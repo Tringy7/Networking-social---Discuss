@@ -20,11 +20,10 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final CookieUtil cookieUtil;
 
     @Transactional
     public AuthResult register(RegisterRequestDTO request) {
-        if (userRepository.existsByUsername(request.getEmail())) {
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException(request.getEmail());
         }
 
