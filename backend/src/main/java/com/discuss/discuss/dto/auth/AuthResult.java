@@ -7,7 +7,6 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 public class AuthResult {
-    private User user;
     private String accessToken;
     private String refreshToken;
 }

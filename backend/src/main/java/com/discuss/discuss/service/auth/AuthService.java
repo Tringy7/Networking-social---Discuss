@@ -6,39 +6,64 @@ import com.discuss.discuss.dto.auth.RegisterResponseDTO;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.UserRole;
 import com.discuss.discuss.enums.UserStatus;
-import com.discuss.discuss.exception.EmailAlreadyExistsException;
+import com.discuss.discuss.exception.auth.EmailAlreadyExistsException;
+import com.discuss.discuss.exception.auth.UserNotExistException;
+import com.discuss.discuss.mapper.auth.AuthMapper;
 import com.discuss.discuss.repository.UserRepository;
-import com.discuss.discuss.utils.annotation.auth.CookieUtil;
-import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class AuthService {
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final EmailVerificationService emailVerificationService;
+    private final AuthMapper authMapper;
 
     @Transactional
-    public AuthResult register(RegisterRequestDTO request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new EmailAlreadyExistsException(request.getEmail());
+    public RegisterResponseDTO register(RegisterRequestDTO request) {
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
+
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new EmailAlreadyExistsException(normalizedEmail);
         }
 
         User user = User.builder()
-                .email(request.getEmail())
+                .email(normalizedEmail)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .username(request.getUsername())
                 .role(UserRole.USER)
-                .status(UserStatus.ACTIVE)
+                .status(UserStatus.PENDING)
                 .build();
 
         userRepository.save(user);
 
-        String accessToken = this.jwtService.createAccessToken(user.getUsername(), user);
-        String  refreshToken = this.jwtService.createRefreshToken(user.getUsername(), user);
-        return new AuthResult(user, accessToken, refreshToken);
+        emailVerificationService.generateAndSendCode(user.getEmail(), user.getUsername());
+
+        return authMapper.toRegisterResponseFromUser(user);
+    }
+
+    @Transactional
+    public AuthResult verifyEmailAndIssueTokens(String email, String code) {
+        String normalizedEmail = normalize(email);
+
+        emailVerificationService.verifyCode(normalizedEmail, code);
+
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new UserNotExistException("User not exist"));
+
+        String accessToken = jwtService.createAccessToken(user.getUsername(), user);
+        String refreshToken = jwtService.createRefreshToken(user.getUsername(), user);
+
+        return new AuthResult(accessToken, refreshToken);
+    }
+
+    private String normalize(String email) {
+        return email == null ? null : email.trim().toLowerCase();
     }
 }

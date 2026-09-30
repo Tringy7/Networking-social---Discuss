@@ -3,6 +3,7 @@ package com.discuss.discuss.controller.auth;
 import com.discuss.discuss.dto.auth.AuthResult;
 import com.discuss.discuss.dto.auth.RegisterRequestDTO;
 import com.discuss.discuss.dto.auth.RegisterResponseDTO;
+import com.discuss.discuss.dto.auth.VerifyEmailRequestDTO;
 import com.discuss.discuss.mapper.auth.AuthMapper;
 import com.discuss.discuss.service.auth.AuthService;
 import com.discuss.discuss.service.auth.JwtService;
@@ -13,10 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -30,18 +28,22 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
+        RegisterResponseDTO result = authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    }
 
-        AuthResult result = authService.register(request);
-        RegisterResponseDTO body = authMapper.toRegisterResponse(result);
+    @PostMapping("/verify-email")
+    public ResponseEntity<Void> verifyEmail(@Valid @RequestBody VerifyEmailRequestDTO request) {
+        AuthResult result = authService.verifyEmailAndIssueTokens(request.getEmail(), request.getCode());
 
         ResponseCookie accessCookie = cookieUtil.buildAccessTokenCookie(
                 result.getAccessToken(), jwtService.getAccessExpirationSeconds());
         ResponseCookie refreshCookie = cookieUtil.buildRefreshTokenCookie(
                 result.getRefreshToken(), jwtService.getRefreshExpirationSeconds());
 
-        return ResponseEntity.status(HttpStatus.CREATED)
+        return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .body(body);
+                .build();
     }
 }

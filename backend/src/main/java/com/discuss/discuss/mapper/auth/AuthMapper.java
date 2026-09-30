@@ -7,9 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class AuthMapper {
-    public RegisterResponseDTO toRegisterResponse(AuthResult result) {
-        User user = result.getUser();
-
+    public RegisterResponseDTO toRegisterResponseFromUser(User user) {
         return RegisterResponseDTO.builder()
                 .id(String.valueOf(user.getId()))
                 .username(user.getUsername())

@@ -1,4 +1,4 @@
-package com.discuss.discuss.exception;
+package com.discuss.discuss.exception.auth;
 
 public class EmailAlreadyExistsException extends RuntimeException {
     public EmailAlreadyExistsException(String email) {
