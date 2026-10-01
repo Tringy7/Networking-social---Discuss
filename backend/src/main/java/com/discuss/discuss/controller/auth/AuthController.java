@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-    private final AuthMapper authMapper;
     private final JwtService jwtService;
     private final CookieUtil cookieUtil;
 
@@ -33,7 +32,7 @@ public class AuthController {
     }
 
     @PostMapping("/verify-email")
-    public ResponseEntity<Void> verifyEmail(@Valid @RequestBody VerifyEmailRequestDTO request) {
+    public ResponseEntity<String> verifyEmail(@Valid @RequestBody VerifyEmailRequestDTO request) {
         AuthResult result = authService.verifyEmailAndIssueTokens(request.getEmail(), request.getCode());
 
         ResponseCookie accessCookie = cookieUtil.buildAccessTokenCookie(
@@ -44,6 +43,6 @@ public class AuthController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .build();
+                .body("Email verified successfully");
     }
 }

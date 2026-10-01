@@ -9,6 +9,7 @@ import com.discuss.discuss.repository.UserRepository;
 import com.discuss.discuss.service.auth.JwtService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ public class UserService {
     private final UserProfileRepository userProfileRepository;
     private final RefreshTokenRepository refreshTokenRepository;
 
+    @Transactional
     public void createUserProfile(User user) {
         UserProfile profile = UserProfile.builder()
                 .user(user)
@@ -30,6 +32,7 @@ public class UserService {
         this.userProfileRepository.save(profile);
     }
 
+    @Transactional
     public void saveRefreshToken(User user, String tokenValue, Instant expiration) {
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
