@@ -4,12 +4,14 @@ import com.discuss.discuss.dto.auth.AuthResult;
 import com.discuss.discuss.dto.auth.RegisterRequestDTO;
 import com.discuss.discuss.dto.auth.RegisterResponseDTO;
 import com.discuss.discuss.entity.User;
+import com.discuss.discuss.entity.UserProfile;
 import com.discuss.discuss.enums.UserRole;
 import com.discuss.discuss.enums.UserStatus;
 import com.discuss.discuss.exception.auth.EmailAlreadyExistsException;
 import com.discuss.discuss.exception.auth.UserNotExistException;
 import com.discuss.discuss.mapper.auth.AuthMapper;
 import com.discuss.discuss.repository.UserRepository;
+import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final EmailVerificationService emailVerificationService;
     private final AuthMapper authMapper;
+    private final UserService userService;
 
     @Transactional
     public RegisterResponseDTO register(RegisterRequestDTO request) {
@@ -59,6 +62,12 @@ public class AuthService {
 
         String accessToken = jwtService.createAccessToken(user.getUsername(), user);
         String refreshToken = jwtService.createRefreshToken(user.getUsername(), user);
+
+        this.userService.createUserProfile(user);
+        this.userService.saveRefreshToken(
+                user,
+                refreshToken,
+                this.jwtService.getRefreshTokenExpiration());
 
         return new AuthResult(accessToken, refreshToken);
     }

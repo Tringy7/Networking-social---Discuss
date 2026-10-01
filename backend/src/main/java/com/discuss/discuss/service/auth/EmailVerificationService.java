@@ -1,6 +1,7 @@
 package com.discuss.discuss.service.auth;
 
 import com.discuss.discuss.entity.User;
+import com.discuss.discuss.entity.UserProfile;
 import com.discuss.discuss.enums.UserStatus;
 import com.discuss.discuss.exception.auth.InvalidVerificationException;
 import com.discuss.discuss.exception.auth.OtpCooldownException;
@@ -55,6 +56,7 @@ public class EmailVerificationService {
         }
 
         user.setStatus(UserStatus.ACTIVE);
+
         log.info("Account verified successfully for user: {}", normalizedEmail);
     }
 

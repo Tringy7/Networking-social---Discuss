@@ -52,6 +52,11 @@ public class JwtService {
         return createToken(userName, user, now, validity);
     }
 
+    public Instant getRefreshTokenExpiration() {
+        return Instant.now()
+                .plus(jwtExpirationRefreshTokenMs, ChronoUnit.MILLIS);
+    }
+
     private String createToken(String userName, User user, Instant now, Instant validity) {
         List<String> authorities = List.of(user.getRole().name());
 
