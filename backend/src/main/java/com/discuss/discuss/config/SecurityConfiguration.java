@@ -2,6 +2,7 @@ package com.discuss.discuss.config;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.util.Base64;
+import jakarta.servlet.http.Cookie;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,13 +18,18 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.util.Arrays;
 
 @Configuration
 public class SecurityConfiguration {
+
+    private static final String ACCESS_TOKEN_COOKIE = "access_token";
+
     @Value("${jwt.secret}")
     private String jwtKey;
 
@@ -36,10 +42,15 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(
             HttpSecurity http,
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
-            CustomAccessDeniedHandler customAccessDeniedHandler) throws Exception {
+            CustomAccessDeniedHandler customAccessDeniedHandler,
+            JwtDecoder jwtDecoder,
+            JwtAuthenticationConverter jwtAuthenticationConverter,
+            BearerTokenResolver bearerTokenResolver) throws Exception {
+
         String[] PUBLIC_ENDPOINTS = {
                 "/auth/**"
         };
+
         http
                 .csrf(c -> c.disable())
                 .cors(Customizer.withDefaults())
@@ -47,11 +58,15 @@ public class SecurityConfiguration {
                         authz -> authz
                                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                                 .anyRequest().authenticated())
-                .oauth2ResourceServer((oauth2) -> oauth2.jwt(Customizer.withDefaults())
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .decoder(jwtDecoder)
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter))
+                        .bearerTokenResolver(bearerTokenResolver)
                         .authenticationEntryPoint(customAuthenticationEntryPoint))
                 .exceptionHandling(
                         exceptions -> exceptions
-                                .authenticationEntryPoint(customAuthenticationEntryPoint) // 401)
+                                .authenticationEntryPoint(customAuthenticationEntryPoint) // 401
                                 .accessDeniedHandler(customAccessDeniedHandler) // 403
                 )
                 .formLogin(f -> f.disable())
@@ -60,6 +75,33 @@ public class SecurityConfiguration {
         return http.build();
     }
 
+    /**
+     * Đọc JWT từ cookie "access_token" thay vì header Authorization.
+     * Nếu không tìm thấy cookie, fallback về header Authorization (hữu ích cho Postman/testing/mobile app).
+     */
+    @Bean
+    public BearerTokenResolver bearerTokenResolver() {
+        return request -> {
+            if (request.getCookies() != null) {
+                String tokenFromCookie = Arrays.stream(request.getCookies())
+                        .filter(c -> ACCESS_TOKEN_COOKIE.equals(c.getName()))
+                        .map(Cookie::getValue)
+                        .findFirst()
+                        .orElse(null);
+                if (tokenFromCookie != null) {
+                    return tokenFromCookie;
+                }
+            }
+
+            // Fallback: header Authorization: Bearer <token>
+            String header = request.getHeader("Authorization");
+            if (header != null && header.startsWith("Bearer ")) {
+                return header.substring(7);
+            }
+
+            return null;
+        };
+    }
 
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
