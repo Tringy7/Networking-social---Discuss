@@ -1,7 +1,10 @@
 package com.discuss.discuss.exception.auth;
 
-public class OtpCooldownException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+public class OtpCooldownException extends AuthException {
+
     public OtpCooldownException(String message) {
-        super(message);
+        super(message, HttpStatus.TOO_MANY_REQUESTS);
     }
 }

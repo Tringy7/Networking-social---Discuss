@@ -2,9 +2,9 @@ package com.discuss.discuss.exception.auth;
 
 import org.springframework.http.HttpStatus;
 
-public class InvalidVerificationException extends AuthException {
+public class UnsupportedProviderException extends AuthException {
 
-    public InvalidVerificationException(String message) {
+    public UnsupportedProviderException(String message) {
         super(message, HttpStatus.BAD_REQUEST);
     }
 }

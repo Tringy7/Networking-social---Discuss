@@ -9,12 +9,15 @@ import com.discuss.discuss.service.auth.AuthService;
 import com.discuss.discuss.service.auth.JwtService;
 import com.discuss.discuss.utils.annotation.auth.CookieUtil;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -24,6 +27,8 @@ public class AuthController {
     private final AuthService authService;
     private final JwtService jwtService;
     private final CookieUtil cookieUtil;
+
+    public record SocialLoginRequestDTO(@NotBlank String token) {}
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
@@ -44,5 +49,24 @@ public class AuthController {
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body("Email verified successfully");
+    }
+
+
+    @PostMapping("/social/{provider}")
+    public ResponseEntity<Map<String, String>> loginWithSocial(
+            @PathVariable String provider,
+            @RequestBody SocialLoginRequestDTO request) {
+
+        AuthResult result = authService.loginWithProvider(provider, request.token);
+
+        ResponseCookie accessCookie = cookieUtil.buildAccessTokenCookie(
+                result.getAccessToken(), jwtService.getAccessExpirationSeconds());
+        ResponseCookie refreshCookie = cookieUtil.buildRefreshTokenCookie(
+                result.getRefreshToken(), jwtService.getRefreshExpirationSeconds());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(Map.of("message", "Login with " + provider + " successful"));
     }
 }

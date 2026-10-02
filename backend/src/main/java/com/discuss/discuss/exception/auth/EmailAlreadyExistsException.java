@@ -1,7 +1,10 @@
 package com.discuss.discuss.exception.auth;
 
-public class EmailAlreadyExistsException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+public class EmailAlreadyExistsException extends AuthException {
+
     public EmailAlreadyExistsException(String email) {
-        super("Email already exists: " + email);
+        super("Email already exists: " + email, HttpStatus.CONFLICT);
     }
 }

@@ -1,4 +1,4 @@
-package com.discuss.discuss.service.auth;
+package com.discuss.discuss.service.auth.email;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

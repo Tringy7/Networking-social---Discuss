@@ -1,7 +1,6 @@
-package com.discuss.discuss.service.auth;
+package com.discuss.discuss.service.auth.email;
 
 import com.discuss.discuss.entity.User;
-import com.discuss.discuss.entity.UserProfile;
 import com.discuss.discuss.enums.UserStatus;
 import com.discuss.discuss.exception.auth.InvalidVerificationException;
 import com.discuss.discuss.exception.auth.OtpCooldownException;

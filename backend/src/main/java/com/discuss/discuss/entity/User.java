@@ -1,5 +1,6 @@
 package com.discuss.discuss.entity;
 
+import com.discuss.discuss.enums.Provider;
 import com.discuss.discuss.enums.UserRole;
 import com.discuss.discuss.enums.UserStatus;
 import jakarta.persistence.*;
@@ -27,7 +28,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -37,6 +38,11 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Provider provider = Provider.LOCAL;
 
     @CreationTimestamp
     @Column(updatable = false)

@@ -1,4 +1,4 @@
-package com.discuss.discuss.service.auth;
+package com.discuss.discuss.service.auth.email;
 
 import com.discuss.discuss.exception.auth.EmailSendException;
 import jakarta.mail.MessagingException;
