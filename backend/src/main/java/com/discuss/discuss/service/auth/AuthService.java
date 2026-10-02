@@ -88,6 +88,10 @@ public class AuthService {
         return requestedUsername;
     }
 
+    public void resendOtp(String email) {
+        emailVerificationService.resendCode(email);
+    }
+
     @Transactional
     public AuthResult verifyEmailAndIssueTokens(String email, String code) {
         String normalizedEmail = normalize(email);
