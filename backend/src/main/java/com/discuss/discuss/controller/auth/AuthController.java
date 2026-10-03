@@ -1,10 +1,10 @@
 package com.discuss.discuss.controller.auth;
 
 import com.discuss.discuss.dto.auth.*;
-import com.discuss.discuss.mapper.auth.AuthMapper;
+import com.discuss.discuss.exception.auth.RefreshTokenException;
 import com.discuss.discuss.service.auth.AuthService;
 import com.discuss.discuss.service.auth.JwtService;
-import com.discuss.discuss.utils.annotation.auth.CookieUtil;
+import com.discuss.discuss.utils.CookieUtil;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -47,7 +47,7 @@ public class AuthController {
     }
 
     @PostMapping("/verify-email")
-    public ResponseEntity<String> verifyEmail(@Valid @RequestBody VerifyEmailRequestDTO request) {
+    public ResponseEntity<Map<String, String>> verifyEmail(@Valid @RequestBody VerifyEmailRequestDTO request) {
         AuthResult result = this.authService.verifyEmailAndIssueTokens(request.getEmail(), request.getCode());
 
         ResponseCookie accessCookie = cookieUtil.buildAccessTokenCookie(
@@ -58,7 +58,26 @@ public class AuthController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .body("Email verified successfully");
+                .body(Map.of("message", "Email verified successfully"));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<Map<String, String>> refresh(@CookieValue(
+            name = "refresh_token", defaultValue = "") String refreshToken) throws Exception {
+        if (refreshToken.equals("")) {
+            throw new RefreshTokenException("Not refreshed token");
+        }
+
+        AuthResult result = this.authService.refreshToken(refreshToken);
+        ResponseCookie accessCookie = cookieUtil.buildAccessTokenCookie(
+                result.getAccessToken(), jwtService.getAccessExpirationSeconds());
+        ResponseCookie refreshCookie = cookieUtil.buildRefreshTokenCookie(
+                result.getRefreshToken(), jwtService.getRefreshExpirationSeconds());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(Map.of("message", "Token refreshed successfully"));
     }
 
 

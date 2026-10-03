@@ -1,6 +1,9 @@
 package com.discuss.discuss.service.auth;
 
 import com.discuss.discuss.entity.User;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -9,13 +12,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
+import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
-@Component
+@Slf4j
+@Service
 public class JwtService {
 
     public static final MacAlgorithm JWT_ALGORITHM = MacAlgorithm.HS256;
@@ -27,9 +33,13 @@ public class JwtService {
     private long jwtExpirationRefreshTokenMs;
 
     private final JwtEncoder jwtEncoder;
+    private final JwtDecoder jwtDecoder;
+    private final SecretKey secretKey;
 
-    public JwtService(JwtEncoder jwtEncoder) {
+    public JwtService(JwtEncoder jwtEncoder, SecretKey secretKey, JwtDecoder jwtDecoder) {
         this.jwtEncoder = jwtEncoder;
+        this.secretKey = secretKey;
+        this.jwtDecoder = jwtDecoder;
     }
 
     public long getAccessExpirationSeconds() {
@@ -94,5 +104,18 @@ public class JwtService {
             return s;
         }
         return null;
+    }
+
+    public Jwt verifyRefreshToken(String refreshToken) {
+        try {
+            return jwtDecoder.decode(refreshToken);
+        } catch (JwtException e) {
+            log.warn("Refresh token verification failed: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public String hashToken(String token) {
+        return DigestUtils.sha256Hex(token);
     }
 }

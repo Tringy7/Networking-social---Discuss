@@ -1,4 +1,4 @@
-package com.discuss.discuss.utils.annotation.auth;
+package com.discuss.discuss.utils;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
