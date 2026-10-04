@@ -1,14 +1,14 @@
 package com.discuss.discuss.mapper.auth;
 
-import com.discuss.discuss.dto.auth.RegisterResponseDTO;
+import com.discuss.discuss.dto.auth.AuthResponseDTO;
 import com.discuss.discuss.entity.User;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AuthMapper {
 
-    public RegisterResponseDTO.UserDTO toUserDTO(User user) {
-        RegisterResponseDTO.UserDTO dto = new RegisterResponseDTO.UserDTO();
+    public AuthResponseDTO.UserDTO toUserDTO(User user) {
+        AuthResponseDTO.UserDTO dto = new AuthResponseDTO.UserDTO();
 
         dto.setId(String.valueOf(user.getId()));
         dto.setUsername(user.getUsername());
@@ -20,13 +20,13 @@ public class AuthMapper {
         return dto;
     }
 
-    public RegisterResponseDTO toRegisterResponse(
+    public AuthResponseDTO toRegisterResponse(
             User user,
             String message
     ) {
-        return RegisterResponseDTO.builder()
+        return AuthResponseDTO.builder()
                 .message(message)
-                .content(toUserDTO(user))
+                .data(toUserDTO(user))
                 .build();
     }
 }

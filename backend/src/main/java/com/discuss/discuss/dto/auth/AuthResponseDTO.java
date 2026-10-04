@@ -8,9 +8,9 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-public class RegisterResponseDTO {
+public class AuthResponseDTO {
     private String message;
-    private UserDTO content;
+    private UserDTO data;
 
     @Getter
     @Setter

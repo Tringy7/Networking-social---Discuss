@@ -2,8 +2,10 @@ package com.discuss.discuss.controller.auth;
 
 import com.discuss.discuss.dto.auth.*;
 import com.discuss.discuss.exception.auth.RefreshTokenException;
-import com.discuss.discuss.service.auth.AuthService;
 import com.discuss.discuss.service.auth.JwtService;
+import com.discuss.discuss.service.auth.LocalAuthService;
+import com.discuss.discuss.service.auth.TokenService;
+import com.discuss.discuss.service.auth.social.SocialAuthService;
 import com.discuss.discuss.utils.CookieUtil;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -13,6 +15,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -22,16 +28,19 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+    private final LocalAuthService localAuthService;
+    private final SocialAuthService socialAuthService;
+    private final TokenService tokenService;
     private final JwtService jwtService;
     private final CookieUtil cookieUtil;
+    private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
     public record SocialLoginRequestDTO(@NotBlank String token) {}
     public record ResendOtpRequestDTO(@NotBlank @Email String email) {}
 
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
-        RegisterResponseDTO result = this.authService.register(request);
+    public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
+        AuthResponseDTO result = this.localAuthService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
@@ -39,7 +48,7 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> resendOtp(
             @Valid @RequestBody ResendOtpRequestDTO request) {
 
-        this.authService.resendOtp(request.email);
+        this.localAuthService.resendOtp(request.email);
 
         return ResponseEntity.ok(
                 Map.of("message", "Verification code has been sent")
@@ -48,7 +57,7 @@ public class AuthController {
 
     @PostMapping("/verify-email")
     public ResponseEntity<Map<String, String>> verifyEmail(@Valid @RequestBody VerifyEmailRequestDTO request) {
-        AuthResult result = this.authService.verifyEmailAndIssueTokens(request.getEmail(), request.getCode());
+        AuthResult result = this.localAuthService.verifyEmailAndIssueTokens(request.getEmail(), request.getCode());
 
         ResponseCookie accessCookie = cookieUtil.buildAccessTokenCookie(
                 result.getAccessToken(), jwtService.getAccessExpirationSeconds());
@@ -68,7 +77,7 @@ public class AuthController {
             throw new RefreshTokenException("Not refreshed token");
         }
 
-        AuthResult result = this.authService.refreshToken(refreshToken);
+        AuthResult result = this.tokenService.refreshToken(refreshToken);
         ResponseCookie accessCookie = cookieUtil.buildAccessTokenCookie(
                 result.getAccessToken(), jwtService.getAccessExpirationSeconds());
         ResponseCookie refreshCookie = cookieUtil.buildRefreshTokenCookie(
@@ -86,7 +95,7 @@ public class AuthController {
             @PathVariable String provider,
             @RequestBody SocialLoginRequestDTO request) {
 
-        AuthResult result = authService.loginWithProvider(provider, request.token);
+        AuthResult result = this.socialAuthService.loginWithProvider(provider, request.token);
 
         ResponseCookie accessCookie = cookieUtil.buildAccessTokenCookie(
                 result.getAccessToken(), jwtService.getAccessExpirationSeconds());
@@ -99,6 +108,20 @@ public class AuthController {
                 .body(Map.of("message", "Login with " + provider + " successful"));
     }
 
-//    @PostMapping("/login")
-//    public ResponseEntity<>
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginRequestDTO) throws Exception {
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                loginRequestDTO.getUsername(),
+                loginRequestDTO.getPassword());
+        Authentication authentication = this.authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String username = authentication.getName();
+//
+//         loginRes = this.authService.handleAuthentication(email);
+//
+//        return ResponseEntity.ok()
+//                .header(HttpHeaders.SET_COOKIE, this.authService.getCookie(loginRes.getRefreshToken()).toString())
+//                .body(loginRes);
+        return null;
+    }
 }
