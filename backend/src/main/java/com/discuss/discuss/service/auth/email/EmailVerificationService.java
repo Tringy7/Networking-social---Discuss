@@ -19,7 +19,7 @@ public class EmailVerificationService {
     private final OtpService otpService;
     private final EmailService emailService;
 
-    public void generateAndSendCode(String email, String username) {
+    public String generateAndSendCode(String email, String username) {
         String normalizedEmail = normalize(email);
 
         if (otpService.isInCooldown(normalizedEmail)) {
@@ -32,6 +32,8 @@ public class EmailVerificationService {
         emailService.sendOtpEmail(normalizedEmail, username, code);
 
         log.info("OTP generated and sent for user: {}", normalizedEmail);
+        String message = "Email send successfully";
+        return message;
     }
 
     @Transactional

@@ -81,9 +81,9 @@ public class AuthService {
             userRepository.save(user);
         }
 
-        emailVerificationService.generateAndSendCode(user.getEmail(), user.getUsername());
+        String message = emailVerificationService.generateAndSendCode(user.getEmail(), user.getUsername());
 
-        return authMapper.toRegisterResponseFromUser(user);
+        return authMapper.toRegisterResponse(user, message);
     }
 
     private String resolveUsername(String requestedUsername, User existingUser) {
