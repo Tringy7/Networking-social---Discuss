@@ -1,22 +1,25 @@
 package com.discuss.discuss.exception.auth;
 
-import org.springframework.http.HttpStatus;
+public class AuthException extends RuntimeException {
 
-public abstract class AuthException extends RuntimeException {
+    private final AuthErrorCode errorCode;
 
-    private final HttpStatus status;
-
-    protected AuthException(String message, HttpStatus status) {
-        super(message);
-        this.status = status;
+    public AuthException(AuthErrorCode errorCode) {
+        super(errorCode.getDefaultMessage());
+        this.errorCode = errorCode;
     }
 
-    protected AuthException(String message, HttpStatus status, Throwable cause) {
-        super(message, cause);
-        this.status = status;
+    public AuthException(AuthErrorCode errorCode, String customMessage) {
+        super(customMessage);
+        this.errorCode = errorCode;
     }
 
-    public HttpStatus getStatus() {
-        return status;
+    public AuthException(AuthErrorCode errorCode, String customMessage, Throwable cause) {
+        super(customMessage, cause);
+        this.errorCode = errorCode;
+    }
+
+    public AuthErrorCode getErrorCode() {
+        return errorCode;
     }
 }

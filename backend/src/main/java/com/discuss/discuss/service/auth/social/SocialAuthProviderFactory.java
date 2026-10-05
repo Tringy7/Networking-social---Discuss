@@ -1,6 +1,7 @@
 package com.discuss.discuss.service.auth.social;
 
-import com.discuss.discuss.exception.auth.UnsupportedProviderException;
+import com.discuss.discuss.exception.auth.AuthErrorCode;
+import com.discuss.discuss.exception.auth.AuthException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -20,7 +21,7 @@ public class SocialAuthProviderFactory {
     public SocialAuthProvider getProvider(String providerName) {
         SocialAuthProvider provider = providers.get(providerName.toLowerCase());
         if (provider == null) {
-            throw new UnsupportedProviderException("Unsupported provider: " + providerName);
+            throw new AuthException(AuthErrorCode.UNSUPPORTED_PROVIDER ,"Unsupported provider: " + providerName);
         }
         return provider;
     }

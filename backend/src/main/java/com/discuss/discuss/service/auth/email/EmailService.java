@@ -1,6 +1,7 @@
 package com.discuss.discuss.service.auth.email;
 
-import com.discuss.discuss.exception.auth.EmailSendException;
+import com.discuss.discuss.exception.auth.AuthErrorCode;
+import com.discuss.discuss.exception.auth.AuthException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -73,7 +74,7 @@ public class EmailService {
             log.info("Email sent successfully to {}", to);
         } catch (MessagingException e) {
             log.error("Failed to send email to {}: {}", to, e.getMessage());
-            throw new EmailSendException("Failed to send email to " + to, e);
+            throw new AuthException(AuthErrorCode.EMAIL_SEND_FAILED, "Failed to send email to " + to, e);
         }
     }
 }

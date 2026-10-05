@@ -2,8 +2,8 @@ package com.discuss.discuss.service.auth.email;
 
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.UserStatus;
-import com.discuss.discuss.exception.auth.InvalidVerificationException;
-import com.discuss.discuss.exception.auth.OtpCooldownException;
+import com.discuss.discuss.exception.auth.AuthErrorCode;
+import com.discuss.discuss.exception.auth.AuthException;
 import com.discuss.discuss.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ public class EmailVerificationService {
         String normalizedEmail = normalize(email);
 
         if (otpService.isInCooldown(normalizedEmail)) {
-            throw new OtpCooldownException(
+            throw new AuthException(AuthErrorCode.OTP_COOLDOWN,
                     "Please wait " + otpService.getCooldownSeconds()
                             + " seconds before requesting a new code");
         }
@@ -42,18 +42,16 @@ public class EmailVerificationService {
 
         User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() ->
-                        new InvalidVerificationException("Invalid verification code"));
+                        new AuthException(AuthErrorCode.USER_NOT_FOUND));
 
         if (user.getStatus() == UserStatus.ACTIVE) {
-            throw new InvalidVerificationException(
-                    "The account has already been verified");
+            throw new AuthException(AuthErrorCode.ACCOUNT_ALREADY_EXISTS);
         }
 
         boolean isValid = otpService.verifyOtp(normalizedEmail, code);
 
         if (!isValid) {
-            throw new InvalidVerificationException(
-                    "The verification code is incorrect or has expired");
+            throw new AuthException(AuthErrorCode.INVALID_VERIFICATION_CODE);
         }
 
         user.setStatus(UserStatus.ACTIVE);
@@ -67,11 +65,10 @@ public class EmailVerificationService {
 
         User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() ->
-                        new InvalidVerificationException("Email does not exist"));
+                        new AuthException(AuthErrorCode.USER_NOT_FOUND));
 
         if (user.getStatus() == UserStatus.ACTIVE) {
-            throw new InvalidVerificationException(
-                    "The account has already been verified");
+            throw new AuthException(AuthErrorCode.ACCOUNT_ALREADY_EXISTS);
         }
 
         generateAndSendCode(user.getEmail(), user.getUsername());

@@ -6,7 +6,8 @@ import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.Provider;
 import com.discuss.discuss.enums.UserRole;
 import com.discuss.discuss.enums.UserStatus;
-import com.discuss.discuss.exception.auth.VerificationException;
+import com.discuss.discuss.exception.auth.AuthErrorCode;
+import com.discuss.discuss.exception.auth.AuthException;
 import com.discuss.discuss.repository.UserRepository;
 import com.discuss.discuss.service.auth.TokenService;
 import com.discuss.discuss.service.user.UserService;
@@ -29,7 +30,7 @@ public class SocialAuthService {
         SocialUserInfo socialUser = provider.verifyToken(token);
 
         if (!socialUser.isEmailVerified()) {
-            throw new VerificationException("Email not verified by " + providerName);
+            throw new AuthException(AuthErrorCode.UNSUPPORTED_PROVIDER,"Email not verified by " + providerName);
         }
 
         String normalizedEmail = socialUser.getEmail().trim().toLowerCase();

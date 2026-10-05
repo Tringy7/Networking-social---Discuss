@@ -1,7 +1,8 @@
 package com.discuss.discuss.controller.auth;
 
 import com.discuss.discuss.dto.auth.*;
-import com.discuss.discuss.exception.auth.RefreshTokenException;
+import com.discuss.discuss.exception.auth.AuthErrorCode;
+import com.discuss.discuss.exception.auth.AuthException;
 import com.discuss.discuss.service.auth.JwtService;
 import com.discuss.discuss.service.auth.LocalAuthService;
 import com.discuss.discuss.service.auth.TokenService;
@@ -74,7 +75,7 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> refresh(@CookieValue(
             name = "refresh_token", defaultValue = "") String refreshToken) throws Exception {
         if (refreshToken.equals("")) {
-            throw new RefreshTokenException("Not refreshed token");
+            throw new AuthException(AuthErrorCode.INVALID_REFRESH_TOKEN);
         }
 
         AuthResult result = this.tokenService.refreshToken(refreshToken);

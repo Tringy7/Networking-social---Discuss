@@ -18,10 +18,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthException.class)
     public ResponseEntity<Map<String, Object>> handleAuthException(AuthException ex) {
-        log.warn("AuthException: {}", ex.getMessage());
-        return ResponseEntity.status(ex.getStatus())
+        log.warn("[{}] {}", ex.getErrorCode().getCode(), ex.getMessage());
+
+        return ResponseEntity.status(ex.getErrorCode().getStatus())
                 .body(Map.of(
-                        "status", ex.getStatus().value(),
+                        "code", ex.getErrorCode().getCode(),
+                        "status", ex.getErrorCode().getStatus().value(),
                         "message", ex.getMessage()
                 ));
     }
