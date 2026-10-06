@@ -5,8 +5,10 @@ import lombok.*;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @AllArgsConstructor
 public class AuthResult {
+    private User user;
     private String accessToken;
     private String refreshToken;
 }

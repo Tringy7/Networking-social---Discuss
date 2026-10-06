@@ -1,5 +1,6 @@
 package com.discuss.discuss.service.auth;
 
+import com.discuss.discuss.dto.auth.AuthResponseDTO;
 import com.discuss.discuss.dto.auth.AuthResult;
 import com.discuss.discuss.entity.RefreshToken;
 import com.discuss.discuss.entity.User;
@@ -44,7 +45,11 @@ public class TokenService {
                 jwtService.getRefreshTokenExpiration()
         );
 
-        return new AuthResult(accessToken, rawRefreshToken);
+        return new AuthResult(
+                user,
+                accessToken,
+                rawRefreshToken
+        );
     }
 
     @Transactional

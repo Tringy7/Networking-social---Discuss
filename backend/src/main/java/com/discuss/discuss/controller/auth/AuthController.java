@@ -1,9 +1,10 @@
 package com.discuss.discuss.controller.auth;
 
 import com.discuss.discuss.dto.auth.*;
+import com.discuss.discuss.dto.common.ApiResponse;
 import com.discuss.discuss.exception.auth.AuthErrorCode;
 import com.discuss.discuss.exception.auth.AuthException;
-import com.discuss.discuss.service.auth.JwtService;
+import com.discuss.discuss.mapper.auth.AuthMapper;
 import com.discuss.discuss.service.auth.LocalAuthService;
 import com.discuss.discuss.service.auth.TokenService;
 import com.discuss.discuss.service.auth.social.SocialAuthService;
@@ -16,113 +17,83 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
+    private final AuthMapper authMapper;
     private final LocalAuthService localAuthService;
     private final SocialAuthService socialAuthService;
     private final TokenService tokenService;
-    private final JwtService jwtService;
     private final CookieUtil cookieUtil;
-    private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
     public record SocialLoginRequestDTO(@NotBlank String token) {}
     public record ResendOtpRequestDTO(@NotBlank @Email String email) {}
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
-        AuthResponseDTO result = this.localAuthService.register(request);
+        AuthResponseDTO result = localAuthService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
-    @PostMapping("/resend-otp")
-    public ResponseEntity<Map<String, String>> resendOtp(
-            @Valid @RequestBody ResendOtpRequestDTO request) {
-
-        this.localAuthService.resendOtp(request.email);
-
-        return ResponseEntity.ok(
-                Map.of("message", "Verification code has been sent")
-        );
+    @PostMapping("/verify-email")
+    public ResponseEntity<AuthResponseDTO> verifyEmail(@Valid @RequestBody VerifyEmailRequestDTO request) {
+        AuthResult result = localAuthService.verifyEmailAndIssueTokens(request.getEmail(), request.getCode());
+        return ResponseEntity.ok()
+                .headers(cookieUtil.buildAuthHeaders(result))
+                .body(authMapper.toResponse(result.getUser(), "Email verified successfully"));
     }
 
-    @PostMapping("/verify-email")
-    public ResponseEntity<Map<String, String>> verifyEmail(@Valid @RequestBody VerifyEmailRequestDTO request) {
-        AuthResult result = this.localAuthService.verifyEmailAndIssueTokens(request.getEmail(), request.getCode());
-
-        ResponseCookie accessCookie = cookieUtil.buildAccessTokenCookie(
-                result.getAccessToken(), jwtService.getAccessExpirationSeconds());
-        ResponseCookie refreshCookie = cookieUtil.buildRefreshTokenCookie(
-                result.getRefreshToken(), jwtService.getRefreshExpirationSeconds());
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
-                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .body(Map.of("message", "Email verified successfully"));
+    @PostMapping("/resend-otp")
+    public ResponseEntity<ApiResponse> resendOtp(@Valid @RequestBody ResendOtpRequestDTO request) {
+        localAuthService.resendOtp(request.email());
+        return ResponseEntity.ok(new ApiResponse("Verification code has been sent"));
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<Map<String, String>> refresh(@CookieValue(
-            name = "refresh_token", defaultValue = "") String refreshToken) throws Exception {
-        if (refreshToken.equals("")) {
+    public ResponseEntity<ApiResponse> refresh(
+            @CookieValue(name = CookieUtil.REFRESH_TOKEN_COOKIE, defaultValue = "") String refreshToken) {
+        if (refreshToken.isBlank()) {
             throw new AuthException(AuthErrorCode.INVALID_REFRESH_TOKEN);
         }
-
-        AuthResult result = this.tokenService.refreshToken(refreshToken);
-        ResponseCookie accessCookie = cookieUtil.buildAccessTokenCookie(
-                result.getAccessToken(), jwtService.getAccessExpirationSeconds());
-        ResponseCookie refreshCookie = cookieUtil.buildRefreshTokenCookie(
-                result.getRefreshToken(), jwtService.getRefreshExpirationSeconds());
-
+        AuthResult result = tokenService.refreshToken(refreshToken);
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
-                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .body(Map.of("message", "Token refreshed successfully"));
+                .headers(cookieUtil.buildAuthHeaders(result))
+                .body(new ApiResponse("Token refreshed successfully"));
     }
 
-
     @PostMapping("/social/{provider}")
-    public ResponseEntity<Map<String, String>> loginWithSocial(
+    public ResponseEntity<AuthResponseDTO> loginWithSocial(
             @PathVariable String provider,
-            @RequestBody SocialLoginRequestDTO request) {
-
-        AuthResult result = this.socialAuthService.loginWithProvider(provider, request.token);
-
-        ResponseCookie accessCookie = cookieUtil.buildAccessTokenCookie(
-                result.getAccessToken(), jwtService.getAccessExpirationSeconds());
-        ResponseCookie refreshCookie = cookieUtil.buildRefreshTokenCookie(
-                result.getRefreshToken(), jwtService.getRefreshExpirationSeconds());
-
+            @Valid @RequestBody SocialLoginRequestDTO request) {
+        AuthResult result = socialAuthService.loginWithProvider(provider, request.token());
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
-                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .body(Map.of("message", "Login with " + provider + " successful"));
+                .headers(cookieUtil.buildAuthHeaders(result))
+                .body(authMapper.toResponse(result.getUser(), "Login with " + provider + " successful"));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginRequestDTO) throws Exception {
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                loginRequestDTO.getUsername(),
-                loginRequestDTO.getPassword());
-        Authentication authentication = this.authenticationManagerBuilder.getObject().authenticate(authenticationToken);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String username = authentication.getName();
-//
-//         loginRes = this.authService.handleAuthentication(email);
-//
-//        return ResponseEntity.ok()
-//                .header(HttpHeaders.SET_COOKIE, this.authService.getCookie(loginRes.getRefreshToken()).toString())
-//                .body(loginRes);
-        return null;
+    public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginRequestDTO) {
+        AuthResult result = localAuthService.login(loginRequestDTO);
+        return ResponseEntity.ok()
+                .headers(cookieUtil.buildAuthHeaders(result))
+                .body(authMapper.toResponse(result.getUser(), "Login successfully"));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse> logout() {
+        ResponseCookie accessCookie =
+                cookieUtil.clearCookie(CookieUtil.ACCESS_TOKEN_COOKIE, "/");
+
+        ResponseCookie refreshCookie =
+                cookieUtil.clearCookie(CookieUtil.REFRESH_TOKEN_COOKIE, "/auth");
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(new ApiResponse("Logout successfully"));
     }
 }

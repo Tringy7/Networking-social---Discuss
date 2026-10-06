@@ -9,7 +9,6 @@ import lombok.Data;
 @Data
 public class LoginRequestDTO {
     @NotBlank(message = "Username is required")
-    @UniqueUsername(message = "Username is already taken")
     private String username;
 
     @NotBlank(message = "Password is required")

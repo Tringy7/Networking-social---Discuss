@@ -8,19 +8,17 @@ import org.springframework.stereotype.Component;
 public class AuthMapper {
 
     public AuthResponseDTO.UserDTO toUserDTO(User user) {
-        AuthResponseDTO.UserDTO dto = new AuthResponseDTO.UserDTO();
-
-        dto.setId(String.valueOf(user.getId()));
-        dto.setUsername(user.getUsername());
-        dto.setEmail(user.getEmail());
-        dto.setRole(user.getRole());
-        dto.setStatus(user.getStatus());
-        dto.setCreatedAt(user.getCreatedAt());
-
-        return dto;
+        return AuthResponseDTO.UserDTO.builder()
+                .id(String.valueOf(user.getId()))
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .status(user.getStatus())
+                .createdAt(user.getCreatedAt())
+                .build();
     }
 
-    public AuthResponseDTO toRegisterResponse(
+    public AuthResponseDTO toResponse(
             User user,
             String message
     ) {

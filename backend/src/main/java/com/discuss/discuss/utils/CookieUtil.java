@@ -1,11 +1,18 @@
 package com.discuss.discuss.utils;
 
+import com.discuss.discuss.dto.auth.AuthResult;
+import com.discuss.discuss.service.auth.JwtService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class CookieUtil {
+
+    private final JwtService jwtService;
 
     @Value("${app.cookie.secure}")
     private boolean secure;
@@ -44,5 +51,16 @@ public class CookieUtil {
                 .path(path)
                 .maxAge(0)
                 .build();
+    }
+
+    public HttpHeaders buildAuthHeaders(AuthResult result) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE,
+                buildAccessTokenCookie(result.getAccessToken(),
+                        this.jwtService.getAccessExpirationSeconds()).toString());
+        headers.add(HttpHeaders.SET_COOKIE,
+                buildRefreshTokenCookie(result.getRefreshToken(),
+                        this.jwtService.getRefreshExpirationSeconds()).toString());
+        return headers;
     }
 }

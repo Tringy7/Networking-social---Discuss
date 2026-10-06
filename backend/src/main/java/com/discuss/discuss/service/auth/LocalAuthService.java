@@ -2,6 +2,7 @@ package com.discuss.discuss.service.auth;
 
 import com.discuss.discuss.dto.auth.AuthResult;
 import com.discuss.discuss.dto.auth.AuthResponseDTO;
+import com.discuss.discuss.dto.auth.LoginRequestDTO;
 import com.discuss.discuss.dto.auth.RegisterRequestDTO;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.UserRole;
@@ -13,6 +14,10 @@ import com.discuss.discuss.repository.UserRepository;
 import com.discuss.discuss.service.auth.email.EmailVerificationService;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,9 +27,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class LocalAuthService {
 
     private final UserRepository userRepository;
+
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationService emailVerificationService;
     private final AuthMapper authMapper;
+    private final AuthenticationManagerBuilder authenticationManagerBuilder;
+
     private final UserService userService;
     private final TokenService tokenService;
 
@@ -42,7 +50,7 @@ public class LocalAuthService {
                 user.getUsername()
         );
 
-        return authMapper.toRegisterResponse(user, message);
+        return authMapper.toResponse(user, message);
     }
 
     public void resendOtp(String email) {
@@ -75,41 +83,21 @@ public class LocalAuthService {
     }
 
     @Transactional
-    public AuthResult login(
-            String username,
-            String rawPassword
-    ) {
+    public AuthResult login(LoginRequestDTO loginRequestDTO) {
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                loginRequestDTO.getUsername(),
+                loginRequestDTO.getPassword());
+        Authentication authentication = this.authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        User user = userRepository.findByUsername(username.trim())
+        User user = userRepository.findByUsername(authentication.getName().trim())
                 .orElseThrow(() ->
                         new AuthException(AuthErrorCode.INVALID_CREDENTIALS)
                 );
 
-        validateCredentials(user, rawPassword);
         validateAccountStatus(user);
 
         return tokenService.issueTokens(user);
-    }
-
-    private void validateCredentials(
-            User user,
-            String rawPassword
-    ) {
-
-        if (user.getPassword() == null) {
-            throw new AuthException(
-                    AuthErrorCode.INVALID_CREDENTIALS
-            );
-        }
-
-        if (!passwordEncoder.matches(
-                rawPassword,
-                user.getPassword()
-        )) {
-            throw new AuthException(
-                    AuthErrorCode.INVALID_CREDENTIALS
-            );
-        }
     }
 
     private void validateAccountStatus(User user) {
