@@ -2,24 +2,24 @@ package com.discuss.discuss.exception.auth;
 
 public class AuthException extends RuntimeException {
 
-    private final AuthErrorCode errorCode;
+    private final AuthErrorCode error;
 
-    public AuthException(AuthErrorCode errorCode) {
-        super(errorCode.getDefaultMessage());
-        this.errorCode = errorCode;
+    public AuthException(AuthErrorCode error) {
+        super(error.getDefaultMessage());
+        this.error = error;
     }
 
-    public AuthException(AuthErrorCode errorCode, String customMessage) {
+    public AuthException(AuthErrorCode error, String customMessage) {
         super(customMessage);
-        this.errorCode = errorCode;
+        this.error = error;
     }
 
-    public AuthException(AuthErrorCode errorCode, String customMessage, Throwable cause) {
+    public AuthException(AuthErrorCode error, String customMessage, Throwable cause) {
         super(customMessage, cause);
-        this.errorCode = errorCode;
+        this.error = error;
     }
 
-    public AuthErrorCode getErrorCode() {
-        return errorCode;
+    public AuthErrorCode getError() {
+        return error;
     }
 }
