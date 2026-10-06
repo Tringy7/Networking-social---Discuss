@@ -14,6 +14,7 @@ import com.discuss.discuss.repository.UserRepository;
 import com.discuss.discuss.service.auth.email.EmailVerificationService;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
@@ -58,7 +59,7 @@ public class LocalAuthService {
     }
 
     @Transactional
-    public AuthResult verifyEmailAndIssueTokens(
+    public AuthResponseDTO verifyEmailAndIssueTokens(
             String email,
             String code
     ) {
@@ -79,25 +80,39 @@ public class LocalAuthService {
 
         userService.createUserProfile(user);
 
-        return tokenService.issueTokens(user);
+        return authMapper.toResponse(user, "Email verified successfully");
+
     }
 
     @Transactional
     public AuthResult login(LoginRequestDTO loginRequestDTO) {
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                loginRequestDTO.getUsername(),
-                loginRequestDTO.getPassword());
-        Authentication authentication = this.authenticationManagerBuilder.getObject().authenticate(authenticationToken);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        try {
+            UsernamePasswordAuthenticationToken authenticationToken =
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequestDTO.getUsername(),
+                            loginRequestDTO.getPassword()
+                    );
 
-        User user = userRepository.findByUsername(authentication.getName().trim())
-                .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.INVALID_CREDENTIALS)
-                );
+            Authentication authentication =
+                    authenticationManagerBuilder
+                            .getObject()
+                            .authenticate(authenticationToken);
 
-        validateAccountStatus(user);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        return tokenService.issueTokens(user);
+            User user = userRepository
+                    .findByUsername(authentication.getName().trim())
+                    .orElseThrow(() ->
+                            new AuthException(AuthErrorCode.INVALID_CREDENTIALS)
+                    );
+
+            validateAccountStatus(user);
+
+            return tokenService.issueTokens(user);
+
+        } catch (BadCredentialsException ex) {
+            throw new AuthException(AuthErrorCode.INVALID_CREDENTIALS);
+        }
     }
 
     private void validateAccountStatus(User user) {

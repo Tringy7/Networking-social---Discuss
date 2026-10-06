@@ -14,7 +14,9 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -39,7 +41,7 @@ public class TokenService {
 
         String hashedRefreshToken = jwtService.hashToken(rawRefreshToken);
 
-        userService.saveRefreshToken(
+        this.saveRefreshToken(
                 user,
                 hashedRefreshToken,
                 jwtService.getRefreshTokenExpiration()
@@ -101,6 +103,21 @@ public class TokenService {
         storedToken.setRevoked(true);
 
         return issueTokens(user);
+    }
+
+    @Transactional
+    public void saveRefreshToken(User user, String tokenValue, Instant expiration) {
+        this.revokeAllUserTokens(user);
+        RefreshToken refreshToken = RefreshToken.builder()
+                .user(user)
+                .token(tokenValue)
+                .expiresAt(LocalDateTime.ofInstant(
+                        expiration,
+                        ZoneId.systemDefault()))
+                .revoked(false)
+                .build();
+
+        refreshTokenRepository.save(refreshToken);
     }
 
     @Transactional
