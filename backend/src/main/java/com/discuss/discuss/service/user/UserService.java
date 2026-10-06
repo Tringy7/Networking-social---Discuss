@@ -1,9 +1,12 @@
 package com.discuss.discuss.service.user;
 
 import com.discuss.discuss.dto.auth.AuthResponseDTO;
+import com.discuss.discuss.dto.user.UserInfoResponseDTO;
 import com.discuss.discuss.entity.RefreshToken;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserProfile;
+import com.discuss.discuss.exception.user.UserErrorCode;
+import com.discuss.discuss.exception.user.UserException;
 import com.discuss.discuss.repository.RefreshTokenRepository;
 import com.discuss.discuss.repository.UserProfileRepository;
 import com.discuss.discuss.repository.UserRepository;
@@ -22,6 +25,7 @@ import java.time.ZoneId;
 public class UserService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
+    private final JwtService jwtService;
 
     @Transactional
     public void createUserProfile(User user) {
@@ -34,4 +38,21 @@ public class UserService {
     }
 
 
+    public UserInfoResponseDTO getUserInfo() {
+
+        String username = jwtService.getCurrentUserLogin()
+                .orElseThrow(() ->
+                        new UserException(UserErrorCode.USER_NOT_FOUND)
+                );
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new UserException(UserErrorCode.USER_NOT_FOUND)
+                );
+
+        UserProfile profile = userProfileRepository.findByUser(user)
+                .orElse(null);
+
+        return userMapper.toUserInfoResponse(user, profile);
+    }
 }
