@@ -4,12 +4,6 @@ import com.discuss.discuss.dto.auth.AuthResponseDTO;
 import com.discuss.discuss.entity.RefreshToken;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserProfile;
-<<<<<<< Updated upstream
-=======
-import com.discuss.discuss.exception.user.UserErrorCode;
-import com.discuss.discuss.exception.user.UserException;
-import com.discuss.discuss.mapper.user.UserMapper;
->>>>>>> Stashed changes
 import com.discuss.discuss.repository.RefreshTokenRepository;
 import com.discuss.discuss.repository.UserProfileRepository;
 import com.discuss.discuss.repository.UserRepository;
@@ -28,8 +22,6 @@ import java.time.ZoneId;
 public class UserService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
-
-    private final UserMapper userMapper;
 
     @Transactional
     public void createUserProfile(User user) {
