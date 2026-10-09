@@ -42,3 +42,33 @@ lerna-debug.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+
+# =========================================
+# FRONTEND: REACT.JS (Node / NPM / Vite or CRA)
+# =========================================
+# Dependencies
+node_modules/
+jspm_packages/
+
+# Production builds
+dist/
+build-react/
+out-react/
+
+# Testing and coverage reports
+coverage/
+.nyc_output/
+
+# Cache directories
+.npm
+.eslintcache
+.parcel-cache
+.vite/
+.turbo/
+
+# Frontend environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
