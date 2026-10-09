@@ -1,0 +1,96 @@
+# =========================================
+# GENERAL / OS & EDITORS
+# =========================================
+# Operating System files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+# IDEs and Editors (IntelliJ, VS Code, Eclipse)
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+
+# =========================================
+# BACKEND: JAVA & SPRING BOOT (Maven / Gradle)
+# =========================================
+# Build output directories
+target/
+build/
+out/
+
+# Maven wrapper and local caches (uncomment if you don't want wrapper files tracked)
+#.mvn/
+#m2/
+
+# Spring Boot specific files
+*.log
+*.sqlite
+hs_err_pid*
+replay_pid*
+
+# Environment and property configurations that may hold local secrets
+**/src/main/resources/application-local.properties
+**/src/main/resources/application-local.yml
+*.env
+
+
+# =========================================
+# FRONTEND: REACT.JS (Node / NPM / Vite or CRA)
+# =========================================
+# Dependencies
+node_modules/
+jspm_packages/
+
+# Production builds
+dist/
+build-react/
+out-react/
+
+# Testing and coverage reports
+coverage/
+.nyc_output/
+
+# Cache directories
+.npm
+.eslintcache
+.parcel-cache
+.vite/
+.turbo/
+
+# Frontend environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# =========================================
+# OTHER COMMON UNNECESSARY FILES
+# =========================================
+# Compiled class files
+*.class
+
+# Packaged files
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# NPM / Yarn / PNPM debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
