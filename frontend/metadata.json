@@ -1,0 +1,8 @@
+{
+  "name": "Remix Nexus Community Social Network",
+  "description": "Nền tảng mạng xã hội cộng đồng theo mô hình Reddit phục vụ tiểu luận chuyên ngành với hệ thống phân quyền 2 tầng (Global Role \u0026 Community Role), quản lý bài viết, bình luận phân cấp, bình chọn và kiểm duyệt.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
