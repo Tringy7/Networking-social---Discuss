@@ -1,5 +1,6 @@
 package com.discuss.discuss.service.auth.email;
 
+import com.discuss.discuss.enums.OtpPurpose;
 import com.discuss.discuss.exception.auth.AuthErrorCode;
 import com.discuss.discuss.exception.auth.AuthException;
 import jakarta.mail.MessagingException;
@@ -19,10 +20,6 @@ import org.thymeleaf.context.Context;
 @Slf4j
 public class EmailService {
 
-    private static final String OTP_TEMPLATE = "otp-verification";
-    private static final String PASSWORD_RESET_TEMPLATE = "password-reset";
-    private static final String EMAIL_VERIFICATION_TEMPLATE = "email-verification";
-
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
 
@@ -30,34 +27,14 @@ public class EmailService {
     private String fromAddress;
 
     @Async
-    public void sendOtpEmail(String toEmail, String username, String otpCode) {
+    public void sendOtpEmail(OtpPurpose purpose, String toEmail, String username, String otpCode) {
         Context context = new Context();
         context.setVariable("username", username);
         context.setVariable("otpCode", otpCode);
         context.setVariable("year", java.time.Year.now().getValue());
 
-        String htmlContent = templateEngine.process(OTP_TEMPLATE, context);
-        sendHtmlEmail(toEmail, "Your Account Verification Code", htmlContent);
-    }
-
-    @Async
-    public void sendPasswordResetEmail(String toEmail, String username, String resetLink) {
-        Context context = new Context();
-        context.setVariable("username", username);
-        context.setVariable("resetLink", resetLink);
-
-        String htmlContent = templateEngine.process(PASSWORD_RESET_TEMPLATE, context);
-        sendHtmlEmail(toEmail, "Password Reset Request", htmlContent);
-    }
-
-    @Async
-    public void sendVerificationEmail(String toEmail, String username, String verifyLink) {
-        Context context = new Context();
-        context.setVariable("username", username);
-        context.setVariable("verifyLink", verifyLink);
-
-        String htmlContent = templateEngine.process(EMAIL_VERIFICATION_TEMPLATE, context);
-        sendHtmlEmail(toEmail, "Verify Your Account", htmlContent);
+        String htmlContent = templateEngine.process(purpose.getTemplate(), context);
+        sendHtmlEmail(toEmail, purpose.getSubject(), htmlContent);
     }
 
     private void sendHtmlEmail(String to, String subject, String htmlContent) {

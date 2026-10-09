@@ -8,6 +8,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+
 @Component
 @RequiredArgsConstructor
 public class CookieUtil {
@@ -20,8 +22,14 @@ public class CookieUtil {
     @Value("${app.cookie.same-site}")
     private String sameSite;
 
+    @Value("${app.password-reset.expiration-minutes}")
+    private long expirationMinutes;
+
     public static final String ACCESS_TOKEN_COOKIE = "access_token";
     public static final String REFRESH_TOKEN_COOKIE = "refresh_token";
+    public static final String RESET_PASSWORD_TOKEN_COOKIE =
+            "reset_password_token";
+
 
     public ResponseCookie buildAccessTokenCookie(String token, long maxAgeSeconds) {
         return ResponseCookie.from(ACCESS_TOKEN_COOKIE, token)
@@ -43,6 +51,16 @@ public class CookieUtil {
                 .build();
     }
 
+    public ResponseCookie buildPasswordResetTokenCookie(String token) {
+        return ResponseCookie.from(RESET_PASSWORD_TOKEN_COOKIE, token)
+                .httpOnly(true)
+                .secure(secure)
+                .sameSite("Strict")
+                .path("/auth/reset-password")
+                .maxAge(Duration.ofMinutes(expirationMinutes))
+                .build();
+    }
+
     public ResponseCookie clearCookie(String name, String path) {
         return ResponseCookie.from(name, "")
                 .httpOnly(true)
@@ -50,6 +68,17 @@ public class CookieUtil {
                 .sameSite(sameSite)
                 .path(path)
                 .maxAge(0)
+                .build();
+    }
+
+
+    public ResponseCookie clearPasswordResetTokenCookie() {
+        return ResponseCookie.from("password_reset_token", "")
+                .httpOnly(true)
+                .secure(secure)
+                .sameSite("Strict")
+                .path("/auth/reset-password")
+                .maxAge(Duration.ZERO)
                 .build();
     }
 
@@ -63,4 +92,16 @@ public class CookieUtil {
                         this.jwtService.getRefreshExpirationSeconds()).toString());
         return headers;
     }
+
+    public HttpHeaders buildPasswordResetHeaders(String token) {
+        HttpHeaders headers = new HttpHeaders();
+
+        headers.add(
+                HttpHeaders.SET_COOKIE,
+                buildPasswordResetTokenCookie(token).toString()
+        );
+
+        return headers;
+    }
+
 }

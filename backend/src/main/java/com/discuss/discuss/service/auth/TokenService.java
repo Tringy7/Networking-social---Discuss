@@ -24,7 +24,6 @@ import java.util.List;
 public class TokenService {
 
     private final JwtService jwtService;
-    private final UserService userService;
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
 

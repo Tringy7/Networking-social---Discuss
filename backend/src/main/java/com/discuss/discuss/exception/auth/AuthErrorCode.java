@@ -51,6 +51,11 @@ public enum AuthErrorCode {
             "Invalid refresh token"
     ),
 
+    INVALID_RESET_TOKEN (
+            HttpStatus.UNAUTHORIZED,
+            "Invalid reset password token"
+    ),
+
     REFRESH_TOKEN_EXPIRED(
             HttpStatus.UNAUTHORIZED,
             "Refresh token has expired"
@@ -93,6 +98,13 @@ public enum AuthErrorCode {
             HttpStatus.TOO_MANY_REQUESTS,
             "Please wait before requesting a new code"
     ),
+
+    // =========================
+    // 429 - TOO MANY REQUEST
+    // =========================
+
+    OTP_TOO_MANY_ATTEMPTS(HttpStatus.TOO_MANY_REQUESTS,
+            "Too many incorrect attempts. Please request a new code"),
 
     // =========================
     // 404 - Not Found
