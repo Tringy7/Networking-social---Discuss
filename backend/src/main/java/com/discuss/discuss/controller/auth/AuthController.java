@@ -88,7 +88,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse("Forgot password has been sent"));
     }
 
-    @PostMapping("/verify-forgot-password")
+    @PostMapping("/forgot-password/verify")
     public ResponseEntity<ApiResponse> verifyForgotPassword(
             @Valid @RequestBody VerifyEmailRequestDTO request) {
 
@@ -104,7 +104,7 @@ public class AuthController {
                 ));
     }
 
-    @PostMapping("/reset-password")
+    @PostMapping("/forgot-password/reset")
     public ResponseEntity<ApiResponse> resetPassword(
             @CookieValue(
                     name = CookieUtil.RESET_PASSWORD_TOKEN_COOKIE,
@@ -119,7 +119,7 @@ public class AuthController {
 
         ResponseCookie resetPasswordCookie = cookieUtil.clearCookie(
                 CookieUtil.RESET_PASSWORD_TOKEN_COOKIE,
-                "/auth/reset-password"
+                "/auth/forgot-password/reset"
         );
 
         return ResponseEntity.ok()

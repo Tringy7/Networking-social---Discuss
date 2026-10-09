@@ -56,7 +56,7 @@ public class CookieUtil {
                 .httpOnly(true)
                 .secure(secure)
                 .sameSite("Strict")
-                .path("/auth/reset-password")
+                .path("/auth/forgot-password/reset")
                 .maxAge(Duration.ofMinutes(expirationMinutes))
                 .build();
     }
@@ -77,7 +77,7 @@ public class CookieUtil {
                 .httpOnly(true)
                 .secure(secure)
                 .sameSite("Strict")
-                .path("/auth/reset-password")
+                .path("/auth/forgot-password/reset")
                 .maxAge(Duration.ZERO)
                 .build();
     }
