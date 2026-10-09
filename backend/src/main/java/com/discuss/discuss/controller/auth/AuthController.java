@@ -132,6 +132,17 @@ public class AuthController {
                 ));
     }
 
+    @PatchMapping("/change-password")
+    public ResponseEntity<ApiResponse> changePassword(
+            @Valid @RequestBody ResetPasswordDTO request
+    ) {
+        localAuthService.changePassword(request.getPassword());
+
+        return ResponseEntity.ok(
+                new ApiResponse("Password changed successfully")
+        );
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse> logout() {
         ResponseCookie accessCookie =

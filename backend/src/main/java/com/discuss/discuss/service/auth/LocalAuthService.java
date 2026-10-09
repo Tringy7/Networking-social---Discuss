@@ -40,6 +40,7 @@ public class LocalAuthService {
     private final UserService userService;
     private final TokenService tokenService;
     private final PasswordResetTokenService passwordResetTokenService;
+    private final JwtService jwtService;
 
     /*
         Register new user local
@@ -168,6 +169,24 @@ public class LocalAuthService {
         userRepository.save(user);
 
         passwordResetTokenService.consumeToken(resetToken);
+    }
+
+    @Transactional
+    public void changePassword(String newPassword) {
+        String username = jwtService.getCurrentUserLogin()
+                .orElseThrow(() ->
+                        new AuthException(AuthErrorCode.INVALID_CREDENTIALS)
+                );
+
+        User user = userRepository.findByUsername(username)
+                .filter(existingUser -> existingUser.getStatus() == UserStatus.ACTIVE)
+                .orElseThrow(() ->
+                        new AuthException(AuthErrorCode.USER_NOT_FOUND)
+                );
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        userRepository.save(user);
     }
 
     private User checkEmailValid(String email) {
