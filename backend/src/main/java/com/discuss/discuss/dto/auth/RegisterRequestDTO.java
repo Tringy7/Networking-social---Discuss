@@ -10,7 +10,7 @@ import lombok.Data;
 
 @Data
 @PasswordMatches
-public class RegisterRequestDTO {
+public class RegisterRequestDTO implements PasswordConfirmable {
 
     @NotBlank(message = "Username is required")
     @Size(min = 3, max = 30, message = "Username must be between 3 and 30 characters")

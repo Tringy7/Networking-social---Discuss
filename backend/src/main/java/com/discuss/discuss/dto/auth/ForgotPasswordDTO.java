@@ -11,7 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @PasswordMatches
-public class ResetPasswordDTO {
+public class ForgotPasswordDTO implements PasswordConfirmable {
+
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;

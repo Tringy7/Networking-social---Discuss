@@ -110,7 +110,7 @@ public class AuthController {
                     name = CookieUtil.RESET_PASSWORD_TOKEN_COOKIE,
                     defaultValue = ""
             ) String resetPasswordToken,
-            @Valid @RequestBody ResetPasswordDTO request
+            @Valid @RequestBody ForgotPasswordDTO request
     ) {
         localAuthService.resetPassword(
                 resetPasswordToken,
@@ -134,9 +134,9 @@ public class AuthController {
 
     @PatchMapping("/change-password")
     public ResponseEntity<ApiResponse> changePassword(
-            @Valid @RequestBody ResetPasswordDTO request
+            @Valid @RequestBody ChanegPasswordDTO request
     ) {
-        localAuthService.changePassword(request.getPassword());
+        localAuthService.changePassword(request.getOldPassword(), request.getPassword());
 
         return ResponseEntity.ok(
                 new ApiResponse("Password changed successfully")
