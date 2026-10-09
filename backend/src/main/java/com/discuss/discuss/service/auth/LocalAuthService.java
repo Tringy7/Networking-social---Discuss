@@ -50,11 +50,8 @@ public class LocalAuthService {
 
         String normalizedEmail = normalize(request.getEmail());
 
-        if (userRepository.existsByEmail(normalizedEmail)) {
-            throw new AuthException(AuthErrorCode.EMAIL_ALREADY_EXISTS);
-        }
-
         User user = userRepository.findByEmail(normalizedEmail)
+                .map(existingUser -> handleExistingUser(existingUser, request))
                 .orElseGet(() -> createPendingUser(request, normalizedEmail));
 
         String message = emailVerificationService.generateAndSendOtp(
@@ -260,5 +257,53 @@ public class LocalAuthService {
         return email == null
                 ? null
                 : email.trim().toLowerCase();
+    }
+
+    private User handleExistingUser(
+            User existingUser,
+            RegisterRequestDTO request
+    ) {
+
+        if (existingUser.getStatus() == UserStatus.ACTIVE) {
+            throw new AuthException(
+                    AuthErrorCode.EMAIL_ALREADY_EXISTS
+            );
+        }
+
+        String username = resolveUsername(
+                request.getUsername(),
+                existingUser
+        );
+
+        existingUser.setUsername(username);
+        existingUser.setPassword(
+                passwordEncoder.encode(request.getPassword())
+        );
+        existingUser.setRole(UserRole.USER);
+        existingUser.setStatus(UserStatus.PENDING);
+
+        return existingUser;
+    }
+
+    private String resolveUsername(
+            String requestedUsername,
+            User existingUser
+    ) {
+
+        if (requestedUsername.equals(
+                existingUser.getUsername()
+        )) {
+            return requestedUsername;
+        }
+
+        if (userRepository.existsByUsername(
+                requestedUsername
+        )) {
+            throw new AuthException(
+                    AuthErrorCode.USERNAME_ALREADY_EXISTS
+            );
+        }
+
+        return requestedUsername;
     }
 }
