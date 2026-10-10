@@ -37,6 +37,15 @@ public class UserService {
         this.userProfileRepository.save(profile);
     }
 
+    @Transactional
+    public void createUserProfileForProvider(User user, String displayName) {
+        UserProfile profile = UserProfile.builder()
+                .user(user)
+                .displayName(displayName)
+                .build();
+
+        this.userProfileRepository.save(profile);
+    }
 
     public UserInfoResponseDTO getUserInfo() {
 

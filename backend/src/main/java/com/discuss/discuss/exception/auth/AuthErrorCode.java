@@ -37,6 +37,11 @@ public enum AuthErrorCode {
             "Unsupported login provider"
     ),
 
+    PASSWORD_UNCHANGED(
+            HttpStatus.BAD_REQUEST,
+            "The new password must be different from the current password"
+    ),
+
     // =========================
     // 401 - Unauthorized
     // =========================
@@ -49,6 +54,11 @@ public enum AuthErrorCode {
     INVALID_REFRESH_TOKEN(
             HttpStatus.UNAUTHORIZED,
             "Invalid refresh token"
+    ),
+
+    INVALID_RESET_TOKEN (
+            HttpStatus.UNAUTHORIZED,
+            "Invalid reset password token"
     ),
 
     REFRESH_TOKEN_EXPIRED(
@@ -93,6 +103,9 @@ public enum AuthErrorCode {
             HttpStatus.TOO_MANY_REQUESTS,
             "Please wait before requesting a new code"
     ),
+
+    OTP_TOO_MANY_ATTEMPTS(HttpStatus.TOO_MANY_REQUESTS,
+            "Too many incorrect attempts. Please request a new code"),
 
     // =========================
     // 404 - Not Found

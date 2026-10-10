@@ -38,13 +38,29 @@ public class SocialAuthService {
         User user = userRepository.findByEmail(normalizedEmail)
                 .orElseGet(() -> createSocialUser(normalizedEmail, socialUser.getName(), providerName));
 
+        // Handle with user has status "PENDING"
+        if (user.getStatus().equals(UserStatus.PENDING)) {
+            user = this.handleUserHasStatusPending(user, socialUser.getName());
+        }
+
         return tokenService.issueTokens(user);
     }
 
-    private User createSocialUser(String email, String name, String providerName) {
+    @Transactional
+    public User handleUserHasStatusPending(User user, String displayName) {
+        user.setPassword(null);
+        user.setStatus(UserStatus.ACTIVE);
+        user.setProvider(Provider.GOOGLE);
+
+        userRepository.save(user);
+        userService.createUserProfileForProvider(user, displayName);
+        return user;
+    }
+
+    private User createSocialUser(String email, String displayName, String providerName) {
         User newUser = User.builder()
                 .email(email)
-                .username(generateUniqueUsername(email))
+                .username(email)
                 .password(null)
                 .role(UserRole.USER)
                 .status(UserStatus.ACTIVE)
@@ -52,18 +68,7 @@ public class SocialAuthService {
                 .build();
 
         User savedUser = userRepository.save(newUser);
-        userService.createUserProfile(savedUser);
+        userService.createUserProfileForProvider(savedUser, displayName);
         return savedUser;
-    }
-
-    private String generateUniqueUsername(String email) {
-        String base = email.split("@")[0].replaceAll("[^a-zA-Z0-9_]", "");
-        String candidate = base;
-        int suffix = 0;
-        while (userRepository.existsByUsername(candidate)) {
-            suffix++;
-            candidate = base + suffix;
-        }
-        return candidate;
     }
 }

@@ -1,10 +1,12 @@
 package com.discuss.discuss.service.auth;
 
+import com.discuss.discuss.controller.auth.AuthController;
 import com.discuss.discuss.dto.auth.AuthResult;
 import com.discuss.discuss.dto.auth.AuthResponseDTO;
 import com.discuss.discuss.dto.auth.LoginRequestDTO;
 import com.discuss.discuss.dto.auth.RegisterRequestDTO;
 import com.discuss.discuss.entity.User;
+import com.discuss.discuss.enums.OtpPurpose;
 import com.discuss.discuss.enums.UserRole;
 import com.discuss.discuss.enums.UserStatus;
 import com.discuss.discuss.exception.auth.AuthErrorCode;
@@ -12,6 +14,7 @@ import com.discuss.discuss.exception.auth.AuthException;
 import com.discuss.discuss.mapper.auth.AuthMapper;
 import com.discuss.discuss.repository.UserRepository;
 import com.discuss.discuss.service.auth.email.EmailVerificationService;
+import com.discuss.discuss.service.auth.email.PasswordResetTokenService;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -36,7 +39,12 @@ public class LocalAuthService {
 
     private final UserService userService;
     private final TokenService tokenService;
+    private final PasswordResetTokenService passwordResetTokenService;
+    private final JwtService jwtService;
 
+    /*
+        Register new user local
+     */
     @Transactional
     public AuthResponseDTO register(RegisterRequestDTO request) {
 
@@ -46,7 +54,8 @@ public class LocalAuthService {
                 .map(existingUser -> handleExistingUser(existingUser, request))
                 .orElseGet(() -> createPendingUser(request, normalizedEmail));
 
-        String message = emailVerificationService.generateAndSendCode(
+        String message = emailVerificationService.generateAndSendOtp(
+                OtpPurpose.VERIFY_EMAIL,
                 user.getEmail(),
                 user.getUsername()
         );
@@ -115,6 +124,92 @@ public class LocalAuthService {
         }
     }
 
+    @Transactional
+    public void forgotPassword(String email) {
+        String normalizedEmail = normalize(email);
+
+        User user = this.checkEmailValid(normalizedEmail);
+
+        String message = emailVerificationService.generateAndSendOtp(
+                OtpPurpose.FORGOT_PASSWORD,
+                user.getEmail(),
+                user.getUsername()
+        );
+    }
+
+    @Transactional
+    public String verifyForgotPassword(String email, String code) {
+        String normalizedEmail = normalize(email);
+
+        emailVerificationService.verifyCodeForForgotPassword(
+                normalizedEmail,
+                code
+        );
+
+        return passwordResetTokenService.generateToken(normalizedEmail);
+    }
+
+    @Transactional
+    public void resetPassword(String resetToken, String newPassword) {
+
+        String email = passwordResetTokenService.getEmailByToken(resetToken);
+
+        User user = userRepository.findByEmail(email)
+                .filter(existingUser ->
+                        existingUser.getStatus() == UserStatus.ACTIVE)
+                .orElseThrow(() ->
+                        new AuthException(AuthErrorCode.USER_NOT_FOUND)
+                );
+
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new AuthException(AuthErrorCode.PASSWORD_UNCHANGED);
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        userRepository.save(user);
+
+        passwordResetTokenService.consumeToken(resetToken);
+    }
+
+    @Transactional
+    public void changePassword(String oldPassword, String newPassword) {
+
+        String username = jwtService.getCurrentUserLogin()
+                .orElseThrow(() ->
+                        new AuthException(AuthErrorCode.INVALID_CREDENTIALS)
+                );
+
+        User user = userRepository.findByUsername(username)
+                .filter(existingUser ->
+                        existingUser.getStatus() == UserStatus.ACTIVE
+                )
+                .orElseThrow(() ->
+                        new AuthException(AuthErrorCode.USER_NOT_FOUND)
+                );
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new AuthException(AuthErrorCode.INVALID_CREDENTIALS);
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new AuthException(AuthErrorCode.PASSWORD_UNCHANGED);
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        userRepository.save(user);
+    }
+
+
+    private User checkEmailValid(String email) {
+        return  userRepository.findByEmail(email)
+                .filter(userCheck -> userCheck.getStatus() == UserStatus.ACTIVE)
+                .filter(userCheck -> userCheck.getPassword() != null)
+                .orElseThrow(() ->
+                        new AuthException(AuthErrorCode.USER_NOT_FOUND));
+    }
+
     private void validateAccountStatus(User user) {
 
         switch (user.getStatus()) {
@@ -140,32 +235,9 @@ public class LocalAuthService {
         }
     }
 
-    private User handleExistingUser(
-            User existingUser,
-            RegisterRequestDTO request
-    ) {
-
-        if (existingUser.getStatus() == UserStatus.ACTIVE) {
-            throw new AuthException(
-                    AuthErrorCode.EMAIL_ALREADY_EXISTS
-            );
-        }
-
-        String username = resolveUsername(
-                request.getUsername(),
-                existingUser
-        );
-
-        existingUser.setUsername(username);
-        existingUser.setPassword(
-                passwordEncoder.encode(request.getPassword())
-        );
-        existingUser.setRole(UserRole.USER);
-        existingUser.setStatus(UserStatus.PENDING);
-
-        return existingUser;
-    }
-
+    /*
+        Create user with status pending
+     */
     private User createPendingUser(
             RegisterRequestDTO request,
             String normalizedEmail
@@ -194,6 +266,41 @@ public class LocalAuthService {
         return userRepository.save(user);
     }
 
+    /*
+        Normalize email
+     */
+    private String normalize(String email) {
+        return email == null
+                ? null
+                : email.trim().toLowerCase();
+    }
+
+    private User handleExistingUser(
+            User existingUser,
+            RegisterRequestDTO request
+    ) {
+
+        if (existingUser.getStatus() == UserStatus.ACTIVE) {
+            throw new AuthException(
+                    AuthErrorCode.EMAIL_ALREADY_EXISTS
+            );
+        }
+
+        String username = resolveUsername(
+                request.getUsername(),
+                existingUser
+        );
+
+        existingUser.setUsername(username);
+        existingUser.setPassword(
+                passwordEncoder.encode(request.getPassword())
+        );
+        existingUser.setRole(UserRole.USER);
+        existingUser.setStatus(UserStatus.PENDING);
+
+        return existingUser;
+    }
+
     private String resolveUsername(
             String requestedUsername,
             User existingUser
@@ -214,11 +321,5 @@ public class LocalAuthService {
         }
 
         return requestedUsername;
-    }
-
-    private String normalize(String email) {
-        return email == null
-                ? null
-                : email.trim().toLowerCase();
     }
 }

@@ -32,6 +32,7 @@ public class AuthController {
 
     public record SocialLoginRequestDTO(@NotBlank String token) {}
     public record ResendOtpRequestDTO(@NotBlank @Email String email) {}
+    public record RequestEmailDTO(@NotBlank @Email String email) {}
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
@@ -79,6 +80,67 @@ public class AuthController {
         return ResponseEntity.ok()
                 .headers(cookieUtil.buildAuthHeaders(result))
                 .body(authMapper.toResponse(result.getUser(), "Login successfully"));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse> forgotPassword(@Valid @RequestBody RequestEmailDTO request) {
+        this.localAuthService.forgotPassword(request.email);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse("Forgot password has been sent"));
+    }
+
+    @PostMapping("/forgot-password/verify")
+    public ResponseEntity<ApiResponse> verifyForgotPassword(
+            @Valid @RequestBody VerifyEmailRequestDTO request) {
+
+        String resetToken = localAuthService.verifyForgotPassword(
+                request.getEmail(),
+                request.getCode()
+        );
+
+        return ResponseEntity.ok()
+                .headers(cookieUtil.buildPasswordResetHeaders(resetToken))
+                .body(new ApiResponse(
+                        "Email verification successful. You can now reset your password."
+                ));
+    }
+
+    @PostMapping("/forgot-password/reset")
+    public ResponseEntity<ApiResponse> resetPassword(
+            @CookieValue(
+                    name = CookieUtil.RESET_PASSWORD_TOKEN_COOKIE,
+                    defaultValue = ""
+            ) String resetPasswordToken,
+            @Valid @RequestBody ForgotPasswordDTO request
+    ) {
+        localAuthService.resetPassword(
+                resetPasswordToken,
+                request.getPassword()
+        );
+
+        ResponseCookie resetPasswordCookie = cookieUtil.clearCookie(
+                CookieUtil.RESET_PASSWORD_TOKEN_COOKIE,
+                "/auth/forgot-password/reset"
+        );
+
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.SET_COOKIE,
+                        resetPasswordCookie.toString()
+                )
+                .body(new ApiResponse(
+                        "Password has been reset successfully"
+                ));
+    }
+
+    @PatchMapping("/change-password")
+    public ResponseEntity<ApiResponse> changePassword(
+            @Valid @RequestBody ChanegPasswordDTO request
+    ) {
+        localAuthService.changePassword(request.getOldPassword(), request.getPassword());
+
+        return ResponseEntity.ok(
+                new ApiResponse("Password changed successfully")
+        );
     }
 
     @PostMapping("/logout")
