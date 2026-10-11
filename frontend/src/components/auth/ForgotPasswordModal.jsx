@@ -8,6 +8,7 @@ export default function ForgotPasswordModal({ isOpen, onClose, onOpenLogin }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async (e) => {
@@ -15,10 +16,11 @@ export default function ForgotPasswordModal({ isOpen, onClose, onOpenLogin }) {
     setErrorMsg('');
     setLoading(true);
     try {
-      await forgotPassword(email);
+      const res = await forgotPassword(email);
+      setSuccessMsg(res?.message || '');
       setSubmitted(true);
     } catch (err) {
-      setErrorMsg(err.message || 'Không thể gửi yêu cầu đặt lại mật khẩu');
+      setErrorMsg(err.message || '');
     } finally {
       setLoading(false);
     }
@@ -26,29 +28,27 @@ export default function ForgotPasswordModal({ isOpen, onClose, onOpenLogin }) {
 
   const handleResetState = () => {
     setSubmitted(false);
+    setSuccessMsg('');
     setEmail('');
     onClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleResetState} title="Khôi phục mật khẩu">
+    <Modal isOpen={isOpen} onClose={handleResetState} title="Khôi phục mật khẩu" maxWidth="max-w-md">
       {submitted ? (
         <div className="text-center py-4 space-y-4">
           <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
             <CheckCircle className="w-6 h-6" />
           </div>
           <div>
-            <h4 className="text-base font-bold text-slate-800">Đã gửi hướng dẫn khôi phục!</h4>
-            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-              Chúng tôi đã gửi đường dẫn đặt lại mật khẩu đến <span className="font-semibold text-slate-800">{email}</span>. Vui lòng kiểm tra hòm thư của bạn.
-            </p>
+            <h4 className="text-base font-bold text-slate-800">{successMsg}</h4>
           </div>
           <button
             onClick={() => {
               handleResetState();
               onOpenLogin();
             }}
-            className="w-full py-2.5 px-4 bg-indigo-600 text-white font-medium rounded-xl text-sm hover:bg-indigo-700 transition cursor-pointer"
+            className="btn-primary w-full"
           >
             Quay lại Đăng nhập
           </button>
@@ -66,7 +66,7 @@ export default function ForgotPasswordModal({ isOpen, onClose, onOpenLogin }) {
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label className="form-label">
               Địa chỉ Email
             </label>
             <div className="relative">
@@ -76,19 +76,15 @@ export default function ForgotPasswordModal({ isOpen, onClose, onOpenLogin }) {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="user_a@discuss.vn"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+                placeholder=""
+                className="input-with-icon"
               />
             </div>
           </div>
 
           <div className="pt-2">
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            <button type="submit" disabled={loading} className="btn-primary w-full">
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               <span>Gửi liên kết khôi phục</span>
             </button>
           </div>
