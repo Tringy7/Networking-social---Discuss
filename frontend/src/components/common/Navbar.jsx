@@ -17,7 +17,6 @@ import {
   LogIn,
   UserPlus,
   Flame,
-  RotateCcw,
   MailCheck
 } from 'lucide-react';
 
@@ -35,9 +34,12 @@ export default function Navbar({
   currentView,
   onToggleMobileSidebar,
 }) {
-  const { currentUser, currentRole, isAuthenticated, logout, refreshToken, pendingEmail } = useAuth();
+  const { currentUser, currentRole, isAuthenticated, logout, pendingEmail } = useAuth();
   const { searchKeyword, setSearchKeyword } = usePost();
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const userDisplayName = currentUser?.name || currentUser?.username || 'Người dùng';
+  const userAvatar = currentUser?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName)}&background=6366f1&color=fff`;
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80">
@@ -140,16 +142,16 @@ export default function Navbar({
                 className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 transition cursor-pointer"
               >
                 <img
-                  src={currentUser.avatar}
-                  alt={currentUser.name}
+                  src={userAvatar}
+                  alt={userDisplayName}
                   className="w-8 h-8 rounded-full object-cover border-2 border-indigo-200"
                 />
                 <div className="hidden lg:flex flex-col text-left">
                   <span className="text-xs font-bold text-slate-800 leading-tight truncate max-w-[120px]">
-                    {currentUser.name}
+                    {userDisplayName}
                   </span>
                   <span className="text-[10px] text-slate-400 font-mono">
-                    @{currentUser.username}
+                    @{currentUser?.username}
                   </span>
                 </div>
               </button>
@@ -161,8 +163,8 @@ export default function Navbar({
                   onClick={() => setShowUserMenu(false)}
                 >
                   <div className="px-4 py-2.5 border-b border-slate-100">
-                    <div className="font-bold text-xs text-slate-900 truncate">{currentUser.name}</div>
-                    <div className="text-[11px] text-slate-400 font-mono truncate">{currentUser.email}</div>
+                    <div className="font-bold text-xs text-slate-900 truncate">{userDisplayName}</div>
+                    <div className="text-[11px] text-slate-400 font-mono truncate">{currentUser?.email}</div>
                     <div className="mt-1.5">
                       <RoleBadge role={currentRole} type="system" size="xs" />
                     </div>
@@ -182,19 +184,6 @@ export default function Navbar({
                   >
                     <Settings className="w-4 h-4 text-slate-400" />
                     <span>Chỉnh sửa thông tin</span>
-                  </button>
-
-                  {/* Refresh Token action (POST /auth/refresh) */}
-                  <button
-                    onClick={async () => {
-                      setShowUserMenu(false);
-                      await refreshToken();
-                    }}
-                    type="button"
-                    className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
-                  >
-                    <RotateCcw className="w-4 h-4 text-slate-400" />
-                    <span>Làm mới Token (Refresh)</span>
                   </button>
 
                   {currentRole === SYSTEM_ROLES.ADMIN && (
