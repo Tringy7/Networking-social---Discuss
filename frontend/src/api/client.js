@@ -1,6 +1,6 @@
 import { storage } from '../utils/storage';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 export class ApiError extends Error {
   constructor(code, status, message) {
