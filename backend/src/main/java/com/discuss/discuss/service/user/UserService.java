@@ -7,6 +7,7 @@ import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserProfile;
 import com.discuss.discuss.exception.user.UserErrorCode;
 import com.discuss.discuss.exception.user.UserException;
+import com.discuss.discuss.mapper.user.UserMapper;
 import com.discuss.discuss.repository.RefreshTokenRepository;
 import com.discuss.discuss.repository.UserProfileRepository;
 import com.discuss.discuss.repository.UserRepository;
@@ -26,6 +27,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final JwtService jwtService;
+    private final UserMapper userMapper;
 
     @Transactional
     public void createUserProfile(User user) {
