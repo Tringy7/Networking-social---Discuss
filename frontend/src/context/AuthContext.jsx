@@ -187,6 +187,38 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // MỚI: Bước 1.8 - Xác minh OTP quên mật khẩu
+  const verifyForgotPasswordOtp = async ({ email, code }) => {
+    try {
+      const res = await authService.verifyForgotPasswordOtp({ email, code });
+      if (res?.message) {
+        success(res.message);
+      }
+      return res;
+    } catch (err) {
+      if (err?.message) {
+        toastError(err.message);
+      }
+      throw err;
+    }
+  };
+
+  // MỚI: Bước 1.9 - Đặt lại mật khẩu
+  const resetPassword = async ({ password, confirmPassword }) => {
+    try {
+      const res = await authService.resetPassword({ password, confirmPassword });
+      if (res?.message) {
+        success(res.message);
+      }
+      return res;
+    } catch (err) {
+      if (err?.message) {
+        toastError(err.message);
+      }
+      throw err;
+    }
+  };
+
   const updateProfile = async (updates) => {
     if (!currentUser) return;
     try {
@@ -245,6 +277,8 @@ export function AuthProvider({ children }) {
         refreshToken,
         logout,
         forgotPassword,
+        verifyForgotPasswordOtp,
+        resetPassword, // MỚI
         updateProfile,
         lockUserAccount,
         unlockUserAccount,

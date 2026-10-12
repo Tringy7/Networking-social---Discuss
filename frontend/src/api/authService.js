@@ -62,4 +62,16 @@ export const authService = {
       email: (email || '').trim().toLowerCase(),
     });
   },
+
+  verifyForgotPasswordOtp: ({ email, code }) =>
+    apiClient.post('/auth/forgot-password/verify', {
+      email: (email || '').trim().toLowerCase(),
+      code: (code || '').trim(),
+    }),
+
+  resetPassword: ({ password, confirmPassword }) =>
+    apiClient.post('/auth/forgot-password/reset', {
+      password,
+      confirmPassword,
+    }),
 };

@@ -208,7 +208,10 @@ function DiscussMainApp() {
       <ForgotPasswordModal
         isOpen={isForgotPasswordOpen}
         onClose={() => setIsForgotPasswordOpen(false)}
-        onOpenLogin={() => setIsLoginOpen(true)}
+        onOpenLogin={(userEmail) => {
+          if (userEmail) setPrefilledLoginUsername(userEmail);
+          setIsLoginOpen(true);
+        }}
       />
 
       <EditProfileModal

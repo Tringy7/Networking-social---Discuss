@@ -25,6 +25,7 @@ const NO_REFRESH_PATHS = [
   '/auth/refresh',
   '/auth/social',
   '/auth/logout',
+  '/auth/forgot-password',
 ];
 
 let refreshPromise = null;
