@@ -16,6 +16,18 @@ export default function RegisterModal({ isOpen, onClose, onOpenLogin, onOpenVeri
   const [socialLoading, setSocialLoading] = useState(false);
   const [errorInfo, setErrorInfo] = useState(null);
 
+  const handleInputChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errorInfo?.errors?.[field]) {
+      setErrorInfo((prev) => {
+        if (!prev?.errors) return prev;
+        const newErrors = { ...prev.errors };
+        delete newErrors[field];
+        return { ...prev, errors: Object.keys(newErrors).length > 0 ? newErrors : null };
+      });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorInfo(null);
@@ -46,6 +58,8 @@ export default function RegisterModal({ isOpen, onClose, onOpenLogin, onOpenVeri
     }
   };
 
+  const fieldErrors = errorInfo?.errors || {};
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Đăng ký tài khoản Discuss" maxWidth="max-w-md">
       <form onSubmit={handleSubmit} className="space-y-3.5">
@@ -65,11 +79,14 @@ export default function RegisterModal({ isOpen, onClose, onOpenLogin, onOpenVeri
               type="text"
               required
               value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              onChange={(e) => handleInputChange('username', e.target.value)}
               placeholder=""
-              className="input-with-icon"
+              className={`input-with-icon ${fieldErrors.username ? '!border-rose-400 focus:!ring-rose-400/30' : ''}`}
             />
           </div>
+          {fieldErrors.username && (
+            <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.username}</p>
+          )}
         </div>
 
         <div>
@@ -82,11 +99,14 @@ export default function RegisterModal({ isOpen, onClose, onOpenLogin, onOpenVeri
               type="email"
               required
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder=""
-              className="input-with-icon"
+              className={`input-with-icon ${fieldErrors.email ? '!border-rose-400 focus:!ring-rose-400/30' : ''}`}
             />
           </div>
+          {fieldErrors.email && (
+            <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.email}</p>
+          )}
         </div>
 
         <div>
@@ -98,13 +118,15 @@ export default function RegisterModal({ isOpen, onClose, onOpenLogin, onOpenVeri
             <input
               type="password"
               required
-              minLength={6}
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) => handleInputChange('password', e.target.value)}
               placeholder=""
-              className="input-with-icon"
+              className={`input-with-icon ${fieldErrors.password ? '!border-rose-400 focus:!ring-rose-400/30' : ''}`}
             />
           </div>
+          {fieldErrors.password && (
+            <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.password}</p>
+          )}
         </div>
 
         <div>
@@ -116,13 +138,15 @@ export default function RegisterModal({ isOpen, onClose, onOpenLogin, onOpenVeri
             <input
               type="password"
               required
-              minLength={6}
               value={formData.confirmPassword}
-              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+              onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
               placeholder=""
-              className="input-with-icon"
+              className={`input-with-icon ${fieldErrors.confirmPassword ? '!border-rose-400 focus:!ring-rose-400/30' : ''}`}
             />
           </div>
+          {fieldErrors.confirmPassword && (
+            <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.confirmPassword}</p>
+          )}
         </div>
 
         <div className="pt-2">

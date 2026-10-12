@@ -1,18 +1,19 @@
 import { storage } from '../utils/storage';
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export class ApiError extends Error {
-  constructor(code, status, message) {
+  constructor(code, status, message, errors = null) {
     super(message);
     this.name = 'ApiError';
     this.code = code;
     this.status = status;
     this.message = message;
+    this.errors = errors;
   }
 
   toJSON() {
-    return { code: this.code, status: this.status, message: this.message };
+    return { code: this.code, status: this.status, message: this.message, errors: this.errors };
   }
 }
 
@@ -50,9 +51,10 @@ async function rawRequest(method, path, body) {
 
   if (!res.ok) {
     throw new ApiError(
-      payload?.code || 'UNKNOWN_ERROR',
+      payload?.code || (payload?.errors ? 'VALIDATION_ERROR' : 'API_ERROR'),
       payload?.status || res.status,
-      payload?.message || 'Đã có lỗi xảy ra'
+      payload?.message || 'Đã có lỗi xảy ra',
+      payload?.errors || null
     );
   }
   return payload;
@@ -92,5 +94,5 @@ export const apiClient = {
 
   getHeaders: () => ({ 'Content-Type': 'application/json' }),
   delay: (ms = 200) => new Promise(resolve => setTimeout(resolve, ms)),
-  createError: (code, status, message) => new ApiError(code, status, message),
+  createError: (code, status, message, errors = null) => new ApiError(code, status, message, errors),
 };
