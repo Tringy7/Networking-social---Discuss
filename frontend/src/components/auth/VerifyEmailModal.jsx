@@ -7,28 +7,34 @@ export default function VerifyEmailModal({
   isOpen,
   onClose,
   initialEmail = '',
+  initialOtp = '',
   onOpenLogin,
 }) {
   const { verifyEmail, resendOtp } = useAuth();
   const [email, setEmail] = useState(initialEmail || '');
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(initialOtp || '');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [errorInfo, setErrorInfo] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     if (initialEmail) {
       setEmail(initialEmail);
     }
+    if (initialOtp) {
+      setCode(initialOtp);
+    }
     if (!isOpen) {
       setCode('');
       setErrorInfo(null);
       setIsSuccess(false);
+      setSuccessMessage('');
     }
-  }, [initialEmail, isOpen]);
+  }, [initialEmail, initialOtp, isOpen]);
 
   useEffect(() => {
     let timer;
@@ -48,17 +54,14 @@ export default function VerifyEmailModal({
     setLoading(true);
 
     try {
-      await verifyEmail({
+      const res = await verifyEmail({
         email: email.trim(),
         code: code.trim(),
       });
+      setSuccessMessage(res?.message || '');
       setIsSuccess(true);
     } catch (err) {
-      setErrorInfo({
-        code: err.code || 'AUTH_010',
-        status: err.status || 400,
-        message: err.message || 'Mã xác thực không hợp lệ',
-      });
+      setErrorInfo(err);
     } finally {
       setLoading(false);
     }
@@ -74,11 +77,7 @@ export default function VerifyEmailModal({
       setCountdown(60);
       setCanResend(false);
     } catch (err) {
-      setErrorInfo({
-        code: err.code || 'AUTH_011',
-        status: err.status || 400,
-        message: err.message || 'Không thể gửi lại mã OTP',
-      });
+      setErrorInfo(err);
     } finally {
       setResending(false);
     }
@@ -86,6 +85,7 @@ export default function VerifyEmailModal({
 
   const handleGoToLogin = () => {
     setIsSuccess(false);
+    setSuccessMessage('');
     onClose();
     if (onOpenLogin) {
       onOpenLogin(email);
@@ -100,10 +100,7 @@ export default function VerifyEmailModal({
             <CheckCircle2 className="w-8 h-8" />
           </div>
           <div>
-            <h4 className="text-lg font-bold text-slate-900">Xác thực email thành công</h4>
-            <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-              Tài khoản của bạn đã được kích hoạt. Bạn có thể tiến hành đăng nhập vào Discuss.
-            </p>
+            <h4 className="text-base font-bold text-slate-900">{successMessage}</h4>
           </div>
           <button
             onClick={handleGoToLogin}
@@ -119,16 +116,8 @@ export default function VerifyEmailModal({
             Mã xác thực gồm 6 chữ số đã được gửi đến: <strong className="text-slate-900 font-mono">{email}</strong>
           </div>
 
-          {errorInfo && (
-            <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded-xl space-y-1">
-              <div className="font-bold flex items-center justify-between">
-                <span>Lỗi xác thực</span>
-                {errorInfo.code && (
-                  <span className="font-mono text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded border border-rose-200">
-                    {errorInfo.code} ({errorInfo.status})
-                  </span>
-                )}
-              </div>
+          {errorInfo?.message && (
+            <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded-xl">
               <p>{errorInfo.message}</p>
             </div>
           )}
@@ -161,7 +150,7 @@ export default function VerifyEmailModal({
                 maxLength={6}
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                placeholder="Nhập mã 6 chữ số"
+                placeholder=""
                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-center text-lg font-mono font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
               />
             </div>

@@ -10,11 +10,16 @@ export const authService = {
       confirmPassword,
     }),
 
-  verifyEmail: ({ email, code }) =>
-    apiClient.post('/auth/verify-email', {
+  verifyEmail: async ({ email, code }) => {
+    const res = await apiClient.post('/auth/verify-email', {
       email: (email || '').trim().toLowerCase(),
       code: (code || '').trim(),
-    }),
+    });
+    if (res?.data) {
+      storage.setSavedUser(res.data);
+    }
+    return res;
+  },
 
   resendOtp: ({ email }) =>
     apiClient.post('/auth/resend-otp', {
@@ -26,7 +31,9 @@ export const authService = {
       username: (username || '').trim(),
       password,
     });
-    storage.setSavedUser(res.data);
+    if (res?.data) {
+      storage.setSavedUser(res.data);
+    }
     return res;
   },
 
@@ -35,7 +42,9 @@ export const authService = {
   loginSocial: async (provider = 'google', tokenPayload) => {
     const token = typeof tokenPayload === 'string' ? tokenPayload : tokenPayload?.token;
     const res = await apiClient.post(`/auth/social/${provider}`, { token });
-    storage.setSavedUser(res.data);
+    if (res?.data) {
+      storage.setSavedUser(res.data);
+    }
     return res;
   },
 
@@ -46,4 +55,9 @@ export const authService = {
       storage.clearAll();
     }
   },
+
+  forgotPassword: ({ email }) =>
+    apiClient.post('/auth/forgot-password', {
+      email: (email || '').trim().toLowerCase(),
+    }),
 };

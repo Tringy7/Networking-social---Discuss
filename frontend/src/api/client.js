@@ -1,10 +1,7 @@
 import { storage } from '../utils/storage';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const BASE_URL = import.meta.env.VITE_API_URL;
 
-/**
- * { "code": "AUTH_020", "status": 401, "message": "Invalid username or password" }
- */
 export class ApiError extends Error {
   constructor(code, status, message) {
     super(message);
@@ -19,7 +16,6 @@ export class ApiError extends Error {
   }
 }
 
-// Các endpoint không được tự refresh khi gặp 401 (tránh vòng lặp / nhầm với sai mật khẩu)
 const NO_REFRESH_PATHS = [
   '/auth/login',
   '/auth/register',
@@ -49,7 +45,7 @@ async function rawRequest(method, path, body) {
   try {
     payload = await res.json();
   } catch {
-    console.error('Không thể phân tích dữ liệu phản hồi từ máy chủ');
+    // response không có json body
   }
 
   if (!res.ok) {
@@ -79,9 +75,8 @@ async function request(method, path, body) {
       });
       await refreshPromise;
     } catch (refreshErr) {
-
       storage.clearAll();
-      window.dispatchEvent(new CustomEvent('auth:expired'));
+      window.dispatchEvent(new CustomEvent('auth:expired', { detail: refreshErr }));
       throw refreshErr;
     }
     return rawRequest(method, path, body);
@@ -94,7 +89,6 @@ export const apiClient = {
   put: (path, body) => request('PUT', path, body),
   patch: (path, body) => request('PATCH', path, body),
   delete: (path) => request('DELETE', path),
-
 
   getHeaders: () => ({ 'Content-Type': 'application/json' }),
   delay: (ms = 200) => new Promise(resolve => setTimeout(resolve, ms)),

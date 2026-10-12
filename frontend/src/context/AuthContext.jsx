@@ -37,68 +37,88 @@ export function AuthProvider({ children }) {
     }
   }, [users]);
 
-  const currentRole = currentUser?.systemRole || SYSTEM_ROLES.GUEST;
-  const isAuthenticated = !!currentUser && currentUser.systemRole !== SYSTEM_ROLES.GUEST;
+  useEffect(() => {
+    const handleExpired = (e) => {
+      setCurrentUser(null);
+      storage.clearAll();
+      if (e?.detail?.message) {
+        toastError(e.detail.message);
+      }
+    };
+    window.addEventListener('auth:expired', handleExpired);
+    return () => window.removeEventListener('auth:expired', handleExpired);
+  }, [toastError]);
+
+  const currentRole = currentUser?.role || (currentUser ? SYSTEM_ROLES.USER : SYSTEM_ROLES.GUEST);
+  const isAuthenticated = !!currentUser && currentRole !== SYSTEM_ROLES.GUEST;
 
   const register = async (formData) => {
     try {
-      const res = await authService.register(formData, users);
-      setUsers(prev => [res._fullUser, ...prev.filter(u => u.email !== res._fullUser.email)]);
-      setPendingEmail(res.data.email);
-      success(res.message || 'Registration successful. Please verify your email.');
+      const res = await authService.register(formData);
+      setPendingEmail(res?.data?.email || formData.email);
+      if (res?.message) {
+        success(res.message);
+      }
       return res;
     } catch (err) {
-      const msg = err.message || 'Đăng ký thất bại';
-      toastError(err.code ? `[${err.code}] ${msg}` : msg);
+      if (err?.message) {
+        toastError(err.message);
+      }
       throw err;
     }
   };
 
   const verifyEmail = async ({ email, code }) => {
     try {
-      const res = await authService.verifyEmail({ email, code }, users);
-      setUsers(prev => prev.map(u => u.email.toLowerCase() === email.toLowerCase() ? { ...u, status: 'ACTIVE' } : u));
-      success(res.message || 'Email verified successfully');
+      const res = await authService.verifyEmail({ email, code });
+      if (res?.data) {
+        setCurrentUser(res.data);
+      }
+      if (res?.message) {
+        success(res.message);
+      }
       setPendingEmail('');
       return res;
     } catch (err) {
-      const msg = err.message || 'Xác thực email thất bại';
-      toastError(err.code ? `[${err.code}] ${msg}` : msg);
+      if (err?.message) {
+        toastError(err.message);
+      }
       throw err;
     }
   };
 
   const resendOtp = async ({ email }) => {
     try {
-      const res = await authService.resendOtp({ email }, users);
-      success(res.message || 'Verification code has been sent');
+      const res = await authService.resendOtp({ email });
+      if (res?.message) {
+        success(res.message);
+      }
       return res;
     } catch (err) {
-      const msg = err.message || 'Không thể gửi lại OTP';
-      toastError(err.code ? `[${err.code}] ${msg}` : msg);
+      if (err?.message) {
+        toastError(err.message);
+      }
       throw err;
     }
   };
 
   const login = async (credentials) => {
     try {
-      const res = await authService.login(credentials, users);
-      const userObj = users.find(u => u.id === res.data.id) || {
-        ...res.data,
-        name: res.data.username,
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=256&q=80',
-        systemRole: res.data.role === 'ADMIN' ? SYSTEM_ROLES.ADMIN : SYSTEM_ROLES.USER,
-      };
-
-      setCurrentUser(userObj);
-      success(res.message || 'Login successfully');
+      const res = await authService.login(credentials);
+      if (res?.data) {
+        setCurrentUser(res.data);
+      }
+      if (res?.message) {
+        success(res.message);
+      }
       return res;
     } catch (err) {
       if (err.code === 'AUTH_021' && err.email) {
         setPendingEmail(err.email);
       }
-      const msg = err.message || 'Đăng nhập thất bại';
-      toastError(err.code ? `[${err.code}] ${msg}` : msg);
+      if (err?.message) {
+        toastError(err.message);
+      }
       throw err;
     }
   };
@@ -106,30 +126,32 @@ export function AuthProvider({ children }) {
   const refreshToken = async () => {
     try {
       const res = await authService.refresh();
-      info(res.message || 'Token refreshed successfully');
+      if (res?.message) {
+        info(res.message);
+      }
       return res;
     } catch (err) {
-      toastError(err.message || 'Không thể làm mới token');
+      if (err?.message) {
+        toastError(err.message);
+      }
       throw err;
     }
   };
 
   const loginSocial = async (provider = 'google', tokenPayload) => {
     try {
-      const res = await authService.loginSocial(provider, tokenPayload, users);
-      const userObj = res.user;
-      setUsers(prev => {
-        if (!prev.some(u => u.id === userObj.id)) {
-          return [userObj, ...prev];
-        }
-        return prev;
-      });
-      setCurrentUser(userObj);
-      success(res.message || 'Login with google successful');
+      const res = await authService.loginSocial(provider, tokenPayload);
+      if (res?.data) {
+        setCurrentUser(res.data);
+      }
+      if (res?.message) {
+        success(res.message);
+      }
       return res;
     } catch (err) {
-      const msg = err.message || 'Đăng nhập Google thất bại';
-      toastError(err.code ? `[${err.code}] ${msg}` : msg);
+      if (err?.message) {
+        toastError(err.message);
+      }
       throw err;
     }
   };
@@ -138,21 +160,29 @@ export function AuthProvider({ children }) {
     try {
       const res = await authService.logout();
       setCurrentUser(null);
-      info(res.message || 'Logout successfully');
+      if (res?.message) {
+        info(res.message);
+      }
       return res;
     } catch (err) {
-      toastError(err.message || 'Đăng xuất thất bại');
+      setCurrentUser(null);
+      if (err?.message) {
+        toastError(err.message);
+      }
     }
   };
 
   const forgotPassword = async (email) => {
     try {
-      const res = await authService.forgotPassword(email, users);
-      success(res.message);
+      const res = await authService.forgotPassword(email);
+      if (res?.message) {
+        success(res.message);
+      }
       return res;
     } catch (err) {
-      const msg = err.message || 'Yêu cầu thất bại';
-      toastError(err.code ? `[${err.code}] ${msg}` : msg);
+      if (err?.message) {
+        toastError(err.message);
+      }
       throw err;
     }
   };
