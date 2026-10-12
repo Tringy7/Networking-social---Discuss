@@ -27,6 +27,18 @@ export default function LoginModal({
     }
   }, [prefilledUsername, isOpen]);
 
+  const handleInputChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errorInfo?.errors?.[field]) {
+      setErrorInfo((prev) => {
+        if (!prev?.errors) return prev;
+        const newErrors = { ...prev.errors };
+        delete newErrors[field];
+        return { ...prev, errors: Object.keys(newErrors).length > 0 ? newErrors : null };
+      });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorInfo(null);
@@ -58,6 +70,8 @@ export default function LoginModal({
       setSocialLoading(false);
     }
   };
+
+  const fieldErrors = errorInfo?.errors || {};
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Đăng nhập tài khoản Discuss" maxWidth="max-w-md">
@@ -94,11 +108,16 @@ export default function LoginModal({
               type="text"
               required
               value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              onChange={(e) => handleInputChange('username', e.target.value)}
               placeholder=""
-              className="input-with-icon"
+              className={`input-with-icon ${(fieldErrors.username || fieldErrors.email) ? '!border-rose-400 focus:!ring-rose-400/30' : ''}`}
             />
           </div>
+          {(fieldErrors.username || fieldErrors.email) && (
+            <p className="text-xs text-rose-500 mt-1 font-medium">
+              {fieldErrors.username || fieldErrors.email}
+            </p>
+          )}
         </div>
 
         <div>
@@ -123,11 +142,14 @@ export default function LoginModal({
               type="password"
               required
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) => handleInputChange('password', e.target.value)}
               placeholder=""
-              className="input-with-icon"
+              className={`input-with-icon ${fieldErrors.password ? '!border-rose-400 focus:!ring-rose-400/30' : ''}`}
             />
           </div>
+          {fieldErrors.password && (
+            <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.password}</p>
+          )}
         </div>
 
         <div className="pt-2">

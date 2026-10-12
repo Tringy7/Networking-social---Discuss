@@ -9,18 +9,30 @@ export default function ForgotPasswordModal({ isOpen, onClose, onOpenLogin }) {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errorInfo, setErrorInfo] = useState(null);
+
+  const handleEmailChange = (val) => {
+    setEmail(val);
+    if (errorInfo?.errors?.email) {
+      setErrorInfo((prev) => {
+        if (!prev?.errors) return prev;
+        const newErrors = { ...prev.errors };
+        delete newErrors.email;
+        return { ...prev, errors: Object.keys(newErrors).length > 0 ? newErrors : null };
+      });
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg('');
+    setErrorInfo(null);
     setLoading(true);
     try {
       const res = await forgotPassword(email);
       setSuccessMsg(res?.message || '');
       setSubmitted(true);
     } catch (err) {
-      setErrorMsg(err.message || '');
+      setErrorInfo(err);
     } finally {
       setLoading(false);
     }
@@ -29,9 +41,12 @@ export default function ForgotPasswordModal({ isOpen, onClose, onOpenLogin }) {
   const handleResetState = () => {
     setSubmitted(false);
     setSuccessMsg('');
+    setErrorInfo(null);
     setEmail('');
     onClose();
   };
+
+  const fieldErrors = errorInfo?.errors || {};
 
   return (
     <Modal isOpen={isOpen} onClose={handleResetState} title="Khôi phục mật khẩu" maxWidth="max-w-md">
@@ -59,9 +74,9 @@ export default function ForgotPasswordModal({ isOpen, onClose, onOpenLogin }) {
             Nhập địa chỉ email liên kết với tài khoản của bạn để nhận liên kết đặt lại mật khẩu.
           </p>
 
-          {errorMsg && (
+          {errorInfo?.message && (
             <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded-xl">
-              {errorMsg}
+              {errorInfo.message}
             </div>
           )}
 
@@ -75,11 +90,14 @@ export default function ForgotPasswordModal({ isOpen, onClose, onOpenLogin }) {
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => handleEmailChange(e.target.value)}
                 placeholder=""
-                className="input-with-icon"
+                className={`input-with-icon ${fieldErrors.email ? '!border-rose-400 focus:!ring-rose-400/30' : ''}`}
               />
             </div>
+            {fieldErrors.email && (
+              <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.email}</p>
+            )}
           </div>
 
           <div className="pt-2">

@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import { useAuth } from '../../context/AuthContext';
-import { Mail, CheckCircle2, RotateCcw, Loader2, KeyRound, ArrowRight } from 'lucide-react';
+import { Mail, RotateCcw, Loader2, KeyRound } from 'lucide-react';
 
 export default function VerifyEmailModal({
   isOpen,
   onClose,
   initialEmail = '',
   initialOtp = '',
-  onOpenLogin,
 }) {
   const { verifyEmail, resendOtp } = useAuth();
   const [email, setEmail] = useState(initialEmail || '');
@@ -18,8 +17,6 @@ export default function VerifyEmailModal({
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [errorInfo, setErrorInfo] = useState(null);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     if (initialEmail) {
@@ -31,8 +28,6 @@ export default function VerifyEmailModal({
     if (!isOpen) {
       setCode('');
       setErrorInfo(null);
-      setIsSuccess(false);
-      setSuccessMessage('');
     }
   }, [initialEmail, initialOtp, isOpen]);
 
@@ -48,18 +43,41 @@ export default function VerifyEmailModal({
     return () => clearTimeout(timer);
   }, [isOpen, countdown]);
 
+  const handleEmailChange = (val) => {
+    setEmail(val);
+    if (errorInfo?.errors?.email) {
+      setErrorInfo((prev) => {
+        if (!prev?.errors) return prev;
+        const newErrors = { ...prev.errors };
+        delete newErrors.email;
+        return { ...prev, errors: Object.keys(newErrors).length > 0 ? newErrors : null };
+      });
+    }
+  };
+
+  const handleCodeChange = (val) => {
+    setCode(val);
+    if (errorInfo?.errors?.code) {
+      setErrorInfo((prev) => {
+        if (!prev?.errors) return prev;
+        const newErrors = { ...prev.errors };
+        delete newErrors.code;
+        return { ...prev, errors: Object.keys(newErrors).length > 0 ? newErrors : null };
+      });
+    }
+  };
+
   const handleVerify = async (e) => {
     e.preventDefault();
     setErrorInfo(null);
     setLoading(true);
 
     try {
-      const res = await verifyEmail({
+      await verifyEmail({
         email: email.trim(),
         code: code.trim(),
       });
-      setSuccessMessage(res?.message || '');
-      setIsSuccess(true);
+      onClose();
     } catch (err) {
       setErrorInfo(err);
     } finally {
@@ -83,112 +101,96 @@ export default function VerifyEmailModal({
     }
   };
 
-  const handleGoToLogin = () => {
-    setIsSuccess(false);
-    setSuccessMessage('');
-    onClose();
-    if (onOpenLogin) {
-      onOpenLogin(email);
-    }
-  };
+  const fieldErrors = errorInfo?.errors || {};
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Xác thực Email" maxWidth="max-w-md">
-      {isSuccess ? (
-        <div className="text-center py-4 space-y-4">
-          <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
-            <CheckCircle2 className="w-8 h-8" />
+      <form onSubmit={handleVerify} className="space-y-4">
+        {errorInfo?.message && (
+          <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded-xl">
+            <p>{errorInfo.message}</p>
           </div>
-          <div>
-            <h4 className="text-base font-bold text-slate-900">{successMessage}</h4>
+        )}
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            Địa chỉ Email
+          </label>
+          <div className="relative">
+            <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => handleEmailChange(e.target.value)}
+              className={`w-full pl-10 pr-4 py-2 bg-slate-50 border rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 ${
+                fieldErrors.email
+                  ? 'border-rose-400 focus:ring-rose-400/30'
+                  : 'border-slate-200 focus:ring-indigo-500/30'
+              }`}
+            />
           </div>
+          {fieldErrors.email && (
+            <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.email}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            Mã xác thực (Code) <span className="text-rose-500">*</span>
+          </label>
+          <div className="relative">
+            <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              required
+              value={code}
+              onChange={(e) => handleCodeChange(e.target.value)}
+              placeholder=""
+              className={`w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-xl text-center text-lg font-mono font-bold tracking-widest focus:outline-none focus:ring-2 ${
+                fieldErrors.code
+                  ? 'border-rose-400 focus:ring-rose-400/30'
+                  : 'border-slate-200 focus:ring-indigo-500/30 focus:border-indigo-500'
+              }`}
+            />
+          </div>
+          {fieldErrors.code && (
+            <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.code}</p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between text-xs pt-1">
+          <span className="text-slate-500">Chưa nhận được mã?</span>
           <button
-            onClick={handleGoToLogin}
-            className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
+            type="button"
+            disabled={!canResend || resending}
+            onClick={handleResend}
+            className={`font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+              canResend
+                ? 'text-indigo-600 hover:text-indigo-700 hover:underline'
+                : 'text-slate-400 cursor-not-allowed'
+            }`}
           >
-            <span>Đăng nhập ngay</span>
-            <ArrowRight className="w-4 h-4" />
+            {resending ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <RotateCcw className="w-3.5 h-3.5" />
+            )}
+            <span>{canResend ? 'Gửi lại mã OTP' : `Gửi lại sau (${countdown}s)`}</span>
           </button>
         </div>
-      ) : (
-        <form onSubmit={handleVerify} className="space-y-4">
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700">
-            Mã xác thực gồm 6 chữ số đã được gửi đến: <strong className="text-slate-900 font-mono">{email}</strong>
-          </div>
 
-          {errorInfo?.message && (
-            <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded-xl">
-              <p>{errorInfo.message}</p>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Địa chỉ Email
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Mã xác thực (Code) <span className="text-rose-500">*</span>
-            </label>
-            <div className="relative">
-              <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                required
-                maxLength={6}
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                placeholder=""
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-center text-lg font-mono font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between text-xs pt-1">
-            <span className="text-slate-500">Chưa nhận được mã?</span>
-            <button
-              type="button"
-              disabled={!canResend || resending}
-              onClick={handleResend}
-              className={`font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                canResend
-                  ? 'text-indigo-600 hover:text-indigo-700 hover:underline'
-                  : 'text-slate-400 cursor-not-allowed'
-              }`}
-            >
-              {resending ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <RotateCcw className="w-3.5 h-3.5" />
-              )}
-              <span>{canResend ? 'Gửi lại mã OTP' : `Gửi lại sau (${countdown}s)`}</span>
-            </button>
-          </div>
-
-          <div className="pt-2">
-            <button
-              type="submit"
-              disabled={loading || code.length < 4}
-              className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 text-white font-medium rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-sm"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              <span>Xác thực email</span>
-            </button>
-          </div>
-        </form>
-      )}
+        <div className="pt-2">
+          <button
+            type="submit"
+            disabled={loading || !code.trim()}
+            className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 text-white font-medium rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-sm"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            <span>Xác thực email</span>
+          </button>
+        </div>
+      </form>
     </Modal>
   );
 }

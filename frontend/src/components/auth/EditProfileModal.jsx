@@ -11,6 +11,7 @@ export default function EditProfileModal({ isOpen, onClose }) {
     avatar: '',
   });
   const [loading, setLoading] = useState(false);
+  const [errorInfo, setErrorInfo] = useState(null);
 
   useEffect(() => {
     if (currentUser) {
@@ -19,25 +20,47 @@ export default function EditProfileModal({ isOpen, onClose }) {
         bio: currentUser.bio || '',
         avatar: currentUser.avatar || '',
       });
+      setErrorInfo(null);
     }
   }, [currentUser, isOpen]);
 
+  const handleInputChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errorInfo?.errors?.[field]) {
+      setErrorInfo((prev) => {
+        if (!prev?.errors) return prev;
+        const newErrors = { ...prev.errors };
+        delete newErrors[field];
+        return { ...prev, errors: Object.keys(newErrors).length > 0 ? newErrors : null };
+      });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorInfo(null);
     setLoading(true);
     try {
       await updateProfile(formData);
       onClose();
-    } catch {
-      // error handled in context
+    } catch (err) {
+      setErrorInfo(err);
     } finally {
       setLoading(false);
     }
   };
 
+  const fieldErrors = errorInfo?.errors || {};
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Chỉnh sửa thông tin cá nhân">
       <form onSubmit={handleSubmit} className="space-y-4">
+        {errorInfo?.message && (
+          <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded-xl">
+            <p>{errorInfo.message}</p>
+          </div>
+        )}
+
         {/* Avatar preview */}
         <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200/60">
           <img
@@ -53,10 +76,17 @@ export default function EditProfileModal({ isOpen, onClose }) {
             <input
               type="url"
               value={formData.avatar}
-              onChange={(e) => setFormData({ ...formData, avatar: e.target.value })}
+              onChange={(e) => handleInputChange('avatar', e.target.value)}
               placeholder="https://images.unsplash.com/..."
-              className="w-full text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              className={`w-full text-xs px-3 py-1.5 bg-white border rounded-lg focus:outline-none focus:ring-2 ${
+                fieldErrors.avatar
+                  ? 'border-rose-400 focus:ring-rose-400/30'
+                  : 'border-slate-200 focus:ring-indigo-500/20'
+              }`}
             />
+            {fieldErrors.avatar && (
+              <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.avatar}</p>
+            )}
           </div>
         </div>
 
@@ -70,10 +100,17 @@ export default function EditProfileModal({ isOpen, onClose }) {
               type="text"
               required
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 ${
+                fieldErrors.name
+                  ? 'border-rose-400 focus:ring-rose-400/30'
+                  : 'border-slate-200 focus:ring-indigo-500/30 focus:border-indigo-500'
+              }`}
             />
           </div>
+          {fieldErrors.name && (
+            <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.name}</p>
+          )}
         </div>
 
         <div>
@@ -84,11 +121,18 @@ export default function EditProfileModal({ isOpen, onClose }) {
             <textarea
               rows={3}
               value={formData.bio}
-              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              onChange={(e) => handleInputChange('bio', e.target.value)}
               placeholder="Chia sẻ đôi nét về bạn, sở thích hoặc kinh nghiệm làm việc..."
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 resize-none"
+              className={`w-full p-3 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 resize-none ${
+                fieldErrors.bio
+                  ? 'border-rose-400 focus:ring-rose-400/30'
+                  : 'border-slate-200 focus:ring-indigo-500/30 focus:border-indigo-500'
+              }`}
             />
           </div>
+          {fieldErrors.bio && (
+            <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.bio}</p>
+          )}
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">

@@ -56,8 +56,10 @@ export const authService = {
     }
   },
 
-  forgotPassword: ({ email }) =>
-    apiClient.post('/auth/forgot-password', {
+  forgotPassword: (params) => {
+    const email = typeof params === 'string' ? params : params?.email;
+    return apiClient.post('/auth/forgot-password', {
       email: (email || '').trim().toLowerCase(),
-    }),
+    });
+  },
 };
