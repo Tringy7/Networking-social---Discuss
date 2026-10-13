@@ -52,7 +52,8 @@ public class SecurityConfiguration {
             BearerTokenResolver bearerTokenResolver) throws Exception {
 
         String[] PUBLIC_ENDPOINTS = {
-                "/auth/**"
+                "/auth/**",
+                "/media/**"
         };
 
         http

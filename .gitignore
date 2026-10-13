@@ -1,0 +1,67 @@
+# ==========================================
+# General & Environment
+# ==========================================
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env*
+!.env.example
+
+# IDE & Editors
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+
+# ==========================================
+# Backend (Java / Spring Boot / Maven)
+# ==========================================
+HELP.md
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Maven Wrapper
+.mvn/wrapper/maven-wrapper.jar
+**/.mvn/wrapper/maven-wrapper.jar
+
+# Eclipse / STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.settings
+.springBeans
+.sts4-cache
+
+# NetBeans
+nbproject/private/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+# Build outputs
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# ==========================================
+# Frontend (Node / Vite)
+# ==========================================
+node_modules/
+dist/
+coverage/
+
+# ==========================================
+# Local Storage & Tools
+# ==========================================
+storage/
+tools/
