@@ -84,8 +84,8 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse> forgotPassword(@Valid @RequestBody RequestEmailDTO request) {
-        this.localAuthService.forgotPassword(request.email);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse("Forgot password has been sent"));
+        String message = this.localAuthService.forgotPassword(request.email);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(message));
     }
 
     @PostMapping("/forgot-password/verify")
