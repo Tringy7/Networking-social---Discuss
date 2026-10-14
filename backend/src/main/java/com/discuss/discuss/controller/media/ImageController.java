@@ -27,7 +27,7 @@ public class ImageController {
             @RequestParam("file") MultipartFile file) {
         return avatarService.setAvatar(file);
     }
-//
+
 //    @PostMapping(value = "/posts/{postId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 //    public List<MediaStorageService.StoredImage> uploadPostImages(
 //            @PathVariable String postId,
