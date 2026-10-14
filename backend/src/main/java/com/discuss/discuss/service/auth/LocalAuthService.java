@@ -175,18 +175,7 @@ public class LocalAuthService {
     @Transactional
     public void changePassword(String oldPassword, String newPassword) {
 
-        String username = jwtService.getCurrentUserLogin()
-                .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.INVALID_CREDENTIALS)
-                );
-
-        User user = userRepository.findByUsername(username)
-                .filter(existingUser ->
-                        existingUser.getStatus() == UserStatus.ACTIVE
-                )
-                .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.USER_NOT_FOUND)
-                );
+        User user = this.userService.getCurrentUser();
 
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new AuthException(AuthErrorCode.INVALID_CREDENTIALS);

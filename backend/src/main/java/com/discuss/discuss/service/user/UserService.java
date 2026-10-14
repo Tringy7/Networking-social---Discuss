@@ -5,6 +5,9 @@ import com.discuss.discuss.dto.user.UserInfoResponseDTO;
 import com.discuss.discuss.entity.RefreshToken;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserProfile;
+import com.discuss.discuss.enums.UserStatus;
+import com.discuss.discuss.exception.auth.AuthErrorCode;
+import com.discuss.discuss.exception.auth.AuthException;
 import com.discuss.discuss.exception.user.UserErrorCode;
 import com.discuss.discuss.exception.user.UserException;
 import com.discuss.discuss.mapper.user.UserMapper;
@@ -28,6 +31,21 @@ public class UserService {
     private final UserProfileRepository userProfileRepository;
     private final JwtService jwtService;
     private final UserMapper userMapper;
+
+    public User getCurrentUser() {
+        String username = jwtService.getCurrentUserLogin()
+                .orElseThrow(() ->
+                        new AuthException(AuthErrorCode.INVALID_CREDENTIALS)
+                );
+
+        return userRepository.findByUsername(username)
+                .filter(existingUser ->
+                        existingUser.getStatus() == UserStatus.ACTIVE
+                )
+                .orElseThrow(() ->
+                        new AuthException(AuthErrorCode.USER_NOT_FOUND)
+                );
+    }
 
     @Transactional
     public void createUserProfile(User user) {

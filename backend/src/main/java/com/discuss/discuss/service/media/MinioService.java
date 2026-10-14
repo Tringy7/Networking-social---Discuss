@@ -1,11 +1,7 @@
 package com.discuss.discuss.service.media;
 
 import com.discuss.discuss.dto.media.FileUploadResponseDTO;
-import io.minio.GetPresignedObjectUrlArgs;
-import io.minio.GetObjectArgs;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
-import io.minio.RemoveObjectArgs;
+import io.minio.*;
 import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -165,7 +161,35 @@ public class MinioService {
         }
     }
 
-    private String buildFileUrl(String objectKey) {
+    /**
+     * Upload raw bytes to MinIO with default immutable cache header
+     */
+    public void upload(String key, byte[] data, String contentType) {
+        upload(key, data, contentType, java.util.Map.of("Cache-Control", "public, max-age=31536000, immutable"));
+    }
+
+    /**
+     * Upload raw bytes to MinIO with custom headers
+     */
+    public void upload(String key, byte[] data, String contentType, java.util.Map<String, String> headers) {
+        try (java.io.InputStream in = new java.io.ByteArrayInputStream(data)) {
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(defaultBucket)
+                            .object(key)
+                            .stream(in, data.length, -1)
+                            .contentType(contentType)
+                            .headers(headers)
+                            .build()
+            );
+            log.info("Uploaded raw bytes to MinIO: key={}, size={} bytes", key, data.length);
+        } catch (Exception e) {
+            log.error("Failed to upload raw bytes to MinIO: {}", e.getMessage(), e);
+            throw new RuntimeException("Could not upload to MinIO: " + e.getMessage(), e);
+        }
+    }
+
+    public String buildFileUrl(String objectKey) {
         String cleanEndpoint = endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
         return String.format("%s/%s/%s", cleanEndpoint, defaultBucket, objectKey);
     }
@@ -176,4 +200,14 @@ public class MinioService {
         }
         return filename.substring(filename.lastIndexOf('.'));
     }
+
+    public StatObjectResponse stat(String objectKey) {
+        try {
+            return minioClient.statObject(
+                    StatObjectArgs.builder().bucket(defaultBucket).object(objectKey).build());
+        } catch (Exception e) {
+            throw new RuntimeException("Object not found or unreadable: " + objectKey, e);
+        }
+    }
 }
+
