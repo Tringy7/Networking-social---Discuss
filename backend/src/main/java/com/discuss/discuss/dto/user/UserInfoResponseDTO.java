@@ -43,8 +43,7 @@ public class UserInfoResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class PrivacySettings {
-        private boolean showBirthday;
-        private boolean showBirthYear;
+        private boolean showDateOfBirth;
         private boolean showLocation;
         private boolean showPostsOnProfile;
     }

@@ -33,11 +33,8 @@ import java.time.format.DateTimeFormatter;
 @AllArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
-    private final UserProfileRepository userProfileRepository;
-    private final UserPrivacySettingsRepository userPrivacySettingsRepository;
 
     private final JwtService jwtService;
-    private final UserMapper userMapper;
 
     public User getCurrentUser() {
         String username = jwtService.getCurrentUserLogin()
@@ -58,81 +55,5 @@ public class UserService {
         return userRepository.findById(userId)
                 .filter(existingUser -> existingUser.getStatus() == UserStatus.ACTIVE)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
-    }
-
-
-    @Transactional
-    public void createUserProfile(User user, String displayName) {
-        UserProfile profile = UserProfile.builder()
-                .user(user)
-                .displayName(displayName)
-                .build();
-
-        this.userProfileRepository.save(profile);
-    }
-
-    @Transactional
-    public void createUserPrivacy(User user) {
-        UserPrivacySettings privacySettings = UserPrivacySettings.builder()
-                .user(user)
-                .build();
-
-        userPrivacySettingsRepository.save(privacySettings);
-    }
-
-    public UserInfoResponseDTO getUserInfo() {
-        User user = this.getCurrentUser();
-
-        UserProfile profile = userProfileRepository.findByUser(user)
-                .orElse(null);
-
-        UserPrivacySettings privacySettings =
-                userPrivacySettingsRepository.findByUser(user)
-                        .orElse(null);
-
-        return userMapper.toUserInfoResponse(user, profile, privacySettings);
-    }
-
-    public PublicUserProfileResponseDTO getPublicUserProfile(Long userId) {
-        User user = getUserActive(userId);
-
-        UserProfile profile = userProfileRepository.findByUser(user)
-                .orElse(null);
-
-        UserPrivacySettings privacySettings =
-                userPrivacySettingsRepository.findByUser(user)
-                        .orElse(null);
-
-        String dateOfBirth = null;
-        String location = null;
-
-        if (profile != null && privacySettings != null) {
-            LocalDate dob = profile.getDateOfBirth();
-
-            // Check date of birth
-            if (privacySettings.isShowDateOfBirth() && dob != null) {
-                dateOfBirth = dob.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-            }
-
-            // Check location
-            if (privacySettings.isShowLocation()) {
-                location = profile.getLocation();
-            }
-        }
-
-        PublicUserProfileResponseDTO.Statistics statistics =
-                new PublicUserProfileResponseDTO.Statistics(
-                        0L,
-                        0L,
-                        0L
-                );
-
-        return userMapper.toPublicUserProfileResponse(
-                user,
-                profile,
-                dateOfBirth,
-                location,
-                statistics
-        );
     }
 }

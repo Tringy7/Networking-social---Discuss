@@ -18,7 +18,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ImageController {
 
-    private final MediaStorageService storage;
     private final AvatarService avatarService;
 
     // New avatar, edit avatar

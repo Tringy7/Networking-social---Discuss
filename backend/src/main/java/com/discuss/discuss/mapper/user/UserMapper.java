@@ -38,8 +38,7 @@ public class UserMapper {
 
         if (privacySettings != null) {
             privacySettingsDTO = new UserInfoResponseDTO.PrivacySettings(
-                    privacySettings.isShowBirthday(),
-                    privacySettings.isShowBirthYear(),
+                    privacySettings.isShowDateOfBirth(),
                     privacySettings.isShowLocation(),
                     privacySettings.isShowPostsOnProfile()
             );
