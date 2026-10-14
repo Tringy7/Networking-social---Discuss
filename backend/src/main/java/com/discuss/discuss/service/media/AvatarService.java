@@ -1,5 +1,6 @@
 package com.discuss.discuss.service.media;
 
+import com.discuss.discuss.dto.media.StoredImageDTO;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserProfile;
 import com.discuss.discuss.exception.auth.AuthErrorCode;
@@ -23,23 +24,23 @@ public class AvatarService {
 
 
     @Transactional
-    public MediaStorageService.StoredImage setAvatar(MultipartFile file) {
+    public StoredImageDTO setAvatar(MultipartFile file) {
         User user = userService.getCurrentUser();
 
         var stored = storage.storeAvatar(user.getId(), file);
         UserProfile profile = findProfile(user, stored);
 
-        String oldAvatar = profile.getAvatar();
-        profile.setAvatar(stored.objectKey());
+        String oldAvatar = profile.getAvatarObjectKey();
+        profile.setAvatarObjectKey(stored.getObjectKey());
         profileRepository.save(profile);
 
-        cleanupAfterTransaction(user.getId(), oldAvatar, stored.objectKey());
+        cleanupAfterTransaction(user.getId(), oldAvatar, stored.getObjectKey());
         return stored;
     }
 
-    private UserProfile findProfile(User user, MediaStorageService.StoredImage stored) {
+    private UserProfile findProfile(User user, StoredImageDTO stored) {
         return profileRepository.findByUser(user).orElseThrow(() -> {
-            storage.safeDelete(stored.objectKey());
+            storage.safeDelete(stored.getObjectKey());
             return new AuthException(AuthErrorCode.USER_NOT_FOUND);
         });
     }

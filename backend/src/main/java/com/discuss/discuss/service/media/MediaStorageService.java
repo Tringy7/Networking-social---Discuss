@@ -1,5 +1,6 @@
 package com.discuss.discuss.service.media;
 
+import com.discuss.discuss.dto.media.StoredImageDTO;
 import com.discuss.discuss.enums.ImageKind;
 import com.discuss.discuss.exception.media.MediaErrorCode;
 import com.discuss.discuss.exception.media.MediaException;
@@ -36,30 +37,28 @@ public class MediaStorageService {
 
     @Value("${media.image.max-files-per-request}")
     private int maxFiles;
-
-    public record StoredImage(String objectKey, String url, String contentType,
-                              int width, int height, long size) {}
+    
 
     // ------------------------------------------------------------------ public API
 
-    public StoredImage storeAvatar(Long userId, MultipartFile file) {
+    public StoredImageDTO storeAvatar(Long userId, MultipartFile file) {
         return store(file, ImageKind.AVATAR, avatarPrefix(userId));
     }
 
-    public StoredImage storeCommunityIcon(String communityId, MultipartFile file) {
+    public StoredImageDTO storeCommunityIcon(String communityId, MultipartFile file) {
         return store(file, ImageKind.COMMUNITY_ICON, "communities/%s/icon/".formatted(communityId));
     }
 
-    public StoredImage storeCommunityBanner(String communityId, MultipartFile file) {
+    public StoredImageDTO storeCommunityBanner(String communityId, MultipartFile file) {
         return store(file, ImageKind.BANNER, "communities/%s/banner/".formatted(communityId));
     }
 
-    public StoredImage storePostImage(String postId, MultipartFile file) {
+    public StoredImageDTO storePostImage(String postId, MultipartFile file) {
         return store(file, ImageKind.POST, "posts/%s/".formatted(postId));
     }
 
     /** All-or-nothing: if any image fails, delete the images already uploaded in this request. */
-    public List<StoredImage> storePostImages(String postId, List<MultipartFile> files) {
+    public List<StoredImageDTO> storePostImages(String postId, List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {
             throw new MediaException(MediaErrorCode.EMPTY_FILE, "No files provided");
         }
@@ -68,14 +67,14 @@ public class MediaStorageService {
                     "A maximum of " + maxFiles + " images is allowed per request");
         }
 
-        List<StoredImage> done = new ArrayList<>();
+        List<StoredImageDTO> done = new ArrayList<>();
         try {
             for (MultipartFile f : files) {
                 done.add(storePostImage(postId, f));
             }
             return done;
         } catch (RuntimeException e) {
-            done.forEach(s -> safeDelete(s.objectKey())); // safeDelete never throws
+            done.forEach(s -> safeDelete(s.getObjectKey())); // safeDelete never throws
             throw e;
         }
     }
@@ -104,7 +103,7 @@ public class MediaStorageService {
      * Lỗi dữ liệu (MediaException từ process) được giữ nguyên mã lỗi 4xx.
      * Chỉ lỗi khi ghi lên MinIO mới là STORAGE_UPLOAD_FAILED.
      */
-    private StoredImage store(MultipartFile file, ImageKind kind, String prefix) {
+    private StoredImageDTO store(MultipartFile file, ImageKind kind, String prefix) {
         var processed = imageProcessor.process(file, kind);   // ném MediaException nếu ảnh không hợp lệ
 
         String key = prefix + UUID.randomUUID() + extensionFor(processed.contentType());
@@ -116,7 +115,7 @@ public class MediaStorageService {
             throw new MediaException(MediaErrorCode.STORAGE_UPLOAD_FAILED, e.getMessage(), e);
         }
 
-        return new StoredImage(key, minioService.buildFileUrl(key), processed.contentType(),
+        return new StoredImageDTO(key, minioService.buildFileUrl(key), processed.contentType(),
                 processed.width(), processed.height(), processed.data().length);
     }
 

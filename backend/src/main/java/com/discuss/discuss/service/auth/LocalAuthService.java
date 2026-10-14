@@ -87,7 +87,8 @@ public class LocalAuthService {
 
         user.setStatus(UserStatus.ACTIVE);
 
-        userService.createUserProfile(user);
+        userService.createUserProfile(user, user.getUsername());
+        userService.createUserPrivacy(user);
 
         return authMapper.toResponse(user, "Email verified successfully");
 
