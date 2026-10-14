@@ -22,10 +22,20 @@ export default function LoginModal({
   const [errorInfo, setErrorInfo] = useState(null);
 
   useEffect(() => {
-    if (prefilledUsername) {
-      setFormData((prev) => ({ ...prev, username: prefilledUsername }));
+    if (isOpen) {
+      setFormData({
+        username: prefilledUsername || '',
+        password: '',
+      });
+      setErrorInfo(null);
+    } else {
+      setFormData({
+        username: '',
+        password: '',
+      });
+      setErrorInfo(null);
     }
-  }, [prefilledUsername, isOpen]);
+  }, [isOpen, prefilledUsername]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -75,7 +85,7 @@ export default function LoginModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Đăng nhập tài khoản Discuss" maxWidth="max-w-md">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
         {errorInfo?.message && (
           <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded-xl space-y-2">
             <p>{errorInfo.message}</p>
@@ -106,6 +116,9 @@ export default function LoginModal({
             <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
+              name="discuss_login_username"
+              id="discuss_login_username"
+              autoComplete="off"
               required
               value={formData.username}
               onChange={(e) => handleInputChange('username', e.target.value)}
@@ -140,6 +153,9 @@ export default function LoginModal({
             <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="password"
+              name="discuss_login_password"
+              id="discuss_login_password"
+              autoComplete="new-password"
               required
               value={formData.password}
               onChange={(e) => handleInputChange('password', e.target.value)}
