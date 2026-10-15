@@ -45,6 +45,5 @@ public class UserInfoResponseDTO {
     public static class PrivacySettings {
         private boolean showDateOfBirth;
         private boolean showLocation;
-        private boolean showPostsOnProfile;
     }
 }
