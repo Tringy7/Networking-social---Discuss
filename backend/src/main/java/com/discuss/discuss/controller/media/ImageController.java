@@ -1,30 +1,31 @@
 package com.discuss.discuss.controller.media;
 
 import com.discuss.discuss.dto.media.StoredImageDTO;
-import com.discuss.discuss.service.media.AvatarService;
-import com.discuss.discuss.service.media.MediaStorageService;
-import com.discuss.discuss.service.media.MinioService;
+import com.discuss.discuss.service.media.ProfileImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/media")
 @RequiredArgsConstructor
 public class ImageController {
 
-    private final AvatarService avatarService;
+    private final ProfileImageService profileImageService;
 
     // New avatar, edit avatar
     @PutMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public StoredImageDTO setAvatar(
             @RequestParam("file") MultipartFile file) {
-        return avatarService.setAvatar(file);
+        return profileImageService.setAvatar(file);
+    }
+
+    // New banner, edit banner
+    @PutMapping(value = "/banner", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public StoredImageDTO setBanner(
+            @RequestParam("file") MultipartFile file) {
+        return profileImageService.setBanner(file);
     }
 
 //    @PostMapping(value = "/posts/{postId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

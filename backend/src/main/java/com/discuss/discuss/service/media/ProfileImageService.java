@@ -3,6 +3,7 @@ package com.discuss.discuss.service.media;
 import com.discuss.discuss.dto.media.StoredImageDTO;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserProfile;
+import com.discuss.discuss.enums.ImageKind;
 import com.discuss.discuss.exception.auth.AuthErrorCode;
 import com.discuss.discuss.exception.auth.AuthException;
 import com.discuss.discuss.repository.UserProfileRepository;
@@ -14,57 +15,64 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+
 @Service
 @RequiredArgsConstructor
-public class AvatarService {
+public class ProfileImageService {
 
     private final MediaStorageService storage;
     private final UserService userService;
     private final UserProfileRepository profileRepository;
 
-
     @Transactional
     public StoredImageDTO setAvatar(MultipartFile file) {
-        User user = userService.getCurrentUser();
-
-        var stored = storage.storeAvatar(user.getId(), file);
-        UserProfile profile = findProfile(user, stored);
-
-        String oldAvatar = profile.getAvatarObjectKey();
-        profile.setAvatarObjectKey(stored.getObjectKey());
-        profileRepository.save(profile);
-
-        cleanupAfterTransaction(user.getId(), oldAvatar, stored.getObjectKey());
-        return stored;
+        return replace(ImageKind.AVATAR, file,
+                UserProfile::getAvatarObjectKey, UserProfile::setAvatarObjectKey);
     }
 
-    private UserProfile findProfile(User user, StoredImageDTO stored) {
-        return profileRepository.findByUser(user).orElseThrow(() -> {
+    @Transactional
+    public StoredImageDTO setBanner(MultipartFile file) {
+        return replace(ImageKind.PROFILE_BANNER, file,
+                UserProfile::getBannerObjectKey, UserProfile::setBannerObjectKey);
+    }
+
+    private StoredImageDTO replace(ImageKind kind,
+                                   MultipartFile file,
+                                   Function<UserProfile, String> getter,
+                                   BiConsumer<UserProfile, String> setter) {
+        User user = userService.getCurrentUser();
+        StoredImageDTO stored = storage.store(kind, user.getId(), file);
+
+        UserProfile profile = profileRepository.findByUser(user).orElseThrow(() -> {
             storage.safeDelete(stored.getObjectKey());
             return new AuthException(AuthErrorCode.USER_NOT_FOUND);
         });
-    }
 
-    private void cleanupAfterTransaction(Long userId, String oldAvatar, String newAvatar) {
+        String oldKey = getter.apply(profile);
+        String ownerPrefix = kind.prefixFor(user.getId());
+
+        setter.accept(profile, stored.getObjectKey());
+        profileRepository.save(profile);
+
+        // Xóa ảnh cũ sau commit, xóa ảnh mới nếu rollback
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                if (isOwnedAvatar(oldAvatar, userId)) {
-                    storage.safeDelete(oldAvatar);
+                if (oldKey != null && oldKey.startsWith(ownerPrefix)) {
+                    storage.safeDelete(oldKey);
                 }
             }
 
             @Override
             public void afterCompletion(int status) {
                 if (status == STATUS_ROLLED_BACK) {
-                    storage.safeDelete(newAvatar);
+                    storage.safeDelete(stored.getObjectKey());
                 }
             }
         });
-    }
 
-    /** Chỉ avatar nằm trong thư mục của chính user mới được xóa (tránh xóa ảnh mặc định/dùng chung). */
-    private boolean isOwnedAvatar(String key, Long userId) {
-        return key != null && key.startsWith("avatars/" + userId + "/");
+        return stored;
     }
 }

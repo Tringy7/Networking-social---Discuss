@@ -28,33 +28,21 @@ public class MediaStorageService {
             "image/webp", ".webp"
     );
 
-    /** Key hợp lệ do backend sinh ra: prefix cố định, chỉ ký tự an toàn, đuôi jpg/png/webp. */
+    /** Key hợp lệ do backend sinh ra: thư mục gốc cố định, chỉ ký tự an toàn, đuôi jpg/png/webp. */
     private static final Pattern SAFE_KEY = Pattern.compile(
-            "^(avatars|posts|communities)/[A-Za-z0-9_\\-]+(/[A-Za-z0-9_\\-]+)*\\.(jpg|png|webp)$");
+            "^(profiles|posts|communities)/[A-Za-z0-9_\\-]+(/[A-Za-z0-9_\\-]+)*\\.(jpg|png|webp)$");
 
     private final ImageProcessingService imageProcessor;
     private final MinioService minioService;
 
     @Value("${media.image.max-files-per-request}")
     private int maxFiles;
-    
 
     // ------------------------------------------------------------------ public API
 
-    public StoredImageDTO storeAvatar(Long userId, MultipartFile file) {
-        return store(file, ImageKind.AVATAR, avatarPrefix(userId));
-    }
-
-    public StoredImageDTO storeCommunityIcon(String communityId, MultipartFile file) {
-        return store(file, ImageKind.COMMUNITY_ICON, "communities/%s/icon/".formatted(communityId));
-    }
-
-    public StoredImageDTO storeCommunityBanner(String communityId, MultipartFile file) {
-        return store(file, ImageKind.BANNER, "communities/%s/banner/".formatted(communityId));
-    }
-
-    public StoredImageDTO storePostImage(String postId, MultipartFile file) {
-        return store(file, ImageKind.POST, "posts/%s/".formatted(postId));
+    /** Lưu một ảnh. ownerId là userId / communityId / postId tùy kind. */
+    public StoredImageDTO store(ImageKind kind, Object ownerId, MultipartFile file) {
+        return upload(file, kind, kind.prefixFor(ownerId));
     }
 
     /** All-or-nothing: if any image fails, delete the images already uploaded in this request. */
@@ -70,7 +58,7 @@ public class MediaStorageService {
         List<StoredImageDTO> done = new ArrayList<>();
         try {
             for (MultipartFile f : files) {
-                done.add(storePostImage(postId, f));
+                done.add(store(ImageKind.POST, postId, f));
             }
             return done;
         } catch (RuntimeException e) {
@@ -91,11 +79,6 @@ public class MediaStorageService {
         return key != null && key.length() < 300 && SAFE_KEY.matcher(key).matches();
     }
 
-    /** Một nơi duy nhất định nghĩa prefix avatar (dùng cả khi kiểm tra quyền sở hữu). */
-    public String avatarPrefix(Long userId) {
-        return "avatars/%s/".formatted(userId);
-    }
-
     // ------------------------------------------------------------------ internal
 
     /**
@@ -103,8 +86,8 @@ public class MediaStorageService {
      * Lỗi dữ liệu (MediaException từ process) được giữ nguyên mã lỗi 4xx.
      * Chỉ lỗi khi ghi lên MinIO mới là STORAGE_UPLOAD_FAILED.
      */
-    private StoredImageDTO store(MultipartFile file, ImageKind kind, String prefix) {
-        var processed = imageProcessor.process(file, kind);   // ném MediaException nếu ảnh không hợp lệ
+    private StoredImageDTO upload(MultipartFile file, ImageKind kind, String prefix) {
+        var processed = imageProcessor.process(file, kind);
 
         String key = prefix + UUID.randomUUID() + extensionFor(processed.contentType());
         try {
