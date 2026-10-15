@@ -31,7 +31,12 @@ public class CommunityInfo {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(length = 500)
     private String avatar;
+
+    @Column(length = 500)
+    private String banner;
+
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

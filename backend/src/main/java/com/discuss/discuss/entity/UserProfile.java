@@ -38,10 +38,10 @@ public class UserProfile {
     private String bio;
 
     @Column(length = 500)
-    private String avatarObjectKey;
+    private String avatar;
 
     @Column(length = 500)
-    private String bannerObjectKey;
+    private String banner;
 
     private LocalDate dateOfBirth;
 
