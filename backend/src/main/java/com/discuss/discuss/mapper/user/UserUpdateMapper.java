@@ -5,6 +5,7 @@ import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserPrivacySettings;
 import com.discuss.discuss.entity.UserProfile;
 import org.mapstruct.*;
+import org.springframework.stereotype.Component;
 
 @Mapper(
         componentModel = "spring",
