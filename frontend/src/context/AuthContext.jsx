@@ -284,6 +284,58 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const uploadAvatar = async (file) => {
+    try {
+      const storedImage = await userService.uploadAvatar(file);
+      const avatarUrl = storedImage?.url || storedImage?.objectKey;
+      if (avatarUrl && currentUser) {
+        const updatedUser = {
+          ...currentUser,
+          avatar: avatarUrl,
+          profile: {
+            ...(currentUser.profile || {}),
+            avatarObjectKey: storedImage?.objectKey || avatarUrl,
+            avatarUrl: storedImage?.url || avatarUrl,
+          },
+        };
+        setCurrentUser(updatedUser);
+        storage.setSavedUser(updatedUser);
+        setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+      }
+      success('Cập nhật ảnh đại diện thành công!');
+      return storedImage;
+    } catch (err) {
+      toastError(err?.message || 'Cập nhật ảnh đại diện thất bại');
+      throw err;
+    }
+  };
+
+  const uploadBanner = async (file) => {
+    try {
+      const storedImage = await userService.uploadBanner(file);
+      const bannerUrl = storedImage?.url || storedImage?.objectKey;
+      if (bannerUrl && currentUser) {
+        const updatedUser = {
+          ...currentUser,
+          banner: bannerUrl,
+          profile: {
+            ...(currentUser.profile || {}),
+            bannerObjectKey: storedImage?.objectKey || bannerUrl,
+            bannerUrl: storedImage?.url || bannerUrl,
+          },
+        };
+        setCurrentUser(updatedUser);
+        storage.setSavedUser(updatedUser);
+        setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+      }
+      success('Cập nhật ảnh bìa thành công!');
+      return storedImage;
+    } catch (err) {
+      toastError(err?.message || 'Cập nhật ảnh bìa thất bại');
+      throw err;
+    }
+  };
+
   const lockUserAccount = async (userId, reason) => {
     try {
       const result = await adminService.lockUser(userId, reason);
@@ -333,6 +385,8 @@ export function AuthProvider({ children }) {
         resetPassword,
         changePassword,
         updateProfile,
+        uploadAvatar,
+        uploadBanner,
         lockUserAccount,
         unlockUserAccount,
       }}

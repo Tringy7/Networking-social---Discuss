@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Modal from '../common/Modal';
 import { useAuth } from '../../context/AuthContext';
-import { User, MapPin, Calendar, AlignLeft, Loader2, Image, KeyRound } from 'lucide-react';
+import { User, MapPin, Calendar, AlignLeft, Loader2, Image, KeyRound, Upload, Camera } from 'lucide-react';
 
 export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword }) {
-  const { currentUser, updateProfile } = useAuth();
+  const { currentUser, updateProfile, uploadAvatar, uploadBanner } = useAuth();
+  const avatarInputRef = useRef(null);
+  const bannerInputRef = useRef(null);
+
   const [formData, setFormData] = useState({
     username: '',
     displayName: '',
@@ -19,6 +22,8 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
     showPostsOnProfile: true,
   });
   const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [errorInfo, setErrorInfo] = useState(null);
 
   useEffect(() => {
@@ -51,6 +56,44 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
         delete newErrors[field];
         return { ...prev, errors: Object.keys(newErrors).length > 0 ? newErrors : null };
       });
+    }
+  };
+
+  const handleAvatarFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    setErrorInfo(null);
+    try {
+      const res = await uploadAvatar(file);
+      const newUrl = res?.url || res?.objectKey;
+      if (newUrl) {
+        setFormData(prev => ({ ...prev, avatarObjectKey: newUrl }));
+      }
+    } catch (err) {
+      setErrorInfo(err);
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
+
+  const handleBannerFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingBanner(true);
+    setErrorInfo(null);
+    try {
+      const res = await uploadBanner(file);
+      const newUrl = res?.url || res?.objectKey;
+      if (newUrl) {
+        setFormData(prev => ({ ...prev, bannerObjectKey: newUrl }));
+      }
+    } catch (err) {
+      setErrorInfo(err);
+    } finally {
+      setUploadingBanner(false);
+      if (bannerInputRef.current) bannerInputRef.current.value = '';
     }
   };
 
@@ -93,32 +136,90 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
           </div>
         )}
 
-        {/* Avatar preview */}
-        <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200/60">
-          <img
-            src={formData.avatarObjectKey || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'}
-            alt="Avatar Preview"
-            className="w-16 h-16 rounded-full object-cover border-2 border-indigo-200 shadow-xs shrink-0"
-            onError={(e) => {
-              e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80';
-            }}
-          />
-          <div className="flex-1">
-            <span className="text-xs font-semibold text-slate-700 block mb-1">Ảnh đại diện (URL hoặc Object Key)</span>
+        {/* Avatar upload & preview */}
+        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 space-y-3">
+          <div className="flex items-center gap-4">
+            <div className="relative group/avatar">
+              <img
+                src={formData.avatarObjectKey || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'}
+                alt="Avatar Preview"
+                className="w-16 h-16 rounded-full object-cover border-2 border-indigo-200 shadow-xs shrink-0"
+                onError={(e) => {
+                  e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80';
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute inset-0 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white opacity-0 group-hover/avatar:opacity-100 transition cursor-pointer"
+                title="Tải ảnh mới"
+              >
+                {uploadingAvatar ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+              </button>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-xs font-semibold text-slate-700 block">Ảnh đại diện (Avatar)</span>
+                <input
+                  type="file"
+                  ref={avatarInputRef}
+                  onChange={handleAvatarFileChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                >
+                  {uploadingAvatar ? <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" /> : <Upload className="w-3.5 h-3.5 text-indigo-600" />}
+                  <span>{uploadingAvatar ? 'Đang tải lên...' : 'Tải file ảnh'}</span>
+                </button>
+              </div>
+
+              <input
+                type="text"
+                value={formData.avatarObjectKey}
+                onChange={(e) => handleInputChange('avatarObjectKey', e.target.value)}
+                placeholder=""
+                className={`w-full text-xs px-3 py-1.5 bg-white border rounded-lg focus:outline-none focus:ring-2 ${
+                  fieldErrors.avatarObjectKey
+                    ? 'border-rose-400 focus:ring-rose-400/30'
+                    : 'border-slate-200 focus:ring-indigo-500/20'
+                }`}
+              />
+              {fieldErrors.avatarObjectKey && (
+                <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.avatarObjectKey}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Banner upload section */}
+          <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <span className="text-xs font-semibold text-slate-700 block">Ảnh bìa cá nhân (Banner)</span>
+              <p className="text-[11px] text-slate-400 truncate">Hỗ trợ file ảnh JPG, PNG, WEBP</p>
+            </div>
+
             <input
-              type="text"
-              value={formData.avatarObjectKey}
-              onChange={(e) => handleInputChange('avatarObjectKey', e.target.value)}
-              placeholder="profiles/15/avatar/... hoặc URL ảnh"
-              className={`w-full text-xs px-3 py-1.5 bg-white border rounded-lg focus:outline-none focus:ring-2 ${
-                fieldErrors.avatarObjectKey
-                  ? 'border-rose-400 focus:ring-rose-400/30'
-                  : 'border-slate-200 focus:ring-indigo-500/20'
-              }`}
+              type="file"
+              ref={bannerInputRef}
+              onChange={handleBannerFileChange}
+              accept="image/*"
+              className="hidden"
             />
-            {fieldErrors.avatarObjectKey && (
-              <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.avatarObjectKey}</p>
-            )}
+            <button
+              type="button"
+              onClick={() => bannerInputRef.current?.click()}
+              disabled={uploadingBanner}
+              className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition cursor-pointer inline-flex items-center gap-1.5 shadow-2xs shrink-0"
+            >
+              {uploadingBanner ? <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" /> : <Upload className="w-3.5 h-3.5 text-indigo-600" />}
+              <span>{uploadingBanner ? 'Đang tải lên...' : 'Tải ảnh bìa'}</span>
+            </button>
           </div>
         </div>
 
@@ -133,7 +234,7 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
               required
               value={formData.username}
               onChange={(e) => handleInputChange('username', e.target.value)}
-              placeholder="ví dụ: nguyenhuutri"
+              placeholder=""
               className={`w-full pl-9 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-mono focus:outline-none focus:ring-2 ${
                 fieldErrors.username
                   ? 'border-rose-400 focus:ring-rose-400/30'
@@ -157,7 +258,7 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
               required
               value={formData.displayName}
               onChange={(e) => handleInputChange('displayName', e.target.value)}
-              placeholder="Ví dụ: Nguyễn Hữu Trí"
+              placeholder=""
               className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 ${
                 fieldErrors.displayName
                   ? 'border-rose-400 focus:ring-rose-400/30'
@@ -203,7 +304,7 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
                 type="text"
                 value={formData.location}
                 onChange={(e) => handleInputChange('location', e.target.value)}
-                placeholder="Ví dụ: Thành phố Hồ Chí Minh"
+                placeholder=""
                 className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               />
             </div>

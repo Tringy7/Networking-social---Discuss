@@ -33,4 +33,18 @@ export const userService = {
     }
     return updated;
   },
+
+  uploadAvatar: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiClient.put('/users/avatar', formData);
+    return res?.data || res;
+  },
+
+  uploadBanner: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiClient.put('/users/banner', formData);
+    return res?.data || res;
+  },
 };
