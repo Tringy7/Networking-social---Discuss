@@ -29,6 +29,21 @@ export default function UserProfilePage({
 
   if (!currentUser) return null;
 
+  const profile = currentUser?.profile || {};
+  const privacySettings = currentUser?.privacySettings || {};
+
+  const userDisplayName = profile.displayName || currentUser?.displayName || currentUser?.name || currentUser?.username || 'Người dùng';
+  const rawAvatar = profile.avatarObjectKey || currentUser?.avatar || '';
+  const userAvatar = rawAvatar
+    ? (rawAvatar.startsWith('http') || rawAvatar.startsWith('/') ? rawAvatar : `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80`)
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName)}&background=6366f1&color=fff`;
+
+  const rawBanner = profile.bannerObjectKey || currentUser?.banner || '';
+  const userBio = profile.bio || currentUser?.bio || '';
+  const userLocation = profile.location || currentUser?.location || '';
+  const userDob = profile.dateOfBirth || currentUser?.dateOfBirth || '';
+  const userGender = profile.gender || currentUser?.gender || '';
+
   // Find all memberships for this user
   const userMemberships = memberships.filter(m => m.userId === currentUser.id && !m.isBanned);
   const userCommunities = userMemberships.map(m => {
@@ -37,29 +52,40 @@ export default function UserProfilePage({
   }).filter(c => !!c.id);
 
   // Find posts authored by this user
-  const userPosts = posts.filter(p => p.authorId === currentUser.id);
+  const userPosts = posts.filter(p => p.authorId === currentUser.id || p.author?.username === currentUser?.username);
 
   return (
     <div className="space-y-6">
       {/* Profile Card */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
         {/* Banner */}
-        <div className="h-36 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 relative" />
+        <div 
+          className="h-36 sm:h-44 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 relative bg-cover bg-center"
+          style={rawBanner && (rawBanner.startsWith('http') || rawBanner.startsWith('/')) ? { backgroundImage: `url(${rawBanner})` } : undefined}
+        />
 
         <div className="px-6 pb-6 pt-0 relative">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12 mb-4">
             <div className="flex items-end gap-4">
               <img
-                src={currentUser.avatar}
-                alt={currentUser.name}
+                src={userAvatar}
+                alt={userDisplayName}
                 className="w-24 h-24 rounded-3xl border-4 border-white shadow-lg object-cover bg-white shrink-0"
               />
               <div className="pb-1">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <h1 className="text-xl font-bold text-slate-900">{currentUser.name}</h1>
+                  <h1 className="text-xl font-bold text-slate-900">{userDisplayName}</h1>
                   <RoleBadge role={currentRole} type="system" size="md" />
                 </div>
-                <p className="text-xs text-slate-400 font-mono">@{currentUser.username}</p>
+                <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
+                  <span>@{currentUser?.username}</span>
+                  {currentUser?.email && (
+                    <>
+                      <span>•</span>
+                      <span>{currentUser.email}</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -72,14 +98,41 @@ export default function UserProfilePage({
             </button>
           </div>
 
-          <p className="text-xs sm:text-sm text-slate-700 leading-relaxed max-w-2xl mb-4">
-            {currentUser.bio || 'Chưa có tiểu sử cá nhân.'}
-          </p>
+          {userBio ? (
+            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed max-w-2xl mb-4">
+              {userBio}
+            </p>
+          ) : (
+            <p className="text-xs text-slate-400 italic mb-4">
+              Chưa có tiểu sử cá nhân.
+            </p>
+          )}
+
+          {/* Location & Gender metadata */}
+          {(userLocation || (userDob && privacySettings.showDateOfBirth !== false) || userGender) && (
+            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 mb-4 pb-1">
+              {userLocation && (privacySettings.showLocation !== false) && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 rounded-lg text-slate-600">
+                  📍 {userLocation}
+                </span>
+              )}
+              {userGender && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 rounded-lg text-slate-600">
+                  {userGender === 'MALE' ? 'Nam' : userGender === 'FEMALE' ? 'Nữ' : userGender}
+                </span>
+              )}
+              {userDob && privacySettings.showDateOfBirth === true && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 rounded-lg text-slate-600">
+                  🎂 {formatDate(userDob)}
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-3 border-t border-slate-100">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-slate-400" />
-              Tham gia ngày {formatDate(currentUser.joinedAt)}
+              Tham gia ngày {formatDate(currentUser.createdAt || currentUser.joinedAt)}
             </span>
             <span className="flex items-center gap-1.5">
               <Award className="w-4 h-4 text-amber-500" />

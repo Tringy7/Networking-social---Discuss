@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { SYSTEM_ROLES } from '../constants/roles';
 import { authService } from '../api/authService';
+import { userService } from '../api/userService';
 import { adminService } from '../api/adminService';
 import { storage } from '../utils/storage';
 import { useToast } from './ToastContext';
@@ -27,7 +28,34 @@ export function AuthProvider({ children }) {
     }
   });
 
+  const [authLoading, setAuthLoading] = useState(true);
   const [pendingEmail, setPendingEmail] = useState('');
+
+  // Hàm gọi GET /users/me để làm mới hoặc đồng bộ thông tin user từ server
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      const userData = await userService.getMe();
+      if (userData && (userData.username || userData.email)) {
+        setCurrentUser(userData);
+        return userData;
+      }
+    } catch {
+      // Nếu 401 hoặc chưa đăng nhập, giữ nguyên hoặc bỏ qua
+    }
+    return null;
+  }, []);
+
+  // Tự động kiểm tra phiên và gọi GET /users/me khi load trang
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        await fetchCurrentUser();
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+    initAuth();
+  }, [fetchCurrentUser]);
 
   useEffect(() => {
     try {
@@ -74,6 +102,8 @@ export function AuthProvider({ children }) {
       if (res?.data) {
         setCurrentUser(res.data);
       }
+      // Đồng bộ thông tin đầy đủ từ GET /users/me
+      await fetchCurrentUser().catch(() => {});
       if (res?.message) {
         success(res.message);
       }
@@ -108,6 +138,8 @@ export function AuthProvider({ children }) {
       if (res?.data) {
         setCurrentUser(res.data);
       }
+      // Lấy ngay thông tin người dùng đầy đủ từ GET /users/me
+      await fetchCurrentUser().catch(() => {});
       if (res?.message) {
         success(res.message);
       }
@@ -144,6 +176,8 @@ export function AuthProvider({ children }) {
       if (res?.data) {
         setCurrentUser(res.data);
       }
+      // Lấy profile đầy đủ từ GET /users/me
+      await fetchCurrentUser().catch(() => {});
       if (res?.message) {
         success(res.message);
       }
@@ -187,7 +221,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // MỚI: Bước 1.8 - Xác minh OTP quên mật khẩu
   const verifyForgotPasswordOtp = async ({ email, code }) => {
     try {
       const res = await authService.verifyForgotPasswordOtp({ email, code });
@@ -203,7 +236,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // MỚI: Bước 1.9 - Đặt lại mật khẩu
   const resetPassword = async ({ password, confirmPassword }) => {
     try {
       const res = await authService.resetPassword({ password, confirmPassword });
@@ -222,14 +254,20 @@ export function AuthProvider({ children }) {
   const updateProfile = async (updates) => {
     if (!currentUser) return;
     try {
-      const updatedUser = { ...currentUser, ...updates };
+      let serverUpdated = null;
+      try {
+        serverUpdated = await userService.updateMe(updates);
+      } catch {
+        // Nếu backend chưa có endpoint PUT /users/me, fallback cập nhật cục bộ
+      }
+      const updatedUser = serverUpdated || { ...currentUser, ...updates };
       setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
       setCurrentUser(updatedUser);
       storage.setSavedUser(updatedUser);
       success('Cập nhật hồ sơ cá nhân thành công!');
       return updatedUser;
     } catch (err) {
-      toastError(err.message || 'Cập nhật thất bại');
+      toastError(err?.message || 'Cập nhật thất bại');
       throw err;
     }
   };
@@ -266,6 +304,8 @@ export function AuthProvider({ children }) {
         currentUser,
         currentRole,
         isAuthenticated,
+        authLoading,
+        fetchCurrentUser,
         allUsers: users,
         pendingEmail,
         setPendingEmail,
@@ -278,7 +318,7 @@ export function AuthProvider({ children }) {
         logout,
         forgotPassword,
         verifyForgotPasswordOtp,
-        resetPassword, // MỚI
+        resetPassword,
         updateProfile,
         lockUserAccount,
         unlockUserAccount,
