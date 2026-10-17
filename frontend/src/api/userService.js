@@ -2,13 +2,8 @@ import { apiClient } from './client';
 import { storage } from '../utils/storage';
 
 export const userService = {
-  /**
-   * GET /users/me
-   * Lấy thông tin tài khoản và hồ sơ người dùng hiện tại
-   */
   getMe: async () => {
     const res = await apiClient.get('/users/me');
-    // Backend trả về trực tiếp user object (hoặc res.data nếu có wrapper)
     const userData = res?.data || res;
     if (userData && (userData.username || userData.email)) {
       storage.setSavedUser(userData);
@@ -16,22 +11,24 @@ export const userService = {
     return userData;
   },
 
-  /**
-   * GET /users/{userId}
-   * Xem hồ sơ công khai của người dùng khác
-   */
   getUserById: async (userId) => {
     const res = await apiClient.get(`/users/${userId}`);
     return res?.data || res;
   },
 
-  /**
-   * Cập nhật thông tin profile/privacy (nếu backend hỗ trợ PUT/PATCH /users/me)
-   */
-  updateMe: async (payload) => {
-    const res = await apiClient.put('/users/me', payload);
+  updateProfile: async (payload) => {
+    const res = await apiClient.patch('/users/me/profile', payload);
     const updated = res?.data || res;
-    if (updated) {
+    if (updated && (updated.username || updated.email || updated.profile)) {
+      storage.setSavedUser(updated);
+    }
+    return updated;
+  },
+
+  updateMe: async (payload) => {
+    const res = await apiClient.patch('/users/me/profile', payload);
+    const updated = res?.data || res;
+    if (updated && (updated.username || updated.email || updated.profile)) {
       storage.setSavedUser(updated);
     }
     return updated;

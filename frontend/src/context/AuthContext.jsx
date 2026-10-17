@@ -31,7 +31,6 @@ export function AuthProvider({ children }) {
   const [authLoading, setAuthLoading] = useState(true);
   const [pendingEmail, setPendingEmail] = useState('');
 
-  // Hàm gọi GET /users/me để làm mới hoặc đồng bộ thông tin user từ server
   const fetchCurrentUser = useCallback(async () => {
     try {
       const userData = await userService.getMe();
@@ -40,12 +39,11 @@ export function AuthProvider({ children }) {
         return userData;
       }
     } catch {
-      // Nếu 401 hoặc chưa đăng nhập, giữ nguyên hoặc bỏ qua
+      // Ignored
     }
     return null;
   }, []);
 
-  // Tự động kiểm tra phiên và gọi GET /users/me khi load trang
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -272,13 +270,10 @@ export function AuthProvider({ children }) {
     if (!currentUser) return;
     try {
       let serverUpdated = null;
-      try {
-        serverUpdated = await userService.updateMe(updates);
-      } catch {
-        // Nếu backend chưa có endpoint PUT /users/me, fallback cập nhật cục bộ
-      }
-      const updatedUser = serverUpdated || { ...currentUser, ...updates };
-      setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+      serverUpdated = await userService.updateProfile(updates);
+      
+      const updatedUser = serverUpdated || currentUser;
+      setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, ...updatedUser } : u));
       setCurrentUser(updatedUser);
       storage.setSavedUser(updatedUser);
       success('Cập nhật hồ sơ cá nhân thành công!');

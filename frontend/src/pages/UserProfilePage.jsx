@@ -37,10 +37,8 @@ export default function UserProfilePage({
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
 
-  // Kiểm tra xem đây có phải là hồ sơ của chính người đang đăng nhập hay không
   const isMe = !userId || (currentUser && (String(currentUser.id) === String(userId) || currentUser.username === String(userId)));
 
-  // Khi xem người khác (userId được truyền vào và khác currentUser)
   useEffect(() => {
     if (isMe) {
       setPublicUser(null);
@@ -59,7 +57,6 @@ export default function UserProfilePage({
         }
       } catch (err) {
         if (isMounted) {
-          // Fallback: tìm trong danh sách allUsers nếu có
           const localMatch = allUsers.find(u => String(u.id) === String(userId) || u.username === String(userId));
           if (localMatch) {
             setPublicUser({
@@ -97,7 +94,6 @@ export default function UserProfilePage({
     };
   }, [userId, isMe, allUsers, posts, memberships]);
 
-  // Nếu đang tải hồ sơ của người dùng khác
   if (loading) {
     return (
       <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center space-y-3">
@@ -107,7 +103,6 @@ export default function UserProfilePage({
     );
   }
 
-  // Nếu có lỗi khi tải người dùng khác
   if (!isMe && fetchError) {
     return (
       <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center space-y-4">
@@ -127,7 +122,6 @@ export default function UserProfilePage({
     );
   }
 
-  // Xác định đối tượng profile hiển thị (currentUser hoặc publicUser)
   const targetUser = isMe ? currentUser : publicUser;
   if (!targetUser) {
     if (!isMe) return null;
@@ -210,7 +204,6 @@ export default function UserProfilePage({
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
                   <span>@{targetUser?.username}</span>
-                  {/* Email chỉ hiển thị khi xem chính mình (bảo mật người dùng khác) */}
                   {isMe && targetUser?.email && (
                     <>
                       <span>•</span>
@@ -221,7 +214,6 @@ export default function UserProfilePage({
               </div>
             </div>
 
-            {/* Chỉ hiển thị nút Chỉnh sửa thông tin nếu là chính mình */}
             {isMe && (
               <button
                 onClick={onOpenEditProfile}
@@ -338,28 +330,34 @@ export default function UserProfilePage({
       </div>
 
       {/* Authored Posts */}
-      <div className="space-y-3">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-          Bài viết đã đăng ({userPosts.length})
-        </h3>
+      {(!isMe && privacySettings.showPostsOnProfile === false) ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-400">
+          Người dùng đã ẩn danh sách bài viết trên trang cá nhân.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            Bài viết đã đăng ({userPosts.length})
+          </h3>
 
-        {userPosts.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-400">
-            {isMe ? 'Bạn chưa đăng bài viết nào.' : 'Người dùng này chưa có bài viết nào.'}
-          </div>
-        ) : (
-          userPosts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onOpenDetail={onOpenPostDetail}
-              onOpenEdit={onOpenEditPost}
-              onOpenReport={onOpenReportPost}
-              onSelectCommunity={onSelectCommunity}
-            />
-          ))
-        )}
-      </div>
+          {userPosts.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-400">
+              {isMe ? 'Bạn chưa đăng bài viết nào.' : 'Người dùng này chưa có bài viết nào.'}
+            </div>
+          ) : (
+            userPosts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onOpenDetail={onOpenPostDetail}
+                onOpenEdit={onOpenEditPost}
+                onOpenReport={onOpenReportPost}
+                onSelectCommunity={onSelectCommunity}
+              />
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

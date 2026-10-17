@@ -6,6 +6,7 @@ import { User, MapPin, Calendar, AlignLeft, Loader2, Image, KeyRound } from 'luc
 export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword }) {
   const { currentUser, updateProfile } = useAuth();
   const [formData, setFormData] = useState({
+    username: '',
     displayName: '',
     bio: '',
     avatarObjectKey: '',
@@ -15,6 +16,7 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
     gender: 'MALE',
     showDateOfBirth: false,
     showLocation: true,
+    showPostsOnProfile: true,
   });
   const [loading, setLoading] = useState(false);
   const [errorInfo, setErrorInfo] = useState(null);
@@ -24,7 +26,8 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
       const p = currentUser.profile || {};
       const priv = currentUser.privacySettings || {};
       setFormData({
-        displayName: p.displayName || currentUser.name || currentUser.username || '',
+        username: currentUser.username || '',
+        displayName: p.displayName || currentUser.displayName || currentUser.name || currentUser.username || '',
         bio: p.bio || currentUser.bio || '',
         avatarObjectKey: p.avatarObjectKey || currentUser.avatar || '',
         bannerObjectKey: p.bannerObjectKey || currentUser.banner || '',
@@ -33,6 +36,7 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
         gender: p.gender || currentUser.gender || 'MALE',
         showDateOfBirth: priv.showDateOfBirth ?? false,
         showLocation: priv.showLocation ?? true,
+        showPostsOnProfile: priv.showPostsOnProfile ?? true,
       });
       setErrorInfo(null);
     }
@@ -55,25 +59,20 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
     setErrorInfo(null);
     setLoading(true);
     try {
-      // Chuẩn hóa payload theo schema backend
-      const payload = {
-        name: formData.displayName, // tương thích
-        bio: formData.bio,
-        avatar: formData.avatarObjectKey,
-        profile: {
-          displayName: formData.displayName,
-          bio: formData.bio,
-          avatarObjectKey: formData.avatarObjectKey,
-          bannerObjectKey: formData.bannerObjectKey,
-          location: formData.location,
-          dateOfBirth: formData.dateOfBirth,
-          gender: formData.gender,
-        },
-        privacySettings: {
-          showDateOfBirth: formData.showDateOfBirth,
-          showLocation: formData.showLocation,
-        },
-      };
+      // UpdateProfileRequestDTO chỉ chứa các trường được phép cập nhật
+      const payload = {};
+
+      if (formData.username?.trim()) payload.username = formData.username.trim();
+      if (formData.displayName?.trim()) payload.displayName = formData.displayName.trim();
+      if (formData.bio !== undefined) payload.bio = formData.bio;
+      if (formData.dateOfBirth) payload.dateOfBirth = formData.dateOfBirth;
+      if (formData.gender) payload.gender = formData.gender;
+      if (formData.location !== undefined) payload.location = formData.location;
+      
+      payload.showDateOfBirth = Boolean(formData.showDateOfBirth);
+      payload.showLocation = Boolean(formData.showLocation);
+      payload.showPostsOnProfile = Boolean(formData.showPostsOnProfile);
+
       await updateProfile(payload);
       onClose();
     } catch (err) {
@@ -121,6 +120,30 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
               <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.avatarObjectKey}</p>
             )}
           </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+            Tên tài khoản (Username) <span className="text-rose-500">*</span>
+          </label>
+          <div className="relative">
+            <span className="text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-mono font-bold">@</span>
+            <input
+              type="text"
+              required
+              value={formData.username}
+              onChange={(e) => handleInputChange('username', e.target.value)}
+              placeholder="ví dụ: nguyenhuutri"
+              className={`w-full pl-9 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-mono focus:outline-none focus:ring-2 ${
+                fieldErrors.username
+                  ? 'border-rose-400 focus:ring-rose-400/30'
+                  : 'border-slate-200 focus:ring-indigo-500/30 focus:border-indigo-500'
+              }`}
+            />
+          </div>
+          {fieldErrors.username && (
+            <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.username}</p>
+          )}
         </div>
 
         <div>
@@ -240,6 +263,15 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
                   className="rounded text-indigo-600 focus:ring-indigo-500"
                 />
                 <span>Hiển thị ngày sinh công khai</span>
+              </label>
+              <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.showPostsOnProfile}
+                  onChange={(e) => handleInputChange('showPostsOnProfile', e.target.checked)}
+                  className="rounded text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Hiển thị bài viết trên trang cá nhân</span>
               </label>
             </div>
           </div>
