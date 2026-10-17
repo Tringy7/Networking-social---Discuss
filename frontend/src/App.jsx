@@ -54,6 +54,8 @@ function DiscussMainApp() {
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
+  const [viewUserId, setViewUserId] = useState(null);
+
   const handleSelectCommunity = (communityId) => {
     setSelectedCommunityId(communityId);
     setCurrentView('community');
@@ -73,6 +75,12 @@ function DiscussMainApp() {
   };
 
   const handleNavigateProfile = () => {
+    setViewUserId(null); // xem chính mình
+    setCurrentView('profile');
+  };
+
+  const handleNavigateUserProfile = (userId) => {
+    setViewUserId(userId);
     setCurrentView('profile');
   };
 
@@ -128,6 +136,7 @@ function DiscussMainApp() {
               onOpenEdit={(post) => setEditingPost(post)}
               onOpenReport={(post) => setReportingPost(post)}
               onSelectCommunity={handleSelectCommunity}
+              onSelectUser={handleNavigateUserProfile}
               onOpenCreatePost={() => setIsCreatePostOpen(true)}
             />
           )}
@@ -139,6 +148,7 @@ function DiscussMainApp() {
               onOpenEditPost={(post) => setEditingPost(post)}
               onOpenReportPost={(post) => setReportingPost(post)}
               onSelectCommunity={handleSelectCommunity}
+              onSelectUser={handleNavigateUserProfile}
             />
           )}
 
@@ -158,11 +168,16 @@ function DiscussMainApp() {
 
           {currentView === 'profile' && (
             <UserProfilePage
+              userId={viewUserId}
               onOpenEditProfile={() => setIsEditProfileOpen(true)}
               onOpenPostDetail={(post) => setDetailPost(post)}
               onOpenEditPost={(post) => setEditingPost(post)}
               onOpenReportPost={(post) => setReportingPost(post)}
               onSelectCommunity={handleSelectCommunity}
+              onBack={() => {
+                setViewUserId(null);
+                setCurrentView('home');
+              }}
             />
           )}
         </main>
@@ -247,6 +262,7 @@ function DiscussMainApp() {
         onOpenEdit={(post) => setEditingPost(post)}
         onOpenReport={(post) => setReportingPost(post)}
         onSelectCommunity={handleSelectCommunity}
+        onSelectUser={handleNavigateUserProfile}
       />
 
       <EditPostModal

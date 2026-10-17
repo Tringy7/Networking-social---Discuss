@@ -11,6 +11,7 @@ export default function FeedPage({
   onOpenEdit,
   onOpenReport,
   onSelectCommunity,
+  onSelectUser,
   onOpenCreatePost,
 }) {
   const { posts, searchKeyword, setSearchKeyword, activeSort, setActiveSort, selectedTag, setSelectedTag } = usePost();
@@ -171,6 +172,7 @@ export default function FeedPage({
               onOpenEdit={onOpenEdit}
               onOpenReport={onOpenReport}
               onSelectCommunity={onSelectCommunity}
+              onSelectUser={onSelectUser}
             />
           ))
         )}

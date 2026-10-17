@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCommunity } from '../context/CommunityContext';
 import { usePost } from '../context/PostContext';
+import { userService } from '../api/userService';
 import RoleBadge from '../components/common/RoleBadge';
 import PostCard from '../components/post/PostCard';
 import { formatDate, formatNumber } from '../utils/formatters';
@@ -13,49 +14,175 @@ import {
   FileText, 
   Users, 
   ShieldCheck, 
-  Sparkles 
+  Sparkles,
+  MessageSquare,
+  Loader2,
+  ArrowLeft
 } from 'lucide-react';
 
 export default function UserProfilePage({
+  userId = null,
   onOpenEditProfile,
   onOpenPostDetail,
   onOpenEditPost,
   onOpenReportPost,
   onSelectCommunity,
+  onBack,
 }) {
-  const { currentUser, currentRole } = useAuth();
+  const { currentUser, currentRole, allUsers } = useAuth();
   const { communities, memberships } = useCommunity();
   const { posts } = usePost();
 
-  if (!currentUser) return null;
+  const [publicUser, setPublicUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
 
-  const profile = currentUser?.profile || {};
-  const privacySettings = currentUser?.privacySettings || {};
+  // Kiểm tra xem đây có phải là hồ sơ của chính người đang đăng nhập hay không
+  const isMe = !userId || (currentUser && (String(currentUser.id) === String(userId) || currentUser.username === String(userId)));
 
-  const userDisplayName = profile.displayName || currentUser?.displayName || currentUser?.name || currentUser?.username || 'Người dùng';
-  const rawAvatar = profile.avatarObjectKey || currentUser?.avatar || '';
+  // Khi xem người khác (userId được truyền vào và khác currentUser)
+  useEffect(() => {
+    if (isMe) {
+      setPublicUser(null);
+      setFetchError(null);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchPublicProfile = async () => {
+      setLoading(true);
+      setFetchError(null);
+      try {
+        const data = await userService.getUserById(userId);
+        if (isMounted) {
+          setPublicUser(data);
+        }
+      } catch (err) {
+        if (isMounted) {
+          // Fallback: tìm trong danh sách allUsers nếu có
+          const localMatch = allUsers.find(u => String(u.id) === String(userId) || u.username === String(userId));
+          if (localMatch) {
+            setPublicUser({
+              userId: localMatch.id,
+              username: localMatch.username,
+              joinedAt: localMatch.joinedAt || localMatch.createdAt,
+              profile: {
+                displayName: localMatch.name || localMatch.displayName || localMatch.username,
+                bio: localMatch.bio || '',
+                avatarObjectKey: localMatch.avatar || '',
+                bannerObjectKey: localMatch.banner || '',
+                gender: localMatch.gender || 'MALE',
+                location: localMatch.location || '',
+              },
+              statistics: {
+                postCount: posts.filter(p => p.authorId === localMatch.id).length,
+                commentCount: 0,
+                communityCount: memberships.filter(m => m.userId === localMatch.id).length,
+              }
+            });
+          } else {
+            setFetchError(err?.message || 'Không thể tải thông tin người dùng này');
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchPublicProfile();
+    return () => {
+      isMounted = false;
+    };
+  }, [userId, isMe, allUsers, posts, memberships]);
+
+  // Nếu đang tải hồ sơ của người dùng khác
+  if (loading) {
+    return (
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center space-y-3">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto" />
+        <p className="text-sm text-slate-500">Đang tải hồ sơ người dùng...</p>
+      </div>
+    );
+  }
+
+  // Nếu có lỗi khi tải người dùng khác
+  if (!isMe && fetchError) {
+    return (
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center space-y-4">
+        <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">!</div>
+        <h3 className="text-base font-bold text-slate-900">Không tìm thấy người dùng</h3>
+        <p className="text-xs text-slate-500 max-w-sm mx-auto">{fetchError}</p>
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Quay lại</span>
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // Xác định đối tượng profile hiển thị (currentUser hoặc publicUser)
+  const targetUser = isMe ? currentUser : publicUser;
+  if (!targetUser) {
+    if (!isMe) return null;
+    return (
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center text-xs text-slate-400">
+        Vui lòng đăng nhập để xem hồ sơ cá nhân.
+      </div>
+    );
+  }
+
+  const profile = targetUser?.profile || {};
+  const privacySettings = targetUser?.privacySettings || {};
+  const statistics = targetUser?.statistics || null;
+
+  const userDisplayName = profile.displayName || targetUser?.displayName || targetUser?.name || targetUser?.username || 'Người dùng';
+  const rawAvatar = profile.avatarObjectKey || targetUser?.avatar || '';
   const userAvatar = rawAvatar
     ? (rawAvatar.startsWith('http') || rawAvatar.startsWith('/') ? rawAvatar : `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80`)
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName)}&background=6366f1&color=fff`;
 
-  const rawBanner = profile.bannerObjectKey || currentUser?.banner || '';
-  const userBio = profile.bio || currentUser?.bio || '';
-  const userLocation = profile.location || currentUser?.location || '';
-  const userDob = profile.dateOfBirth || currentUser?.dateOfBirth || '';
-  const userGender = profile.gender || currentUser?.gender || '';
+  const rawBanner = profile.bannerObjectKey || targetUser?.banner || '';
+  const userBio = profile.bio || targetUser?.bio || '';
+  const userLocation = profile.location || targetUser?.location || '';
+  const userDob = profile.dateOfBirth || targetUser?.dateOfBirth || '';
+  const userGender = profile.gender || targetUser?.gender || '';
+
+  const targetUserId = targetUser.userId || targetUser.id;
 
   // Find all memberships for this user
-  const userMemberships = memberships.filter(m => m.userId === currentUser.id && !m.isBanned);
+  const userMemberships = memberships.filter(m => String(m.userId) === String(targetUserId) && !m.isBanned);
   const userCommunities = userMemberships.map(m => {
     const c = communities.find(comm => comm.id === m.communityId);
     return { ...c, role: m.role };
   }).filter(c => !!c.id);
 
   // Find posts authored by this user
-  const userPosts = posts.filter(p => p.authorId === currentUser.id || p.author?.username === currentUser?.username);
+  const userPosts = posts.filter(p => String(p.authorId) === String(targetUserId) || p.author?.username === targetUser?.username);
+
+  const displayPostCount = statistics?.postCount !== undefined ? statistics.postCount : userPosts.length;
+  const displayCommentCount = statistics?.commentCount !== undefined ? statistics.commentCount : null;
+  const displayCommunityCount = statistics?.communityCount !== undefined ? statistics.communityCount : userCommunities.length;
 
   return (
     <div className="space-y-6">
+      {/* Top back button if viewing someone else */}
+      {!isMe && onBack && (
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 cursor-pointer transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Quay lại danh sách</span>
+        </button>
+      )}
+
       {/* Profile Card */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
         {/* Banner */}
@@ -75,27 +202,35 @@ export default function UserProfilePage({
               <div className="pb-1">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                   <h1 className="text-xl font-bold text-slate-900">{userDisplayName}</h1>
-                  <RoleBadge role={currentRole} type="system" size="md" />
+                  {isMe ? (
+                    <RoleBadge role={currentRole} type="system" size="md" />
+                  ) : (
+                    targetUser?.role && <RoleBadge role={targetUser.role} type="system" size="md" />
+                  )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
-                  <span>@{currentUser?.username}</span>
-                  {currentUser?.email && (
+                  <span>@{targetUser?.username}</span>
+                  {/* Email chỉ hiển thị khi xem chính mình (bảo mật người dùng khác) */}
+                  {isMe && targetUser?.email && (
                     <>
                       <span>•</span>
-                      <span>{currentUser.email}</span>
+                      <span>{targetUser.email}</span>
                     </>
                   )}
                 </div>
               </div>
             </div>
 
-            <button
-              onClick={onOpenEditProfile}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
-            >
-              <Settings className="w-3.5 h-3.5" />
-              <span>Chỉnh sửa thông tin</span>
-            </button>
+            {/* Chỉ hiển thị nút Chỉnh sửa thông tin nếu là chính mình */}
+            {isMe && (
+              <button
+                onClick={onOpenEditProfile}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>Chỉnh sửa thông tin</span>
+              </button>
+            )}
           </div>
 
           {userBio ? (
@@ -121,7 +256,7 @@ export default function UserProfilePage({
                   {userGender === 'MALE' ? 'Nam' : userGender === 'FEMALE' ? 'Nữ' : userGender}
                 </span>
               )}
-              {userDob && privacySettings.showDateOfBirth === true && (
+              {userDob && (isMe || privacySettings.showDateOfBirth === true) && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 rounded-lg text-slate-600">
                   🎂 {formatDate(userDob)}
                 </span>
@@ -132,20 +267,27 @@ export default function UserProfilePage({
           <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-3 border-t border-slate-100">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-slate-400" />
-              Tham gia ngày {formatDate(currentUser.createdAt || currentUser.joinedAt)}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Award className="w-4 h-4 text-amber-500" />
-              <strong className="text-slate-800">{formatNumber(currentUser.reputation || 0)}</strong> điểm uy tín
+              Tham gia ngày {formatDate(targetUser.joinedAt || targetUser.createdAt)}
             </span>
             <span className="flex items-center gap-1.5">
               <FileText className="w-4 h-4 text-indigo-500" />
-              <strong className="text-slate-800">{userPosts.length}</strong> bài viết
+              <strong className="text-slate-800">{displayPostCount}</strong> bài viết
+            </span>
+            {displayCommentCount !== null && (
+              <span className="flex items-center gap-1.5">
+                <MessageSquare className="w-4 h-4 text-teal-500" />
+                <strong className="text-slate-800">{displayCommentCount}</strong> bình luận
+              </span>
+            )}
+            <span className="flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-purple-500" />
+              <strong className="text-slate-800">{displayCommunityCount}</strong> cộng đồng
             </span>
           </div>
         </div>
       </div>
 
+      {/* Communities section */}
       <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -153,42 +295,46 @@ export default function UserProfilePage({
               Cộng đồng đã tham gia
             </h3>
             <p className="text-xs text-slate-500">
-              Danh sách các cộng đồng bạn đang tham gia trên Discuss.
+              {isMe ? 'Danh sách các cộng đồng bạn đang tham gia trên Discuss.' : `Danh sách các cộng đồng mà ${userDisplayName} đang tham gia.`}
             </p>
           </div>
 
           <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg">
-            {userCommunities.length} cộng đồng
+            {displayCommunityCount} cộng đồng
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {userCommunities.map((c) => (
-            <div
-              key={c.id}
-              onClick={() => onSelectCommunity(c.id)}
-              className="p-3.5 bg-slate-50/80 hover:bg-indigo-50/40 rounded-2xl border border-slate-200/80 transition cursor-pointer flex items-center justify-between gap-3 group"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <img
-                  src={c.avatar}
-                  alt=""
-                  className="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0"
-                />
-                <div className="min-w-0">
-                  <h4 className="font-bold text-xs text-slate-800 group-hover:text-indigo-600 transition truncate">
-                    c/{c.slug}
-                  </h4>
-                  <p className="text-[11px] text-slate-400 truncate">
-                    {c.name}
-                  </p>
+        {userCommunities.length === 0 ? (
+          <p className="text-xs text-slate-400 italic">Chưa tham gia cộng đồng nào.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {userCommunities.map((c) => (
+              <div
+                key={c.id}
+                onClick={() => onSelectCommunity(c.id)}
+                className="p-3.5 bg-slate-50/80 hover:bg-indigo-50/40 rounded-2xl border border-slate-200/80 transition cursor-pointer flex items-center justify-between gap-3 group"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <img
+                    src={c.avatar}
+                    alt=""
+                    className="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-xs text-slate-800 group-hover:text-indigo-600 transition truncate">
+                      c/{c.slug}
+                    </h4>
+                    <p className="text-[11px] text-slate-400 truncate">
+                      {c.name}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <RoleBadge role={c.role} size="xs" />
-            </div>
-          ))}
-        </div>
+                <RoleBadge role={c.role} size="xs" />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Authored Posts */}
@@ -199,7 +345,7 @@ export default function UserProfilePage({
 
         {userPosts.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-400">
-            Bạn chưa đăng bài viết nào.
+            {isMe ? 'Bạn chưa đăng bài viết nào.' : 'Người dùng này chưa có bài viết nào.'}
           </div>
         ) : (
           userPosts.map((post) => (

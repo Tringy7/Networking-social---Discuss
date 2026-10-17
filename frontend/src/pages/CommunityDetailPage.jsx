@@ -13,6 +13,7 @@ export default function CommunityDetailPage({
   onOpenEditPost,
   onOpenReportPost,
   onSelectCommunity,
+  onSelectUser,
 }) {
   const [showEdit, setShowEdit] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
@@ -47,6 +48,7 @@ export default function CommunityDetailPage({
         onOpenEdit={onOpenEditPost}
         onOpenReport={onOpenReportPost}
         onSelectCommunity={onSelectCommunity}
+        onSelectUser={onSelectUser}
         onOpenCreatePost={() => setShowCreatePost(true)}
       />
 

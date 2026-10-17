@@ -8,12 +8,21 @@ export const userService = {
    */
   getMe: async () => {
     const res = await apiClient.get('/users/me');
-    // Backend trả về trực tiếp user object 
+    // Backend trả về trực tiếp user object (hoặc res.data nếu có wrapper)
     const userData = res?.data || res;
     if (userData && (userData.username || userData.email)) {
       storage.setSavedUser(userData);
     }
     return userData;
+  },
+
+  /**
+   * GET /users/{userId}
+   * Xem hồ sơ công khai của người dùng khác
+   */
+  getUserById: async (userId) => {
+    const res = await apiClient.get(`/users/${userId}`);
+    return res?.data || res;
   },
 
   /**
