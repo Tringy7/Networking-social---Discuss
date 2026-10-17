@@ -56,6 +56,13 @@ export const authService = {
     }
   },
 
+  changePassword: ({ oldPassword, password, confirmPassword }) =>
+    apiClient.patch('/auth/change-password', {
+      oldPassword,
+      password,
+      confirmPassword,
+    }),
+
   forgotPassword: (params) => {
     const email = typeof params === 'string' ? params : params?.email;
     return apiClient.post('/auth/forgot-password', {

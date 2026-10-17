@@ -14,6 +14,7 @@ import RegisterModal from './components/auth/RegisterModal';
 import VerifyEmailModal from './components/auth/VerifyEmailModal';
 import ForgotPasswordModal from './components/auth/ForgotPasswordModal';
 import EditProfileModal from './components/auth/EditProfileModal';
+import ChangePasswordModal from './components/auth/ChangePasswordModal';
 
 import PostDetailModal from './components/post/PostDetailModal';
 import CreatePostModal from './components/post/CreatePostModal';
@@ -43,6 +44,7 @@ function DiscussMainApp() {
 
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [isCreateCommunityOpen, setIsCreateCommunityOpen] = useState(false);
@@ -217,6 +219,12 @@ function DiscussMainApp() {
       <EditProfileModal
         isOpen={isEditProfileOpen}
         onClose={() => setIsEditProfileOpen(false)}
+        onOpenChangePassword={() => setIsChangePasswordOpen(true)}
+      />
+
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
       />
 
       <CreatePostModal

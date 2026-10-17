@@ -251,6 +251,23 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const changePassword = async ({ oldPassword, password, confirmPassword }) => {
+    try {
+      const res = await authService.changePassword({ oldPassword, password, confirmPassword });
+      if (res?.message) {
+        success(res.message);
+      } else {
+        success('Đổi mật khẩu thành công!');
+      }
+      return res;
+    } catch (err) {
+      if (err?.message) {
+        toastError(err.message);
+      }
+      throw err;
+    }
+  };
+
   const updateProfile = async (updates) => {
     if (!currentUser) return;
     try {
@@ -319,6 +336,7 @@ export function AuthProvider({ children }) {
         forgotPassword,
         verifyForgotPasswordOtp,
         resetPassword,
+        changePassword,
         updateProfile,
         lockUserAccount,
         unlockUserAccount,

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import { useAuth } from '../../context/AuthContext';
-import { User, MapPin, Calendar, AlignLeft, Loader2, Image } from 'lucide-react';
+import { User, MapPin, Calendar, AlignLeft, Loader2, Image, KeyRound } from 'lucide-react';
 
-export default function EditProfileModal({ isOpen, onClose }) {
+export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword }) {
   const { currentUser, updateProfile } = useAuth();
   const [formData, setFormData] = useState({
     displayName: '',
@@ -243,6 +243,27 @@ export default function EditProfileModal({ isOpen, onClose }) {
               </label>
             </div>
           </div>
+        </div>
+
+        {/* Bảo mật & Đổi mật khẩu */}
+        <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+          <div>
+            <h4 className="text-xs font-semibold text-slate-800">Bảo mật tài khoản</h4>
+            <p className="text-[11px] text-slate-400">Thay đổi mật khẩu đăng nhập tài khoản của bạn</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              if (onOpenChangePassword) {
+                onOpenChangePassword();
+              }
+            }}
+            className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition cursor-pointer flex items-center gap-1.5"
+          >
+            <KeyRound className="w-3.5 h-3.5 text-slate-500" />
+            <span>Đổi mật khẩu</span>
+          </button>
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
