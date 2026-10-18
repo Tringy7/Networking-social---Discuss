@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCommunity } from '../context/CommunityContext';
 import { usePost } from '../context/PostContext';
 import { userService } from '../api/userService';
+import { getFriendlyErrorMessage } from '../utils/errorHandler';
 import RoleBadge from '../components/common/RoleBadge';
 import PostCard from '../components/post/PostCard';
 import { formatDate, formatNumber } from '../utils/formatters';
@@ -78,7 +79,7 @@ export default function UserProfilePage({
               }
             });
           } else {
-            setFetchError(err?.message || 'Không thể tải thông tin người dùng này');
+            setFetchError(getFriendlyErrorMessage(err, 'Không tìm thấy người dùng'));
           }
         }
       } finally {

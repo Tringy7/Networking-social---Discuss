@@ -4,6 +4,7 @@ import { authService } from '../api/authService';
 import { userService } from '../api/userService';
 import { adminService } from '../api/adminService';
 import { storage } from '../utils/storage';
+import { getFriendlyErrorMessage } from '../utils/errorHandler';
 import { useToast } from './ToastContext';
 
 const AuthContext = createContext(null);
@@ -279,7 +280,7 @@ export function AuthProvider({ children }) {
       success('Cập nhật hồ sơ cá nhân thành công!');
       return updatedUser;
     } catch (err) {
-      toastError(err?.message || 'Cập nhật thất bại');
+      toastError(getFriendlyErrorMessage(err, 'Cập nhật thất bại'));
       throw err;
     }
   };
@@ -305,7 +306,7 @@ export function AuthProvider({ children }) {
       success('Cập nhật ảnh đại diện thành công!');
       return storedImage;
     } catch (err) {
-      toastError(err?.message || 'Cập nhật ảnh đại diện thất bại');
+      toastError(getFriendlyErrorMessage(err, 'Cập nhật ảnh đại diện thất bại'));
       throw err;
     }
   };
@@ -331,7 +332,7 @@ export function AuthProvider({ children }) {
       success('Cập nhật ảnh bìa thành công!');
       return storedImage;
     } catch (err) {
-      toastError(err?.message || 'Cập nhật ảnh bìa thất bại');
+      toastError(getFriendlyErrorMessage(err, 'Cập nhật ảnh bìa thất bại'));
       throw err;
     }
   };

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Modal from '../common/Modal';
 import ImageCropperModal from '../common/ImageCropperModal';
 import { useAuth } from '../../context/AuthContext';
+import { getFriendlyErrorMessage } from '../../utils/errorHandler';
 import { User, MapPin, Calendar, AlignLeft, Loader2, Image, KeyRound, Upload, Camera } from 'lucide-react';
 
 export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword }) {
@@ -147,13 +148,14 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
   };
 
   const fieldErrors = errorInfo?.errors || {};
+  const errorMessage = errorInfo ? getFriendlyErrorMessage(errorInfo) : null;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Chỉnh sửa thông tin cá nhân" maxWidth="max-w-lg">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {errorInfo?.message && (
+        {errorMessage && (
           <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded-xl">
-            <p>{errorInfo.message}</p>
+            <p>{errorMessage}</p>
           </div>
         )}
 
