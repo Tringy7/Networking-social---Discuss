@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Modal from '../common/Modal';
+import ImageCropperModal from '../common/ImageCropperModal';
 import { useAuth } from '../../context/AuthContext';
 import { User, MapPin, Calendar, AlignLeft, Loader2, Image, KeyRound, Upload, Camera } from 'lucide-react';
 
@@ -25,6 +26,11 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [errorInfo, setErrorInfo] = useState(null);
+
+  // States cho modal crop ảnh
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropFile, setCropFile] = useState(null);
+  const [cropTarget, setCropTarget] = useState('avatar'); // 'avatar' | 'banner'
 
   useEffect(() => {
     if (currentUser) {
@@ -59,41 +65,56 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
     }
   };
 
-  const handleAvatarFileChange = async (e) => {
+  const handleAvatarFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadingAvatar(true);
-    setErrorInfo(null);
-    try {
-      const res = await uploadAvatar(file);
-      const newUrl = res?.url || res?.objectKey;
-      if (newUrl) {
-        setFormData(prev => ({ ...prev, avatarObjectKey: newUrl }));
-      }
-    } catch (err) {
-      setErrorInfo(err);
-    } finally {
-      setUploadingAvatar(false);
-      if (avatarInputRef.current) avatarInputRef.current.value = '';
-    }
+    setCropFile(file);
+    setCropTarget('avatar');
+    setCropperOpen(true);
+    if (avatarInputRef.current) avatarInputRef.current.value = '';
   };
 
-  const handleBannerFileChange = async (e) => {
+  const handleBannerFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadingBanner(true);
+    setCropFile(file);
+    setCropTarget('banner');
+    setCropperOpen(true);
+    if (bannerInputRef.current) bannerInputRef.current.value = '';
+  };
+
+  const handleConfirmCrop = async (croppedFile) => {
     setErrorInfo(null);
-    try {
-      const res = await uploadBanner(file);
-      const newUrl = res?.url || res?.objectKey;
-      if (newUrl) {
-        setFormData(prev => ({ ...prev, bannerObjectKey: newUrl }));
+    if (cropTarget === 'avatar') {
+      setUploadingAvatar(true);
+      try {
+        const res = await uploadAvatar(croppedFile);
+        const newUrl = res?.url || res?.objectKey;
+        if (newUrl) {
+          setFormData(prev => ({ ...prev, avatarObjectKey: newUrl }));
+        }
+        setCropperOpen(false);
+        setCropFile(null);
+      } catch (err) {
+        setErrorInfo(err);
+      } finally {
+        setUploadingAvatar(false);
       }
-    } catch (err) {
-      setErrorInfo(err);
-    } finally {
-      setUploadingBanner(false);
-      if (bannerInputRef.current) bannerInputRef.current.value = '';
+    } else {
+      setUploadingBanner(true);
+      try {
+        const res = await uploadBanner(croppedFile);
+        const newUrl = res?.url || res?.objectKey;
+        if (newUrl) {
+          setFormData(prev => ({ ...prev, bannerObjectKey: newUrl }));
+        }
+        setCropperOpen(false);
+        setCropFile(null);
+      } catch (err) {
+        setErrorInfo(err);
+      } finally {
+        setUploadingBanner(false);
+      }
     }
   };
 
@@ -137,13 +158,13 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
         )}
 
         {/* Avatar upload & preview */}
-        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 space-y-3">
+        <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/60 space-y-3.5">
           <div className="flex items-center gap-4">
             <div className="relative group/avatar">
               <img
                 src={formData.avatarObjectKey || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'}
                 alt="Avatar Preview"
-                className="w-16 h-16 rounded-full object-cover border-2 border-indigo-200 shadow-xs shrink-0"
+                className="w-16 h-16 rounded-full object-cover border-2 border-indigo-200 shadow-xs shrink-0 bg-white"
                 onError={(e) => {
                   e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80';
                 }}
@@ -152,20 +173,23 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
                 type="button"
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={uploadingAvatar}
-                className="absolute inset-0 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white opacity-0 group-hover/avatar:opacity-100 transition cursor-pointer"
-                title="Tải ảnh mới"
+                className="absolute inset-0 bg-black/45 hover:bg-black/60 rounded-full flex items-center justify-center text-white opacity-0 group-hover/avatar:opacity-100 transition cursor-pointer"
+                title="Thay đổi ảnh đại diện"
               >
                 {uploadingAvatar ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
               </button>
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2 mb-1.5">
-                <span className="text-xs font-semibold text-slate-700 block">Ảnh đại diện (Avatar)</span>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div>
+                  <span className="text-xs font-semibold text-slate-800 block">Ảnh đại diện (Avatar)</span>
+                  <span className="text-[11px] text-slate-400 block">Cắt tỉ lệ 1:1 (256x256px)</span>
+                </div>
                 <input
                   type="file"
                   ref={avatarInputRef}
-                  onChange={handleAvatarFileChange}
+                  onChange={handleAvatarFileSelect}
                   accept="image/*"
                   className="hidden"
                 />
@@ -173,53 +197,53 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
                   type="button"
                   onClick={() => avatarInputRef.current?.click()}
                   disabled={uploadingAvatar}
-                  className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                  className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
                 >
                   {uploadingAvatar ? <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" /> : <Upload className="w-3.5 h-3.5 text-indigo-600" />}
-                  <span>{uploadingAvatar ? 'Đang tải lên...' : 'Tải file ảnh'}</span>
+                  <span>{uploadingAvatar ? 'Đang tải lên...' : 'Chọn ảnh mới'}</span>
                 </button>
               </div>
 
-              <input
-                type="text"
-                value={formData.avatarObjectKey}
-                onChange={(e) => handleInputChange('avatarObjectKey', e.target.value)}
-                placeholder=""
-                className={`w-full text-xs px-3 py-1.5 bg-white border rounded-lg focus:outline-none focus:ring-2 ${
-                  fieldErrors.avatarObjectKey
-                    ? 'border-rose-400 focus:ring-rose-400/30'
-                    : 'border-slate-200 focus:ring-indigo-500/20'
-                }`}
-              />
-              {fieldErrors.avatarObjectKey && (
-                <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.avatarObjectKey}</p>
+              {formData.avatarObjectKey && (
+                <p className="text-[11px] text-emerald-600 font-mono truncate">
+                  ✓ Đã tải ảnh: {formData.avatarObjectKey.split('/').pop()}
+                </p>
               )}
             </div>
           </div>
 
           {/* Banner upload section */}
-          <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <span className="text-xs font-semibold text-slate-700 block">Ảnh bìa cá nhân (Banner)</span>
-              <p className="text-[11px] text-slate-400 truncate">Hỗ trợ file ảnh JPG, PNG, WEBP</p>
+          <div className="pt-3 border-t border-slate-200/60">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="min-w-0">
+                <span className="text-xs font-semibold text-slate-800 block">Ảnh bìa cá nhân (Banner)</span>
+                <span className="text-[11px] text-slate-400 block">Cắt tỉ lệ 3:1 (1500x500px)</span>
+              </div>
+
+              <input
+                type="file"
+                ref={bannerInputRef}
+                onChange={handleBannerFileSelect}
+                accept="image/*"
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => bannerInputRef.current?.click()}
+                disabled={uploadingBanner}
+                className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition cursor-pointer inline-flex items-center gap-1.5 shadow-2xs shrink-0"
+              >
+                {uploadingBanner ? <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" /> : <Upload className="w-3.5 h-3.5 text-indigo-600" />}
+                <span>{uploadingBanner ? 'Đ đang tải lên...' : 'Chọn ảnh bìa'}</span>
+              </button>
             </div>
 
-            <input
-              type="file"
-              ref={bannerInputRef}
-              onChange={handleBannerFileChange}
-              accept="image/*"
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => bannerInputRef.current?.click()}
-              disabled={uploadingBanner}
-              className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition cursor-pointer inline-flex items-center gap-1.5 shadow-2xs shrink-0"
-            >
-              {uploadingBanner ? <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" /> : <Upload className="w-3.5 h-3.5 text-indigo-600" />}
-              <span>{uploadingBanner ? 'Đang tải lên...' : 'Tải ảnh bìa'}</span>
-            </button>
+            {formData.bannerObjectKey && (
+              <div 
+                className="h-16 w-full rounded-xl bg-cover bg-center border border-slate-200 shadow-2xs"
+                style={{ backgroundImage: `url(${formData.bannerObjectKey})` }}
+              />
+            )}
           </div>
         </div>
 
@@ -417,6 +441,21 @@ export default function EditProfileModal({ isOpen, onClose, onOpenChangePassword
           </button>
         </div>
       </form>
+
+      {/* Modal cắt ảnh avatar hoặc banner */}
+      <ImageCropperModal
+        isOpen={cropperOpen}
+        onClose={() => {
+          if (!uploadingAvatar && !uploadingBanner) {
+            setCropperOpen(false);
+            setCropFile(null);
+          }
+        }}
+        imageFile={cropFile}
+        targetType={cropTarget}
+        onConfirmCrop={handleConfirmCrop}
+        loading={uploadingAvatar || uploadingBanner}
+      />
     </Modal>
   );
 }
