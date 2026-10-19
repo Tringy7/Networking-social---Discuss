@@ -190,8 +190,13 @@ public class MinioService {
     }
 
     public String buildFileUrl(String objectKey) {
-        String cleanEndpoint = endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
-        return String.format("%s/%s/%s", cleanEndpoint, defaultBucket, objectKey);
+        if (objectKey == null || objectKey.isBlank()) {
+            return null;
+        }
+
+        return endpoint.replaceAll("/+$", "")
+                + "/" + defaultBucket
+                + "/" + objectKey;
     }
 
     private String getFileExtension(String filename) {

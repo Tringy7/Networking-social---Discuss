@@ -37,14 +37,14 @@ export const userService = {
   uploadAvatar: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await apiClient.put('/users/avatar', formData);
+    const res = await apiClient.put('/users/me/avatar', formData);
     return res?.data || res;
   },
 
   uploadBanner: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await apiClient.put('/users/banner', formData);
+    const res = await apiClient.put('/users/me/banner', formData);
     return res?.data || res;
   },
 };

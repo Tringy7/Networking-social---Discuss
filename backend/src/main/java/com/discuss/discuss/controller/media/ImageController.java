@@ -12,21 +12,21 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class ImageController {
 
-    private final ProfileImageService profileImageService;
-
-    // New avatar, edit avatar
-    @PutMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public StoredImageDTO setAvatar(
-            @RequestParam("file") MultipartFile file) {
-        return profileImageService.setAvatar(file);
-    }
-
-    // New banner, edit banner
-    @PutMapping(value = "/banner", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public StoredImageDTO setBanner(
-            @RequestParam("file") MultipartFile file) {
-        return profileImageService.setBanner(file);
-    }
+//    private final ProfileImageService profileImageService;
+//
+//    // New avatar, edit avatar
+//    @PutMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public StoredImageDTO setAvatar(
+//            @RequestParam("file") MultipartFile file) {
+//        return profileImageService.setAvatar(file);
+//    }
+//
+//    // New banner, edit banner
+//    @PutMapping(value = "/banner", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public StoredImageDTO setBanner(
+//            @RequestParam("file") MultipartFile file) {
+//        return profileImageService.setBanner(file);
+//    }
 
 //    @PostMapping(value = "/posts/{postId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 //    public List<StoredImageDTO> uploadPostImages(
