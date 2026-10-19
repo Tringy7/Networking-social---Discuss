@@ -1,6 +1,7 @@
 package com.discuss.discuss.exception;
 
 import com.discuss.discuss.exception.auth.AuthException;
+import com.discuss.discuss.exception.community.CommunityException;
 import com.discuss.discuss.exception.media.MediaException;
 import com.discuss.discuss.exception.user.UserException;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,24 @@ public class GlobalExceptionHandler {
 
         log.warn(
                 "[AUTH] error={}, status={}, message={}",
+                ex.getError().name(),
+                ex.getError().getStatus().value(),
+                ex.getMessage()
+        );
+
+        return ResponseEntity
+                .status(ex.getError().getStatus())
+                .body(Map.of(
+                        "status", ex.getError().getStatus().value(),
+                        "message", ex.getMessage()
+                ));
+    }
+
+    @ExceptionHandler(CommunityException.class)
+    public ResponseEntity<Map<String, Object>> handleCommunityException(CommunityException ex) {
+
+        log.warn(
+                "[COMMUNITY] error={}, status={}, message={}",
                 ex.getError().name(),
                 ex.getError().getStatus().value(),
                 ex.getMessage()

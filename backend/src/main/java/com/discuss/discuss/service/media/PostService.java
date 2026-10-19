@@ -40,7 +40,7 @@ public class PostService {
 //        // 2. Upload, lưu key mới, rồi dọn file theo kết quả transaction
 //        var stored = storage.storeCommunityIcon(communityId, file);
 //        String oldKey = info.getAvatar();
-//        info.setAvatar(stored.objectKey());
+//        info.setAvatarForUser(stored.objectKey());
 //        communityInfoRepository.save(info);
 //
 //        mediaCleanup.deleteOnRollback(List.of(stored.objectKey()));

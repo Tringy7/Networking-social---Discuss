@@ -76,8 +76,8 @@ public class UserMapper {
             profileDTO = new PublicUserProfileResponseDTO.Profile(
                     profile.getDisplayName(),
                     profile.getBio(),
-                    profile.getAvatarObjectKey(),
-                    profile.getBannerObjectKey(),
+                    profile.getAvatar(),
+                    profile.getBanner(),
                     dateOfBirth,
                     profile.getGender(),
                     location

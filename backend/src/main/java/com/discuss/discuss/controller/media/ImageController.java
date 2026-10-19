@@ -1,7 +1,7 @@
 package com.discuss.discuss.controller.media;
 
 import com.discuss.discuss.dto.media.StoredImageDTO;
-import com.discuss.discuss.service.media.ProfileImageService;
+import com.discuss.discuss.service.media.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -12,21 +12,30 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class ImageController {
 
-//    private final ProfileImageService profileImageService;
-//
-//    // New avatar, edit avatar
-//    @PutMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public StoredImageDTO setAvatar(
-//            @RequestParam("file") MultipartFile file) {
-//        return profileImageService.setAvatar(file);
-//    }
-//
-//    // New banner, edit banner
-//    @PutMapping(value = "/banner", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public StoredImageDTO setBanner(
-//            @RequestParam("file") MultipartFile file) {
-//        return profileImageService.setBanner(file);
-//    }
+    private final ImageService imageService;
+
+    // Set avatar cộng đồng
+    @PutMapping(
+            value = "/communities/{communityId}/avatar",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public StoredImageDTO setAvatarForCommunity(
+            @PathVariable Long communityId,
+            @RequestParam("file") MultipartFile file
+    ) {
+        return imageService.setAvatarForCommunity(communityId, file);
+    }
+
+    @PutMapping(
+            value = "/communities/{communityId}/banner",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public StoredImageDTO setBannerForCommunity(
+            @PathVariable Long communityId,
+            @RequestParam("file") MultipartFile file
+    ) {
+        return imageService.setBannerForCommunity(communityId, file);
+    }
 
 //    @PostMapping(value = "/posts/{postId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 //    public List<StoredImageDTO> uploadPostImages(
