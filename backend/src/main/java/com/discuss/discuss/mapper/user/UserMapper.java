@@ -5,12 +5,17 @@ import com.discuss.discuss.dto.user.UserInfoResponseDTO;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserPrivacySettings;
 import com.discuss.discuss.entity.UserProfile;
+import com.discuss.discuss.service.media.MinioService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 
 @Component
+@RequiredArgsConstructor
 public class UserMapper {
+
+    private final MinioService minioService;
 
     /**
      * Convert information of user to dto
@@ -26,8 +31,8 @@ public class UserMapper {
             profileDTO = new UserInfoResponseDTO.Profile(
                     profile.getDisplayName(),
                     profile.getBio(),
-                    profile.getAvatar(),
-                    profile.getBanner(),
+                    this.minioService.buildFileUrl(profile.getAvatarObjectKey()),
+                    this.minioService.buildFileUrl(profile.getAvatarObjectKey()),
                     profile.getDateOfBirth(),
                     profile.getGender(),
                     profile.getLocation()

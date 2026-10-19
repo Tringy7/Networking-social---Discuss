@@ -14,12 +14,6 @@ public class ImageController {
 
     private final ImageService imageService;
 
-    // New avatar, edit avatar
-    @PutMapping(value = "/profile/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public StoredImageDTO setAvatarForUser(
-            @RequestParam("file") MultipartFile file) {
-        return imageService.setAvatarForUser(file);
-    }
     // Set avatar cộng đồng
     @PutMapping(
             value = "/communities/{communityId}/avatar",
@@ -41,16 +35,6 @@ public class ImageController {
             @RequestParam("file") MultipartFile file
     ) {
         return imageService.setBannerForCommunity(communityId, file);
-    }
-
-    @PutMapping(
-            value = "/banner",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public StoredImageDTO setBannerForUser(
-            @RequestParam("file") MultipartFile file
-    ) {
-        return imageService.setBannerForUser(file);
     }
 
 //    @PostMapping(value = "/posts/{postId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

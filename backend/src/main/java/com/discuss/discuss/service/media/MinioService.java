@@ -200,6 +200,16 @@ public class MinioService {
         }
     }
 
+    public String buildFileUrl(String objectKey) {
+        if (objectKey == null || objectKey.isBlank()) {
+            return null;
+        }
+
+        return endpoint.replaceAll("/+$", "")
+                + "/" + defaultBucket
+                + "/" + objectKey;
+    }
+
     private String getFileExtension(String filename) {
         if (filename == null || !filename.contains(".")) {
             return "";

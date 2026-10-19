@@ -7,6 +7,7 @@ import com.discuss.discuss.dto.auth.LoginRequestDTO;
 import com.discuss.discuss.dto.auth.RegisterRequestDTO;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.OtpPurpose;
+import com.discuss.discuss.enums.Provider;
 import com.discuss.discuss.enums.UserRole;
 import com.discuss.discuss.enums.UserStatus;
 import com.discuss.discuss.exception.auth.AuthErrorCode;
@@ -127,12 +128,16 @@ public class LocalAuthService {
     }
 
     @Transactional
-    public void forgotPassword(String email) {
+    public String forgotPassword(String email) {
         String normalizedEmail = normalize(email);
 
         User user = this.checkEmailValid(normalizedEmail);
 
-        String message = emailVerificationService.generateAndSendOtp(
+        if (user.getProvider() != Provider.LOCAL) {
+            throw new AuthException(AuthErrorCode.PASSWORD_RESET_NOT_SUPPORTED);
+        }
+
+        return emailVerificationService.generateAndSendOtp(
                 OtpPurpose.FORGOT_PASSWORD,
                 user.getEmail(),
                 user.getUsername()
@@ -196,7 +201,6 @@ public class LocalAuthService {
     private User checkEmailValid(String email) {
         return  userRepository.findByEmail(email)
                 .filter(userCheck -> userCheck.getStatus() == UserStatus.ACTIVE)
-                .filter(userCheck -> userCheck.getPassword() != null)
                 .orElseThrow(() ->
                         new AuthException(AuthErrorCode.USER_NOT_FOUND));
     }

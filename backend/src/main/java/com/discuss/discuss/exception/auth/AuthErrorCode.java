@@ -32,6 +32,11 @@ public enum AuthErrorCode {
             "The verification code is incorrect or has expired"
     ),
 
+    PASSWORD_RESET_NOT_SUPPORTED(
+    HttpStatus.BAD_REQUEST,
+            "This account uses Google Sign-In. Please sign in with Google."
+            ),
+
     UNSUPPORTED_PROVIDER(
             HttpStatus.BAD_REQUEST,
             "Unsupported login provider"
