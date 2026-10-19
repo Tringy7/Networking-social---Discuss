@@ -26,8 +26,8 @@ public class PublicUserProfileResponseDTO {
     public static class Profile {
         private String displayName;
         private String bio;
-        private String avatarObjectKey;
-        private String bannerObjectKey;
+        private String avatar;
+        private String banner;
         private String dateOfBirth;
         private Gender gender;
         private String location;
