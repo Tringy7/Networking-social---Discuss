@@ -16,6 +16,7 @@ import com.discuss.discuss.mapper.auth.AuthMapper;
 import com.discuss.discuss.repository.UserRepository;
 import com.discuss.discuss.service.auth.email.EmailVerificationService;
 import com.discuss.discuss.service.auth.email.PasswordResetTokenService;
+import com.discuss.discuss.service.user.UserProfileService;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -39,9 +40,9 @@ public class LocalAuthService {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
     private final UserService userService;
+    private final UserProfileService userProfileService;
     private final TokenService tokenService;
     private final PasswordResetTokenService passwordResetTokenService;
-    private final JwtService jwtService;
 
     /*
         Register new user local
@@ -88,7 +89,8 @@ public class LocalAuthService {
 
         user.setStatus(UserStatus.ACTIVE);
 
-        userService.createUserProfile(user);
+        userProfileService.createUserProfile(user, user.getUsername());
+        userProfileService.createUserPrivacy(user);
 
         return authMapper.toResponse(user, "Email verified successfully");
 
@@ -180,18 +182,7 @@ public class LocalAuthService {
     @Transactional
     public void changePassword(String oldPassword, String newPassword) {
 
-        String username = jwtService.getCurrentUserLogin()
-                .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.INVALID_CREDENTIALS)
-                );
-
-        User user = userRepository.findByUsername(username)
-                .filter(existingUser ->
-                        existingUser.getStatus() == UserStatus.ACTIVE
-                )
-                .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.USER_NOT_FOUND)
-                );
+        User user = this.userService.getCurrentUser();
 
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new AuthException(AuthErrorCode.INVALID_CREDENTIALS);

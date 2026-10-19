@@ -10,6 +10,7 @@ import com.discuss.discuss.exception.auth.AuthErrorCode;
 import com.discuss.discuss.exception.auth.AuthException;
 import com.discuss.discuss.repository.UserRepository;
 import com.discuss.discuss.service.auth.TokenService;
+import com.discuss.discuss.service.user.UserProfileService;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,7 @@ public class SocialAuthService {
 
     private final SocialAuthProviderFactory socialAuthProviderFactory;
     private final UserRepository userRepository;
-    private final UserService userService;
+    private final UserProfileService userProfileService;
     private final TokenService tokenService;
 
     @Transactional
@@ -53,7 +54,7 @@ public class SocialAuthService {
         user.setProvider(Provider.GOOGLE);
 
         userRepository.save(user);
-        userService.createUserProfileForProvider(user, displayName);
+        userProfileService.createUserProfile(user, displayName);
         return user;
     }
 
@@ -68,7 +69,7 @@ public class SocialAuthService {
                 .build();
 
         User savedUser = userRepository.save(newUser);
-        userService.createUserProfileForProvider(savedUser, displayName);
+        userProfileService.createUserProfile(savedUser, displayName);
         return savedUser;
     }
 }
