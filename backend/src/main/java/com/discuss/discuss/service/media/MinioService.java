@@ -30,6 +30,17 @@ public class MinioService {
     @Value("${minio.bucket:discuss-media}")
     private String defaultBucket;
 
+    public String buildFileUrl(String objectKey) {
+        if (objectKey == null || objectKey.isBlank()) {
+            return null;
+        }
+
+        return endpoint.replaceAll("/+$", "")
+                + "/" + defaultBucket
+                + "/" + objectKey;
+    }
+
+
     private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
             "image/jpeg",
             "image/png",
@@ -187,11 +198,6 @@ public class MinioService {
             log.error("Failed to upload raw bytes to MinIO: {}", e.getMessage(), e);
             throw new RuntimeException("Could not upload to MinIO: " + e.getMessage(), e);
         }
-    }
-
-    public String buildFileUrl(String objectKey) {
-        String cleanEndpoint = endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
-        return String.format("%s/%s/%s", cleanEndpoint, defaultBucket, objectKey);
     }
 
     private String getFileExtension(String filename) {

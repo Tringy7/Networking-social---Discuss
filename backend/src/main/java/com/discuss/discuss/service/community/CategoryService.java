@@ -1,6 +1,9 @@
 package com.discuss.discuss.service.community;
 
 import com.discuss.discuss.controller.community.CategoryController;
+import com.discuss.discuss.entity.Category;
+import com.discuss.discuss.exception.community.CommunityErrorCode;
+import com.discuss.discuss.exception.community.CommunityException;
 import com.discuss.discuss.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -19,5 +22,10 @@ public class CategoryService {
                 .stream()
                 .map(c -> new CategoryController.CategoryResponseDTO(c.getId(), c.getName(), c.getSlug()))
                 .toList();
+    }
+
+    public Category getCategoryById(Long id) {
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> new CommunityException(CommunityErrorCode.CATEGORY_NOT_FOUND));
     }
 }
