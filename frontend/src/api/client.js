@@ -32,12 +32,17 @@ let refreshPromise = null;
 
 async function rawRequest(method, path, body) {
   let res;
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
   try {
     res = await fetch(`${BASE_URL}${path}`, {
       method,
       credentials: 'include',
-      headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      headers: isFormData 
+        ? undefined 
+        : (body !== undefined ? { 'Content-Type': 'application/json' } : undefined),
+      body: isFormData 
+        ? body 
+        : (body !== undefined ? JSON.stringify(body) : undefined),
     });
   } catch {
     throw new ApiError('NETWORK_ERROR', 0, 'Không thể kết nối tới máy chủ');
@@ -51,10 +56,32 @@ async function rawRequest(method, path, body) {
   }
 
   if (!res.ok) {
+    const status = payload?.status || res.status;
+    let message = payload?.message;
+
+    // Quy ước xử lý lỗi theo HTTP status code
+    if (status === 409) {
+      message = 'Tên người dùng đã tồn tại';
+    } else if (status === 413) {
+      message = 'File vượt giới hạn dung lượng';
+    } else if (status === 403) {
+      message = 'Bạn không có quyền thực hiện hành động này';
+    } else if (status === 404) {
+      message = message || 'Không tìm thấy người dùng';
+    } else if (status === 401) {
+      message = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại';
+    } else if (status === 400) {
+      message = message || 'Lỗi nhập liệu hoặc file không hợp lệ';
+    } else if (status >= 500) {
+      message = 'Đã có lỗi xảy ra từ máy chủ. Vui lòng thử lại sau';
+    } else if (!message) {
+      message = 'Đã có lỗi xảy ra';
+    }
+
     throw new ApiError(
       payload?.code || (payload?.errors ? 'VALIDATION_ERROR' : 'API_ERROR'),
-      payload?.status || res.status,
-      payload?.message || 'Đã có lỗi xảy ra',
+      status,
+      message,
       payload?.errors || null
     );
   }

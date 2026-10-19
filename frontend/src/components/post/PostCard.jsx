@@ -22,6 +22,7 @@ export default function PostCard({
   onOpenEdit,
   onOpenReport,
   onSelectCommunity,
+  onSelectUser,
 }) {
   const { allUsers, currentUser } = useAuth();
   const { communities, getUserCommunityRole } = useCommunity();
@@ -102,14 +103,23 @@ export default function PostCard({
               <span className="text-slate-300">•</span>
               
               {/* Author */}
-              <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onSelectUser) {
+                    onSelectUser(post.authorId || author.id || author.username);
+                  }
+                }}
+                className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors cursor-pointer group/author"
+              >
                 <img
                   src={author.avatar}
                   alt={author.name}
-                  className="w-4 h-4 rounded-full object-cover"
+                  className="w-4 h-4 rounded-full object-cover group-hover/author:ring-1 group-hover/author:ring-indigo-400"
                 />
-                <span className="font-medium text-slate-700">u/{author.username}</span>
-              </div>
+                <span className="font-medium text-slate-700 group-hover/author:text-indigo-600">u/{author.username}</span>
+              </button>
               <span className="text-slate-300">•</span>
               
               {/* Time */}

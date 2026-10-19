@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { SYSTEM_ROLES } from '../constants/roles';
 import { authService } from '../api/authService';
+import { userService } from '../api/userService';
 import { adminService } from '../api/adminService';
 import { storage } from '../utils/storage';
+import { getFriendlyErrorMessage } from '../utils/errorHandler';
 import { useToast } from './ToastContext';
 
 const AuthContext = createContext(null);
@@ -27,7 +29,32 @@ export function AuthProvider({ children }) {
     }
   });
 
+  const [authLoading, setAuthLoading] = useState(true);
   const [pendingEmail, setPendingEmail] = useState('');
+
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      const userData = await userService.getMe();
+      if (userData && (userData.username || userData.email)) {
+        setCurrentUser(userData);
+        return userData;
+      }
+    } catch {
+      // Ignored
+    }
+    return null;
+  }, []);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        await fetchCurrentUser();
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+    initAuth();
+  }, [fetchCurrentUser]);
 
   useEffect(() => {
     try {
@@ -74,6 +101,8 @@ export function AuthProvider({ children }) {
       if (res?.data) {
         setCurrentUser(res.data);
       }
+      // Đồng bộ thông tin đầy đủ từ GET /users/me
+      await fetchCurrentUser().catch(() => {});
       if (res?.message) {
         success(res.message);
       }
@@ -108,6 +137,8 @@ export function AuthProvider({ children }) {
       if (res?.data) {
         setCurrentUser(res.data);
       }
+      // Lấy ngay thông tin người dùng đầy đủ từ GET /users/me
+      await fetchCurrentUser().catch(() => {});
       if (res?.message) {
         success(res.message);
       }
@@ -144,6 +175,8 @@ export function AuthProvider({ children }) {
       if (res?.data) {
         setCurrentUser(res.data);
       }
+      // Lấy profile đầy đủ từ GET /users/me
+      await fetchCurrentUser().catch(() => {});
       if (res?.message) {
         success(res.message);
       }
@@ -187,7 +220,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // MỚI: Bước 1.8 - Xác minh OTP quên mật khẩu
   const verifyForgotPasswordOtp = async ({ email, code }) => {
     try {
       const res = await authService.verifyForgotPasswordOtp({ email, code });
@@ -203,7 +235,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // MỚI: Bước 1.9 - Đặt lại mật khẩu
   const resetPassword = async ({ password, confirmPassword }) => {
     try {
       const res = await authService.resetPassword({ password, confirmPassword });
@@ -219,17 +250,89 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const changePassword = async ({ oldPassword, password, confirmPassword }) => {
+    try {
+      const res = await authService.changePassword({ oldPassword, password, confirmPassword });
+      if (res?.message) {
+        success(res.message);
+      } else {
+        success('Đổi mật khẩu thành công!');
+      }
+      return res;
+    } catch (err) {
+      if (err?.message) {
+        toastError(err.message);
+      }
+      throw err;
+    }
+  };
+
   const updateProfile = async (updates) => {
     if (!currentUser) return;
     try {
-      const updatedUser = { ...currentUser, ...updates };
-      setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+      let serverUpdated = null;
+      serverUpdated = await userService.updateProfile(updates);
+      
+      const updatedUser = serverUpdated || currentUser;
+      setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, ...updatedUser } : u));
       setCurrentUser(updatedUser);
       storage.setSavedUser(updatedUser);
       success('Cập nhật hồ sơ cá nhân thành công!');
       return updatedUser;
     } catch (err) {
-      toastError(err.message || 'Cập nhật thất bại');
+      toastError(getFriendlyErrorMessage(err, 'Cập nhật thất bại'));
+      throw err;
+    }
+  };
+
+  const uploadAvatar = async (file) => {
+    try {
+      const storedImage = await userService.uploadAvatar(file);
+      const avatarUrl = storedImage?.url || storedImage?.objectKey;
+      if (avatarUrl && currentUser) {
+        const updatedUser = {
+          ...currentUser,
+          avatar: avatarUrl,
+          profile: {
+            ...(currentUser.profile || {}),
+            avatarObjectKey: storedImage?.objectKey || avatarUrl,
+            avatarUrl: storedImage?.url || avatarUrl,
+          },
+        };
+        setCurrentUser(updatedUser);
+        storage.setSavedUser(updatedUser);
+        setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+      }
+      success('Cập nhật ảnh đại diện thành công!');
+      return storedImage;
+    } catch (err) {
+      toastError(getFriendlyErrorMessage(err, 'Cập nhật ảnh đại diện thất bại'));
+      throw err;
+    }
+  };
+
+  const uploadBanner = async (file) => {
+    try {
+      const storedImage = await userService.uploadBanner(file);
+      const bannerUrl = storedImage?.url || storedImage?.objectKey;
+      if (bannerUrl && currentUser) {
+        const updatedUser = {
+          ...currentUser,
+          banner: bannerUrl,
+          profile: {
+            ...(currentUser.profile || {}),
+            bannerObjectKey: storedImage?.objectKey || bannerUrl,
+            bannerUrl: storedImage?.url || bannerUrl,
+          },
+        };
+        setCurrentUser(updatedUser);
+        storage.setSavedUser(updatedUser);
+        setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+      }
+      success('Cập nhật ảnh bìa thành công!');
+      return storedImage;
+    } catch (err) {
+      toastError(getFriendlyErrorMessage(err, 'Cập nhật ảnh bìa thất bại'));
       throw err;
     }
   };
@@ -266,6 +369,8 @@ export function AuthProvider({ children }) {
         currentUser,
         currentRole,
         isAuthenticated,
+        authLoading,
+        fetchCurrentUser,
         allUsers: users,
         pendingEmail,
         setPendingEmail,
@@ -278,8 +383,11 @@ export function AuthProvider({ children }) {
         logout,
         forgotPassword,
         verifyForgotPasswordOtp,
-        resetPassword, // MỚI
+        resetPassword,
+        changePassword,
         updateProfile,
+        uploadAvatar,
+        uploadBanner,
         lockUserAccount,
         unlockUserAccount,
       }}

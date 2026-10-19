@@ -38,8 +38,12 @@ export default function Navbar({
   const { searchKeyword, setSearchKeyword } = usePost();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  const userDisplayName = currentUser?.name || currentUser?.username || 'Người dùng';
-  const userAvatar = currentUser?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName)}&background=6366f1&color=fff`;
+  const profile = currentUser?.profile || {};
+  const userDisplayName = profile.displayName || currentUser?.displayName || currentUser?.name || currentUser?.username || 'Người dùng';
+  const rawAvatar = profile.avatarObjectKey || currentUser?.avatar || '';
+  const userAvatar = rawAvatar
+    ? (rawAvatar.startsWith('http') || rawAvatar.startsWith('/') ? rawAvatar : `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80`)
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName)}&background=6366f1&color=fff`;
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80">

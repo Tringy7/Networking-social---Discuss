@@ -14,6 +14,7 @@ import RegisterModal from './components/auth/RegisterModal';
 import VerifyEmailModal from './components/auth/VerifyEmailModal';
 import ForgotPasswordModal from './components/auth/ForgotPasswordModal';
 import EditProfileModal from './components/auth/EditProfileModal';
+import ChangePasswordModal from './components/auth/ChangePasswordModal';
 
 import PostDetailModal from './components/post/PostDetailModal';
 import CreatePostModal from './components/post/CreatePostModal';
@@ -43,6 +44,7 @@ function DiscussMainApp() {
 
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [isCreateCommunityOpen, setIsCreateCommunityOpen] = useState(false);
@@ -51,6 +53,8 @@ function DiscussMainApp() {
   const [reportingPost, setReportingPost] = useState(null);
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  const [viewUserId, setViewUserId] = useState(null);
 
   const handleSelectCommunity = (communityId) => {
     setSelectedCommunityId(communityId);
@@ -71,6 +75,12 @@ function DiscussMainApp() {
   };
 
   const handleNavigateProfile = () => {
+    setViewUserId(null); // xem chính mình
+    setCurrentView('profile');
+  };
+
+  const handleNavigateUserProfile = (userId) => {
+    setViewUserId(userId);
     setCurrentView('profile');
   };
 
@@ -126,6 +136,7 @@ function DiscussMainApp() {
               onOpenEdit={(post) => setEditingPost(post)}
               onOpenReport={(post) => setReportingPost(post)}
               onSelectCommunity={handleSelectCommunity}
+              onSelectUser={handleNavigateUserProfile}
               onOpenCreatePost={() => setIsCreatePostOpen(true)}
             />
           )}
@@ -137,6 +148,7 @@ function DiscussMainApp() {
               onOpenEditPost={(post) => setEditingPost(post)}
               onOpenReportPost={(post) => setReportingPost(post)}
               onSelectCommunity={handleSelectCommunity}
+              onSelectUser={handleNavigateUserProfile}
             />
           )}
 
@@ -156,11 +168,16 @@ function DiscussMainApp() {
 
           {currentView === 'profile' && (
             <UserProfilePage
+              userId={viewUserId}
               onOpenEditProfile={() => setIsEditProfileOpen(true)}
               onOpenPostDetail={(post) => setDetailPost(post)}
               onOpenEditPost={(post) => setEditingPost(post)}
               onOpenReportPost={(post) => setReportingPost(post)}
               onSelectCommunity={handleSelectCommunity}
+              onBack={() => {
+                setViewUserId(null);
+                setCurrentView('home');
+              }}
             />
           )}
         </main>
@@ -217,6 +234,12 @@ function DiscussMainApp() {
       <EditProfileModal
         isOpen={isEditProfileOpen}
         onClose={() => setIsEditProfileOpen(false)}
+        onOpenChangePassword={() => setIsChangePasswordOpen(true)}
+      />
+
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
       />
 
       <CreatePostModal
@@ -239,6 +262,7 @@ function DiscussMainApp() {
         onOpenEdit={(post) => setEditingPost(post)}
         onOpenReport={(post) => setReportingPost(post)}
         onSelectCommunity={handleSelectCommunity}
+        onSelectUser={handleNavigateUserProfile}
       />
 
       <EditPostModal

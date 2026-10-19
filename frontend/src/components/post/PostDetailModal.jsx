@@ -17,6 +17,7 @@ export default function PostDetailModal({
   onOpenEdit,
   onOpenReport,
   onSelectCommunity,
+  onSelectUser,
 }) {
   const { allUsers, currentUser } = useAuth();
   const { communities, getUserCommunityRole } = useCommunity();
@@ -67,15 +68,23 @@ export default function PostDetailModal({
 
         {/* Post Header with Author Info and Actions */}
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div 
+            className="flex items-center gap-3 cursor-pointer group/author"
+            onClick={() => {
+              if (onSelectUser) {
+                onClose();
+                onSelectUser(post.authorId || author.id || author.username);
+              }
+            }}
+          >
             <img
               src={author.avatar}
               alt={author.name}
-              className="w-11 h-11 rounded-2xl object-cover border border-slate-200 shadow-xs"
+              className="w-11 h-11 rounded-2xl object-cover border border-slate-200 shadow-xs group-hover/author:ring-2 group-hover/author:ring-indigo-400 transition"
             />
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-bold text-slate-900 text-sm">{author.name}</span>
+                <span className="font-bold text-slate-900 text-sm group-hover/author:text-indigo-600 transition">{author.name}</span>
                 <span className="text-xs text-slate-400 font-mono">@{author.username}</span>
                 {authorRoleInComm && <RoleBadge role={authorRoleInComm} size="xs" />}
               </div>
