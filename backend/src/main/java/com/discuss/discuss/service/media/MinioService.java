@@ -30,17 +30,6 @@ public class MinioService {
     @Value("${minio.bucket:discuss-media}")
     private String defaultBucket;
 
-    public String buildFileUrl(String objectKey) {
-        if (objectKey == null || objectKey.isBlank()) {
-            return null;
-        }
-
-        return endpoint.replaceAll("/+$", "")
-                + "/" + defaultBucket
-                + "/" + objectKey;
-    }
-
-
     private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
             "image/jpeg",
             "image/png",

@@ -17,7 +17,6 @@ public class CommunityDetailResponseDTO {
 
     private Long id;
     private String name;
-    private String displayName;
     private String description;
 
     private String avatarUrl;

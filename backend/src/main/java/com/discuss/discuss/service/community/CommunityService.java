@@ -110,13 +110,9 @@ public class CommunityService {
                 community.getName(),
                 info.getDescription(),
                 communityInfoService.buildImageUrl(info.getAvatar()),
-                communityInfoService.buildImageUrl(
-                        info.getBanner()
-                ),
-                info.getCategory() == null
-                        ? null : info.getCategory().getId(),
-                info.getCategory() == null
-                        ? null : info.getCategory().getName(),
+                communityInfoService.buildImageUrl(info.getBanner()),
+                info.getCategory() == null ? null : info.getCategory().getId(),
+                info.getCategory() == null ? null : info.getCategory().getName(),
                 info.getVisibility(),
                 memberCount,
                 community.getCreatedAt(),

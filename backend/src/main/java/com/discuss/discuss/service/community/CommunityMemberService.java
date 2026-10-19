@@ -46,16 +46,11 @@ public class CommunityMemberService {
     }
 
     @Transactional(readOnly = true)
-    public CommunityMember getCurrentActiveMembership(
-            Community community
-    ) {
-        return userService.findCurrentUser()
-                .flatMap(user ->
-                        memberRepository.findByCommunityAndUser(
-                                community, user
-                        ))
-                .filter(member ->
-                        member.getStatus() == MembershipStatus.ACTIVE)
+    public CommunityMember getCurrentActiveMembership(Community community) {
+        User currentUser = userService.getCurrentUser();
+
+        return memberRepository.findByCommunityAndUser(community, currentUser)
+                .filter(member -> member.getStatus() == MembershipStatus.ACTIVE)
                 .orElse(null);
     }
 }
