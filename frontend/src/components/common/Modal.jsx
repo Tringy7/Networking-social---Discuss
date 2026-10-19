@@ -1,10 +1,18 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
-export default function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) {
+export default function Modal({
+  isOpen,
+  onClose,
+  title,
+  children,
+  maxWidth = 'max-w-lg',
+  closeOnBackdrop = false,
+  closeOnEscape = false,
+}) {
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (closeOnEscape && e.key === 'Escape') onClose();
     };
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -14,7 +22,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
       document.body.style.overflow = 'unset';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, closeOnEscape]);
 
   if (!isOpen) return null;
 
@@ -22,7 +30,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div 
         className="fixed inset-0" 
-        onClick={onClose} 
+        onClick={closeOnBackdrop ? onClose : undefined} 
         aria-hidden="true" 
       />
       <div className={`relative w-full ${maxWidth} bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden z-10 max-h-[90vh] flex flex-col`}>

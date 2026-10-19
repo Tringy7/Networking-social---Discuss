@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import { useAuth } from '../../context/AuthContext';
 import { User, Mail, Lock, Loader2 } from 'lucide-react';
@@ -15,6 +15,16 @@ export default function RegisterModal({ isOpen, onClose, onOpenLogin, onOpenVeri
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
   const [errorInfo, setErrorInfo] = useState(null);
+
+  useEffect(() => {
+    setFormData({
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    });
+    setErrorInfo(null);
+  }, [isOpen]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -62,7 +72,7 @@ export default function RegisterModal({ isOpen, onClose, onOpenLogin, onOpenVeri
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Đăng ký tài khoản Discuss" maxWidth="max-w-md">
-      <form onSubmit={handleSubmit} className="space-y-3.5">
+      <form onSubmit={handleSubmit} className="space-y-3.5" autoComplete="off">
         {errorInfo?.message && (
           <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded-xl">
             <p>{errorInfo.message}</p>
@@ -77,6 +87,9 @@ export default function RegisterModal({ isOpen, onClose, onOpenLogin, onOpenVeri
             <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
+              name="discuss_register_username"
+              id="discuss_register_username"
+              autoComplete="off"
               required
               value={formData.username}
               onChange={(e) => handleInputChange('username', e.target.value)}
@@ -97,6 +110,9 @@ export default function RegisterModal({ isOpen, onClose, onOpenLogin, onOpenVeri
             <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="email"
+              name="discuss_register_email"
+              id="discuss_register_email"
+              autoComplete="off"
               required
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
@@ -117,6 +133,9 @@ export default function RegisterModal({ isOpen, onClose, onOpenLogin, onOpenVeri
             <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="password"
+              name="discuss_register_password"
+              id="discuss_register_password"
+              autoComplete="new-password"
               required
               value={formData.password}
               onChange={(e) => handleInputChange('password', e.target.value)}
@@ -137,6 +156,9 @@ export default function RegisterModal({ isOpen, onClose, onOpenLogin, onOpenVeri
             <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="password"
+              name="discuss_register_confirm_password"
+              id="discuss_register_confirm_password"
+              autoComplete="new-password"
               required
               value={formData.confirmPassword}
               onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
