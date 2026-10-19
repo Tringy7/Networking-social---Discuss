@@ -84,8 +84,10 @@ public class SecurityConfiguration {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:5173/"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
-        configuration.setExposedHeaders(Arrays.asList("Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept",
+                "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        configuration
+                .setExposedHeaders(Arrays.asList("Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -95,7 +97,8 @@ public class SecurityConfiguration {
 
     /**
      * Đọc JWT từ cookie "access_token" thay vì header Authorization.
-     * Nếu không tìm thấy cookie, fallback về header Authorization (hữu ích cho Postman/testing/mobile app).
+     * Nếu không tìm thấy cookie, fallback về header Authorization (hữu ích cho
+     * Postman/testing/mobile app).
      */
     @Bean
     public BearerTokenResolver bearerTokenResolver() {
