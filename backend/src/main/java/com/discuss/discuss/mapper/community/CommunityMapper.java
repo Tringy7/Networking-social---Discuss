@@ -2,6 +2,7 @@ package com.discuss.discuss.mapper.community;
 
 import com.discuss.discuss.dto.community.CommunityDetailResponseDTO;
 import com.discuss.discuss.dto.community.CommunityMemberResponseDTO;
+import com.discuss.discuss.dto.community.CommunityPreviewResponseDTO;
 import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.entity.CommunityInfo;
 import com.discuss.discuss.entity.CommunityMember;
@@ -66,6 +67,30 @@ public class CommunityMapper {
                 .avatarUrl(avatarUrl)
                 .role(member.getRole())
                 .joinedAt(member.getJoinedAt())
+                .build();
+    }
+
+    public CommunityPreviewResponseDTO toPreview(
+            Community community,
+            CommunityInfo info,
+            long memberCount
+    ) {
+        return CommunityPreviewResponseDTO.builder()
+                .id(community.getId())
+                .name(community.getName())
+
+                .description(info.getDescription())
+                .avatarUrl(
+                        communityInfoService.buildImageUrl(info.getAvatar())
+                )
+                .categoryName(
+                        info.getCategory() != null
+                                ? info.getCategory().getName()
+                                : null
+                )
+                .visibility(info.getVisibility())
+                .memberCount(memberCount)
+                .createdAt(community.getCreatedAt())
                 .build();
     }
 }

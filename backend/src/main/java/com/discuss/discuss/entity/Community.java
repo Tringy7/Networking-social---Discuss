@@ -26,6 +26,9 @@ public class Community {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @OneToOne(mappedBy = "community", fetch = FetchType.LAZY)
+    private CommunityInfo info;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
