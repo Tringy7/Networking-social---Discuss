@@ -42,29 +42,31 @@ public class MinioConfig {
                         MakeBucketArgs.builder().bucket(defaultBucket).build()
                 );
                 log.info("Bucket '{}' created successfully in MinIO.", defaultBucket);
-
-                String policy = """
-                        {
-                          "Version": "2012-10-17",
-                          "Statement": [
-                            {
-                              "Effect": "Allow",
-                              "Principal": {"AWS": ["*"]},
-                              "Action": ["s3:GetObject"],
-                              "Resource": ["arn:aws:s3:::%s/*"]
-                            }
-                          ]
-                        }
-                        """.formatted(defaultBucket);
-
-                client.setBucketPolicy(
-                        SetBucketPolicyArgs.builder()
-                                .bucket(defaultBucket)
-                                .config(policy)
-                                .build()
-                );
-                log.info("Public read policy configured for bucket '{}'.", defaultBucket);
             }
+
+            // Luôn áp dụng policy, kể cả khi bucket đã tồn tại từ trước
+            String policy = """
+                {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": {"AWS": ["*"]},
+                      "Action": ["s3:GetObject"],
+                      "Resource": ["arn:aws:s3:::%s/*"]
+                    }
+                  ]
+                }
+                """.formatted(defaultBucket);
+
+            client.setBucketPolicy(
+                    SetBucketPolicyArgs.builder()
+                            .bucket(defaultBucket)
+                            .config(policy)
+                            .build()
+            );
+            log.info("Public read policy configured for bucket '{}'.", defaultBucket);
+
         } catch (Exception e) {
             log.warn("MinIO bucket initialization notice for '{}': {}", defaultBucket, e.getMessage());
         }
