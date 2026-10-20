@@ -131,6 +131,21 @@ public class CommunityService {
         );
     }
 
+    public PageResponseDTO<CommunityPreviewResponseDTO>
+    getCommunitiesByCategorySlug(String slug, Pageable pageable) {
+
+        Page<CommunityPreviewResponseDTO> communities =
+                communityRepository
+                        .findAllByCategorySlug(slug, CommunityStatus.ACTIVE, pageable)
+                        .map(community -> communityMapper.toPreview(
+                                community,
+                                community.getInfo(),
+                                communityMemberService.countActiveMembers(community)
+                        ));
+
+        return pageMapper.toResponse(communities);
+    }
+
     private Specification<Community> buildPublicCommunitySpecification() {
         return (root, query, cb) -> {
             Join<Community, CommunityInfo> info =
