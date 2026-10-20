@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +38,6 @@ public class CommunityMemberService {
         return memberRepository.save(owner);
     }
 
-    @Transactional(readOnly = true)
     public long countActiveMembers(Community community) {
         return memberRepository.countByCommunityAndStatus(
                 community,
@@ -45,17 +45,12 @@ public class CommunityMemberService {
         );
     }
 
-    @Transactional(readOnly = true)
-    public CommunityMember getCurrentActiveMembership(
-            Community community
-    ) {
-        return userService.findCurrentUser()
-                .flatMap(user ->
-                        memberRepository.findByCommunityAndUser(
-                                community, user
-                        ))
-                .filter(member ->
-                        member.getStatus() == MembershipStatus.ACTIVE)
-                .orElse(null);
+
+    public List<CommunityMember> getStaffMembers(Community community) {
+        return memberRepository.findStaffMembers(
+                community,
+                List.of(CommunityRole.OWNER, CommunityRole.MODERATOR),
+                MembershipStatus.ACTIVE
+        );
     }
 }

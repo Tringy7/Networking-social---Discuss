@@ -53,7 +53,6 @@ public class CommunityInfoService {
         return infoRepository.save(info);
     }
 
-    @Transactional(readOnly = true)
     public CommunityInfo getActiveInfo(Community community) {
         return infoRepository.findByCommunity(community)
                 .filter(info ->

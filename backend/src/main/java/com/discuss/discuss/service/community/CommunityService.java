@@ -9,6 +9,7 @@ import com.discuss.discuss.entity.CommunityMember;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.exception.community.CommunityErrorCode;
 import com.discuss.discuss.exception.community.CommunityException;
+import com.discuss.discuss.mapper.community.CommunityMapper;
 import com.discuss.discuss.repository.CommunityRepository;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -32,6 +34,7 @@ public class CommunityService {
     private final CommunityInfoService communityInfoService;
     private final CommunityMemberService communityMemberService;
     private final UserService userService;
+    private final CommunityMapper communityMapper;
 
     @Transactional
     public CommunityDetailResponseDTO createCommunity(
@@ -74,10 +77,9 @@ public class CommunityService {
         CommunityMember owner =
                 communityMemberService.addOwner(community, user);
 
-        return toDetail(community, info, 1L, owner);
+        return communityMapper.toDetail(community, info, 1L, List.of(owner));
     }
 
-    @Transactional(readOnly = true)
     public CommunityDetailResponseDTO getCommunity(String name) {
         String normalizedName = name.trim().toLowerCase(Locale.ROOT);
 
@@ -93,35 +95,9 @@ public class CommunityService {
         long memberCount =
                 communityMemberService.countActiveMembers(community);
 
-        CommunityMember mine =
-                communityMemberService.getCurrentActiveMembership(community);
+        List<CommunityMember> staffMembers =
+                communityMemberService.getStaffMembers(community);
 
-        return toDetail(community, info, memberCount, mine);
-    }
-
-    private CommunityDetailResponseDTO toDetail(
-            Community community,
-            CommunityInfo info,
-            long memberCount,
-            CommunityMember mine
-    ) {
-        return new CommunityDetailResponseDTO(
-                community.getId(),
-                community.getName(),
-                info.getDescription(),
-                communityInfoService.buildImageUrl(info.getAvatar()),
-                communityInfoService.buildImageUrl(
-                        info.getBanner()
-                ),
-                info.getCategory() == null
-                        ? null : info.getCategory().getId(),
-                info.getCategory() == null
-                        ? null : info.getCategory().getName(),
-                info.getVisibility(),
-                memberCount,
-                community.getCreatedAt(),
-                mine != null,
-                mine == null ? null : mine.getRole()
-        );
+        return communityMapper.toDetail(community, info, memberCount, staffMembers);
     }
 }

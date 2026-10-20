@@ -4,7 +4,7 @@ import com.discuss.discuss.dto.media.StoredImageDTO;
 import com.discuss.discuss.dto.user.PublicUserProfileResponseDTO;
 import com.discuss.discuss.dto.user.UpdateProfileRequestDTO;
 import com.discuss.discuss.dto.user.UserInfoResponseDTO;
-import com.discuss.discuss.service.media.ProfileImageService;
+import com.discuss.discuss.service.media.ImageService;
 import com.discuss.discuss.service.user.UserProfileService;
 import com.discuss.discuss.service.user.UserService;
 import jakarta.validation.Valid;
@@ -20,7 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
     private final UserProfileService userProfileService;
 
-    private final ProfileImageService profileImageService;
+    private final ImageService imageService;
 
 
     @GetMapping("/me")
@@ -31,14 +31,14 @@ public class UserController {
     @PutMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public StoredImageDTO setAvatar(
             @RequestParam("file") MultipartFile file) {
-        return profileImageService.setAvatar(file);
+        return imageService.setAvatarForUser(file);
     }
 
     // New banner, edit banner
     @PutMapping(value = "/me/banner", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public StoredImageDTO setBanner(
             @RequestParam("file") MultipartFile file) {
-        return profileImageService.setBanner(file);
+        return imageService.setBannerForUser(file);
     }
 
     @GetMapping("/{userId}")

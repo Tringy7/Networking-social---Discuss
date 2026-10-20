@@ -31,8 +31,8 @@ public class UserMapper {
             profileDTO = new UserInfoResponseDTO.Profile(
                     profile.getDisplayName(),
                     profile.getBio(),
-                    this.minioService.buildFileUrl(profile.getAvatarObjectKey()),
-                    this.minioService.buildFileUrl(profile.getAvatarObjectKey()),
+                    this.minioService.buildFileUrl(profile.getAvatar()),
+                    this.minioService.buildFileUrl(profile.getBanner()),
                     profile.getDateOfBirth(),
                     profile.getGender(),
                     profile.getLocation()
