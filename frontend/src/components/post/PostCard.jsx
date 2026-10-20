@@ -94,7 +94,9 @@ export default function PostCard({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onSelectCommunity(post.communityId);
+                  if (onSelectCommunity) {
+                    onSelectCommunity(post.communityId);
+                  }
                 }}
                 className="font-bold text-slate-900 hover:text-indigo-600 transition-colors cursor-pointer flex items-center gap-1"
               >

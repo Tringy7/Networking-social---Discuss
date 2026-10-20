@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCommunity } from '../../context/CommunityContext';
 import { SYSTEM_ROLES, COMMUNITY_ROLES } from '../../constants/roles';
@@ -19,17 +20,11 @@ import {
 } from 'lucide-react';
 
 export default function Sidebar({
-  currentView,
-  selectedCommunityId,
-  onNavigateHome,
-  onNavigateExplore,
-  onNavigateAdmin,
-  onNavigateProfile,
-  onSelectCommunity,
   onOpenCreateCommunity,
   isOpenMobile,
   onCloseMobile,
 }) {
+  const location = useLocation();
   const { currentUser, currentRole, isAuthenticated } = useAuth();
   const { communities, memberships, getUserCommunityRole } = useCommunity();
 
@@ -48,43 +43,43 @@ export default function Sidebar({
       <div className="space-y-6">
         {/* Main Nav Links */}
         <div className="space-y-1">
-          <button
+          <Link
+            to="/"
             onClick={() => {
-              onNavigateHome();
               if (onCloseMobile) onCloseMobile();
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-              currentView === 'home' && !selectedCommunityId
+              location.pathname === '/'
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'text-slate-700 hover:bg-slate-100'
             }`}
           >
             <Home className="w-4 h-4" />
             <span>Bảng tin chính</span>
-          </button>
+          </Link>
 
-          <button
+          <Link
+            to="/explore"
             onClick={() => {
-              onNavigateExplore();
               if (onCloseMobile) onCloseMobile();
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-              currentView === 'explore'
+              location.pathname === '/explore'
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'text-slate-700 hover:bg-slate-100'
             }`}
           >
             <Compass className="w-4 h-4" />
             <span>Khám phá Cộng đồng</span>
-          </button>
+          </Link>
 
-          <button
+          <Link
+            to="/user"
             onClick={() => {
-              onNavigateProfile();
               if (onCloseMobile) onCloseMobile();
             }}
             className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-              currentView === 'profile'
+              location.pathname === '/user' || location.pathname === '/user/edit'
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'text-slate-700 hover:bg-slate-100'
             }`}
@@ -98,23 +93,23 @@ export default function Sidebar({
                 API
               </span>
             )}
-          </button>
+          </Link>
 
           {currentRole === SYSTEM_ROLES.ADMIN && (
-            <button
+            <Link
+              to="/admin"
               onClick={() => {
-                onNavigateAdmin();
                 if (onCloseMobile) onCloseMobile();
               }}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                currentView === 'admin'
+                location.pathname === '/admin'
                   ? 'bg-rose-600 text-white shadow-xs'
                   : 'text-rose-600 hover:bg-rose-50'
               }`}
             >
               <ShieldAlert className="w-4 h-4" />
               <span>Quản trị hệ thống</span>
-            </button>
+            </Link>
           )}
         </div>
 
@@ -142,23 +137,23 @@ export default function Sidebar({
           ) : myCommunities.length === 0 ? (
             <div className="p-3 bg-slate-50 rounded-xl text-[11px] text-slate-500 text-center space-y-2">
               <p>Bạn chưa tham gia cộng đồng nào.</p>
-              <button
-                onClick={onNavigateExplore}
+              <Link
+                to="/explore"
                 className="text-xs font-semibold text-indigo-600 hover:underline block mx-auto cursor-pointer"
               >
                 Khám phá ngay →
-              </button>
+              </Link>
             </div>
           ) : (
             <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
               {myCommunities.map((c) => {
-                const isSelected = selectedCommunityId === c.id;
+                const isSelected = location.pathname === `/c/${c.slug}` || location.pathname === `/c/${c.id}`;
 
                 return (
-                  <button
+                  <Link
                     key={c.id}
+                    to={`/c/${c.slug || c.id}`}
                     onClick={() => {
-                      onSelectCommunity(c.id);
                       if (onCloseMobile) onCloseMobile();
                     }}
                     className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition cursor-pointer text-left ${
@@ -177,7 +172,7 @@ export default function Sidebar({
                     </div>
 
                     <RoleBadge role={c.role} size="xs" />
-                  </button>
+                  </Link>
                 );
               })}
             </div>

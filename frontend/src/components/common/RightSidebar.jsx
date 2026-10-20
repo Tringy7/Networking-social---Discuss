@@ -1,10 +1,12 @@
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCommunity } from '../../context/CommunityContext';
 import { usePost } from '../../context/PostContext';
 import { formatNumber } from '../../utils/formatters';
 import { Flame, Hash, Shield } from 'lucide-react';
 
 export default function RightSidebar({ onSelectCommunity, onSelectTag }) {
+  const navigate = useNavigate();
   const { communities, joinCommunity, getUserCommunityRole } = useCommunity();
   const { posts, selectedTag } = usePost();
 
@@ -34,9 +36,9 @@ export default function RightSidebar({ onSelectCommunity, onSelectTag }) {
               const role = getUserCommunityRole(c.id);
 
               return (
-                <div
+                <Link
                   key={c.id}
-                  onClick={() => onSelectCommunity(c.id)}
+                  to={`/c/${c.slug || c.id}`}
                   className="flex items-center justify-between gap-3 p-2 rounded-2xl hover:bg-slate-50 transition cursor-pointer group"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -58,6 +60,7 @@ export default function RightSidebar({ onSelectCommunity, onSelectTag }) {
                   {!role && (
                     <button
                       onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         joinCommunity(c.id);
                       }}
@@ -66,7 +69,7 @@ export default function RightSidebar({ onSelectCommunity, onSelectTag }) {
                       Tham gia
                     </button>
                   )}
-                </div>
+                </Link>
               );
             })}
           </div>

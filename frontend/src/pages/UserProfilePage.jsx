@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCommunity } from '../context/CommunityContext';
 import { usePost } from '../context/PostContext';
@@ -22,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export default function UserProfilePage({
-  userId = null,
+  userId: propUserId = null,
   onOpenEditProfile,
   onOpenPostDetail,
   onOpenEditPost,
@@ -30,6 +31,10 @@ export default function UserProfilePage({
   onSelectCommunity,
   onBack,
 }) {
+  const params = useParams();
+  const navigate = useNavigate();
+  const userId = propUserId || params.userId || null;
+
   const { currentUser, currentRole, allUsers } = useAuth();
   const { communities, memberships } = useCommunity();
   const { posts } = usePost();
@@ -125,10 +130,12 @@ export default function UserProfilePage({
 
   const targetUser = isMe ? currentUser : publicUser;
   if (!targetUser) {
-    if (!isMe) return null;
+    if (isMe) {
+      return <Navigate to="/login" replace />;
+    }
     return (
       <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center text-xs text-slate-400">
-        Vui lòng đăng nhập để xem hồ sơ cá nhân.
+        Không tìm thấy thông tin người dùng này.
       </div>
     );
   }
@@ -138,12 +145,12 @@ export default function UserProfilePage({
   const statistics = targetUser?.statistics || null;
 
   const userDisplayName = profile.displayName || targetUser?.displayName || targetUser?.name || targetUser?.username || 'Người dùng';
-  const rawAvatar = profile.avatarObjectKey || targetUser?.avatar || '';
+  const rawAvatar = profile.avatar || profile.avatarObjectKey || targetUser?.avatar || '';
   const userAvatar = rawAvatar
     ? (rawAvatar.startsWith('http') || rawAvatar.startsWith('/') ? rawAvatar : `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80`)
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName)}&background=6366f1&color=fff`;
 
-  const rawBanner = profile.bannerObjectKey || targetUser?.banner || '';
+  const rawBanner = profile.banner || profile.bannerObjectKey || targetUser?.banner || '';
   const userBio = profile.bio || targetUser?.bio || '';
   const userLocation = profile.location || targetUser?.location || '';
   const userDob = profile.dateOfBirth || targetUser?.dateOfBirth || '';

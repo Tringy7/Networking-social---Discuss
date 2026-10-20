@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ImageCropperModal from '../components/common/ImageCropperModal';
 import { useAuth } from '../context/AuthContext';
 import { getFriendlyErrorMessage } from '../utils/errorHandler';
@@ -21,6 +22,14 @@ export default function EditProfilePage({
   onBack,
   onOpenChangePassword,
 }) {
+  const navigate = useNavigate();
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/user');
+    }
+  };
   const { currentUser, updateProfile, uploadAvatar, uploadBanner } = useAuth();
   const avatarInputRef = useRef(null);
   const bannerInputRef = useRef(null);
@@ -57,8 +66,8 @@ export default function EditProfilePage({
         username: currentUser.username || '',
         displayName: p.displayName || currentUser.displayName || currentUser.name || currentUser.username || '',
         bio: p.bio || currentUser.bio || '',
-        avatarObjectKey: p.avatarObjectKey || currentUser.avatar || '',
-        bannerObjectKey: p.bannerObjectKey || currentUser.banner || '',
+        avatarObjectKey: p.avatar || p.avatarObjectKey || currentUser.avatar || '',
+        bannerObjectKey: p.banner || p.bannerObjectKey || currentUser.banner || '',
         location: p.location || currentUser.location || '',
         dateOfBirth: p.dateOfBirth || currentUser.dateOfBirth || '',
         gender: p.gender || currentUser.gender || 'MALE',
@@ -106,7 +115,7 @@ export default function EditProfilePage({
       setUploadingAvatar(true);
       try {
         const res = await uploadAvatar(croppedFile);
-        const newUrl = res?.url || res?.objectKey;
+        const newUrl = res?.avatar || res?.url || res?.objectKey;
         if (newUrl) {
           setFormData(prev => ({ ...prev, avatarObjectKey: newUrl }));
         }
@@ -121,7 +130,7 @@ export default function EditProfilePage({
       setUploadingBanner(true);
       try {
         const res = await uploadBanner(croppedFile);
-        const newUrl = res?.url || res?.objectKey;
+        const newUrl = res?.banner || res?.url || res?.objectKey;
         if (newUrl) {
           setFormData(prev => ({ ...prev, bannerObjectKey: newUrl }));
         }
@@ -154,7 +163,7 @@ export default function EditProfilePage({
       payload.showPostsOnProfile = Boolean(formData.showPostsOnProfile);
 
       await updateProfile(payload);
-      if (onBack) onBack();
+      handleBack();
     } catch (err) {
       setErrorInfo(err);
     } finally {
@@ -171,7 +180,7 @@ export default function EditProfilePage({
       <div className="flex items-center justify-between gap-4">
         <button
           type="button"
-          onClick={onBack}
+          onClick={handleBack}
           className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-indigo-600 cursor-pointer transition-colors bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-2xs"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -204,7 +213,7 @@ export default function EditProfilePage({
             className="px-3.5 py-2 bg-slate-900/60 hover:bg-slate-900/80 backdrop-blur-md text-white rounded-xl text-xs font-semibold transition cursor-pointer inline-flex items-center gap-2 shadow-lg disabled:opacity-50"
           >
             {uploadingBanner ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Camera className="w-4 h-4" />}
-            <span>{uploadingBanner ? 'Đang tải lên...' : 'Thay đổi ảnh bìa (1500x500)'}</span>
+            <span>{uploadingBanner ? 'Đang tải lên...' : 'Thay đổi ảnh bìa'}</span>
           </button>
         </div>
 
@@ -257,7 +266,6 @@ export default function EditProfilePage({
                 </button>
               </div>
               <p className="text-xs text-slate-400">
-                Ảnh đại diện sẽ được cắt theo tỉ lệ vuông chuẩn 1:1 (256x256px).
               </p>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { usePost } from '../../context/PostContext';
 import { SYSTEM_ROLES } from '../../constants/roles';
@@ -11,35 +12,28 @@ import {
   ShieldAlert, 
   Settings, 
   Compass, 
-  Menu,
-  X,
-  LogIn,
-  UserPlus,
-  Flame,
-  MailCheck
+  Menu, 
+  X, 
+  LogIn, 
+  UserPlus, 
+  Flame, 
+  MailCheck 
 } from 'lucide-react';
 
 export default function Navbar({
-  onOpenLogin,
-  onOpenRegister,
-  onOpenVerifyEmail,
   onOpenCreatePost,
-  onOpenCreateCommunity,
-  onOpenEditProfile,
-  onNavigateHome,
-  onNavigateExplore,
-  onNavigateAdmin,
-  onNavigateProfile,
-  currentView,
+  onOpenVerifyEmail,
   onToggleMobileSidebar,
 }) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser, currentRole, isAuthenticated, logout, pendingEmail } = useAuth();
   const { searchKeyword, setSearchKeyword } = usePost();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const profile = currentUser?.profile || {};
   const userDisplayName = profile.displayName || currentUser?.displayName || currentUser?.name || currentUser?.username || 'Người dùng';
-  const rawAvatar = profile.avatarObjectKey || currentUser?.avatar || '';
+  const rawAvatar = profile.avatar || profile.avatarObjectKey || currentUser?.avatar || '';
   const userAvatar = rawAvatar
     ? (rawAvatar.startsWith('http') || rawAvatar.startsWith('/') ? rawAvatar : `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80`)
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName)}&background=6366f1&color=fff`;
@@ -56,8 +50,8 @@ export default function Navbar({
             <Menu className="w-5 h-5" />
           </button>
 
-          <button
-            onClick={onNavigateHome}
+          <Link
+            to="/"
             className="flex items-center gap-2.5 text-indigo-600 hover:opacity-90 transition cursor-pointer"
           >
             <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 font-black text-lg">
@@ -71,7 +65,7 @@ export default function Navbar({
                 Mạng Xã Hội Thảo Luận
               </span>
             </div>
-          </button>
+          </Link>
         </div>
 
         {/* Middle: Global Search Input (Module 7) */}
@@ -99,17 +93,17 @@ export default function Navbar({
         {/* Right: Actions & User Account */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Explore communities nav button */}
-          <button
-            onClick={onNavigateExplore}
+          <Link
+            to="/explore"
             className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-              currentView === 'explore'
+              location.pathname === '/explore'
                 ? 'bg-indigo-50 text-indigo-700'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <Compass className="w-4 h-4 text-indigo-500" />
             <span>Khám phá</span>
-          </button>
+          </Link>
 
           {/* Create Post Button */}
           {isAuthenticated && (
@@ -124,17 +118,17 @@ export default function Navbar({
 
           {/* Admin panel quick button if admin */}
           {currentRole === SYSTEM_ROLES.ADMIN && (
-            <button
-              onClick={onNavigateAdmin}
+            <Link
+              to="/admin"
               className={`p-2 rounded-xl transition cursor-pointer ${
-                currentView === 'admin'
+                location.pathname === '/admin'
                   ? 'bg-rose-100 text-rose-700'
                   : 'text-rose-600 hover:bg-rose-50'
               }`}
               title="Quản trị hệ thống (Admin Panel)"
             >
               <ShieldAlert className="w-5 h-5" />
-            </button>
+            </Link>
           )}
 
           {/* User Profile or Guest Auth buttons */}
@@ -170,30 +164,30 @@ export default function Navbar({
                     <div className="text-[11px] text-slate-400 font-mono truncate">{currentUser?.email}</div>
                   </div>
 
-                  <button
-                    onClick={onNavigateProfile}
+                  <Link
+                    to="/user"
                     className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
                   >
                     <User className="w-4 h-4 text-slate-400" />
                     <span>Hồ sơ của tôi</span>
-                  </button>
+                  </Link>
 
-                  <button
-                    onClick={onOpenEditProfile}
+                  <Link
+                    to="/user/edit"
                     className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
                   >
                     <Settings className="w-4 h-4 text-slate-400" />
                     <span>Chỉnh sửa thông tin</span>
-                  </button>
+                  </Link>
 
                   {currentRole === SYSTEM_ROLES.ADMIN && (
-                    <button
-                      onClick={onNavigateAdmin}
+                    <Link
+                      to="/admin"
                       className="w-full px-4 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer"
                     >
                       <ShieldAlert className="w-4 h-4 text-rose-500" />
                       <span>Quản trị hệ thống</span>
-                    </button>
+                    </Link>
                   )}
 
                   <div className="border-t border-slate-100 mt-1 pt-1">
@@ -220,20 +214,20 @@ export default function Navbar({
                   <span>Xác thực email</span>
                 </button>
               )}
-              <button
-                onClick={onOpenLogin}
+              <Link
+                to="/login"
                 className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer flex items-center gap-1.5"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Đăng nhập</span>
-              </button>
-              <button
-                onClick={onOpenRegister}
+              </Link>
+              <Link
+                to="/register"
                 className="px-3.5 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5"
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span>Đăng ký</span>
-              </button>
+              </Link>
             </div>
           )}
         </div>
