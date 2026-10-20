@@ -197,11 +197,6 @@ export default function UserProfilePage({
               <div className="pb-1">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                   <h1 className="text-xl font-bold text-slate-900">{userDisplayName}</h1>
-                  {isMe ? (
-                    <RoleBadge role={currentRole} type="system" size="md" />
-                  ) : (
-                    targetUser?.role && <RoleBadge role={targetUser.role} type="system" size="md" />
-                  )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
                   <span>@{targetUser?.username}</span>

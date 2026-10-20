@@ -13,7 +13,6 @@ import LoginModal from './components/auth/LoginModal';
 import RegisterModal from './components/auth/RegisterModal';
 import VerifyEmailModal from './components/auth/VerifyEmailModal';
 import ForgotPasswordModal from './components/auth/ForgotPasswordModal';
-import EditProfileModal from './components/auth/EditProfileModal';
 import ChangePasswordModal from './components/auth/ChangePasswordModal';
 
 import PostDetailModal from './components/post/PostDetailModal';
@@ -28,6 +27,7 @@ import CommunityDetailPage from './pages/CommunityDetailPage';
 import ExploreCommunitiesPage from './pages/ExploreCommunitiesPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import UserProfilePage from './pages/UserProfilePage';
+import EditProfilePage from './pages/EditProfilePage';
 
 function DiscussMainApp() {
   const { communities } = useCommunity();
@@ -43,7 +43,6 @@ function DiscussMainApp() {
   const [prefilledLoginUsername, setPrefilledLoginUsername] = useState('');
 
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
@@ -84,6 +83,10 @@ function DiscussMainApp() {
     setCurrentView('profile');
   };
 
+  const handleNavigateEditProfile = () => {
+    setCurrentView('edit-profile');
+  };
+
   const handleOpenVerifyEmail = (email = '', otp = '') => {
     setVerifyEmailTarget(email);
     setVerifyEmailOtp(otp);
@@ -106,7 +109,7 @@ function DiscussMainApp() {
         onOpenVerifyEmail={(email, otp) => handleOpenVerifyEmail(email, otp)}
         onOpenCreatePost={() => setIsCreatePostOpen(true)}
         onOpenCreateCommunity={() => setIsCreateCommunityOpen(true)}
-        onOpenEditProfile={() => setIsEditProfileOpen(true)}
+        onOpenEditProfile={handleNavigateEditProfile}
         onNavigateHome={handleNavigateHome}
         onNavigateExplore={handleNavigateExplore}
         onNavigateAdmin={handleNavigateAdmin}
@@ -114,7 +117,7 @@ function DiscussMainApp() {
         onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
       />
 
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 flex-1 flex gap-6">
+      <div className="max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-1 flex gap-6">
         <Sidebar
           currentView={currentView}
           selectedCommunityId={selectedCommunityId}
@@ -169,7 +172,7 @@ function DiscussMainApp() {
           {currentView === 'profile' && (
             <UserProfilePage
               userId={viewUserId}
-              onOpenEditProfile={() => setIsEditProfileOpen(true)}
+              onOpenEditProfile={handleNavigateEditProfile}
               onOpenPostDetail={(post) => setDetailPost(post)}
               onOpenEditPost={(post) => setEditingPost(post)}
               onOpenReportPost={(post) => setReportingPost(post)}
@@ -178,6 +181,16 @@ function DiscussMainApp() {
                 setViewUserId(null);
                 setCurrentView('home');
               }}
+            />
+          )}
+
+          {currentView === 'edit-profile' && (
+            <EditProfilePage
+              onBack={() => {
+                setViewUserId(null);
+                setCurrentView('profile');
+              }}
+              onOpenChangePassword={() => setIsChangePasswordOpen(true)}
             />
           )}
         </main>
@@ -229,12 +242,6 @@ function DiscussMainApp() {
           if (userEmail) setPrefilledLoginUsername(userEmail);
           setIsLoginOpen(true);
         }}
-      />
-
-      <EditProfileModal
-        isOpen={isEditProfileOpen}
-        onClose={() => setIsEditProfileOpen(false)}
-        onOpenChangePassword={() => setIsChangePasswordOpen(true)}
       />
 
       <ChangePasswordModal

@@ -104,18 +104,6 @@ export default function RightSidebar({ onSelectCommunity, onSelectTag }) {
           </div>
         </div>
       )}
-
-      <div className="bg-slate-50/80 rounded-3xl border border-slate-200/80 p-4 text-xs text-slate-600 space-y-2">
-        <h4 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
-          <Shield className="w-4 h-4 text-indigo-600" />
-          Văn hóa cộng đồng Discuss
-        </h4>
-        <ul className="space-y-1 list-disc list-inside text-[11px] text-slate-500 leading-relaxed">
-          <li>Chia sẻ kiến thức bổ ích và xây dựng.</li>
-          <li>Tôn trọng sự đa dạng quan điểm kỹ thuật.</li>
-          <li>Giữ không gian thảo luận văn minh, tôn trọng người khác.</li>
-        </ul>
-      </div>
     </aside>
   );
 }

@@ -78,22 +78,27 @@ export default function Sidebar({
             <span>Khám phá Cộng đồng</span>
           </button>
 
-          {isAuthenticated && (
-            <button
-              onClick={() => {
-                onNavigateProfile();
-                if (onCloseMobile) onCloseMobile();
-              }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                currentView === 'profile'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
+          <button
+            onClick={() => {
+              onNavigateProfile();
+              if (onCloseMobile) onCloseMobile();
+            }}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+              currentView === 'profile'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <div className="flex items-center gap-3">
               <User className="w-4 h-4" />
               <span>Hồ sơ cá nhân</span>
-            </button>
-          )}
+            </div>
+            {!isAuthenticated && (
+              <span className="text-[10px] bg-indigo-50 text-indigo-700 font-mono px-1.5 py-0.5 rounded font-bold">
+                API
+              </span>
+            )}
+          </button>
 
           {currentRole === SYSTEM_ROLES.ADMIN && (
             <button
@@ -197,11 +202,6 @@ export default function Sidebar({
             </button>
           </div>
         )}
-      </div>
-
-      {/* Footer Info */}
-      <div className="pt-4 border-t border-slate-100 text-[11px] text-slate-400 px-2 space-y-1">
-        <p className="font-semibold text-slate-600">Discuss Platform</p>
       </div>
     </div>
   );
