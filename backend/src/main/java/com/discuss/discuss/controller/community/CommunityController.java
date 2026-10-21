@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -63,16 +64,20 @@ public class CommunityController {
     }
 
     @GetMapping("/{name}")
-    public ResponseEntity<CommunityDetailResponseDTO> getCommunity(
+    public ResponseEntity<CommunityDetailResponseDTO> getCommunityByName(
             @PathVariable String name
     ) {
         return ResponseEntity.ok(communityService.getCommunity(name));
     }
 
     @GetMapping
-    public ResponseEntity<PageResponseDTO<CommunityPreviewResponseDTO>> getCommunities(
+    public ResponseEntity<PageResponseDTO<CommunityPreviewResponseDTO>> getCommunitiesWithFilter(
             @Filter Specification<Community> filterSpec,
-            @PageableDefault(size = 10) Pageable pageable
+            @PageableDefault(
+                    size = 10,
+                    sort = "createdAt",
+                    direction = Sort.Direction.DESC
+            ) Pageable pageable
     ) {
         return ResponseEntity.ok(
                 communityService.getAllCommunityWithFilter(filterSpec, pageable)

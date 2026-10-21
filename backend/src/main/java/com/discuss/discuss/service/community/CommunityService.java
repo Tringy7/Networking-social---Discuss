@@ -146,6 +146,21 @@ public class CommunityService {
         return pageMapper.toResponse(communities);
     }
 
+    public PageResponseDTO<CommunityPreviewResponseDTO>
+    getAllCommunity(Pageable pageable) {
+
+        Page<CommunityPreviewResponseDTO> communities =
+                communityRepository
+                        .findAll(buildPublicCommunitySpecification(), pageable)
+                        .map(community -> communityMapper.toPreview(
+                                community,
+                                community.getInfo(),
+                                communityMemberService.countActiveMembers(community)
+                        ));
+
+        return pageMapper.toResponse(communities);
+    }
+
     private Specification<Community> buildPublicCommunitySpecification() {
         return (root, query, cb) -> {
             Join<Community, CommunityInfo> info =
