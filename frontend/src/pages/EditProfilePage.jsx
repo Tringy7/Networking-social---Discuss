@@ -38,14 +38,13 @@ export default function EditProfilePage({
     username: '',
     displayName: '',
     bio: '',
-    avatarObjectKey: '',
-    bannerObjectKey: '',
+    avatar: '',
+    banner: '',
     location: '',
     dateOfBirth: '',
     gender: 'MALE',
     showDateOfBirth: false,
     showLocation: true,
-    showPostsOnProfile: true,
   });
 
   const [loading, setLoading] = useState(false);
@@ -66,14 +65,13 @@ export default function EditProfilePage({
         username: currentUser.username || '',
         displayName: p.displayName || currentUser.displayName || currentUser.name || currentUser.username || '',
         bio: p.bio || currentUser.bio || '',
-        avatarObjectKey: p.avatar || p.avatarObjectKey || currentUser.avatar || '',
-        bannerObjectKey: p.banner || p.bannerObjectKey || currentUser.banner || '',
+        avatar: p.avatar || currentUser.avatar || '',
+        banner: p.banner || currentUser.banner || '',
         location: p.location || currentUser.location || '',
         dateOfBirth: p.dateOfBirth || currentUser.dateOfBirth || '',
         gender: p.gender || currentUser.gender || 'MALE',
         showDateOfBirth: priv.showDateOfBirth ?? false,
         showLocation: priv.showLocation ?? true,
-        showPostsOnProfile: priv.showPostsOnProfile ?? true,
       });
       setErrorInfo(null);
     }
@@ -117,7 +115,7 @@ export default function EditProfilePage({
         const res = await uploadAvatar(croppedFile);
         const newUrl = res?.avatar || res?.url || res?.objectKey;
         if (newUrl) {
-          setFormData(prev => ({ ...prev, avatarObjectKey: newUrl }));
+          setFormData(prev => ({ ...prev, avatar: newUrl }));
         }
         setCropperOpen(false);
         setCropFile(null);
@@ -132,7 +130,7 @@ export default function EditProfilePage({
         const res = await uploadBanner(croppedFile);
         const newUrl = res?.banner || res?.url || res?.objectKey;
         if (newUrl) {
-          setFormData(prev => ({ ...prev, bannerObjectKey: newUrl }));
+          setFormData(prev => ({ ...prev, banner: newUrl }));
         }
         setCropperOpen(false);
         setCropFile(null);
@@ -160,7 +158,6 @@ export default function EditProfilePage({
       
       payload.showDateOfBirth = Boolean(formData.showDateOfBirth);
       payload.showLocation = Boolean(formData.showLocation);
-      payload.showPostsOnProfile = Boolean(formData.showPostsOnProfile);
 
       await updateProfile(payload);
       handleBack();
@@ -197,7 +194,7 @@ export default function EditProfilePage({
         {/* Banner Preview & Upload Area */}
         <div 
           className="h-44 sm:h-52 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 relative bg-cover bg-center flex items-end justify-end p-4"
-          style={formData.bannerObjectKey ? { backgroundImage: `url(${formData.bannerObjectKey})` } : undefined}
+          style={formData.banner ? { backgroundImage: `url(${formData.banner})` } : undefined}
         >
           <input
             type="file"
@@ -228,7 +225,7 @@ export default function EditProfilePage({
           <div className="flex flex-col sm:flex-row sm:items-center gap-5 -mt-16 sm:-mt-20 relative pb-6 border-b border-slate-100">
             <div className="relative group/avatar self-start">
               <img
-                src={formData.avatarObjectKey || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'}
+                src={formData.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'}
                 alt="Avatar Preview"
                 className="w-24 h-24 rounded-3xl object-cover border-4 border-white shadow-xl bg-white shrink-0"
                 onError={(e) => {
@@ -409,7 +406,7 @@ export default function EditProfilePage({
               <span>Cài đặt hiển thị & quyền riêng tư</span>
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label className="flex items-center gap-2.5 p-3.5 bg-slate-50 hover:bg-indigo-50/40 rounded-2xl border border-slate-200/80 cursor-pointer transition">
                 <input
                   type="checkbox"
@@ -417,7 +414,7 @@ export default function EditProfilePage({
                   onChange={(e) => handleInputChange('showLocation', e.target.checked)}
                   className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
                 />
-                <span className="text-xs text-slate-700 font-medium">Hiển thị địa điểm</span>
+                <span className="text-xs text-slate-700 font-medium">Hiển thị địa điểm trên hồ sơ</span>
               </label>
 
               <label className="flex items-center gap-2.5 p-3.5 bg-slate-50 hover:bg-indigo-50/40 rounded-2xl border border-slate-200/80 cursor-pointer transition">
@@ -427,17 +424,7 @@ export default function EditProfilePage({
                   onChange={(e) => handleInputChange('showDateOfBirth', e.target.checked)}
                   className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
                 />
-                <span className="text-xs text-slate-700 font-medium">Hiển thị ngày sinh</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 p-3.5 bg-slate-50 hover:bg-indigo-50/40 rounded-2xl border border-slate-200/80 cursor-pointer transition">
-                <input
-                  type="checkbox"
-                  checked={formData.showPostsOnProfile}
-                  onChange={(e) => handleInputChange('showPostsOnProfile', e.target.checked)}
-                  className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
-                />
-                <span className="text-xs text-slate-700 font-medium">Hiển thị bài viết</span>
+                <span className="text-xs text-slate-700 font-medium">Hiển thị ngày sinh trên hồ sơ</span>
               </label>
             </div>
           </div>
