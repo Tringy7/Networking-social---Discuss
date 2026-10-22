@@ -1,9 +1,11 @@
 package com.discuss.discuss.controller.community;
 
+import com.discuss.discuss.dto.common.ApiResponse;
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.community.CommunityDetailResponseDTO;
 import com.discuss.discuss.dto.community.CommunityPreviewResponseDTO;
 import com.discuss.discuss.dto.community.CreateCommunityRequestDTO;
+import com.discuss.discuss.dto.community.UpdateCommunityRequestDTO;
 import com.discuss.discuss.dto.media.StoredImageDTO;
 import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.mapper.page.PageMapper;
@@ -39,6 +41,25 @@ public class CommunityController {
     ) {
         CommunityDetailResponseDTO response = communityService.createCommunity(req);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PatchMapping("/{name}")
+    public ResponseEntity<CommunityDetailResponseDTO> updateCommunity(
+            @PathVariable String name,
+            @Valid @RequestBody UpdateCommunityRequestDTO request
+    ) {
+        CommunityDetailResponseDTO response =
+                communityService.updateCommunity(name, request);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{name}")
+    public ResponseEntity<ApiResponse> deleteCommunity(
+            @PathVariable String name
+    ) {
+        this.communityService.deleteCommunity(name);
+        return ResponseEntity.ok().body(new ApiResponse("Community deleted successfully"));
     }
 
     @PutMapping(

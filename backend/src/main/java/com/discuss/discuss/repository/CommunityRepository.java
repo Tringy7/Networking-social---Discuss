@@ -36,4 +36,26 @@ public interface CommunityRepository extends
             @Param("status") CommunityStatus status,
             Pageable pageable
     );
+
+    @Query(
+            value = """
+        SELECT c
+        FROM Community c
+        JOIN c.info i
+        WHERE c.owner.id = :userId
+          AND i.status = :communityStatus
+        """,
+            countQuery = """
+        SELECT COUNT(c.id)
+        FROM Community c
+        JOIN c.info i
+        WHERE c.owner.id = :userId
+          AND i.status = :communityStatus
+        """
+    )
+    Page<Community> findAllCreatedByUser(
+            @Param("userId") Long userId,
+            @Param("communityStatus") CommunityStatus communityStatus,
+            Pageable pageable
+    );
 }

@@ -2,6 +2,7 @@
 package com.discuss.discuss.service.community;
 
 import com.discuss.discuss.dto.community.CreateCommunityRequestDTO;
+import com.discuss.discuss.dto.community.UpdateCommunityRequestDTO;
 import com.discuss.discuss.entity.Category;
 import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.entity.CommunityInfo;
@@ -53,6 +54,33 @@ public class CommunityInfoService {
         return infoRepository.save(info);
     }
 
+    @Transactional
+    public CommunityInfo updateInfo(
+            Community community,
+            UpdateCommunityRequestDTO req
+    ) {
+        CommunityInfo info = infoRepository.findByCommunity(community)
+                .orElseThrow(() -> new CommunityException(
+                        CommunityErrorCode.COMMUNITY_INFORMATION_NOT_FOUND
+                ));
+
+        if (req.getDescription() != null) {
+            info.setDescription(req.getDescription().trim());
+        }
+
+        if (req.getCategoryId() != null) {
+            info.setCategory(
+                    categoryService.getCategoryById(req.getCategoryId())
+            );
+        }
+
+        if (req.getVisibility() != null) {
+            info.setVisibility(req.getVisibility());
+        }
+
+        return infoRepository.save(info);
+    }
+
     public CommunityInfo getActiveInfo(Community community) {
         return infoRepository.findByCommunity(community)
                 .filter(info ->
@@ -60,6 +88,24 @@ public class CommunityInfoService {
                 .orElseThrow(() -> new CommunityException(
                         CommunityErrorCode.COMMUNITY_NOT_FOUND
                 ));
+    }
+
+    @Transactional
+    public void deleteCommunityInfo(Community community) {
+        CommunityInfo info = infoRepository.findByCommunity(community)
+                .orElseThrow(() ->
+                        new CommunityException(
+                                CommunityErrorCode.COMMUNITY_INFORMATION_NOT_FOUND
+                        )
+                );
+
+        if (info.getStatus() == CommunityStatus.DELETED) {
+            throw new CommunityException(
+                    CommunityErrorCode.COMMUNITY_NOT_FOUND
+            );
+        }
+
+        info.setStatus(CommunityStatus.DELETED);
     }
 
     public String buildImageUrl(String objectKey) {

@@ -30,4 +30,11 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
             @Param("roles") Collection<CommunityRole> roles,
             @Param("status") MembershipStatus status
     );
+
+    Optional<CommunityMember>
+    findByCommunityAndUserAndStatus(
+            Community community,
+            User user,
+            MembershipStatus status
+    );
 }

@@ -56,6 +56,11 @@ public enum CommunityErrorCode {
             "Community not found"
     ),
 
+    COMMUNITY_INFORMATION_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "Community information not found"
+    ),
+
     CATEGORY_NOT_FOUND(
             HttpStatus.NOT_FOUND,
             "Category not found"

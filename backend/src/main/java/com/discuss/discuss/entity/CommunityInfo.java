@@ -37,7 +37,6 @@ public class CommunityInfo {
     @Column(length = 500)
     private String banner;
 
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CommunityVisibility visibility;

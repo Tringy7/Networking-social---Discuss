@@ -5,10 +5,8 @@ import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.community.CommunityDetailResponseDTO;
 import com.discuss.discuss.dto.community.CommunityPreviewResponseDTO;
 import com.discuss.discuss.dto.community.CreateCommunityRequestDTO;
-import com.discuss.discuss.entity.Community;
-import com.discuss.discuss.entity.CommunityInfo;
-import com.discuss.discuss.entity.CommunityMember;
-import com.discuss.discuss.entity.User;
+import com.discuss.discuss.dto.community.UpdateCommunityRequestDTO;
+import com.discuss.discuss.entity.*;
 import com.discuss.discuss.enums.CommunityStatus;
 import com.discuss.discuss.enums.CommunityVisibility;
 import com.discuss.discuss.exception.community.CommunityErrorCode;
@@ -43,6 +41,7 @@ public class CommunityService {
     private final CommunityInfoService communityInfoService;
     private final CommunityMemberService communityMemberService;
     private final UserService userService;
+    private final CommunityAuthorizationService communityAuthorizationService;
     private final CommunityMapper communityMapper;
     private final PageMapper pageMapper;
 
@@ -50,7 +49,7 @@ public class CommunityService {
     public CommunityDetailResponseDTO createCommunity(CreateCommunityRequestDTO req) {
         User user = userService.getCurrentUser();
 
-        String name = req.getName().trim().toLowerCase(Locale.ROOT);
+        String name = this.normalizeCommunityName(req.getName());
 
         if (RESERVED_NAMES.contains(name)) {
             throw new CommunityException(
@@ -86,6 +85,54 @@ public class CommunityService {
                 communityMemberService.addOwner(community, user);
 
         return communityMapper.toDetail(community, info, 1L, List.of(owner));
+    }
+
+    @Transactional
+    public CommunityDetailResponseDTO updateCommunity(
+            String communityName,
+            UpdateCommunityRequestDTO request
+    ) {
+        User user = userService.getCurrentUser();
+
+        Community community = communityRepository.findByName(communityName)
+                .orElseThrow(() ->
+                        new CommunityException(CommunityErrorCode.COMMUNITY_NOT_FOUND)
+                );
+
+        communityAuthorizationService.requireOwner(community, user);
+
+        community.setName(this.normalizeCommunityName(request.getName()));
+
+        CommunityInfo info = this.communityInfoService.updateInfo(community, request);
+
+        long memberCount =
+                communityMemberService.countActiveMembers(community);
+
+        List<CommunityMember> staffMembers =
+                communityMemberService.getStaffMembers(community);
+
+        return communityMapper.toDetail(
+                community,
+                info,
+                memberCount,
+                staffMembers
+        );
+    }
+
+    @Transactional
+    public void deleteCommunity(String communityName) {
+        User user = userService.getCurrentUser();
+
+        Community community = communityRepository.findByName(communityName)
+                .orElseThrow(() ->
+                        new CommunityException(
+                                CommunityErrorCode.COMMUNITY_NOT_FOUND
+                        )
+                );
+
+        communityAuthorizationService.requireOwner(community, user);
+
+        communityInfoService.deleteCommunityInfo(community);
     }
 
     public CommunityDetailResponseDTO getCommunity(String name) {
@@ -161,6 +208,19 @@ public class CommunityService {
         return pageMapper.toResponse(communities);
     }
 
+    public PageResponseDTO<CommunityPreviewResponseDTO> getAllCommunitiesOfUser(Pageable pageable) {
+        Page<CommunityPreviewResponseDTO> communities =
+                communityRepository
+                        .findAll(buildPublicCommunitySpecification(), pageable)
+                        .map(community -> communityMapper.toPreview(
+                                community,
+                                community.getInfo(),
+                                communityMemberService.countActiveMembers(community)
+                        ));
+
+        return pageMapper.toResponse(communities);
+    }
+
     private Specification<Community> buildPublicCommunitySpecification() {
         return (root, query, cb) -> {
             Join<Community, CommunityInfo> info =
@@ -171,5 +231,9 @@ public class CommunityService {
                     cb.equal(info.get("visibility"), CommunityVisibility.PUBLIC)
             );
         };
+    }
+
+    private String normalizeCommunityName(String name) {
+        return name.trim().toLowerCase(Locale.ROOT);
     }
 }

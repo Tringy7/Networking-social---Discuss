@@ -1,9 +1,12 @@
 package com.discuss.discuss.controller.user;
 
+import com.discuss.discuss.dto.common.PageResponseDTO;
+import com.discuss.discuss.dto.community.CommunityPreviewResponseDTO;
 import com.discuss.discuss.dto.media.StoredImageDTO;
 import com.discuss.discuss.dto.user.PublicUserProfileResponseDTO;
 import com.discuss.discuss.dto.user.UpdateProfileRequestDTO;
 import com.discuss.discuss.dto.user.UserInfoResponseDTO;
+import com.discuss.discuss.service.community.CommunityService;
 import com.discuss.discuss.service.media.ImageService;
 import com.discuss.discuss.service.user.UserProfileService;
 import com.discuss.discuss.service.user.UserService;
@@ -19,13 +22,18 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class UserController {
     private final UserProfileService userProfileService;
-
+    private final CommunityService communityService;
     private final ImageService imageService;
 
 
     @GetMapping("/me")
     public ResponseEntity<UserInfoResponseDTO> getUserInfo() {
         return ResponseEntity.ok().body(this.userProfileService.getUserProfile());
+    }
+
+    @GetMapping("/me/communities/created")
+    public ResponseEntity<PageResponseDTO<CommunityPreviewResponseDTO>> getCommunitiesOfUser() {
+
     }
 
     @PutMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -52,4 +60,6 @@ public class UserController {
     ) {
         return ResponseEntity.ok(userProfileService.updateProfile(request));
     }
+
+
 }
