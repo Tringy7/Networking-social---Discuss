@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ImageCropperModal from '../components/common/ImageCropperModal';
 import { useAuth } from '../context/AuthContext';
 import { getFriendlyErrorMessage } from '../utils/errorHandler';
 import { 
@@ -9,13 +8,12 @@ import {
   Calendar, 
   Loader2, 
   KeyRound, 
-  Upload, 
-  Camera, 
   ArrowLeft, 
   Check, 
   Shield, 
   Eye, 
-  FileText 
+  FileText,
+  Mail 
 } from 'lucide-react';
 
 export default function EditProfilePage({
@@ -30,16 +28,13 @@ export default function EditProfilePage({
       navigate('/user');
     }
   };
-  const { currentUser, updateProfile, uploadAvatar, uploadBanner } = useAuth();
-  const avatarInputRef = useRef(null);
-  const bannerInputRef = useRef(null);
+  const { currentUser, updateProfile } = useAuth();
 
   const [formData, setFormData] = useState({
     username: '',
+    email: '',
     displayName: '',
     bio: '',
-    avatar: '',
-    banner: '',
     location: '',
     dateOfBirth: '',
     gender: 'MALE',
@@ -48,14 +43,7 @@ export default function EditProfilePage({
   });
 
   const [loading, setLoading] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [errorInfo, setErrorInfo] = useState(null);
-
-  // States cho modal crop ảnh
-  const [cropperOpen, setCropperOpen] = useState(false);
-  const [cropFile, setCropFile] = useState(null);
-  const [cropTarget, setCropTarget] = useState('avatar'); // 'avatar' | 'banner'
 
   useEffect(() => {
     if (currentUser) {
@@ -63,10 +51,9 @@ export default function EditProfilePage({
       const priv = currentUser.privacySettings || {};
       setFormData({
         username: currentUser.username || '',
+        email: currentUser.email || '',
         displayName: p.displayName || currentUser.displayName || currentUser.name || currentUser.username || '',
         bio: p.bio || currentUser.bio || '',
-        avatar: p.avatar || currentUser.avatar || '',
-        banner: p.banner || currentUser.banner || '',
         location: p.location || currentUser.location || '',
         dateOfBirth: p.dateOfBirth || currentUser.dateOfBirth || '',
         gender: p.gender || currentUser.gender || 'MALE',
@@ -89,59 +76,6 @@ export default function EditProfilePage({
     }
   };
 
-  const handleAvatarFileSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setCropFile(file);
-    setCropTarget('avatar');
-    setCropperOpen(true);
-    if (avatarInputRef.current) avatarInputRef.current.value = '';
-  };
-
-  const handleBannerFileSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setCropFile(file);
-    setCropTarget('banner');
-    setCropperOpen(true);
-    if (bannerInputRef.current) bannerInputRef.current.value = '';
-  };
-
-  const handleConfirmCrop = async (croppedFile) => {
-    setErrorInfo(null);
-    if (cropTarget === 'avatar') {
-      setUploadingAvatar(true);
-      try {
-        const res = await uploadAvatar(croppedFile);
-        const newUrl = res?.avatar || res?.url || res?.objectKey;
-        if (newUrl) {
-          setFormData(prev => ({ ...prev, avatar: newUrl }));
-        }
-        setCropperOpen(false);
-        setCropFile(null);
-      } catch (err) {
-        setErrorInfo(err);
-      } finally {
-        setUploadingAvatar(false);
-      }
-    } else {
-      setUploadingBanner(true);
-      try {
-        const res = await uploadBanner(croppedFile);
-        const newUrl = res?.banner || res?.url || res?.objectKey;
-        if (newUrl) {
-          setFormData(prev => ({ ...prev, banner: newUrl }));
-        }
-        setCropperOpen(false);
-        setCropFile(null);
-      } catch (err) {
-        setErrorInfo(err);
-      } finally {
-        setUploadingBanner(false);
-      }
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorInfo(null);
@@ -149,7 +83,8 @@ export default function EditProfilePage({
     try {
       const payload = {};
 
-      if (formData.username?.trim()) payload.username = formData.username.trim();
+      // Username giữ nguyên cố định không gửi sửa đổi
+      if (formData.email?.trim()) payload.email = formData.email.trim();
       if (formData.displayName?.trim()) payload.displayName = formData.displayName.trim();
       if (formData.bio !== undefined) payload.bio = formData.bio;
       if (formData.dateOfBirth) payload.dateOfBirth = formData.dateOfBirth;
@@ -191,27 +126,10 @@ export default function EditProfilePage({
 
       {/* Main Settings Card */}
       <div className="bg-[#1a1a1b] rounded-3xl border border-[#343536] shadow-sm overflow-hidden text-[#d7dadc]">
-        {/* Banner Preview & Upload Area */}
-        <div 
-          className="h-44 sm:h-52 bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 relative bg-cover bg-center flex items-end justify-end p-4"
-          style={formData.banner ? { backgroundImage: `url(${formData.banner})` } : undefined}
-        >
-          <input
-            type="file"
-            ref={bannerInputRef}
-            onChange={handleBannerFileSelect}
-            accept="image/*"
-            className="hidden"
-          />
-          <button
-            type="button"
-            onClick={() => bannerInputRef.current?.click()}
-            disabled={uploadingBanner}
-            className="px-4 py-2 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-full text-xs font-semibold transition cursor-pointer inline-flex items-center gap-2 shadow-lg disabled:opacity-50 border border-white/10"
-          >
-            {uploadingBanner ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Camera className="w-4 h-4" />}
-            <span>{uploadingBanner ? 'Đang tải lên...' : 'Thay đổi ảnh bìa'}</span>
-          </button>
+        {/* Header Title */}
+        <div className="p-6 bg-[#16181a] border-b border-[#343536]">
+          <h2 className="text-base font-bold text-[#d7dadc]">Chỉnh sửa hồ sơ cá nhân</h2>
+          <p className="text-xs text-[#818384] mt-0.5">Cập nhật thông tin hiển thị, giới thiệu và quyền riêng tư tài khoản</p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-8">
@@ -221,85 +139,39 @@ export default function EditProfilePage({
             </div>
           )}
 
-          {/* Avatar Section */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-5 -mt-16 sm:-mt-20 relative pb-6 border-b border-[#343536]">
-            <div className="relative group/avatar self-start">
-              <img
-                src={formData.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'}
-                alt="Avatar Preview"
-                className="w-24 h-24 rounded-3xl object-cover border-4 border-[#1a1a1b] shadow-xl bg-[#272729] shrink-0"
-                onError={(e) => {
-                  e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80';
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => avatarInputRef.current?.click()}
-                disabled={uploadingAvatar}
-                className="absolute inset-0 bg-black/45 hover:bg-black/60 rounded-3xl flex items-center justify-center text-white opacity-0 group-hover/avatar:opacity-100 transition cursor-pointer"
-                title="Thay đổi ảnh đại diện"
-              >
-                {uploadingAvatar ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
-              </button>
-            </div>
-
-            <div className="flex-1 space-y-1.5">
-              <div className="flex items-center gap-3">
-                <input
-                  type="file"
-                  ref={avatarInputRef}
-                  onChange={handleAvatarFileSelect}
-                  accept="image/*"
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => avatarInputRef.current?.click()}
-                  disabled={uploadingAvatar}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition cursor-pointer inline-flex items-center gap-2"
-                >
-                  {uploadingAvatar ? <Loader2 className="w-4 h-4 animate-spin text-indigo-600" /> : <Upload className="w-4 h-4 text-indigo-600" />}
-                  <span>{uploadingAvatar ? 'Đang tải lên...' : 'Tải ảnh đại diện mới'}</span>
-                </button>
-              </div>
-              <p className="text-xs text-slate-400">
-              </p>
-            </div>
-          </div>
-
           {/* Group 1: Thông tin cơ bản */}
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <User className="w-4 h-4 text-indigo-600" />
+            <h3 className="text-sm font-bold text-[#d7dadc] uppercase tracking-wider flex items-center gap-2">
+              <User className="w-4 h-4 text-orange-500" />
               <span>Thông tin tài khoản cơ bản</span>
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Tên tài khoản (Username) <span className="text-rose-500">*</span>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Email giới thiệu liên hệ
                 </label>
                 <div className="relative">
-                  <span className="text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-mono font-bold">@</span>
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
-                    type="text"
-                    required
-                    value={formData.username}
-                    onChange={(e) => handleInputChange('username', e.target.value)}
-                    className={`w-full pl-9 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-mono focus:outline-none focus:ring-2 ${
-                      fieldErrors.username
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="email.lienhe@example.com"
+                    className={`w-full pl-10 pr-4 py-2.5 bg-[#272729] border rounded-xl text-sm text-[#d7dadc] placeholder-[#818384] focus:outline-none focus:ring-2 ${
+                      fieldErrors.email
                         ? 'border-rose-400 focus:ring-rose-400/30'
-                        : 'border-slate-200 focus:ring-indigo-500/30 focus:border-indigo-500'
+                        : 'border-[#343536] focus:ring-orange-500/30 focus:border-orange-500'
                     }`}
                   />
                 </div>
-                {fieldErrors.username && (
-                  <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.username}</p>
+                {fieldErrors.email && (
+                  <p className="text-xs text-rose-500 mt-1 font-medium">{fieldErrors.email}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                   Tên hiển thị (Display Name) <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
@@ -309,10 +181,10 @@ export default function EditProfilePage({
                     required
                     value={formData.displayName}
                     onChange={(e) => handleInputChange('displayName', e.target.value)}
-                    className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 ${
+                    className={`w-full pl-10 pr-4 py-2.5 bg-[#272729] border rounded-xl text-sm text-[#d7dadc] placeholder-[#818384] focus:outline-none focus:ring-2 ${
                       fieldErrors.displayName
                         ? 'border-rose-400 focus:ring-rose-400/30'
-                        : 'border-slate-200 focus:ring-indigo-500/30 focus:border-indigo-500'
+                        : 'border-[#343536] focus:ring-orange-500/30 focus:border-orange-500'
                     }`}
                   />
                 </div>
@@ -463,7 +335,7 @@ export default function EditProfilePage({
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-6 py-2.5 bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white text-sm font-semibold rounded-full shadow-xs transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               <span>{loading ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
@@ -471,21 +343,6 @@ export default function EditProfilePage({
           </div>
         </form>
       </div>
-
-      {/* Modal cắt ảnh avatar hoặc banner */}
-      <ImageCropperModal
-        isOpen={cropperOpen}
-        onClose={() => {
-          if (!uploadingAvatar && !uploadingBanner) {
-            setCropperOpen(false);
-            setCropFile(null);
-          }
-        }}
-        imageFile={cropFile}
-        targetType={cropTarget}
-        onConfirmCrop={handleConfirmCrop}
-        loading={uploadingAvatar || uploadingBanner}
-      />
     </div>
   );
 }
