@@ -28,16 +28,18 @@ public class UserController {
     }
 
     @PutMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public StoredImageDTO setAvatar(
+    public ResponseEntity<UserInfoResponseDTO> setAvatar(
             @RequestParam("file") MultipartFile file) {
-        return imageService.setAvatarForUser(file);
+        imageService.setAvatarForUser(file);
+        return ResponseEntity.ok().body(this.userProfileService.getUserProfile()); 
     }
 
     // New banner, edit banner
     @PutMapping(value = "/me/banner", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public StoredImageDTO setBanner(
+    public ResponseEntity<UserInfoResponseDTO> setBanner(
             @RequestParam("file") MultipartFile file) {
-        return imageService.setBannerForUser(file);
+        imageService.setBannerForUser(file);
+        return ResponseEntity.ok().body(this.userProfileService.getUserProfile());
     }
 
     @GetMapping("/{userId}")

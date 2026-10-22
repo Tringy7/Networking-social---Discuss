@@ -31,16 +31,15 @@ public class ImageService {
     private final CommunityInfoRepository communityInfoRepository;
 
     // ==================== USER ====================
-
     @Transactional
-    public StoredImageDTO setAvatarForUser(MultipartFile file) {
+    public void setAvatarForUser(MultipartFile file) {
         User user = userService.getCurrentUser();
 
         UserProfile profile = profileRepository.findByUser(user)
-                .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.USER_NOT_FOUND));
+                .orElseThrow(()
+                        -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
 
-        return replace(
+        this.replace(
                 ImageKind.AVATAR,
                 file,
                 user.getId(),
@@ -52,14 +51,14 @@ public class ImageService {
     }
 
     @Transactional
-    public StoredImageDTO setBannerForUser(MultipartFile file) {
+    public void setBannerForUser(MultipartFile file) {
         User user = userService.getCurrentUser();
 
         UserProfile profile = profileRepository.findByUser(user)
-                .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.USER_NOT_FOUND));
+                .orElseThrow(()
+                        -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
 
-        return replace(
+        this.replace(
                 ImageKind.PROFILE_BANNER,
                 file,
                 user.getId(),
@@ -71,18 +70,17 @@ public class ImageService {
     }
 
     // ==================== COMMUNITY ====================
-
     @Transactional
-    public StoredImageDTO setAvatarForCommunity(
+    public void setAvatarForCommunity(
             Long communityId,
             MultipartFile file
     ) {
         CommunityInfo info = communityInfoRepository
                 .findByCommunityId(communityId)
-                .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.USER_NOT_FOUND));
+                .orElseThrow(()
+                        -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
 
-        return replace(
+        this.replace(
                 ImageKind.COMMUNITY_AVATAR,
                 file,
                 communityId,
@@ -94,16 +92,16 @@ public class ImageService {
     }
 
     @Transactional
-    public StoredImageDTO setBannerForCommunity(
+    public void setBannerForCommunity(
             Long communityId,
             MultipartFile file
     ) {
         CommunityInfo info = communityInfoRepository
                 .findByCommunityId(communityId)
-                .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.USER_NOT_FOUND));
+                .orElseThrow(()
+                        -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
 
-        return replace(
+        this.replace(
                 ImageKind.COMMUNITY_BANNER,
                 file,
                 communityId,
@@ -115,8 +113,7 @@ public class ImageService {
     }
 
     // ==================== SHARED ====================
-
-    private <T> StoredImageDTO replace(
+    private <T> void replace(
             ImageKind kind,
             MultipartFile file,
             Object ownerId,
@@ -141,24 +138,22 @@ public class ImageService {
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
 
-                    @Override
-                    public void afterCommit() {
-                        if (oldKey != null
-                                && oldKey.startsWith(ownerPrefix)
-                                && !oldKey.equals(stored.getObjectKey())) {
-                            storage.safeDelete(oldKey);
-                        }
-                    }
-
-                    @Override
-                    public void afterCompletion(int status) {
-                        if (status == STATUS_ROLLED_BACK) {
-                            storage.safeDelete(stored.getObjectKey());
-                        }
-                    }
+            @Override
+            public void afterCommit() {
+                if (oldKey != null
+                        && oldKey.startsWith(ownerPrefix)
+                        && !oldKey.equals(stored.getObjectKey())) {
+                    storage.safeDelete(oldKey);
                 }
-        );
+            }
 
-        return stored;
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    storage.safeDelete(stored.getObjectKey());
+                }
+            }
+        }
+        );
     }
 }
