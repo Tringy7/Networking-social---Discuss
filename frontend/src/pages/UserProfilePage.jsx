@@ -8,14 +8,14 @@ import { getFriendlyErrorMessage } from '../utils/errorHandler';
 import RoleBadge from '../components/common/RoleBadge';
 import PostCard from '../components/post/PostCard';
 import { formatDate, formatNumber } from '../utils/formatters';
-import {
-  User,
-  Settings,
-  Award,
-  Calendar,
-  FileText,
-  Users,
-  ShieldCheck,
+import { 
+  User, 
+  Settings, 
+  Award, 
+  Calendar, 
+  FileText, 
+  Users, 
+  ShieldCheck, 
   Sparkles,
   MessageSquare,
   Loader2,
@@ -178,7 +178,7 @@ export default function UserProfilePage({
       {!isMe && onBack && (
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 cursor-pointer transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#818384] hover:text-[#d7dadc] cursor-pointer transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Quay lại danh sách</span>
@@ -186,10 +186,10 @@ export default function UserProfilePage({
       )}
 
       {/* Profile Card */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-[#1a1a1b] rounded-3xl border border-[#343536] shadow-sm overflow-hidden">
         {/* Banner */}
-        <div
-          className="h-36 sm:h-44 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 relative bg-cover bg-center"
+        <div 
+          className="h-36 sm:h-44 bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 relative bg-cover bg-center"
           style={rawBanner && (rawBanner.startsWith('http') || rawBanner.startsWith('/')) ? { backgroundImage: `url(${rawBanner})` } : undefined}
         />
 
@@ -199,17 +199,17 @@ export default function UserProfilePage({
               <img
                 src={userAvatar}
                 alt={userDisplayName}
-                className="w-24 h-24 rounded-3xl border-4 border-white shadow-lg object-cover bg-white shrink-0"
+                className="w-24 h-24 rounded-3xl border-4 border-[#1a1a1b] shadow-xl object-cover bg-[#272729] shrink-0"
               />
               <div className="pb-1">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <h1 className="text-xl font-bold text-slate-900">{userDisplayName}</h1>
+                  <h1 className="text-xl font-bold text-[#d7dadc]">{userDisplayName}</h1>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
-                  <span>@{targetUser?.username}</span>
+                <div className="flex items-center gap-2 text-xs text-[#818384] font-mono">
+                  <span>u/{targetUser?.username}</span>
                   {isMe && targetUser?.email && (
                     <>
-                      <span>•</span>
+                      <span className="text-[#343536]">•</span>
                       <span>{targetUser.email}</span>
                     </>
                   )}
@@ -220,63 +220,63 @@ export default function UserProfilePage({
             {isMe && (
               <button
                 onClick={onOpenEditProfile}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
+                className="px-4 py-2 bg-[#272729] hover:bg-[#343536] text-[#d7dadc] text-xs font-semibold rounded-full border border-[#343536] transition cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
               >
-                <Settings className="w-3.5 h-3.5" />
+                <Settings className="w-3.5 h-3.5 text-[#818384]" />
                 <span>Chỉnh sửa thông tin</span>
               </button>
             )}
           </div>
 
           {userBio ? (
-            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed max-w-2xl mb-4">
+            <p className="text-xs sm:text-sm text-[#d7dadc] leading-relaxed max-w-2xl mb-4">
               {userBio}
             </p>
           ) : (
-            <p className="text-xs text-slate-400 italic mb-4">
+            <p className="text-xs text-[#818384] italic mb-4">
               Chưa có tiểu sử cá nhân.
             </p>
           )}
 
           {/* Location & Gender metadata */}
           {(userLocation || (userDob && privacySettings.showDateOfBirth !== false) || userGender) && (
-            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 mb-4 pb-1">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[#818384] mb-4 pb-1">
               {userLocation && (privacySettings.showLocation !== false) && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 rounded-lg text-slate-600">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#272729] border border-[#343536] rounded-full text-[#d7dadc]">
                   📍 {userLocation}
                 </span>
               )}
               {userGender && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 rounded-lg text-slate-600">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#272729] border border-[#343536] rounded-full text-[#d7dadc]">
                   {userGender === 'MALE' ? 'Nam' : userGender === 'FEMALE' ? 'Nữ' : userGender}
                 </span>
               )}
               {userDob && (isMe || privacySettings.showDateOfBirth === true) && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 rounded-lg text-slate-600">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#272729] border border-[#343536] rounded-full text-[#d7dadc]">
                   🎂 {formatDate(userDob)}
                 </span>
               )}
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-3 border-t border-slate-100">
+          <div className="flex flex-wrap items-center gap-4 text-xs text-[#818384] pt-3 border-t border-[#343536]">
             <span className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-slate-400" />
-              Tham gia ngày {formatDate(targetUser.joinedAt || targetUser.createdAt)}
+              <Calendar className="w-4 h-4 text-[#818384]" />
+              Tham gia ngày {formatDate(targetUser.createdAt || targetUser.joinedAt)}
             </span>
             <span className="flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-indigo-500" />
-              <strong className="text-slate-800">{displayPostCount}</strong> bài viết
+              <FileText className="w-4 h-4 text-orange-400" />
+              <strong className="text-[#d7dadc]">{displayPostCount}</strong> bài viết
             </span>
             {displayCommentCount !== null && (
               <span className="flex items-center gap-1.5">
-                <MessageSquare className="w-4 h-4 text-teal-500" />
-                <strong className="text-slate-800">{displayCommentCount}</strong> bình luận
+                <MessageSquare className="w-4 h-4 text-teal-400" />
+                <strong className="text-[#d7dadc]">{displayCommentCount}</strong> bình luận
               </span>
             )}
             <span className="flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-purple-500" />
-              <strong className="text-slate-800">{displayCommunityCount}</strong> cộng đồng
+              <Users className="w-4 h-4 text-purple-400" />
+              <strong className="text-[#d7dadc]">{displayCommunityCount}</strong> cộng đồng
             </span>
           </div>
         </div>
@@ -338,23 +338,23 @@ export default function UserProfilePage({
           Bài viết đã đăng ({userPosts.length})
         </h3>
 
-        {userPosts.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-400">
-            {isMe ? 'Bạn chưa đăng bài viết nào.' : 'Người dùng này chưa có bài viết nào.'}
-          </div>
-        ) : (
-          userPosts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onOpenDetail={onOpenPostDetail}
-              onOpenEdit={onOpenEditPost}
-              onOpenReport={onOpenReportPost}
-              onSelectCommunity={onSelectCommunity}
-            />
-          ))
-        )}
-      </div>
+          {userPosts.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-400">
+              {isMe ? 'Bạn chưa đăng bài viết nào.' : 'Người dùng này chưa có bài viết nào.'}
+            </div>
+          ) : (
+            userPosts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onOpenDetail={onOpenPostDetail}
+                onOpenEdit={onOpenEditPost}
+                onOpenReport={onOpenReportPost}
+                onSelectCommunity={onSelectCommunity}
+              />
+            ))
+          )}
+        </div>
     </div>
   );
 }

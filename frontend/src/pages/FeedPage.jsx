@@ -59,26 +59,26 @@ export default function FeedPage({
     <div className="space-y-4">
       {/* Active Filter Indicators */}
       {(searchKeyword || selectedTag) && (
-        <div className="bg-indigo-50 border border-indigo-200/80 p-3 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="bg-[#1a1a1b] border border-[#343536] p-3 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-indigo-900">Bộ lọc đang áp dụng:</span>
+            <span className="font-bold text-[#d7dadc]">Bộ lọc đang áp dụng:</span>
             {searchKeyword && (
-              <span className="bg-white px-2.5 py-1 rounded-lg border border-indigo-200 text-indigo-700 font-medium flex items-center gap-1">
+              <span className="bg-[#272729] px-2.5 py-1 rounded-full border border-[#343536] text-[#d7dadc] font-medium flex items-center gap-1">
                 Từ khóa: "{searchKeyword}"
                 <button
                   onClick={() => setSearchKeyword('')}
-                  className="hover:text-rose-600 font-bold ml-1 cursor-pointer"
+                  className="hover:text-rose-400 font-bold ml-1 cursor-pointer"
                 >
                   ×
                 </button>
               </span>
             )}
             {selectedTag && (
-              <span className="bg-white px-2.5 py-1 rounded-lg border border-indigo-200 text-indigo-700 font-medium flex items-center gap-1">
+              <span className="bg-[#272729] px-2.5 py-1 rounded-full border border-[#343536] text-orange-400 font-medium flex items-center gap-1">
                 Tag: #{selectedTag}
                 <button
                   onClick={() => setSelectedTag(null)}
-                  className="hover:text-rose-600 font-bold ml-1 cursor-pointer"
+                  className="hover:text-rose-400 font-bold ml-1 cursor-pointer"
                 >
                   ×
                 </button>
@@ -91,7 +91,7 @@ export default function FeedPage({
               setSearchKeyword('');
               setSelectedTag(null);
             }}
-            className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer underline"
+            className="text-xs text-orange-400 hover:text-orange-300 font-semibold cursor-pointer underline"
           >
             Xóa tất cả bộ lọc
           </button>
@@ -99,14 +99,14 @@ export default function FeedPage({
       )}
 
       {/* Sort Buttons Bar */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-2 shadow-xs flex items-center justify-between gap-2">
+      <div className="bg-[#1a1a1b] rounded-2xl border border-[#343536] p-2 shadow-sm flex items-center justify-between gap-2">
         <div className="flex items-center gap-1">
           <button
             onClick={() => setActiveSort(SORT_OPTIONS.HOT)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
               activeSort === SORT_OPTIONS.HOT
-                ? 'bg-orange-50 text-orange-700 font-bold border border-orange-200/60'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-[#272729] text-white font-bold border border-[#343536]'
+                : 'text-[#818384] hover:text-[#d7dadc] hover:bg-[#272729]'
             }`}
           >
             <Flame className="w-3.5 h-3.5 text-orange-500" />
@@ -115,25 +115,25 @@ export default function FeedPage({
 
           <button
             onClick={() => setActiveSort(SORT_OPTIONS.NEW)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
               activeSort === SORT_OPTIONS.NEW
-                ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-200/60'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-[#272729] text-white font-bold border border-[#343536]'
+                : 'text-[#818384] hover:text-[#d7dadc] hover:bg-[#272729]'
             }`}
           >
-            <Clock className="w-3.5 h-3.5 text-indigo-500" />
+            <Clock className="w-3.5 h-3.5 text-blue-400" />
             <span>Mới nhất (New)</span>
           </button>
 
           <button
             onClick={() => setActiveSort(SORT_OPTIONS.TOP)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
               activeSort === SORT_OPTIONS.TOP
-                ? 'bg-purple-50 text-purple-700 font-bold border border-purple-200/60'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-[#272729] text-white font-bold border border-[#343536]'
+                : 'text-[#818384] hover:text-[#d7dadc] hover:bg-[#272729]'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+            <Sparkles className="w-3.5 h-3.5 text-yellow-500" />
             <span>Bình chọn cao (Top)</span>
           </button>
         </div>

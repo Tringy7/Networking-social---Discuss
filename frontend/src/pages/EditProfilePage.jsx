@@ -178,22 +178,22 @@ export default function EditProfilePage({
         <button
           type="button"
           onClick={handleBack}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-indigo-600 cursor-pointer transition-colors bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-2xs"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-[#818384] hover:text-[#d7dadc] cursor-pointer transition-colors bg-[#1a1a1b] px-4 py-2 rounded-full border border-[#343536] shadow-sm"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Quay lại hồ sơ</span>
         </button>
 
-        <span className="text-xs text-slate-400 font-mono hidden sm:inline">
-          @{currentUser?.username}
+        <span className="text-xs text-[#818384] font-mono hidden sm:inline">
+          u/{currentUser?.username}
         </span>
       </div>
 
       {/* Main Settings Card */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-[#1a1a1b] rounded-3xl border border-[#343536] shadow-sm overflow-hidden text-[#d7dadc]">
         {/* Banner Preview & Upload Area */}
         <div 
-          className="h-44 sm:h-52 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 relative bg-cover bg-center flex items-end justify-end p-4"
+          className="h-44 sm:h-52 bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 relative bg-cover bg-center flex items-end justify-end p-4"
           style={formData.banner ? { backgroundImage: `url(${formData.banner})` } : undefined}
         >
           <input
@@ -207,7 +207,7 @@ export default function EditProfilePage({
             type="button"
             onClick={() => bannerInputRef.current?.click()}
             disabled={uploadingBanner}
-            className="px-3.5 py-2 bg-slate-900/60 hover:bg-slate-900/80 backdrop-blur-md text-white rounded-xl text-xs font-semibold transition cursor-pointer inline-flex items-center gap-2 shadow-lg disabled:opacity-50"
+            className="px-4 py-2 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-full text-xs font-semibold transition cursor-pointer inline-flex items-center gap-2 shadow-lg disabled:opacity-50 border border-white/10"
           >
             {uploadingBanner ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Camera className="w-4 h-4" />}
             <span>{uploadingBanner ? 'Đang tải lên...' : 'Thay đổi ảnh bìa'}</span>
@@ -216,18 +216,18 @@ export default function EditProfilePage({
 
         <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-8">
           {errorMessage && (
-            <div className="p-4 text-xs sm:text-sm bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl">
+            <div className="p-4 text-xs sm:text-sm bg-rose-950/40 border border-rose-800 text-rose-300 rounded-2xl">
               <p>{errorMessage}</p>
             </div>
           )}
 
           {/* Avatar Section */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-5 -mt-16 sm:-mt-20 relative pb-6 border-b border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-5 -mt-16 sm:-mt-20 relative pb-6 border-b border-[#343536]">
             <div className="relative group/avatar self-start">
               <img
                 src={formData.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'}
                 alt="Avatar Preview"
-                className="w-24 h-24 rounded-3xl object-cover border-4 border-white shadow-xl bg-white shrink-0"
+                className="w-24 h-24 rounded-3xl object-cover border-4 border-[#1a1a1b] shadow-xl bg-[#272729] shrink-0"
                 onError={(e) => {
                   e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80';
                 }}

@@ -45,30 +45,36 @@ function MainLayout({
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100/70 text-slate-900">
+    <div className="min-h-screen flex flex-col bg-[#0e1113] text-[#d7dadc]">
       <Navbar
         onOpenCreatePost={onOpenCreatePost}
         onOpenVerifyEmail={onOpenVerifyEmail}
         onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
       />
 
-      <div className="max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-1 flex gap-6">
+      {/* Main Container: Sidebar flush against left edge */}
+      <div className="flex-1 flex w-full">
         <Sidebar
           onOpenCreateCommunity={onOpenCreateCommunity}
           isOpenMobile={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
         />
 
-        <main className="flex-1 min-w-0">
-          {children}
-        </main>
+        {/* Center Content & Optional RightSidebar */}
+        <div className="flex-1 min-w-0 flex justify-center py-5 px-3 sm:px-6">
+          <div className="w-full max-w-6xl flex gap-6">
+            <main className="flex-1 min-w-0">
+              {children}
+            </main>
 
-        {showRightSidebar && (
-          <RightSidebar
-            onSelectCommunity={(commId) => navigate(`/c/${commId}`)}
-            onSelectTag={() => navigate('/')}
-          />
-        )}
+            {showRightSidebar && (
+              <RightSidebar
+                onSelectCommunity={(commId) => navigate(`/c/${commId}`)}
+                onSelectTag={() => navigate('/')}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

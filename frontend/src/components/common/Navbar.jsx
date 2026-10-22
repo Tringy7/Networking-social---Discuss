@@ -39,45 +39,45 @@ export default function Navbar({
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName)}&background=6366f1&color=fff`;
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 bg-[#1a1a1b]/95 backdrop-blur-md border-b border-[#343536]">
+      <div className="w-full px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
         {/* Left: Mobile hamburger & Logo */}
         <div className="flex items-center gap-3">
           <button
             onClick={onToggleMobileSidebar}
-            className="md:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 cursor-pointer"
+            className="md:hidden p-1.5 rounded-lg text-[#818384] hover:text-[#d7dadc] hover:bg-[#272729] cursor-pointer"
           >
             <Menu className="w-5 h-5" />
           </button>
 
           <Link
             to="/"
-            className="flex items-center gap-2.5 text-indigo-600 hover:opacity-90 transition cursor-pointer"
+            className="flex items-center gap-2.5 hover:opacity-90 transition cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 font-black text-lg">
+            <div className="w-8 h-8 rounded-full bg-orange-600 text-white flex items-center justify-center shadow-md font-black text-base">
               D
             </div>
             <div className="flex flex-col text-left">
-              <span className="font-extrabold text-lg text-slate-900 leading-tight tracking-tight">
-                Discuss<span className="text-indigo-600">.</span>
+              <span className="font-extrabold text-base text-[#d7dadc] leading-tight tracking-tight">
+                Discuss<span className="text-orange-500">.</span>
               </span>
-              <span className="text-[10px] font-medium text-slate-400 -mt-1 hidden sm:inline">
-                Mạng Xã Hội Thảo Luận
+              <span className="text-[10px] font-medium text-[#818384] -mt-0.5 hidden sm:inline">
+                Reddit Style Community
               </span>
             </div>
           </Link>
         </div>
 
-        {/* Middle: Global Search Input (Module 7) */}
-        <div className="flex-1 max-w-md mx-2">
+        {/* Middle: Global Search Input */}
+        <div className="flex-1 max-w-xl mx-2">
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#818384] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
-              placeholder="Tìm kiếm bài viết theo từ khóa, tiêu đề, tag..."
-              className="w-full pl-10 pr-4 py-2 bg-slate-100/80 hover:bg-slate-100 focus:bg-white border border-transparent focus:border-indigo-400 rounded-full text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+              placeholder="Tìm kiếm bài viết, chủ đề trên Discuss..."
+              className="w-full pl-10 pr-4 py-1.5 bg-[#272729] hover:bg-[#2d2d30] focus:bg-[#1a1a1b] border border-[#343536] focus:border-orange-500 rounded-full text-xs sm:text-sm text-[#d7dadc] placeholder-[#818384] focus:outline-none transition-all"
             />
             {searchKeyword && (
               <button
@@ -95,13 +95,13 @@ export default function Navbar({
           {/* Explore communities nav button */}
           <Link
             to="/explore"
-            className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
               location.pathname === '/explore'
-                ? 'bg-indigo-50 text-indigo-700'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-[#272729] text-[#d7dadc] border border-[#343536]'
+                : 'text-[#818384] hover:text-[#d7dadc] hover:bg-[#272729]'
             }`}
           >
-            <Compass className="w-4 h-4 text-indigo-500" />
+            <Compass className="w-4 h-4 text-orange-500" />
             <span>Khám phá</span>
           </Link>
 
@@ -109,7 +109,7 @@ export default function Navbar({
           {isAuthenticated && (
             <button
               onClick={onOpenCreatePost}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white text-xs font-bold rounded-full shadow-xs transition cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden md:inline">Đăng bài</span>
@@ -120,14 +120,14 @@ export default function Navbar({
           {currentRole === SYSTEM_ROLES.ADMIN && (
             <Link
               to="/admin"
-              className={`p-2 rounded-xl transition cursor-pointer ${
+              className={`p-2 rounded-full transition cursor-pointer ${
                 location.pathname === '/admin'
-                  ? 'bg-rose-100 text-rose-700'
-                  : 'text-rose-600 hover:bg-rose-50'
+                  ? 'bg-rose-900/40 text-rose-400 border border-rose-800'
+                  : 'text-rose-400 hover:bg-[#272729]'
               }`}
               title="Quản trị hệ thống (Admin Panel)"
             >
-              <ShieldAlert className="w-5 h-5" />
+              <ShieldAlert className="w-4 h-4" />
             </Link>
           )}
 
@@ -136,19 +136,19 @@ export default function Navbar({
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                className="flex items-center gap-2 p-1 rounded-full hover:bg-[#272729] transition cursor-pointer border border-transparent hover:border-[#343536]"
               >
                 <img
                   src={userAvatar}
                   alt={userDisplayName}
-                  className="w-8 h-8 rounded-full object-cover border-2 border-indigo-200"
+                  className="w-7 h-7 rounded-full object-cover border border-[#343536]"
                 />
-                <div className="hidden lg:flex flex-col text-left">
-                  <span className="text-xs font-bold text-slate-800 leading-tight truncate max-w-[120px]">
+                <div className="hidden lg:flex flex-col text-left pr-2">
+                  <span className="text-xs font-bold text-[#d7dadc] leading-tight truncate max-w-[120px]">
                     {userDisplayName}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    @{currentUser?.username}
+                  <span className="text-[10px] text-[#818384] font-mono">
+                    u/{currentUser?.username}
                   </span>
                 </div>
               </button>
@@ -156,44 +156,44 @@ export default function Navbar({
               {/* Dropdown Menu */}
               {showUserMenu && (
                 <div
-                  className="absolute right-0 top-12 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in"
+                  className="absolute right-0 top-11 w-56 bg-[#1a1a1b] rounded-2xl shadow-2xl border border-[#343536] py-1.5 z-50 animate-in fade-in"
                   onClick={() => setShowUserMenu(false)}
                 >
-                  <div className="px-4 py-2.5 border-b border-slate-100">
-                    <div className="font-bold text-xs text-slate-900 truncate">{userDisplayName}</div>
-                    <div className="text-[11px] text-slate-400 font-mono truncate">{currentUser?.email}</div>
+                  <div className="px-4 py-2.5 border-b border-[#343536]">
+                    <div className="font-bold text-xs text-[#d7dadc] truncate">{userDisplayName}</div>
+                    <div className="text-[11px] text-[#818384] font-mono truncate">{currentUser?.email}</div>
                   </div>
 
                   <Link
                     to="/user"
-                    className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                    className="w-full px-4 py-2 text-left text-xs font-medium text-[#d7dadc] hover:bg-[#272729] flex items-center gap-2 cursor-pointer"
                   >
-                    <User className="w-4 h-4 text-slate-400" />
+                    <User className="w-4 h-4 text-[#818384]" />
                     <span>Hồ sơ của tôi</span>
                   </Link>
 
                   <Link
                     to="/user/edit"
-                    className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                    className="w-full px-4 py-2 text-left text-xs font-medium text-[#d7dadc] hover:bg-[#272729] flex items-center gap-2 cursor-pointer"
                   >
-                    <Settings className="w-4 h-4 text-slate-400" />
+                    <Settings className="w-4 h-4 text-[#818384]" />
                     <span>Chỉnh sửa thông tin</span>
                   </Link>
 
                   {currentRole === SYSTEM_ROLES.ADMIN && (
                     <Link
                       to="/admin"
-                      className="w-full px-4 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer"
+                      className="w-full px-4 py-2 text-left text-xs font-semibold text-rose-400 hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer"
                     >
                       <ShieldAlert className="w-4 h-4 text-rose-500" />
                       <span>Quản trị hệ thống</span>
                     </Link>
                   )}
 
-                  <div className="border-t border-slate-100 mt-1 pt-1">
+                  <div className="border-t border-[#343536] mt-1 pt-1">
                     <button
                       onClick={logout}
-                      className="w-full px-4 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer"
+                      className="w-full px-4 py-2 text-left text-xs font-semibold text-rose-400 hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer"
                     >
                       <LogOut className="w-4 h-4 text-rose-500" />
                       <span>Đăng xuất</span>
@@ -207,23 +207,23 @@ export default function Navbar({
               {pendingEmail && (
                 <button
                   onClick={() => onOpenVerifyEmail && onOpenVerifyEmail(pendingEmail, '482915')}
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition cursor-pointer"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-300 bg-amber-950/40 hover:bg-amber-900/50 border border-amber-800 rounded-full transition cursor-pointer"
                   title="Nhập mã OTP để xác thực tài khoản vừa đăng ký"
                 >
-                  <MailCheck className="w-3.5 h-3.5 text-amber-600" />
+                  <MailCheck className="w-3.5 h-3.5 text-amber-400" />
                   <span>Xác thực email</span>
                 </button>
               )}
               <Link
                 to="/login"
-                className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-1.5 text-xs font-bold text-[#d7dadc] hover:bg-[#272729] rounded-full transition cursor-pointer flex items-center gap-1.5 border border-[#343536]"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Đăng nhập</span>
               </Link>
               <Link
                 to="/register"
-                className="px-3.5 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-1.5 text-xs font-bold bg-orange-600 hover:bg-orange-500 text-white rounded-full shadow-xs transition cursor-pointer flex items-center gap-1.5"
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span>Đăng ký</span>
