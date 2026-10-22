@@ -8,13 +8,11 @@ import com.discuss.discuss.dto.community.CreateCommunityRequestDTO;
 import com.discuss.discuss.dto.community.UpdateCommunityRequestDTO;
 import com.discuss.discuss.dto.media.StoredImageDTO;
 import com.discuss.discuss.entity.Community;
-import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.service.community.CommunityService;
 import com.discuss.discuss.service.media.ImageService;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -24,8 +22,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/communities")
@@ -63,32 +59,35 @@ public class CommunityController {
     }
 
     @PutMapping(
-            value = "/{communityId}/avatar",
+            value = "/{name}/avatar",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    public StoredImageDTO setAvatarForCommunity(
-            @PathVariable Long communityId,
+    public ResponseEntity<CommunityDetailResponseDTO> setAvatarForCommunity(
+            @PathVariable String name,
             @RequestParam("file") MultipartFile file
     ) {
-        return imageService.setAvatarForCommunity(communityId, file);
+        imageService.setAvatarForCommunity(name, file);
+
+        return ResponseEntity.ok(communityService.getCommunityDetail(name));
     }
 
     @PutMapping(
             value = "/{communityId}/banner",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    public StoredImageDTO setBannerForCommunity(
-            @PathVariable Long communityId,
+    public ResponseEntity<CommunityDetailResponseDTO> setBannerForCommunity(
+            @PathVariable String name,
             @RequestParam("file") MultipartFile file
     ) {
-        return imageService.setBannerForCommunity(communityId, file);
+        imageService.setBannerForCommunity(name, file);
+        return ResponseEntity.ok(communityService.getCommunityDetail(name));
     }
 
     @GetMapping("/{name}")
     public ResponseEntity<CommunityDetailResponseDTO> getCommunityByName(
             @PathVariable String name
     ) {
-        return ResponseEntity.ok(communityService.getCommunity(name));
+        return ResponseEntity.ok(communityService.getCommunityDetail(name));
     }
 
     @GetMapping
@@ -101,7 +100,7 @@ public class CommunityController {
             ) Pageable pageable
     ) {
         return ResponseEntity.ok(
-                communityService.getAllCommunityWithFilter(filterSpec, pageable)
+                communityService.getAllCommunitiesWithSpec(filterSpec, pageable)
         );
     }
 }

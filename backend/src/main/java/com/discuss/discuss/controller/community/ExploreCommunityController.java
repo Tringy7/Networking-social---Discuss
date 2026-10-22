@@ -2,10 +2,8 @@ package com.discuss.discuss.controller.community;
 
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.community.CommunityPreviewResponseDTO;
-import com.discuss.discuss.repository.CommunityRepository;
 import com.discuss.discuss.service.community.CommunityService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -22,7 +20,7 @@ public class ExploreCommunityController {
     private final CommunityService communityService;
 
     @GetMapping
-    public ResponseEntity<PageResponseDTO<CommunityPreviewResponseDTO>> getAllCommunity(
+    public ResponseEntity<PageResponseDTO<CommunityPreviewResponseDTO>> getAllCommunitiesForPreview(
             @PageableDefault(
                     size = 10,
                     sort = "createdAt",
@@ -30,7 +28,7 @@ public class ExploreCommunityController {
             ) Pageable pageable
     ) {
         return ResponseEntity.ok(
-                communityService.getAllCommunity(pageable)
+                communityService.getAllCommunities(pageable)
         );
     }
 

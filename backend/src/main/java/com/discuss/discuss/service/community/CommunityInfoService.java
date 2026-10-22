@@ -32,23 +32,12 @@ public class CommunityInfoService {
         Category category =
                 categoryService.getCategoryById(req.getCategoryId());
 
-
         String description = req.getDescription();
-
-        if (description != null) {
-            description = description.trim();
-        }
 
         CommunityInfo info = CommunityInfo.builder()
                 .community(community)
                 .category(category)
-                .description(description)
-                .visibility(
-                        req.getVisibility() == null
-                                ? CommunityVisibility.PUBLIC
-                                : req.getVisibility()
-                )
-                .status(CommunityStatus.ACTIVE)
+                .description(description != null ? description.trim() : null)
                 .build();
 
         return infoRepository.save(info);
@@ -59,10 +48,8 @@ public class CommunityInfoService {
             Community community,
             UpdateCommunityRequestDTO req
     ) {
-        CommunityInfo info = infoRepository.findByCommunity(community)
-                .orElseThrow(() -> new CommunityException(
-                        CommunityErrorCode.COMMUNITY_INFORMATION_NOT_FOUND
-                ));
+
+        CommunityInfo info = this.getCommunityInfoByCommunity(community);
 
         if (req.getDescription() != null) {
             info.setDescription(req.getDescription().trim());
@@ -74,38 +61,14 @@ public class CommunityInfoService {
             );
         }
 
-        if (req.getVisibility() != null) {
-            info.setVisibility(req.getVisibility());
-        }
-
         return infoRepository.save(info);
     }
 
-    public CommunityInfo getActiveInfo(Community community) {
+    public CommunityInfo getCommunityInfoByCommunity(Community community) {
         return infoRepository.findByCommunity(community)
-                .filter(info ->
-                        info.getStatus() == CommunityStatus.ACTIVE)
                 .orElseThrow(() -> new CommunityException(
-                        CommunityErrorCode.COMMUNITY_NOT_FOUND
+                        CommunityErrorCode.COMMUNITY_INFORMATION_NOT_FOUND
                 ));
-    }
-
-    @Transactional
-    public void deleteCommunityInfo(Community community) {
-        CommunityInfo info = infoRepository.findByCommunity(community)
-                .orElseThrow(() ->
-                        new CommunityException(
-                                CommunityErrorCode.COMMUNITY_INFORMATION_NOT_FOUND
-                        )
-                );
-
-        if (info.getStatus() == CommunityStatus.DELETED) {
-            throw new CommunityException(
-                    CommunityErrorCode.COMMUNITY_NOT_FOUND
-            );
-        }
-
-        info.setStatus(CommunityStatus.DELETED);
     }
 
     public String buildImageUrl(String objectKey) {

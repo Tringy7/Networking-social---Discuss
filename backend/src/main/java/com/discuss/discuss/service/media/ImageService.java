@@ -1,6 +1,7 @@
 package com.discuss.discuss.service.media;
 
 import com.discuss.discuss.dto.media.StoredImageDTO;
+import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.entity.CommunityInfo;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserProfile;
@@ -9,6 +10,7 @@ import com.discuss.discuss.exception.auth.AuthErrorCode;
 import com.discuss.discuss.exception.auth.AuthException;
 import com.discuss.discuss.repository.CommunityInfoRepository;
 import com.discuss.discuss.repository.UserProfileRepository;
+import com.discuss.discuss.service.community.CommunityService;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,20 +29,20 @@ public class ImageService {
 
     private final MediaStorageService storage;
     private final UserService userService;
+    private final CommunityService communityService;
     private final UserProfileRepository profileRepository;
     private final CommunityInfoRepository communityInfoRepository;
 
     // ==================== USER ====================
-
     @Transactional
-    public StoredImageDTO setAvatarForUser(MultipartFile file) {
+    public void setAvatarForUser(MultipartFile file) {
         User user = userService.getCurrentUser();
 
         UserProfile profile = profileRepository.findByUser(user)
-                .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.USER_NOT_FOUND));
+                .orElseThrow(()
+                        -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
 
-        return replace(
+        this.replace(
                 ImageKind.AVATAR,
                 file,
                 user.getId(),
@@ -52,14 +54,14 @@ public class ImageService {
     }
 
     @Transactional
-    public StoredImageDTO setBannerForUser(MultipartFile file) {
+    public void setBannerForUser(MultipartFile file) {
         User user = userService.getCurrentUser();
 
         UserProfile profile = profileRepository.findByUser(user)
-                .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.USER_NOT_FOUND));
+                .orElseThrow(()
+                        -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
 
-        return replace(
+        this.replace(
                 ImageKind.PROFILE_BANNER,
                 file,
                 user.getId(),
@@ -71,21 +73,20 @@ public class ImageService {
     }
 
     // ==================== COMMUNITY ====================
-
     @Transactional
-    public StoredImageDTO setAvatarForCommunity(
-            Long communityId,
+    public void setAvatarForCommunity(
+            String communityName,
             MultipartFile file
     ) {
-        CommunityInfo info = communityInfoRepository
-                .findByCommunityId(communityId)
-                .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.USER_NOT_FOUND));
+        Community community =
+                communityService.getCommunityByNameAndStatusActive(communityName);
 
-        return replace(
+        CommunityInfo info = community.getInfo();
+
+        this.replace(
                 ImageKind.COMMUNITY_AVATAR,
                 file,
-                communityId,
+                community.getId(),
                 info,
                 CommunityInfo::getAvatar,
                 CommunityInfo::setAvatar,
@@ -94,19 +95,19 @@ public class ImageService {
     }
 
     @Transactional
-    public StoredImageDTO setBannerForCommunity(
-            Long communityId,
+    public void setBannerForCommunity(
+            String communityName,
             MultipartFile file
     ) {
-        CommunityInfo info = communityInfoRepository
-                .findByCommunityId(communityId)
-                .orElseThrow(() ->
-                        new AuthException(AuthErrorCode.USER_NOT_FOUND));
+        Community community =
+                communityService.getCommunityByNameAndStatusActive(communityName);
 
-        return replace(
+        CommunityInfo info = community.getInfo();
+
+        this.replace(
                 ImageKind.COMMUNITY_BANNER,
                 file,
-                communityId,
+                community.getId(),
                 info,
                 CommunityInfo::getBanner,
                 CommunityInfo::setBanner,
@@ -115,8 +116,7 @@ public class ImageService {
     }
 
     // ==================== SHARED ====================
-
-    private <T> StoredImageDTO replace(
+    private <T> void replace(
             ImageKind kind,
             MultipartFile file,
             Object ownerId,
@@ -158,7 +158,5 @@ public class ImageService {
                     }
                 }
         );
-
-        return stored;
     }
 }

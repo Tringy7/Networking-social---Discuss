@@ -29,19 +29,35 @@ public class CommunityMapper {
             long memberCount,
             List<CommunityMember> staffMembers
     ) {
-        List<CommunityMemberResponseDTO> moderatorDTOs = (staffMembers == null)
-                ? Collections.emptyList()
-                : staffMembers.stream().map(this::toMemberDTO).toList();
+        List<CommunityMemberResponseDTO> moderatorDTOs =
+                (staffMembers == null)
+                        ? Collections.emptyList()
+                        : staffMembers.stream()
+                        .map(this::toMemberDTO)
+                        .toList();
 
         return CommunityDetailResponseDTO.builder()
                 .id(community.getId())
                 .name(community.getName())
                 .description(info.getDescription())
-                .avatarUrl(communityInfoService.buildImageUrl(info.getAvatar()))
-                .bannerUrl(communityInfoService.buildImageUrl(info.getBanner()))
-                .categoryId(info.getCategory() == null ? null : info.getCategory().getId())
-                .categoryName(info.getCategory() == null ? null : info.getCategory().getName())
-                .visibility(info.getVisibility())
+                .avatarUrl(
+                        communityInfoService.buildImageUrl(info.getAvatar())
+                )
+                .bannerUrl(
+                        communityInfoService.buildImageUrl(info.getBanner())
+                )
+                .categoryId(
+                        info.getCategory() != null
+                                ? info.getCategory().getId()
+                                : null
+                )
+                .categoryName(
+                        info.getCategory() != null
+                                ? info.getCategory().getName()
+                                : null
+                )
+                .visibility(community.getVisibility())
+                .status(community.getStatus())
                 .memberCount(memberCount)
                 .createdAt(community.getCreatedAt())
                 .moderators(moderatorDTOs)
@@ -50,11 +66,17 @@ public class CommunityMapper {
 
     public CommunityMemberResponseDTO toMemberDTO(CommunityMember member) {
         User user = member.getUser();
-        UserProfile profile = userProfileRepository.findByUser(user).orElse(null);
 
-        String displayName = (profile != null && profile.getDisplayName() != null && !profile.getDisplayName().isBlank())
-                ? profile.getDisplayName()
-                : user.getUsername();
+        UserProfile profile = userProfileRepository
+                .findByUser(user)
+                .orElse(null);
+
+        String displayName =
+                (profile != null
+                        && profile.getDisplayName() != null
+                        && !profile.getDisplayName().isBlank())
+                        ? profile.getDisplayName()
+                        : user.getUsername();
 
         String avatarUrl = (profile != null)
                 ? communityInfoService.buildImageUrl(profile.getAvatar())
@@ -78,7 +100,6 @@ public class CommunityMapper {
         return CommunityPreviewResponseDTO.builder()
                 .id(community.getId())
                 .name(community.getName())
-
                 .description(info.getDescription())
                 .avatarUrl(
                         communityInfoService.buildImageUrl(info.getAvatar())
@@ -88,7 +109,8 @@ public class CommunityMapper {
                                 ? info.getCategory().getName()
                                 : null
                 )
-                .visibility(info.getVisibility())
+                .communityStatus(community.getStatus())
+                .visibility(community.getVisibility())
                 .memberCount(memberCount)
                 .createdAt(community.getCreatedAt())
                 .build();

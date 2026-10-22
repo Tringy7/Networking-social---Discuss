@@ -1,15 +1,11 @@
 package com.discuss.discuss.controller.user;
 
-import com.discuss.discuss.dto.common.PageResponseDTO;
-import com.discuss.discuss.dto.community.CommunityPreviewResponseDTO;
 import com.discuss.discuss.dto.media.StoredImageDTO;
 import com.discuss.discuss.dto.user.PublicUserProfileResponseDTO;
 import com.discuss.discuss.dto.user.UpdateProfileRequestDTO;
 import com.discuss.discuss.dto.user.UserInfoResponseDTO;
-import com.discuss.discuss.service.community.CommunityService;
 import com.discuss.discuss.service.media.ImageService;
 import com.discuss.discuss.service.user.UserProfileService;
-import com.discuss.discuss.service.user.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -22,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class UserController {
     private final UserProfileService userProfileService;
-    private final CommunityService communityService;
+
     private final ImageService imageService;
 
 
@@ -31,22 +27,19 @@ public class UserController {
         return ResponseEntity.ok().body(this.userProfileService.getUserProfile());
     }
 
-    @GetMapping("/me/communities/created")
-    public ResponseEntity<PageResponseDTO<CommunityPreviewResponseDTO>> getCommunitiesOfUser() {
-
-    }
-
     @PutMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public StoredImageDTO setAvatar(
+    public ResponseEntity<UserInfoResponseDTO> setAvatar(
             @RequestParam("file") MultipartFile file) {
-        return imageService.setAvatarForUser(file);
+        imageService.setAvatarForUser(file);
+        return ResponseEntity.ok().body(this.userProfileService.getUserProfile());
     }
 
     // New banner, edit banner
     @PutMapping(value = "/me/banner", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public StoredImageDTO setBanner(
+    public ResponseEntity<UserInfoResponseDTO> setBanner(
             @RequestParam("file") MultipartFile file) {
-        return imageService.setBannerForUser(file);
+        imageService.setBannerForUser(file);
+        return ResponseEntity.ok().body(this.userProfileService.getUserProfile());
     }
 
     @GetMapping("/{userId}")
@@ -60,6 +53,4 @@ public class UserController {
     ) {
         return ResponseEntity.ok(userProfileService.updateProfile(request));
     }
-
-
 }

@@ -1,5 +1,6 @@
 package com.discuss.discuss.dto.community;
 
+import com.discuss.discuss.enums.CommunityStatus;
 import com.discuss.discuss.enums.CommunityVisibility;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,6 +24,7 @@ public class CommunityPreviewResponseDTO {
     private String avatarUrl;
 
     private String categoryName;
+    private CommunityStatus communityStatus;
     private CommunityVisibility visibility;
 
     private long memberCount;

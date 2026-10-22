@@ -9,14 +9,14 @@ import org.springframework.data.web.config.PageableHandlerMethodArgumentResolver
 @Configuration
 public class PaginationConfig {
 
-    @Value("app.pagination.default-page-size")
+    @Value("${app.pagination.default-page-size}")
     private int defaultPageSize;
 
-    @Value("app.pagination.max-page-size")
+    @Value("${app.pagination.max-page-size}")
     private int maxPageSize;
 
     @Bean
-    PageableHandlerMethodArgumentResolverCustomizer paginationCustomizer() {
+    public PageableHandlerMethodArgumentResolverCustomizer paginationCustomizer() {
         return resolver -> {
             resolver.setFallbackPageable(PageRequest.of(0, defaultPageSize));
             resolver.setMaxPageSize(maxPageSize);

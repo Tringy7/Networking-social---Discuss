@@ -1,5 +1,6 @@
 package com.discuss.discuss.dto.community;
 
+import com.discuss.discuss.enums.CommunityStatus;
 import com.discuss.discuss.enums.CommunityVisibility;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,6 +29,7 @@ public class CommunityDetailResponseDTO {
     private String categoryName;
 
     private CommunityVisibility visibility;
+    private CommunityStatus status;
 
     private long memberCount;
     private LocalDateTime createdAt;
