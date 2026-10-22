@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCommunity } from '../context/CommunityContext';
 import { usePost } from '../context/PostContext';
@@ -7,14 +8,14 @@ import { getFriendlyErrorMessage } from '../utils/errorHandler';
 import RoleBadge from '../components/common/RoleBadge';
 import PostCard from '../components/post/PostCard';
 import { formatDate, formatNumber } from '../utils/formatters';
-import { 
-  User, 
-  Settings, 
-  Award, 
-  Calendar, 
-  FileText, 
-  Users, 
-  ShieldCheck, 
+import {
+  User,
+  Settings,
+  Award,
+  Calendar,
+  FileText,
+  Users,
+  ShieldCheck,
   Sparkles,
   MessageSquare,
   Loader2,
@@ -22,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export default function UserProfilePage({
-  userId = null,
+  userId: propUserId = null,
   onOpenEditProfile,
   onOpenPostDetail,
   onOpenEditPost,
@@ -30,6 +31,10 @@ export default function UserProfilePage({
   onSelectCommunity,
   onBack,
 }) {
+  const params = useParams();
+  const navigate = useNavigate();
+  const userId = propUserId || params.userId || null;
+
   const { currentUser, currentRole, allUsers } = useAuth();
   const { communities, memberships } = useCommunity();
   const { posts } = usePost();
@@ -125,10 +130,12 @@ export default function UserProfilePage({
 
   const targetUser = isMe ? currentUser : publicUser;
   if (!targetUser) {
-    if (!isMe) return null;
+    if (isMe) {
+      return <Navigate to="/login" replace />;
+    }
     return (
       <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center text-xs text-slate-400">
-        Vui lòng đăng nhập để xem hồ sơ cá nhân.
+        Không tìm thấy thông tin người dùng này.
       </div>
     );
   }
@@ -138,12 +145,12 @@ export default function UserProfilePage({
   const statistics = targetUser?.statistics || null;
 
   const userDisplayName = profile.displayName || targetUser?.displayName || targetUser?.name || targetUser?.username || 'Người dùng';
-  const rawAvatar = profile.avatarObjectKey || targetUser?.avatar || '';
+  const rawAvatar = profile.avatar || profile.avatarObjectKey || targetUser?.avatar || '';
   const userAvatar = rawAvatar
     ? (rawAvatar.startsWith('http') || rawAvatar.startsWith('/') ? rawAvatar : `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80`)
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName)}&background=6366f1&color=fff`;
 
-  const rawBanner = profile.bannerObjectKey || targetUser?.banner || '';
+  const rawBanner = profile.banner || profile.bannerObjectKey || targetUser?.banner || '';
   const userBio = profile.bio || targetUser?.bio || '';
   const userLocation = profile.location || targetUser?.location || '';
   const userDob = profile.dateOfBirth || targetUser?.dateOfBirth || '';
@@ -181,7 +188,7 @@ export default function UserProfilePage({
       {/* Profile Card */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
         {/* Banner */}
-        <div 
+        <div
           className="h-36 sm:h-44 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 relative bg-cover bg-center"
           style={rawBanner && (rawBanner.startsWith('http') || rawBanner.startsWith('/')) ? { backgroundImage: `url(${rawBanner})` } : undefined}
         />
@@ -197,11 +204,6 @@ export default function UserProfilePage({
               <div className="pb-1">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                   <h1 className="text-xl font-bold text-slate-900">{userDisplayName}</h1>
-                  {isMe ? (
-                    <RoleBadge role={currentRole} type="system" size="md" />
-                  ) : (
-                    targetUser?.role && <RoleBadge role={targetUser.role} type="system" size="md" />
-                  )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
                   <span>@{targetUser?.username}</span>
@@ -331,34 +333,28 @@ export default function UserProfilePage({
       </div>
 
       {/* Authored Posts */}
-      {(!isMe && privacySettings.showPostsOnProfile === false) ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-400">
-          Người dùng đã ẩn danh sách bài viết trên trang cá nhân.
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            Bài viết đã đăng ({userPosts.length})
-          </h3>
+      <div className="space-y-3">
+        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+          Bài viết đã đăng ({userPosts.length})
+        </h3>
 
-          {userPosts.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-400">
-              {isMe ? 'Bạn chưa đăng bài viết nào.' : 'Người dùng này chưa có bài viết nào.'}
-            </div>
-          ) : (
-            userPosts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onOpenDetail={onOpenPostDetail}
-                onOpenEdit={onOpenEditPost}
-                onOpenReport={onOpenReportPost}
-                onSelectCommunity={onSelectCommunity}
-              />
-            ))
-          )}
-        </div>
-      )}
+        {userPosts.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-400">
+            {isMe ? 'Bạn chưa đăng bài viết nào.' : 'Người dùng này chưa có bài viết nào.'}
+          </div>
+        ) : (
+          userPosts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              onOpenDetail={onOpenPostDetail}
+              onOpenEdit={onOpenEditPost}
+              onOpenReport={onOpenReportPost}
+              onSelectCommunity={onSelectCommunity}
+            />
+          ))
+        )}
+      </div>
     </div>
   );
 }

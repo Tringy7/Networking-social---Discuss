@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom';
 import { ToastProvider } from './context/ToastContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { CommunityProvider, useCommunity } from './context/CommunityContext';
 import { PostProvider } from './context/PostContext';
 
@@ -9,11 +10,8 @@ import Sidebar from './components/common/Sidebar';
 import RightSidebar from './components/common/RightSidebar';
 import ToastContainer from './components/common/ToastContainer';
 
-import LoginModal from './components/auth/LoginModal';
-import RegisterModal from './components/auth/RegisterModal';
 import VerifyEmailModal from './components/auth/VerifyEmailModal';
 import ForgotPasswordModal from './components/auth/ForgotPasswordModal';
-import EditProfileModal from './components/auth/EditProfileModal';
 import ChangePasswordModal from './components/auth/ChangePasswordModal';
 
 import PostDetailModal from './components/post/PostDetailModal';
@@ -28,61 +26,73 @@ import CommunityDetailPage from './pages/CommunityDetailPage';
 import ExploreCommunitiesPage from './pages/ExploreCommunitiesPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import UserProfilePage from './pages/UserProfilePage';
+import EditProfilePage from './pages/EditProfilePage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ProtectedRoute from './components/common/ProtectedRoute';
 
-function DiscussMainApp() {
+/**
+ * Layout chung có Navbar, Sidebar và RightSidebar
+ */
+function MainLayout({
+  onOpenCreatePost,
+  onOpenCreateCommunity,
+  onOpenVerifyEmail,
+  children,
+  showRightSidebar = true,
+}) {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+
+  return (
+    <div className="min-h-screen flex flex-col bg-slate-100/70 text-slate-900">
+      <Navbar
+        onOpenCreatePost={onOpenCreatePost}
+        onOpenVerifyEmail={onOpenVerifyEmail}
+        onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
+      />
+
+      <div className="max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-1 flex gap-6">
+        <Sidebar
+          onOpenCreateCommunity={onOpenCreateCommunity}
+          isOpenMobile={isMobileSidebarOpen}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        />
+
+        <main className="flex-1 min-w-0">
+          {children}
+        </main>
+
+        {showRightSidebar && (
+          <RightSidebar
+            onSelectCommunity={(commId) => navigate(`/c/${commId}`)}
+            onSelectTag={() => navigate('/')}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DiscussAppRoutes() {
+  const navigate = useNavigate();
   const { communities } = useCommunity();
 
-  const [currentView, setCurrentView] = useState('home');
-  const [selectedCommunityId, setSelectedCommunityId] = useState(null);
-
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  // Modals toàn cục
   const [isVerifyEmailOpen, setIsVerifyEmailOpen] = useState(false);
   const [verifyEmailTarget, setVerifyEmailTarget] = useState('');
   const [verifyEmailOtp, setVerifyEmailOtp] = useState('');
-  const [prefilledLoginUsername, setPrefilledLoginUsername] = useState('');
 
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [createPostCommunityId, setCreatePostCommunityId] = useState(null);
+
   const [isCreateCommunityOpen, setIsCreateCommunityOpen] = useState(false);
   const [detailPost, setDetailPost] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
   const [reportingPost, setReportingPost] = useState(null);
-
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-
-  const [viewUserId, setViewUserId] = useState(null);
-
-  const handleSelectCommunity = (communityId) => {
-    setSelectedCommunityId(communityId);
-    setCurrentView('community');
-  };
-
-  const handleNavigateHome = () => {
-    setSelectedCommunityId(null);
-    setCurrentView('home');
-  };
-
-  const handleNavigateExplore = () => {
-    setCurrentView('explore');
-  };
-
-  const handleNavigateAdmin = () => {
-    setCurrentView('admin');
-  };
-
-  const handleNavigateProfile = () => {
-    setViewUserId(null); // xem chính mình
-    setCurrentView('profile');
-  };
-
-  const handleNavigateUserProfile = (userId) => {
-    setViewUserId(userId);
-    setCurrentView('profile');
-  };
 
   const handleOpenVerifyEmail = (email = '', otp = '') => {
     setVerifyEmailTarget(email);
@@ -90,151 +100,190 @@ function DiscussMainApp() {
     setIsVerifyEmailOpen(true);
   };
 
-  const activeCommunity = selectedCommunityId && Array.isArray(communities)
-    ? communities.find((c) => c.id === selectedCommunityId)
-    : null;
+  const handleOpenCreatePost = (communityId = null) => {
+    setCreatePostCommunityId(communityId);
+    setIsCreatePostOpen(true);
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100/70 text-slate-900">
-      <Navbar
-        currentView={currentView}
-        onOpenLogin={() => {
-          setPrefilledLoginUsername('');
-          setIsLoginOpen(true);
-        }}
-        onOpenRegister={() => setIsRegisterOpen(true)}
-        onOpenVerifyEmail={(email, otp) => handleOpenVerifyEmail(email, otp)}
-        onOpenCreatePost={() => setIsCreatePostOpen(true)}
-        onOpenCreateCommunity={() => setIsCreateCommunityOpen(true)}
-        onOpenEditProfile={() => setIsEditProfileOpen(true)}
-        onNavigateHome={handleNavigateHome}
-        onNavigateExplore={handleNavigateExplore}
-        onNavigateAdmin={handleNavigateAdmin}
-        onNavigateProfile={handleNavigateProfile}
-        onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
-      />
-
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 flex-1 flex gap-6">
-        <Sidebar
-          currentView={currentView}
-          selectedCommunityId={selectedCommunityId}
-          onNavigateHome={handleNavigateHome}
-          onNavigateExplore={handleNavigateExplore}
-          onNavigateAdmin={handleNavigateAdmin}
-          onNavigateProfile={handleNavigateProfile}
-          onSelectCommunity={handleSelectCommunity}
-          onOpenCreateCommunity={() => setIsCreateCommunityOpen(true)}
-          isOpenMobile={isMobileSidebarOpen}
-          onCloseMobile={() => setIsMobileSidebarOpen(false)}
+    <>
+      <Routes>
+        {/* Auth Dedicated Pages */}
+        <Route 
+          path="/login" 
+          element={
+            <LoginPage
+              onOpenForgotPassword={() => setIsForgotPasswordOpen(true)}
+              onOpenVerifyEmail={handleOpenVerifyEmail}
+            />
+          } 
+        />
+        <Route 
+          path="/register" 
+          element={
+            <RegisterPage
+              onOpenVerifyEmail={handleOpenVerifyEmail}
+            />
+          } 
         />
 
-        <main className="flex-1 min-w-0">
-          {currentView === 'home' && (
-            <FeedPage
-              communityId={null}
-              onOpenDetail={(post) => setDetailPost(post)}
-              onOpenEdit={(post) => setEditingPost(post)}
-              onOpenReport={(post) => setReportingPost(post)}
-              onSelectCommunity={handleSelectCommunity}
-              onSelectUser={handleNavigateUserProfile}
-              onOpenCreatePost={() => setIsCreatePostOpen(true)}
-            />
-          )}
-
-          {currentView === 'community' && activeCommunity && (
-            <CommunityDetailPage
-              community={activeCommunity}
-              onOpenPostDetail={(post) => setDetailPost(post)}
-              onOpenEditPost={(post) => setEditingPost(post)}
-              onOpenReportPost={(post) => setReportingPost(post)}
-              onSelectCommunity={handleSelectCommunity}
-              onSelectUser={handleNavigateUserProfile}
-            />
-          )}
-
-          {currentView === 'explore' && (
-            <ExploreCommunitiesPage
-              onSelectCommunity={handleSelectCommunity}
+        {/* Home Feed */}
+        <Route
+          path="/"
+          element={
+            <MainLayout
+              onOpenCreatePost={() => handleOpenCreatePost(null)}
               onOpenCreateCommunity={() => setIsCreateCommunityOpen(true)}
-            />
-          )}
+              onOpenVerifyEmail={handleOpenVerifyEmail}
+            >
+              <FeedPage
+                communityId={null}
+                onOpenDetail={(post) => setDetailPost(post)}
+                onOpenEdit={(post) => setEditingPost(post)}
+                onOpenReport={(post) => setReportingPost(post)}
+                onSelectCommunity={(commId) => navigate(`/c/${commId}`)}
+                onSelectUser={(userId) => navigate(`/user/${userId}`)}
+                onOpenCreatePost={() => handleOpenCreatePost(null)}
+              />
+            </MainLayout>
+          }
+        />
 
-          {currentView === 'admin' && (
-            <AdminDashboardPage
-              onSelectCommunity={handleSelectCommunity}
-              onOpenPostDetail={(post) => setDetailPost(post)}
-            />
-          )}
+        {/* Explore Communities */}
+        <Route
+          path="/explore"
+          element={
+            <MainLayout
+              onOpenCreatePost={() => handleOpenCreatePost(null)}
+              onOpenCreateCommunity={() => setIsCreateCommunityOpen(true)}
+              onOpenVerifyEmail={handleOpenVerifyEmail}
+            >
+              <ExploreCommunitiesPage
+                onSelectCommunity={(commId) => navigate(`/c/${commId}`)}
+                onOpenCreateCommunity={() => setIsCreateCommunityOpen(true)}
+              />
+            </MainLayout>
+          }
+        />
 
-          {currentView === 'profile' && (
-            <UserProfilePage
-              userId={viewUserId}
-              onOpenEditProfile={() => setIsEditProfileOpen(true)}
-              onOpenPostDetail={(post) => setDetailPost(post)}
-              onOpenEditPost={(post) => setEditingPost(post)}
-              onOpenReportPost={(post) => setReportingPost(post)}
-              onSelectCommunity={handleSelectCommunity}
-              onBack={() => {
-                setViewUserId(null);
-                setCurrentView('home');
-              }}
-            />
-          )}
-        </main>
+        {/* Community Detail: /c/:communityId */}
+        <Route
+          path="/c/:communityId"
+          element={
+            <MainLayout
+              onOpenCreatePost={() => handleOpenCreatePost(null)}
+              onOpenCreateCommunity={() => setIsCreateCommunityOpen(true)}
+              onOpenVerifyEmail={handleOpenVerifyEmail}
+            >
+              <CommunityDetailPage
+                onOpenPostDetail={(post) => setDetailPost(post)}
+                onOpenEditPost={(post) => setEditingPost(post)}
+                onOpenReportPost={(post) => setReportingPost(post)}
+                onSelectCommunity={(commId) => navigate(`/c/${commId}`)}
+                onSelectUser={(userId) => navigate(`/user/${userId}`)}
+              />
+            </MainLayout>
+          }
+        />
 
-        {currentView !== 'admin' && (
-          <RightSidebar
-            onSelectCommunity={handleSelectCommunity}
-            onSelectTag={() => {
-              setCurrentView('home');
-            }}
-          />
-        )}
-      </div>
+        {/* Current User Profile: /user (Yêu cầu đăng nhập, nếu chưa đăng nhập điều hướng sang /login theo chuẩn 401) */}
+        <Route
+          path="/user"
+          element={
+            <ProtectedRoute>
+              <MainLayout
+                onOpenCreatePost={() => handleOpenCreatePost(null)}
+                onOpenCreateCommunity={() => setIsCreateCommunityOpen(true)}
+                onOpenVerifyEmail={handleOpenVerifyEmail}
+              >
+                <UserProfilePage
+                  onOpenEditProfile={() => navigate('/user/edit')}
+                  onOpenPostDetail={(post) => setDetailPost(post)}
+                  onOpenEditPost={(post) => setEditingPost(post)}
+                  onOpenReportPost={(post) => setReportingPost(post)}
+                  onSelectCommunity={(commId) => navigate(`/c/${commId}`)}
+                  onBack={() => navigate('/')}
+                />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
 
-      <LoginModal
-        isOpen={isLoginOpen}
-        onClose={() => setIsLoginOpen(false)}
-        onOpenRegister={() => setIsRegisterOpen(true)}
-        onOpenForgotPassword={() => setIsForgotPasswordOpen(true)}
-        onOpenVerifyEmail={(email, otp) => handleOpenVerifyEmail(email, otp)}
-        prefilledUsername={prefilledLoginUsername}
-      />
+        {/* Public User Profile: /user/:userId (Công khai xem thông tin người khác) */}
+        <Route
+          path="/user/:userId"
+          element={
+            <MainLayout
+              onOpenCreatePost={() => handleOpenCreatePost(null)}
+              onOpenCreateCommunity={() => setIsCreateCommunityOpen(true)}
+              onOpenVerifyEmail={handleOpenVerifyEmail}
+            >
+              <UserProfilePage
+                onOpenEditProfile={() => navigate('/user/edit')}
+                onOpenPostDetail={(post) => setDetailPost(post)}
+                onOpenEditPost={(post) => setEditingPost(post)}
+                onOpenReportPost={(post) => setReportingPost(post)}
+                onSelectCommunity={(commId) => navigate(`/c/${commId}`)}
+                onBack={() => navigate(-1)}
+              />
+            </MainLayout>
+          }
+        />
 
-      <RegisterModal
-        isOpen={isRegisterOpen}
-        onClose={() => setIsRegisterOpen(false)}
-        onOpenLogin={() => {
-          setPrefilledLoginUsername('');
-          setIsLoginOpen(true);
-        }}
-        onOpenVerifyEmail={(email, otp) => handleOpenVerifyEmail(email, otp)}
-      />
+        {/* Edit Profile: /user/edit (Yêu cầu đăng nhập) */}
+        <Route
+          path="/user/edit"
+          element={
+            <ProtectedRoute>
+              <MainLayout
+                onOpenCreatePost={() => handleOpenCreatePost(null)}
+                onOpenCreateCommunity={() => setIsCreateCommunityOpen(true)}
+                onOpenVerifyEmail={handleOpenVerifyEmail}
+              >
+                <EditProfilePage
+                  onBack={() => navigate('/user')}
+                  onOpenChangePassword={() => setIsChangePasswordOpen(true)}
+                />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
 
+        {/* Admin Dashboard: /admin */}
+        <Route
+          path="/admin"
+          element={
+            <MainLayout
+              onOpenCreatePost={() => handleOpenCreatePost(null)}
+              onOpenCreateCommunity={() => setIsCreateCommunityOpen(true)}
+              onOpenVerifyEmail={handleOpenVerifyEmail}
+              showRightSidebar={false}
+            >
+              <AdminDashboardPage
+                onSelectCommunity={(commId) => navigate(`/c/${commId}`)}
+                onOpenPostDetail={(post) => setDetailPost(post)}
+              />
+            </MainLayout>
+          }
+        />
+
+        {/* Fallback to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+      {/* Global Modals */}
       <VerifyEmailModal
         isOpen={isVerifyEmailOpen}
         onClose={() => setIsVerifyEmailOpen(false)}
         initialEmail={verifyEmailTarget}
         initialOtp={verifyEmailOtp}
-        onOpenLogin={(verifiedEmail) => {
-          setPrefilledLoginUsername(verifiedEmail);
-          setIsLoginOpen(true);
-        }}
+        onOpenLogin={() => navigate('/login')}
       />
 
       <ForgotPasswordModal
         isOpen={isForgotPasswordOpen}
         onClose={() => setIsForgotPasswordOpen(false)}
-        onOpenLogin={(userEmail) => {
-          if (userEmail) setPrefilledLoginUsername(userEmail);
-          setIsLoginOpen(true);
-        }}
-      />
-
-      <EditProfileModal
-        isOpen={isEditProfileOpen}
-        onClose={() => setIsEditProfileOpen(false)}
-        onOpenChangePassword={() => setIsChangePasswordOpen(true)}
+        onOpenLogin={() => navigate('/login')}
       />
 
       <ChangePasswordModal
@@ -245,14 +294,14 @@ function DiscussMainApp() {
       <CreatePostModal
         isOpen={isCreatePostOpen}
         onClose={() => setIsCreatePostOpen(false)}
-        defaultCommunityId={selectedCommunityId}
+        defaultCommunityId={createPostCommunityId}
         onCreated={() => {}}
       />
 
       <CreateCommunityModal
         isOpen={isCreateCommunityOpen}
         onClose={() => setIsCreateCommunityOpen(false)}
-        onCreated={(newComm) => handleSelectCommunity(newComm.id)}
+        onCreated={(newComm) => navigate(`/c/${newComm.slug || newComm.id}`)}
       />
 
       <PostDetailModal
@@ -261,8 +310,8 @@ function DiscussMainApp() {
         post={detailPost}
         onOpenEdit={(post) => setEditingPost(post)}
         onOpenReport={(post) => setReportingPost(post)}
-        onSelectCommunity={handleSelectCommunity}
-        onSelectUser={handleNavigateUserProfile}
+        onSelectCommunity={(commId) => navigate(`/c/${commId}`)}
+        onSelectUser={(userId) => navigate(`/user/${userId}`)}
       />
 
       <EditPostModal
@@ -276,22 +325,23 @@ function DiscussMainApp() {
         onClose={() => setReportingPost(null)}
         post={reportingPost}
       />
-
-      <ToastContainer />
-    </div>
+    </>
   );
 }
 
 export default function App() {
   return (
-    <ToastProvider>
-      <AuthProvider>
-        <CommunityProvider>
-          <PostProvider>
-            <DiscussMainApp />
-          </PostProvider>
-        </CommunityProvider>
-      </AuthProvider>
-    </ToastProvider>
+    <BrowserRouter>
+      <ToastProvider>
+        <AuthProvider>
+          <CommunityProvider>
+            <PostProvider>
+              <DiscussAppRoutes />
+              <ToastContainer />
+            </PostProvider>
+          </CommunityProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </BrowserRouter>
   );
 }

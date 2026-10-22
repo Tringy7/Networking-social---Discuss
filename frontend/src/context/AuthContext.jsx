@@ -288,15 +288,16 @@ export function AuthProvider({ children }) {
   const uploadAvatar = async (file) => {
     try {
       const storedImage = await userService.uploadAvatar(file);
-      const avatarUrl = storedImage?.url || storedImage?.objectKey;
+      const avatarUrl = storedImage?.avatar || storedImage?.url || storedImage?.objectKey;
       if (avatarUrl && currentUser) {
         const updatedUser = {
           ...currentUser,
           avatar: avatarUrl,
           profile: {
             ...(currentUser.profile || {}),
-            avatarObjectKey: storedImage?.objectKey || avatarUrl,
-            avatarUrl: storedImage?.url || avatarUrl,
+            avatar: avatarUrl,
+            avatarObjectKey: avatarUrl,
+            avatarUrl: avatarUrl,
           },
         };
         setCurrentUser(updatedUser);
@@ -314,15 +315,16 @@ export function AuthProvider({ children }) {
   const uploadBanner = async (file) => {
     try {
       const storedImage = await userService.uploadBanner(file);
-      const bannerUrl = storedImage?.url || storedImage?.objectKey;
+      const bannerUrl = storedImage?.banner || storedImage?.url || storedImage?.objectKey;
       if (bannerUrl && currentUser) {
         const updatedUser = {
           ...currentUser,
           banner: bannerUrl,
           profile: {
             ...(currentUser.profile || {}),
-            bannerObjectKey: storedImage?.objectKey || bannerUrl,
-            bannerUrl: storedImage?.url || bannerUrl,
+            banner: bannerUrl,
+            bannerObjectKey: bannerUrl,
+            bannerUrl: bannerUrl,
           },
         };
         setCurrentUser(updatedUser);

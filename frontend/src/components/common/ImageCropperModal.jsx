@@ -19,15 +19,13 @@ export default function ImageCropperModal({
   const containerRef = useRef(null);
   const imageRef = useRef(null);
 
-  // Kích thước chuẩn đầu ra theo yêu cầu tutorial:
-  // Avatar: 256x256 (tỉ lệ 1:1)
-  // Banner: 1500x500 (tỉ lệ 3:1)
+
   const isAvatar = targetType === 'avatar';
   const targetWidth = isAvatar ? 256 : 1500;
   const targetHeight = isAvatar ? 256 : 500;
   const aspectRatio = targetWidth / targetHeight;
 
-  // Khung xem trước (viewport crop box kích thước trong modal)
+  // Khung xem trước 
   const previewBoxWidth = isAvatar ? 280 : 420;
   const previewBoxHeight = isAvatar ? 280 : 140;
 
@@ -113,19 +111,24 @@ export default function ImageCropperModal({
 
     ctx.drawImage(img, drawX, drawY, drawW, drawH);
 
-    // Xuất ra file Blob webp/png chất lượng cao
+    // Xác định định dạng ảnh gốc từ imageFile
+    const originalType = imageFile?.type || 'image/jpeg';
+    const originalName = imageFile?.name || (isAvatar ? 'avatar.jpg' : 'banner.jpg');
+    const quality = originalType === 'image/png' ? undefined : 0.92;
+
+    // Xuất ra file Blob giữ nguyên định dạng mime type và tên gốc của file
     canvas.toBlob(
       (blob) => {
         if (!blob) return;
         const croppedFile = new File(
           [blob],
-          isAvatar ? 'avatar.webp' : 'banner.webp',
-          { type: 'image/webp' }
+          originalName,
+          { type: originalType }
         );
         onConfirmCrop(croppedFile);
       },
-      'image/webp',
-      0.92
+      originalType,
+      quality
     );
   };
 
