@@ -27,19 +27,19 @@ export default function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
       <div 
         className="fixed inset-0" 
         onClick={closeOnBackdrop ? onClose : undefined} 
         aria-hidden="true" 
       />
-      <div className={`relative w-full ${maxWidth} bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden z-10 max-h-[90vh] flex flex-col`}>
+      <div className={`relative w-full ${maxWidth} bg-[#1a1a1b] text-[#d7dadc] rounded-2xl shadow-2xl border border-[#343536] overflow-hidden z-10 max-h-[90vh] flex flex-col`}>
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
-          <h3 className="text-lg font-bold text-slate-900 truncate">{title}</h3>
+        <div className="px-6 py-4 border-b border-[#343536] flex items-center justify-between bg-[#16181a]">
+          <h3 className="text-base font-bold text-[#d7dadc] truncate">{title}</h3>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-[#818384] hover:text-[#d7dadc] hover:bg-[#272729] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

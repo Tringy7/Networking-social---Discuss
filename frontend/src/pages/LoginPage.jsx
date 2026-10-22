@@ -129,7 +129,7 @@ export default function LoginPage({ onOpenForgotPassword, onOpenVerifyEmail }) {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                Tài khoản hoặc Email <span className="text-rose-500">*</span>
+                Tên tài khoản <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -138,7 +138,7 @@ export default function LoginPage({ onOpenForgotPassword, onOpenVerifyEmail }) {
                   required
                   value={formData.username}
                   onChange={(e) => handleInputChange('username', e.target.value)}
-                  placeholder="nhập username hoặc email"
+                  placeholder="nhập username"
                   className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 ${
                     fieldErrors.username
                       ? 'border-rose-400 focus:ring-rose-400/30'

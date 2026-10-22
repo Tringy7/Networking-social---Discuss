@@ -39,7 +39,7 @@ export default function Sidebar({
   }).filter(c => !!c.id);
 
   const sidebarContent = (
-    <div className="h-full flex flex-col justify-between py-4 px-3">
+    <div className="h-full flex flex-col justify-between py-4 px-3 text-[#d7dadc]">
       <div className="space-y-6">
         {/* Main Nav Links */}
         <div className="space-y-1">
@@ -50,11 +50,11 @@ export default function Sidebar({
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
               location.pathname === '/'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-700 hover:bg-slate-100'
+                ? 'bg-[#272729] text-white font-bold border-l-2 border-orange-500'
+                : 'text-[#d7dadc] hover:bg-[#272729]'
             }`}
           >
-            <Home className="w-4 h-4" />
+            <Home className="w-4 h-4 text-orange-500" />
             <span>Bảng tin chính</span>
           </Link>
 
@@ -65,11 +65,11 @@ export default function Sidebar({
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
               location.pathname === '/explore'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-700 hover:bg-slate-100'
+                ? 'bg-[#272729] text-white font-bold border-l-2 border-orange-500'
+                : 'text-[#d7dadc] hover:bg-[#272729]'
             }`}
           >
-            <Compass className="w-4 h-4" />
+            <Compass className="w-4 h-4 text-blue-400" />
             <span>Khám phá Cộng đồng</span>
           </Link>
 
@@ -80,16 +80,16 @@ export default function Sidebar({
             }}
             className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
               location.pathname === '/user' || location.pathname === '/user/edit'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-700 hover:bg-slate-100'
+                ? 'bg-[#272729] text-white font-bold border-l-2 border-orange-500'
+                : 'text-[#d7dadc] hover:bg-[#272729]'
             }`}
           >
             <div className="flex items-center gap-3">
-              <User className="w-4 h-4" />
+              <User className="w-4 h-4 text-emerald-400" />
               <span>Hồ sơ cá nhân</span>
             </div>
             {!isAuthenticated && (
-              <span className="text-[10px] bg-indigo-50 text-indigo-700 font-mono px-1.5 py-0.5 rounded font-bold">
+              <span className="text-[10px] bg-[#272729] text-orange-400 font-mono px-1.5 py-0.5 rounded font-bold border border-[#343536]">
                 API
               </span>
             )}
@@ -103,26 +103,26 @@ export default function Sidebar({
               }}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 location.pathname === '/admin'
-                  ? 'bg-rose-600 text-white shadow-xs'
-                  : 'text-rose-600 hover:bg-rose-50'
+                  ? 'bg-rose-950/40 text-rose-400 border-l-2 border-rose-500'
+                  : 'text-rose-400 hover:bg-[#272729]'
               }`}
             >
-              <ShieldAlert className="w-4 h-4" />
+              <ShieldAlert className="w-4 h-4 text-rose-500" />
               <span>Quản trị hệ thống</span>
             </Link>
           )}
         </div>
 
         {/* My Communities Section */}
-        <div className="pt-2 border-t border-slate-200/80">
+        <div className="pt-2 border-t border-[#343536]">
           <div className="flex items-center justify-between px-2 mb-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-[#818384] uppercase tracking-wider">
               Cộng đồng của bạn
             </span>
             {isAuthenticated && (
               <button
                 onClick={onOpenCreateCommunity}
-                className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
+                className="p-1 text-orange-400 hover:bg-[#272729] rounded-lg transition cursor-pointer"
                 title="Tạo cộng đồng mới"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -131,15 +131,15 @@ export default function Sidebar({
           </div>
 
           {!isAuthenticated ? (
-            <div className="p-3 bg-slate-50 rounded-xl text-[11px] text-slate-500 text-center">
+            <div className="p-3 bg-[#1a1a1b] border border-[#343536] rounded-xl text-[11px] text-[#818384] text-center">
               Đăng nhập để xem danh sách cộng đồng bạn tham gia
             </div>
           ) : myCommunities.length === 0 ? (
-            <div className="p-3 bg-slate-50 rounded-xl text-[11px] text-slate-500 text-center space-y-2">
+            <div className="p-3 bg-[#1a1a1b] border border-[#343536] rounded-xl text-[11px] text-[#818384] text-center space-y-2">
               <p>Bạn chưa tham gia cộng đồng nào.</p>
               <Link
                 to="/explore"
-                className="text-xs font-semibold text-indigo-600 hover:underline block mx-auto cursor-pointer"
+                className="text-xs font-semibold text-orange-400 hover:underline block mx-auto cursor-pointer"
               >
                 Khám phá ngay →
               </Link>
@@ -158,15 +158,15 @@ export default function Sidebar({
                     }}
                     className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition cursor-pointer text-left ${
                       isSelected
-                        ? 'bg-indigo-50 text-indigo-900 font-bold border border-indigo-200/60'
-                        : 'hover:bg-slate-100 text-slate-700'
+                        ? 'bg-[#272729] text-white font-bold border border-[#343536]'
+                        : 'hover:bg-[#272729] text-[#d7dadc]'
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <img
                         src={c.avatar}
                         alt=""
-                        className="w-5 h-5 rounded-md object-cover shrink-0"
+                        className="w-5 h-5 rounded-md object-cover shrink-0 border border-[#343536]"
                       />
                       <span className="truncate font-medium">c/{c.slug}</span>
                     </div>
@@ -181,17 +181,17 @@ export default function Sidebar({
 
         {/* Quick info card */}
         {isAuthenticated && (
-          <div className="p-3.5 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100/80 text-xs">
-            <div className="flex items-center gap-1.5 font-bold text-indigo-900 mb-1">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+          <div className="p-3.5 bg-[#1a1a1b] rounded-2xl border border-[#343536] text-xs">
+            <div className="flex items-center gap-1.5 font-bold text-orange-400 mb-1">
+              <Sparkles className="w-3.5 h-3.5 text-orange-400" />
               <span>Tạo Cộng Đồng Mới</span>
             </div>
-            <p className="text-[11px] text-slate-600 leading-relaxed mb-2.5">
+            <p className="text-[11px] text-[#818384] leading-relaxed mb-2.5">
               Xây dựng không gian thảo luận riêng và trở thành Owner quản lý cộng đồng.
             </p>
             <button
               onClick={onOpenCreateCommunity}
-              className="w-full py-1.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[11px] font-semibold transition cursor-pointer shadow-xs"
+              className="w-full py-1.5 px-3 bg-orange-600 hover:bg-orange-500 text-white rounded-full text-[11px] font-semibold transition cursor-pointer shadow-xs"
             >
               + Tạo ngay
             </button>
@@ -203,8 +203,8 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:block w-64 shrink-0 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto border-r border-slate-200/80 bg-white/70">
+      {/* Desktop Sidebar: Flush against the very left edge */}
+      <aside className="hidden md:block w-64 shrink-0 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto border-r border-[#343536] bg-[#0e1113]">
         {sidebarContent}
       </aside>
 
@@ -212,10 +212,10 @@ export default function Sidebar({
       {isOpenMobile && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs"
+            className="fixed inset-0 bg-black/75 backdrop-blur-xs"
             onClick={onCloseMobile}
           />
-          <div className="relative w-72 bg-white h-full shadow-2xl z-10 flex flex-col">
+          <div className="relative w-72 bg-[#0e1113] border-r border-[#343536] h-full shadow-2xl z-10 flex flex-col">
             {sidebarContent}
           </div>
         </div>

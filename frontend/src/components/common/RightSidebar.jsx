@@ -19,19 +19,19 @@ export default function RightSidebar({ onSelectCommunity, onSelectTag }) {
   ).slice(0, 8);
 
   return (
-    <aside className="hidden xl:block w-80 shrink-0 space-y-5 sticky top-20">
+    <aside className="hidden xl:block w-80 shrink-0 space-y-4 sticky top-16">
       {trendingCommunities.length > 0 && (
-        <div className="bg-white rounded-3xl border border-slate-200/80 p-4 shadow-xs">
+        <div className="bg-[#1a1a1b] rounded-2xl border border-[#343536] p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
-            <div className="p-1.5 rounded-lg bg-orange-100 text-orange-600">
+            <div className="p-1.5 rounded-lg bg-orange-950/60 text-orange-500 border border-orange-900/50">
               <Flame className="w-4 h-4" />
             </div>
-            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
+            <h3 className="font-bold text-[#d7dadc] text-xs uppercase tracking-wider">
               Cộng đồng nổi bật
             </h3>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-1">
             {trendingCommunities.map((c) => {
               const role = getUserCommunityRole(c.id);
 
@@ -39,19 +39,19 @@ export default function RightSidebar({ onSelectCommunity, onSelectTag }) {
                 <Link
                   key={c.id}
                   to={`/c/${c.slug || c.id}`}
-                  className="flex items-center justify-between gap-3 p-2 rounded-2xl hover:bg-slate-50 transition cursor-pointer group"
+                  className="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-[#272729] transition cursor-pointer group"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <img
                       src={c.avatar}
                       alt=""
-                      className="w-9 h-9 rounded-xl object-cover border border-slate-200 shrink-0"
+                      className="w-8 h-8 rounded-lg object-cover border border-[#343536] shrink-0"
                     />
                     <div className="min-w-0">
-                      <h4 className="font-bold text-xs text-slate-800 group-hover:text-indigo-600 transition truncate">
+                      <h4 className="font-bold text-xs text-[#d7dadc] group-hover:text-orange-400 transition truncate">
                         c/{c.slug}
                       </h4>
-                      <p className="text-[11px] text-slate-400 truncate">
+                      <p className="text-[11px] text-[#818384] truncate">
                         {formatNumber(c.memberCount || 0)} thành viên
                       </p>
                     </div>
@@ -64,9 +64,9 @@ export default function RightSidebar({ onSelectCommunity, onSelectTag }) {
                         e.stopPropagation();
                         joinCommunity(c.id);
                       }}
-                      className="px-2.5 py-1 text-[11px] font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition shrink-0 cursor-pointer"
+                      className="px-3 py-1 text-[11px] font-bold bg-[#272729] hover:bg-[#343536] text-[#d7dadc] border border-[#343536] rounded-full transition shrink-0 cursor-pointer"
                     >
-                      Tham gia
+                      Gia nhập
                     </button>
                   )}
                 </Link>
@@ -77,12 +77,12 @@ export default function RightSidebar({ onSelectCommunity, onSelectTag }) {
       )}
 
       {popularTags.length > 0 && (
-        <div className="bg-white rounded-3xl border border-slate-200/80 p-4 shadow-xs">
+        <div className="bg-[#1a1a1b] rounded-2xl border border-[#343536] p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
-            <div className="p-1.5 rounded-lg bg-indigo-100 text-indigo-600">
+            <div className="p-1.5 rounded-lg bg-[#272729] text-orange-400 border border-[#343536]">
               <Hash className="w-4 h-4" />
             </div>
-            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
+            <h3 className="font-bold text-[#d7dadc] text-xs uppercase tracking-wider">
               Chủ đề thảo luận
             </h3>
           </div>
@@ -94,10 +94,10 @@ export default function RightSidebar({ onSelectCommunity, onSelectTag }) {
                 <button
                   key={tag}
                   onClick={() => onSelectTag(isSelected ? null : tag)}
-                  className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer ${
                     isSelected
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      ? 'bg-orange-600 text-white font-bold'
+                      : 'bg-[#272729] hover:bg-[#343536] text-[#818384] hover:text-[#d7dadc] border border-[#343536]'
                   }`}
                 >
                   #{tag}

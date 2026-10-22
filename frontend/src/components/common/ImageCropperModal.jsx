@@ -143,7 +143,7 @@ export default function ImageCropperModal({
     >
       <div className="space-y-4">
         <p className="text-xs text-slate-500">
-          Kéo ảnh để chọn vùng hiển thị và dùng thanh trượt để phóng to/thu nhỏ (Ảnh sẽ được cố định kích thước chuẩn{' '}
+          Kéo ảnh để chọn vùng hiển thị và dùng thanh trượt để phóng to/thu nhỏ{' '}
           <strong className="text-slate-700">{targetWidth}x{targetHeight}px</strong>).
         </p>
 

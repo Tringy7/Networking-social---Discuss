@@ -64,16 +64,16 @@ export default function PostCard({
   return (
     <div
       onClick={() => onOpenDetail(post)}
-      className={`bg-white rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden relative group hover:shadow-md ${
+      className={`bg-[#1a1a1b] rounded-2xl border transition-all duration-150 cursor-pointer overflow-hidden relative group hover:border-[#4e5052] ${
         post.isPinned 
-          ? 'border-indigo-300/80 bg-gradient-to-b from-indigo-50/20 to-white shadow-xs' 
-          : 'border-slate-200/80 hover:border-slate-300 shadow-xs'
+          ? 'border-orange-500/50 bg-gradient-to-b from-orange-950/20 to-[#1a1a1b]' 
+          : 'border-[#343536]'
       }`}
     >
       {/* Pinned banner indicator */}
       {post.isPinned && (
-        <div className="bg-indigo-50/80 border-b border-indigo-100 px-4 py-1.5 flex items-center gap-1.5 text-[11px] font-bold text-indigo-700">
-          <Pin className="w-3.5 h-3.5 rotate-45 text-indigo-600" />
+        <div className="bg-orange-950/40 border-b border-orange-900/40 px-4 py-1.5 flex items-center gap-1.5 text-[11px] font-bold text-orange-400">
+          <Pin className="w-3.5 h-3.5 rotate-45 text-orange-400" />
           <span>Bài viết được ghim bởi Ban điều hành</span>
         </div>
       )}
@@ -88,7 +88,7 @@ export default function PostCard({
         <div className="flex-1 min-w-0">
           {/* Header Metadata */}
           <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-[#818384]">
               {/* Community Link */}
               <button
                 type="button"
@@ -98,11 +98,11 @@ export default function PostCard({
                     onSelectCommunity(post.communityId);
                   }
                 }}
-                className="font-bold text-slate-900 hover:text-indigo-600 transition-colors cursor-pointer flex items-center gap-1"
+                className="font-bold text-[#d7dadc] hover:underline transition-colors cursor-pointer flex items-center gap-1"
               >
                 <span>c/{community.slug}</span>
               </button>
-              <span className="text-slate-300">•</span>
+              <span className="text-[#343536]">•</span>
               
               {/* Author */}
               <button
@@ -113,16 +113,16 @@ export default function PostCard({
                     onSelectUser(post.authorId || author.id || author.username);
                   }
                 }}
-                className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors cursor-pointer group/author"
+                className="flex items-center gap-1.5 hover:underline transition-colors cursor-pointer group/author"
               >
                 <img
                   src={author.avatar}
                   alt={author.name}
-                  className="w-4 h-4 rounded-full object-cover group-hover/author:ring-1 group-hover/author:ring-indigo-400"
+                  className="w-4 h-4 rounded-full object-cover border border-[#343536]"
                 />
-                <span className="font-medium text-slate-700 group-hover/author:text-indigo-600">u/{author.username}</span>
+                <span className="font-medium text-[#818384] group-hover/author:text-[#d7dadc]">u/{author.username}</span>
               </button>
-              <span className="text-slate-300">•</span>
+              <span className="text-[#343536]">•</span>
               
               {/* Time */}
               <span>{formatTimeAgo(post.createdAt)}</span>
@@ -132,26 +132,26 @@ export default function PostCard({
             <div className="relative" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() => setShowMenu(!showMenu)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="p-1 rounded-lg text-[#818384] hover:text-[#d7dadc] hover:bg-[#272729] transition cursor-pointer"
               >
                 <MoreHorizontal className="w-4 h-4" />
               </button>
 
               {showMenu && (
-                <div className="absolute right-0 top-7 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-30 animate-in fade-in">
+                <div className="absolute right-0 top-7 w-48 bg-[#1a1a1b] rounded-xl shadow-2xl border border-[#343536] py-1 z-30 animate-in fade-in">
                   {canPin && (
                     <button
                       onClick={handleTogglePin}
-                      className="w-full px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                      className="w-full px-3 py-2 text-left text-xs font-medium text-[#d7dadc] hover:bg-[#272729] flex items-center gap-2 cursor-pointer"
                     >
                       {post.isPinned ? (
                         <>
-                          <PinOff className="w-3.5 h-3.5 text-slate-500" />
+                          <PinOff className="w-3.5 h-3.5 text-[#818384]" />
                           <span>Bỏ ghim bài viết</span>
                         </>
                       ) : (
                         <>
-                          <Pin className="w-3.5 h-3.5 text-indigo-600" />
+                          <Pin className="w-3.5 h-3.5 text-orange-400" />
                           <span>Ghim lên đầu trang</span>
                         </>
                       )}
@@ -164,9 +164,9 @@ export default function PostCard({
                         setShowMenu(false);
                         onOpenEdit(post);
                       }}
-                      className="w-full px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                      className="w-full px-3 py-2 text-left text-xs font-medium text-[#d7dadc] hover:bg-[#272729] flex items-center gap-2 cursor-pointer"
                     >
-                      <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                      <Edit3 className="w-3.5 h-3.5 text-[#818384]" />
                       <span>Chỉnh sửa bài viết</span>
                     </button>
                   )}
@@ -174,7 +174,7 @@ export default function PostCard({
                   {canDelete && (
                     <button
                       onClick={handleDelete}
-                      className="w-full px-3 py-2 text-left text-xs font-medium text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer"
+                      className="w-full px-3 py-2 text-left text-xs font-medium text-rose-400 hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-rose-500" />
                       <span>Xóa bài viết</span>
@@ -187,7 +187,7 @@ export default function PostCard({
                         setShowMenu(false);
                         onOpenReport(post);
                       }}
-                      className="w-full px-3 py-2 text-left text-xs font-medium text-amber-700 hover:bg-amber-50 flex items-center gap-2 cursor-pointer"
+                      className="w-full px-3 py-2 text-left text-xs font-medium text-amber-400 hover:bg-amber-950/40 flex items-center gap-2 cursor-pointer"
                     >
                       <Flag className="w-3.5 h-3.5 text-amber-500" />
                       <span>Báo cáo bài viết</span>
@@ -199,12 +199,12 @@ export default function PostCard({
           </div>
 
           {/* Title */}
-          <h2 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors leading-snug mb-2">
+          <h2 className="text-base sm:text-lg font-bold text-[#d7dadc] group-hover:text-orange-400 transition-colors leading-snug mb-2">
             {post.title}
           </h2>
 
           {/* Excerpt */}
-          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3 mb-3">
+          <p className="text-xs sm:text-sm text-[#818384] leading-relaxed line-clamp-3 mb-3">
             {post.content}
           </p>
 
@@ -214,7 +214,7 @@ export default function PostCard({
               {post.tags.map((tag, idx) => (
                 <span
                   key={idx}
-                  className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition"
+                  className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#272729] text-[#818384] border border-[#343536]"
                 >
                   #{tag}
                 </span>
@@ -223,9 +223,9 @@ export default function PostCard({
           )}
 
           {/* Footer Bar */}
-          <div className="flex items-center gap-3 text-xs text-slate-500 pt-2 border-t border-slate-100">
-            <span className="flex items-center gap-1.5 hover:text-indigo-600 transition">
-              <MessageSquare className="w-4 h-4 text-slate-400" />
+          <div className="flex items-center gap-4 text-xs text-[#818384] pt-2 border-t border-[#343536]">
+            <span className="flex items-center gap-1.5 hover:text-[#d7dadc] transition">
+              <MessageSquare className="w-4 h-4 text-[#818384]" />
               <span>{formatNumber(post.commentsCount || 0)} bình luận</span>
             </span>
 
@@ -234,11 +234,10 @@ export default function PostCard({
               onClick={(e) => {
                 e.stopPropagation();
                 navigator.clipboard?.writeText(window.location.href);
-                alert('Đã sao chép liên kết bài viết!');
               }}
-              className="flex items-center gap-1 hover:text-slate-700 transition cursor-pointer"
+              className="flex items-center gap-1 hover:text-[#d7dadc] transition cursor-pointer"
             >
-              <Share2 className="w-3.5 h-3.5 text-slate-400" />
+              <Share2 className="w-3.5 h-3.5 text-[#818384]" />
               <span className="hidden sm:inline">Chia sẻ</span>
             </button>
           </div>
