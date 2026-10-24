@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@layer components {
+  /* Reusable Buttons */
+  .btn-primary {
+    @apply px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-medium rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-sm disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 font-medium rounded-xl border border-slate-200 transition-all flex items-center justify-center gap-2 cursor-pointer text-sm;
+  }
+
+  .btn-danger {
+    @apply px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-medium rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-sm disabled:opacity-50;
+  }
+
+  .btn-outline {
+    @apply px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl font-medium transition cursor-pointer text-sm;
+  }
+
+  /* Form Inputs */
+  .input-field {
+    @apply w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all;
+  }
+
+  .input-with-icon {
+    @apply w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all;
+  }
+
+  /* Layout Cards & Labels */
+  .card-box {
+    @apply bg-white rounded-2xl border border-slate-200/80 shadow-xs;
+  }
+
+  .form-label {
+    @apply block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1;
+  }
+}
