@@ -5,6 +5,8 @@ import com.discuss.discuss.entity.CommunityMember;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.CommunityRole;
 import com.discuss.discuss.enums.MembershipStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -37,4 +39,11 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
             User user,
             MembershipStatus status
     );
+
+    Page<CommunityMember> findByUserAndStatus(
+            User user,
+            MembershipStatus status,
+            Pageable pageable
+    );
+
 }

@@ -1,22 +1,13 @@
 package com.discuss.discuss.controller.community;
 
 import com.discuss.discuss.dto.common.ApiResponse;
-import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.community.CommunityDetailResponseDTO;
-import com.discuss.discuss.dto.community.CommunityPreviewResponseDTO;
 import com.discuss.discuss.dto.community.CreateCommunityRequestDTO;
 import com.discuss.discuss.dto.community.UpdateCommunityRequestDTO;
-import com.discuss.discuss.dto.media.StoredImageDTO;
-import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.service.community.CommunityService;
 import com.discuss.discuss.service.media.ImageService;
-import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,76 +22,77 @@ public class CommunityController {
     private final CommunityService communityService;
     private final ImageService imageService;
 
+    /** Creates a new community. */
     @PostMapping
     public ResponseEntity<CommunityDetailResponseDTO> createCommunity(
-            @Valid @RequestBody CreateCommunityRequestDTO req
+            @Valid @RequestBody CreateCommunityRequestDTO request
     ) {
-        CommunityDetailResponseDTO response = communityService.createCommunity(req);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(communityService.createCommunity(request));
     }
 
+    /** Updates an existing community. */
     @PatchMapping("/{name}")
     public ResponseEntity<CommunityDetailResponseDTO> updateCommunity(
             @PathVariable String name,
             @Valid @RequestBody UpdateCommunityRequestDTO request
     ) {
-        CommunityDetailResponseDTO response =
-                communityService.updateCommunity(name, request);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                communityService.updateCommunity(name, request)
+        );
     }
 
+    /** Deletes a community. */
     @DeleteMapping("/{name}")
     public ResponseEntity<ApiResponse> deleteCommunity(
             @PathVariable String name
     ) {
-        this.communityService.deleteCommunity(name);
-        return ResponseEntity.ok().body(new ApiResponse("Community deleted successfully"));
+        communityService.deleteCommunity(name);
+
+        return ResponseEntity.ok(
+                new ApiResponse("Community deleted successfully")
+        );
     }
 
+    /** Retrieves community details by name. */
+    @GetMapping("/{name}")
+    public ResponseEntity<CommunityDetailResponseDTO> getCommunityByName(
+            @PathVariable String name
+    ) {
+        return ResponseEntity.ok(
+                communityService.getCommunityDetail(name)
+        );
+    }
+
+    /** Uploads or updates the community avatar. */
     @PutMapping(
             value = "/{name}/avatar",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    public ResponseEntity<CommunityDetailResponseDTO> setAvatarForCommunity(
+    public ResponseEntity<CommunityDetailResponseDTO> setAvatar(
             @PathVariable String name,
             @RequestParam("file") MultipartFile file
     ) {
         imageService.setAvatarForCommunity(name, file);
 
-        return ResponseEntity.ok(communityService.getCommunityDetail(name));
+        return ResponseEntity.ok(
+                communityService.getCommunityDetail(name)
+        );
     }
 
+    /** Uploads or updates the community banner. */
     @PutMapping(
-            value = "/{communityId}/banner",
+            value = "/{name}/banner",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    public ResponseEntity<CommunityDetailResponseDTO> setBannerForCommunity(
+    public ResponseEntity<CommunityDetailResponseDTO> setBanner(
             @PathVariable String name,
             @RequestParam("file") MultipartFile file
     ) {
         imageService.setBannerForCommunity(name, file);
-        return ResponseEntity.ok(communityService.getCommunityDetail(name));
-    }
 
-    @GetMapping("/{name}")
-    public ResponseEntity<CommunityDetailResponseDTO> getCommunityByName(
-            @PathVariable String name
-    ) {
-        return ResponseEntity.ok(communityService.getCommunityDetail(name));
-    }
-
-    @GetMapping
-    public ResponseEntity<PageResponseDTO<CommunityPreviewResponseDTO>> getCommunitiesWithFilter(
-            @Filter Specification<Community> filterSpec,
-            @PageableDefault(
-                    size = 10,
-                    sort = "createdAt",
-                    direction = Sort.Direction.DESC
-            ) Pageable pageable
-    ) {
         return ResponseEntity.ok(
-                communityService.getAllCommunitiesWithSpec(filterSpec, pageable)
+                communityService.getCommunityDetail(name)
         );
     }
 }

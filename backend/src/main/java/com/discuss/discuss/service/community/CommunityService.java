@@ -223,7 +223,7 @@ public class CommunityService {
     /*
     * Get all communities of user
     * */
-    public PageResponseDTO<CommunityPreviewResponseDTO> getAllCommunitiesOfUser(
+    public PageResponseDTO<CommunityPreviewResponseDTO> getAllCommunitiesOfOwner(
             Pageable pageable
     ) {
         User user = userService.getCurrentUser();
@@ -239,6 +239,26 @@ public class CommunityService {
         return pageMapper.toResponse(communities);
     }
 
+    /*
+     * Get all communities of user join
+     * */
+    public PageResponseDTO<CommunityPreviewResponseDTO> getAllCommunitiesOfJoin(
+            Pageable pageable
+    ) {
+        Page<CommunityPreviewResponseDTO> communities =
+                communityMemberService.getJoinedCommunities(pageable)
+                        .map(member -> {
+                            Community community = member.getCommunity();
+
+                            return communityMapper.toPreview(
+                                    community,
+                                    community.getInfo(),
+                                    communityMemberService.countActiveMembers(community)
+                            );
+                        });
+
+        return pageMapper.toResponse(communities);
+    }
 
     /*
      * Get community by name with status active
@@ -283,5 +303,7 @@ public class CommunityService {
             );
         }
     }
+
+
 
 }
