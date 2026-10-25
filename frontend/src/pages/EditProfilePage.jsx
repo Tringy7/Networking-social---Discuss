@@ -195,7 +195,7 @@ export default function EditProfilePage({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-[#d7dadc] uppercase tracking-wider mb-1.5">
                 Tiểu sử (Bio)
               </label>
               <textarea
@@ -203,10 +203,10 @@ export default function EditProfilePage({
                 value={formData.bio}
                 onChange={(e) => handleInputChange('bio', e.target.value)}
                 placeholder="Giới thiệu đôi nét về bản thân hoặc lĩnh vực chuyên môn..."
-                className={`w-full p-3 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 resize-none ${
+                className={`w-full p-3 bg-[#272729] border rounded-xl text-sm text-[#d7dadc] placeholder-[#818384] focus:outline-none focus:ring-2 resize-none ${
                   fieldErrors.bio
                     ? 'border-rose-400 focus:ring-rose-400/30'
-                    : 'border-slate-200 focus:ring-indigo-500/30 focus:border-indigo-500'
+                    : 'border-[#343536] focus:ring-orange-500/30 focus:border-orange-500'
                 }`}
               />
               {fieldErrors.bio && (
@@ -216,55 +216,55 @@ export default function EditProfilePage({
           </div>
 
           {/* Group 2: Thông tin cá nhân */}
-          <div className="space-y-4 pt-6 border-t border-slate-100">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <FileText className="w-4 h-4 text-indigo-600" />
+          <div className="space-y-4 pt-6 border-t border-[#343536]">
+            <h3 className="text-sm font-bold text-[#d7dadc] uppercase tracking-wider flex items-center gap-2">
+              <FileText className="w-4 h-4 text-orange-500" />
               <span>Thông tin chi tiết</span>
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#818384] uppercase tracking-wider mb-1.5">
                   Địa điểm (Location)
                 </label>
                 <div className="relative">
-                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <MapPin className="w-4 h-4 text-[#818384] absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={formData.location}
                     onChange={(e) => handleInputChange('location', e.target.value)}
                     placeholder="Ví dụ: Thành phố Hồ Chí Minh"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#272729] border border-[#343536] rounded-xl text-sm text-[#d7dadc] placeholder-[#818384] focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#818384] uppercase tracking-wider mb-1.5">
                   Giới tính (Gender)
                 </label>
                 <select
                   value={formData.gender}
                   onChange={(e) => handleInputChange('gender', e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                  className="w-full px-3.5 py-2.5 bg-[#272729] border border-[#343536] rounded-xl text-sm text-[#d7dadc] focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 cursor-pointer"
                 >
-                  <option value="MALE">Nam (MALE)</option>
-                  <option value="FEMALE">Nữ (FEMALE)</option>
-                  <option value="OTHER">Khác (OTHER)</option>
+                  <option value="MALE" className="bg-[#1a1a1b] text-[#d7dadc]">Nam (MALE)</option>
+                  <option value="FEMALE" className="bg-[#1a1a1b] text-[#d7dadc]">Nữ (FEMALE)</option>
+                  <option value="OTHER" className="bg-[#1a1a1b] text-[#d7dadc]">Khác (OTHER)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold text-[#818384] uppercase tracking-wider mb-1.5">
                   Ngày sinh (Date of Birth)
                 </label>
                 <div className="relative">
-                  <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Calendar className="w-4 h-4 text-[#818384] absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="date"
                     value={formData.dateOfBirth}
                     onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#272729] border border-[#343536] rounded-xl text-sm text-[#d7dadc] focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500"
                   />
                 </div>
               </div>
@@ -272,62 +272,62 @@ export default function EditProfilePage({
           </div>
 
           {/* Group 3: Quyền riêng tư */}
-          <div className="space-y-4 pt-6 border-t border-slate-100">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <Eye className="w-4 h-4 text-indigo-600" />
+          <div className="space-y-4 pt-6 border-t border-[#343536]">
+            <h3 className="text-sm font-bold text-[#d7dadc] uppercase tracking-wider flex items-center gap-2">
+              <Eye className="w-4 h-4 text-orange-500" />
               <span>Cài đặt hiển thị & quyền riêng tư</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="flex items-center gap-2.5 p-3.5 bg-slate-50 hover:bg-indigo-50/40 rounded-2xl border border-slate-200/80 cursor-pointer transition">
+              <label className="flex items-center gap-2.5 p-3.5 bg-[#272729] hover:bg-[#343536] rounded-2xl border border-[#343536] cursor-pointer transition">
                 <input
                   type="checkbox"
                   checked={formData.showLocation}
                   onChange={(e) => handleInputChange('showLocation', e.target.checked)}
-                  className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                  className="rounded text-orange-500 focus:ring-orange-500 w-4 h-4 accent-orange-500"
                 />
-                <span className="text-xs text-slate-700 font-medium">Hiển thị địa điểm trên hồ sơ</span>
+                <span className="text-xs text-[#d7dadc] font-medium">Hiển thị địa điểm trên hồ sơ</span>
               </label>
 
-              <label className="flex items-center gap-2.5 p-3.5 bg-slate-50 hover:bg-indigo-50/40 rounded-2xl border border-slate-200/80 cursor-pointer transition">
+              <label className="flex items-center gap-2.5 p-3.5 bg-[#272729] hover:bg-[#343536] rounded-2xl border border-[#343536] cursor-pointer transition">
                 <input
                   type="checkbox"
                   checked={formData.showDateOfBirth}
                   onChange={(e) => handleInputChange('showDateOfBirth', e.target.checked)}
-                  className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                  className="rounded text-orange-500 focus:ring-orange-500 w-4 h-4 accent-orange-500"
                 />
-                <span className="text-xs text-slate-700 font-medium">Hiển thị ngày sinh trên hồ sơ</span>
+                <span className="text-xs text-[#d7dadc] font-medium">Hiển thị ngày sinh trên hồ sơ</span>
               </label>
             </div>
           </div>
 
           {/* Group 4: Bảo mật & Đổi mật khẩu */}
-          <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="pt-6 border-t border-[#343536] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Shield className="w-4 h-4 text-indigo-600" />
+              <h4 className="text-sm font-bold text-[#d7dadc] flex items-center gap-2">
+                <Shield className="w-4 h-4 text-orange-500" />
                 <span>Bảo mật tài khoản</span>
               </h4>
-              <p className="text-xs text-slate-400 mt-0.5">Thay đổi mật khẩu đăng nhập của bạn bất cứ lúc nào</p>
+              <p className="text-xs text-[#818384] mt-0.5">Thay đổi mật khẩu đăng nhập của bạn bất cứ lúc nào</p>
             </div>
 
             <button
               type="button"
               onClick={onOpenChangePassword}
-              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition cursor-pointer flex items-center gap-2 self-start sm:self-auto"
+              className="px-4 py-2.5 bg-[#272729] hover:bg-[#343536] text-[#d7dadc] text-xs font-semibold rounded-xl border border-[#343536] transition cursor-pointer flex items-center gap-2 self-start sm:self-auto"
             >
-              <KeyRound className="w-4 h-4 text-slate-500" />
+              <KeyRound className="w-4 h-4 text-orange-400" />
               <span>Đổi mật khẩu</span>
             </button>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-6 border-t border-[#343536]">
             <button
               type="button"
               onClick={onBack}
               disabled={loading}
-              className="px-5 py-2.5 text-sm text-slate-600 hover:bg-slate-100 rounded-xl font-medium cursor-pointer transition"
+              className="px-5 py-2.5 text-sm text-[#818384] hover:text-[#d7dadc] hover:bg-[#272729] rounded-xl font-medium cursor-pointer transition"
             >
               Hủy bỏ
             </button>
