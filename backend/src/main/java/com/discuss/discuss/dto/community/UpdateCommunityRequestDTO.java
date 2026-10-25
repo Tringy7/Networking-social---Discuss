@@ -12,10 +12,6 @@ import lombok.*;
 @Builder
 public class UpdateCommunityRequestDTO {
 
-    @NotBlank
-    @Size(max = 50)
-    private String name;
-
     @Size(max = 500)
     private String description;
 

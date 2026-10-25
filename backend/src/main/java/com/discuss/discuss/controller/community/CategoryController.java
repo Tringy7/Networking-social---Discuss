@@ -19,6 +19,7 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     public record CategoryResponseDTO(Long id, String name, String slug) {}
+
     @GetMapping
     public ResponseEntity<List<CategoryResponseDTO>> getAll() {
         return ResponseEntity.ok(this.categoryService.findAll());

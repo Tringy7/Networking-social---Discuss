@@ -107,10 +107,6 @@ public class CommunityService {
         // Check role user into community
         communityAuthorizationService.requireOwner(community, user);
 
-        String name = this.nameNormalizer.normalize(request.getName());
-        this.checkNameCommunityReserved(name);
-        community.setName(name);
-
         CommunityInfo info =
                 communityInfoService.updateInfo(community, request);
 
@@ -190,9 +186,10 @@ public class CommunityService {
      * */
     public PageResponseDTO<CommunityPreviewResponseDTO>
     getAllCommunities(Pageable pageable) {
+
         Page<CommunityPreviewResponseDTO> communities =
                 communityRepository
-                        .findAll(pageable)
+                        .findAllByStatus(CommunityStatus.ACTIVE, pageable)
                         .map(community -> communityMapper.toPreview(
                                 community,
                                 community.getInfo(),
@@ -273,7 +270,7 @@ public class CommunityService {
                         )
                 );
 
-        if (community.getStatus().equals(CommunityStatus.ACTIVE)) {
+        if (!community.getStatus().equals(CommunityStatus.ACTIVE)) {
             throw new CommunityException(
                     CommunityErrorCode.COMMUNITY_NOT_FOUND
             );
@@ -303,7 +300,5 @@ public class CommunityService {
             );
         }
     }
-
-
 
 }

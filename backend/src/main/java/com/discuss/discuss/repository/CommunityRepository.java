@@ -24,6 +24,11 @@ public interface CommunityRepository extends
 
     Page<Community> findByOwner(User owner, Pageable pageable);
 
+    Page<Community> findAllByStatus(
+            CommunityStatus status,
+            Pageable pageable
+    );
+
     @Override
     @EntityGraph(attributePaths = {"info", "info.category"})
     Page<Community> findAll(

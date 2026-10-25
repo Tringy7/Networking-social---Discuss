@@ -34,4 +34,16 @@ public class CommunityMemberController {
         return ResponseEntity
                 .ok(new ApiResponse("Left community successfully"));
     }
+
+    @DeleteMapping("/{name}/members/{userId}")
+    public ResponseEntity<ApiResponse> kickMember(
+            @PathVariable String name,
+            @PathVariable Long userId
+    ) {
+        communityMemberService.kickMember(name, userId);
+
+        return ResponseEntity.ok(
+                new ApiResponse("Member removed successfully")
+        );
+    }
 }

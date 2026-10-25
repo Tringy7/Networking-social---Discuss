@@ -105,7 +105,6 @@ public class CommunityMemberService {
             );
         }
 
-        // A member who previously left can rejoin.
         reactivateMembership(member);
     }
 
@@ -157,6 +156,27 @@ public class CommunityMemberService {
         validateCanLeave(member);
 
         member.setStatus(MembershipStatus.LEFT);
+        member.setLeftAt(LocalDateTime.now());
+
+        memberRepository.save(member);
+    }
+
+    @Transactional
+    public void kickMember(String communityName, Long userId) {
+        User user = userService.getUserActive(userId);
+
+        Community community =
+                getCommunityByNameAndStatusActive(communityName);
+
+        CommunityMember member = getExistingMembership(
+                community,
+                user
+        );
+
+        validateActiveMembership(member);
+        validateCanLeave(member);
+
+        member.setStatus(MembershipStatus.KICKED);
         member.setLeftAt(LocalDateTime.now());
 
         memberRepository.save(member);
