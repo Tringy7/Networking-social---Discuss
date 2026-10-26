@@ -8,7 +8,6 @@ import { PostProvider } from './context/PostContext';
 import Navbar from './components/common/Navbar';
 import Sidebar from './components/common/Sidebar';
 import RightSidebar from './components/common/RightSidebar';
-import UserProfileRightSidebar from './components/common/UserProfileRightSidebar';
 import ToastContainer from './components/common/ToastContainer';
 
 import VerifyEmailModal from './components/auth/VerifyEmailModal';
@@ -105,9 +104,6 @@ function DiscussAppRoutes() {
   const [detailPost, setDetailPost] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
   const [reportingPost, setReportingPost] = useState(null);
-
-  // Active Profile User data for UserProfileRightSidebar
-  const [activeProfileData, setActiveProfileData] = useState(null);
 
   const handleOpenVerifyEmail = (email = '', otp = '') => {
     setVerifyEmailTarget(email);
@@ -210,17 +206,7 @@ function DiscussAppRoutes() {
                 onOpenCreatePost={() => handleOpenCreatePost(null)}
                 onOpenCreateCommunity={() => setIsCreateCommunityOpen(true)}
                 onOpenVerifyEmail={handleOpenVerifyEmail}
-                rightSidebar={
-                  activeProfileData?.targetUser ? (
-                    <UserProfileRightSidebar
-                      targetUser={activeProfileData.targetUser}
-                      isMe={activeProfileData.isMe}
-                      userPostsCount={activeProfileData.userPostsCount}
-                      userCommunitiesCount={activeProfileData.userCommunitiesCount}
-                      onOpenEditProfile={() => navigate('/user/edit')}
-                    />
-                  ) : null
-                }
+                showRightSidebar={false}
               >
                 <UserProfilePage
                   onOpenEditProfile={() => navigate('/user/edit')}
@@ -229,7 +215,6 @@ function DiscussAppRoutes() {
                   onOpenReportPost={(post) => setReportingPost(post)}
                   onSelectCommunity={(commId) => navigate(`/c/${commId}`)}
                   onBack={() => navigate('/')}
-                  onUserDataLoaded={(data) => setActiveProfileData(data)}
                 />
               </MainLayout>
             </ProtectedRoute>
@@ -244,17 +229,7 @@ function DiscussAppRoutes() {
               onOpenCreatePost={() => handleOpenCreatePost(null)}
               onOpenCreateCommunity={() => setIsCreateCommunityOpen(true)}
               onOpenVerifyEmail={handleOpenVerifyEmail}
-              rightSidebar={
-                activeProfileData?.targetUser ? (
-                  <UserProfileRightSidebar
-                    targetUser={activeProfileData.targetUser}
-                    isMe={activeProfileData.isMe}
-                    userPostsCount={activeProfileData.userPostsCount}
-                    userCommunitiesCount={activeProfileData.userCommunitiesCount}
-                    onOpenEditProfile={() => navigate('/user/edit')}
-                  />
-                ) : null
-              }
+              showRightSidebar={false}
             >
               <UserProfilePage
                 onOpenEditProfile={() => navigate('/user/edit')}
@@ -263,7 +238,6 @@ function DiscussAppRoutes() {
                 onOpenReportPost={(post) => setReportingPost(post)}
                 onSelectCommunity={(commId) => navigate(`/c/${commId}`)}
                 onBack={() => navigate(-1)}
-                onUserDataLoaded={(data) => setActiveProfileData(data)}
               />
             </MainLayout>
           }

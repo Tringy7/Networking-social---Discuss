@@ -32,9 +32,9 @@ export default function CommunityDetailPage({
 
   if (!community) {
     return (
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center space-y-3">
-        <h3 className="text-base font-bold text-slate-800">Không tìm thấy cộng đồng</h3>
-        <p className="text-xs text-slate-500">Cộng đồng này không tồn tại hoặc đã bị gỡ bỏ.</p>
+      <div className="bg-[#1a1a1b] rounded-2xl border border-[#343536] p-12 text-center space-y-3">
+        <h3 className="text-base font-bold text-[#d7dadc]">Không tìm thấy cộng đồng</h3>
+        <p className="text-xs text-[#818384]">Cộng đồng này không tồn tại hoặc đã bị gỡ bỏ.</p>
       </div>
     );
   }
@@ -53,7 +53,7 @@ export default function CommunityDetailPage({
 
       {/* Community Post Feed */}
       <div className="mb-3">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+        <h3 className="text-xs font-bold text-[#818384] uppercase tracking-wider mb-2">
           Các bài thảo luận trong c/{community.slug}
         </h3>
       </div>

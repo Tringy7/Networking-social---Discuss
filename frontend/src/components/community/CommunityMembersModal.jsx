@@ -48,24 +48,24 @@ export default function CommunityMembersModal({ isOpen, onClose, community }) {
       <div className="space-y-4">
         {/* Search Input */}
         <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#818384] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Tìm kiếm thành viên trong cộng đồng..."
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            className="w-full pl-10 pr-4 py-2 bg-[#272729] border border-[#343536] text-[#d7dadc] placeholder-[#818384] rounded-xl text-xs focus:outline-none focus:border-orange-500"
           />
         </div>
 
         {/* Ban confirmation sub-dialog if active */}
         {targetBanUser && (
-          <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl animate-in fade-in space-y-3">
-            <div className="flex items-center gap-2 text-rose-800 font-bold text-sm">
-              <ShieldAlert className="w-5 h-5 text-rose-600" />
+          <div className="p-4 bg-rose-950/40 border border-rose-900/50 rounded-2xl animate-in fade-in space-y-3">
+            <div className="flex items-center gap-2 text-rose-400 font-bold text-sm">
+              <ShieldAlert className="w-5 h-5 text-rose-500" />
               <span>Cấm (Ban) thành viên: {targetBanUser.name} (@{targetBanUser.username})</span>
             </div>
-            <p className="text-xs text-rose-700">
+            <p className="text-xs text-rose-300">
               Thành viên bị cấm sẽ không thể đăng bài, bình luận hoặc tương tác trong cộng đồng này.
             </p>
             <input
@@ -73,20 +73,20 @@ export default function CommunityMembersModal({ isOpen, onClose, community }) {
               value={banReason}
               onChange={(e) => setBanReason(e.target.value)}
               placeholder="Nhập lý do cấm (ví dụ: Spam quảng cáo liên tục)..."
-              className="w-full px-3 py-2 bg-white border border-rose-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+              className="w-full px-3 py-2 bg-[#272729] border border-rose-900/60 text-[#d7dadc] rounded-xl text-xs focus:outline-none focus:border-rose-500"
             />
             <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setTargetBanUser(null)}
-                className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-200 rounded-lg cursor-pointer"
+                className="px-3 py-1.5 text-xs text-[#818384] hover:text-[#d7dadc] hover:bg-[#272729] rounded-lg cursor-pointer transition"
               >
                 Hủy
               </button>
               <button
                 type="button"
                 onClick={handleConfirmBan}
-                className="px-4 py-1.5 text-xs bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg shadow-xs cursor-pointer"
+                className="px-4 py-1.5 text-xs bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg shadow-xs cursor-pointer transition"
               >
                 Xác nhận Ban
               </button>
@@ -95,9 +95,9 @@ export default function CommunityMembersModal({ isOpen, onClose, community }) {
         )}
 
         {/* Member List Table */}
-        <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto pr-1">
+        <div className="divide-y divide-[#272729] max-h-96 overflow-y-auto pr-1">
           {filteredMembers.length === 0 ? (
-            <div className="text-center py-8 text-xs text-slate-400">
+            <div className="text-center py-8 text-xs text-[#818384]">
               Không tìm thấy thành viên nào.
             </div>
           ) : (
@@ -111,18 +111,18 @@ export default function CommunityMembersModal({ isOpen, onClose, community }) {
                     <img
                       src={item.user.avatar}
                       alt={item.user.name}
-                      className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0"
+                      className="w-9 h-9 rounded-full object-cover border border-[#343536] shrink-0"
                     />
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-800">
+                        <span className="text-xs font-bold text-[#d7dadc]">
                           {item.user.name}
                         </span>
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-[11px] text-[#818384]">
                           @{item.user.username}
                         </span>
                         {item.userId === currentUser?.id && (
-                          <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-medium">
+                          <span className="text-[10px] bg-[#272729] text-orange-400 border border-[#343536] px-1.5 py-0.2 rounded font-medium">
                             Bạn
                           </span>
                         )}
@@ -130,11 +130,11 @@ export default function CommunityMembersModal({ isOpen, onClose, community }) {
                       <div className="flex items-center gap-2 mt-0.5">
                         <RoleBadge role={item.role} size="xs" />
                         {item.isBanned && (
-                          <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">
+                          <span className="text-[10px] font-bold text-rose-400 bg-rose-950/60 px-1.5 py-0.2 rounded border border-rose-900/50">
                             Đã bị cấm (Banned)
                           </span>
                         )}
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-[#818384]">
                           Gia nhập: {formatDate(item.joinedAt)}
                         </span>
                       </div>
@@ -147,7 +147,7 @@ export default function CommunityMembersModal({ isOpen, onClose, community }) {
                       canBan && (
                         <button
                           onClick={() => unbanMember(community.id, item.userId)}
-                          className="px-2.5 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1 text-xs font-medium text-emerald-400 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-900/50 rounded-lg flex items-center gap-1 cursor-pointer transition"
                           title="Gỡ cấm cho thành viên này"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
@@ -159,7 +159,7 @@ export default function CommunityMembersModal({ isOpen, onClose, community }) {
                         {canKick && (
                           <button
                             onClick={() => kickMember(community.id, item.userId)}
-                            className="px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-amber-700 bg-slate-100 hover:bg-amber-50 rounded-lg flex items-center gap-1 cursor-pointer transition"
+                            className="px-2.5 py-1 text-xs font-medium text-[#818384] hover:text-amber-400 bg-[#272729] hover:bg-[#343536] border border-[#343536] rounded-lg flex items-center gap-1 cursor-pointer transition"
                             title="Mời rời cộng đồng"
                           >
                             <UserX className="w-3.5 h-3.5" />
@@ -169,7 +169,7 @@ export default function CommunityMembersModal({ isOpen, onClose, community }) {
                         {canBan && (
                           <button
                             onClick={() => setTargetBanUser(item.user)}
-                            className="px-2.5 py-1 text-xs font-medium text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg flex items-center gap-1 cursor-pointer transition border border-rose-200/60"
+                            className="px-2.5 py-1 text-xs font-medium text-rose-400 hover:text-rose-300 bg-rose-950/50 hover:bg-rose-900/50 rounded-lg flex items-center gap-1 cursor-pointer transition border border-rose-900/50"
                             title="Cấm thành viên khỏi cộng đồng"
                           >
                             <Ban className="w-3.5 h-3.5" />
