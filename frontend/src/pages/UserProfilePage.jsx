@@ -8,7 +8,7 @@ import { getFriendlyErrorMessage } from '../utils/errorHandler';
 import RoleBadge from '../components/common/RoleBadge';
 import PostCard from '../components/post/PostCard';
 import ImageCropperModal from '../components/common/ImageCropperModal';
-import UserProfileRightSidebar from '../components/user/UserProfileRightSidebar';
+import UserProfileRightSidebar from '../components/common/UserProfileRightSidebar';
 import { formatDate, formatNumber } from '../utils/formatters';
 import { 
   User, 
@@ -23,7 +23,10 @@ import {
   Loader2,
   ArrowLeft,
   Camera,
-  Upload
+  Upload,
+  Mail,
+  MapPin,
+  Cake
 } from 'lucide-react';
 
 export default function UserProfilePage({
@@ -264,23 +267,30 @@ export default function UserProfilePage({
 
         {/* Profile Header Card */}
         <div className="bg-[#1a1a1b] rounded-3xl border border-[#343536] shadow-sm overflow-hidden">
-          {/* Banner with click to change trigger */}
+          {/* Banner with direct click trigger (no bulky button, click directly anywhere on banner) */}
           <div 
             onClick={isMe ? () => bannerInputRef.current?.click() : undefined}
-            className={`h-40 sm:h-52 bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 relative bg-cover bg-center flex items-end justify-end p-4 group/banner ${
-              isMe ? 'cursor-pointer' : ''
+            className={`h-40 sm:h-52 bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 relative bg-cover bg-center flex items-center justify-center p-4 transition group/banner ${
+              isMe ? 'cursor-pointer hover:brightness-95' : ''
             }`}
-            style={rawBanner && (rawBanner.startsWith('http') || rawBanner.startsWith('/')) ? { backgroundImage: `url(${rawBanner})` } : undefined}
-            title={isMe ? 'Nhấp để thay đổi ảnh bìa' : undefined}
+            style={
+              rawBanner && (rawBanner.startsWith('http') || rawBanner.startsWith('/') || rawBanner.startsWith('data:') || rawBanner.startsWith('blob:'))
+                ? { backgroundImage: `url(${rawBanner})` }
+                : undefined
+            }
+            title={isMe ? 'Nhấp trực tiếp vào ảnh bìa để thay đổi' : undefined}
           >
             {isMe && (
-              <div className="px-3.5 py-1.5 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-full text-xs font-semibold transition cursor-pointer inline-flex items-center gap-2 shadow-lg border border-white/10 opacity-75 group-hover/banner:opacity-100 group-hover/banner:scale-105">
-                {uploadingBanner ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-orange-400" />
-                ) : (
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/banner:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                <span className="text-white text-xs font-medium bg-black/70 px-3.5 py-1.5 rounded-full flex items-center gap-2 backdrop-blur-xs shadow-lg border border-white/20">
                   <Camera className="w-4 h-4 text-orange-400" />
-                )}
-                <span>{uploadingBanner ? 'Đang tải lên...' : 'Đổi ảnh bìa'}</span>
+                  Nhấp để đổi ảnh bìa
+                </span>
+              </div>
+            )}
+            {uploadingBanner && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-xs">
+                <Loader2 className="w-6 h-6 animate-spin text-orange-400" />
               </div>
             )}
           </div>
@@ -444,3 +454,4 @@ export default function UserProfilePage({
     </div>
   );
 }
+
