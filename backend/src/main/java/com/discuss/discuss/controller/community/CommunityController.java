@@ -42,17 +42,17 @@ public class CommunityController {
         );
     }
 
-    /** Deletes a community. */
-    @DeleteMapping("/{name}")
-    public ResponseEntity<ApiResponse> deleteCommunity(
-            @PathVariable String name
-    ) {
-        communityService.deleteCommunity(name);
-
-        return ResponseEntity.ok(
-                new ApiResponse("Community deleted successfully")
-        );
-    }
+//    /** Deletes a community. */
+//    @DeleteMapping("/{name}")
+//    public ResponseEntity<ApiResponse> deleteCommunity(
+//            @PathVariable String name
+//    ) {
+//        communityService.deleteCommunity(name);
+//
+//        return ResponseEntity.ok(
+//                new ApiResponse("Community deleted successfully")
+//        );
+//    }
 
     /** Retrieves community details by name. */
     @GetMapping("/{name}")

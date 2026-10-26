@@ -51,8 +51,8 @@ public class UserService {
                 );
     }
 
-    public User getUserActive(Long userId) {
-        return userRepository.findById(userId)
+    public User getUserActive(String username) {
+        return userRepository.findByUsername(username)
                 .filter(existingUser -> existingUser.getStatus() == UserStatus.ACTIVE)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
     }

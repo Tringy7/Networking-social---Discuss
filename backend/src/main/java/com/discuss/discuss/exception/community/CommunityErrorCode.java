@@ -80,6 +80,9 @@ public enum CommunityErrorCode {
             "Community name already exists"
     ),
 
+    MODERATOR_NOT_FOUND(HttpStatus.CONFLICT,
+            "User is not a moderator of this community"),
+
     ALREADY_MEMBER(
             HttpStatus.CONFLICT,
             "You are already a member of this community"

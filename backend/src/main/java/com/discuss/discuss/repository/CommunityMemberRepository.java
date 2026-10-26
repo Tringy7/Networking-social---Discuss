@@ -16,27 +16,28 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CommunityMemberRepository extends JpaRepository<CommunityMember, Long> {
+
     long countByCommunityAndStatus(Community community, MembershipStatus status);
+
     Optional<CommunityMember> findByCommunityAndUser(Community community, User user);
 
-    @Query("""
-        SELECT cm FROM CommunityMember cm
-        JOIN FETCH cm.user
-        WHERE cm.community = :community
-          AND cm.role IN :roles
-          AND cm.status = :status
-        ORDER BY cm.role DESC, cm.joinedAt ASC
-    """)
-    List<CommunityMember> findStaffMembers(
-            @Param("community") Community community,
-            @Param("roles") Collection<CommunityRole> roles,
-            @Param("status") MembershipStatus status
-    );
-
-    Optional<CommunityMember>
-    findByCommunityAndUserAndStatus(
+    Optional<CommunityMember> findByCommunityAndUserAndStatus(
             Community community,
             User user,
+            MembershipStatus status
+    );
+
+    // Used by transferOwnershipBeforeLeaving(): the earliest-joined member with the given role and status.
+    Optional<CommunityMember> findFirstByCommunityAndRoleAndStatusOrderByJoinedAtAsc(
+            Community community,
+            CommunityRole role,
+            MembershipStatus status
+    );
+
+    // Used by determineRoleForJoining(): checks whether the community has an ACTIVE Owner.
+    boolean existsByCommunityAndRoleAndStatus(
+            Community community,
+            CommunityRole role,
             MembershipStatus status
     );
 
@@ -46,4 +47,22 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
             Pageable pageable
     );
 
+    // Owner first, then Moderators; each group is sorted by joinedAt ascending.
+    // Uses an explicit CASE instead of "ORDER BY cm.role DESC" so the order does not
+    // depend on the enum's @Enumerated mapping (ORDINAL vs STRING) or its alphabetical order.
+    @Query("""
+        SELECT cm FROM CommunityMember cm
+        JOIN FETCH cm.user
+        WHERE cm.community = :community
+          AND cm.role IN :roles
+          AND cm.status = :status
+        ORDER BY
+          CASE WHEN cm.role = com.discuss.discuss.enums.CommunityRole.OWNER THEN 0 ELSE 1 END,
+          cm.joinedAt ASC
+    """)
+    List<CommunityMember> findStaffMembers(
+            @Param("community") Community community,
+            @Param("roles") Collection<CommunityRole> roles,
+            @Param("status") MembershipStatus status
+    );
 }
