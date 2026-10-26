@@ -19,7 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/user")
 @RequiredArgsConstructor
 public class UserController {
     private final UserProfileService userProfileService;
@@ -47,9 +47,9 @@ public class UserController {
         return ResponseEntity.ok().body(this.userProfileService.getUserProfile());
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<PublicUserProfileResponseDTO> getPublicUserProfile(@PathVariable Long userId ) {
-        return ResponseEntity.ok( userProfileService.getPublicUserProfile(userId) );
+    @GetMapping("/{name}")
+    public ResponseEntity<PublicUserProfileResponseDTO> getPublicUserProfile(@PathVariable String name ) {
+        return ResponseEntity.ok( userProfileService.getPublicUserProfileWithName(name) );
     }
 
     /*

@@ -6,6 +6,8 @@ import com.discuss.discuss.dto.user.UserInfoResponseDTO;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserPrivacySettings;
 import com.discuss.discuss.entity.UserProfile;
+import com.discuss.discuss.exception.user.UserErrorCode;
+import com.discuss.discuss.exception.user.UserException;
 import com.discuss.discuss.mapper.user.UserMapper;
 import com.discuss.discuss.mapper.user.UserUpdateMapper;
 import com.discuss.discuss.repository.UserPrivacySettingsRepository;
@@ -25,12 +27,17 @@ public class UserProfileService {
     private final UserProfileRepository userProfileRepository;
     private final UserPrivacySettingsRepository privacyRepository;
     private final UserPrivacySettingsRepository userPrivacySettingsRepository;
+    private final UserRepository userRepository;
 
     private final UserService userService;
 
     private final UserUpdateMapper updateMapper;
     private final UserMapper userMapper;
 
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+    }
 
     @Transactional
     public void createUserProfile(User user, String displayName) {
@@ -64,8 +71,8 @@ public class UserProfileService {
         return userMapper.toUserInfoResponse(user, profile, privacySettings);
     }
 
-    public PublicUserProfileResponseDTO getPublicUserProfile(Long userId) {
-        User user = this.userService.getCurrentUser();
+    public PublicUserProfileResponseDTO getPublicUserProfileWithName(String username) {
+        User user = this.getUserByUsername(username);
 
         UserProfile profile = userProfileRepository.findByUser(user)
                 .orElse(null);
