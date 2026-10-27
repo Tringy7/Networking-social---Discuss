@@ -1,13 +1,11 @@
 package com.discuss.discuss.service.media;
 
 import com.discuss.discuss.dto.media.StoredImageDTO;
-import com.discuss.discuss.entity.CommunityInfo;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserProfile;
 import com.discuss.discuss.enums.ImageKind;
 import com.discuss.discuss.exception.auth.AuthErrorCode;
 import com.discuss.discuss.exception.auth.AuthException;
-import com.discuss.discuss.repository.CommunityInfoRepository;
 import com.discuss.discuss.repository.UserProfileRepository;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +26,6 @@ public class ImageService {
     private final MediaStorageService storage;
     private final UserService userService;
     private final UserProfileRepository profileRepository;
-    private final CommunityInfoRepository communityInfoRepository;
 
     // ==================== USER ====================
     @Transactional
@@ -66,49 +63,6 @@ public class ImageService {
                 UserProfile::getBanner,
                 UserProfile::setBanner,
                 profileRepository::save
-        );
-    }
-
-    // ==================== COMMUNITY ====================
-    @Transactional
-    public void setAvatarForCommunity(
-            Long communityId,
-            MultipartFile file
-    ) {
-        CommunityInfo info = communityInfoRepository
-                .findByCommunityId(communityId)
-                .orElseThrow(()
-                        -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
-
-        this.replace(
-                ImageKind.COMMUNITY_AVATAR,
-                file,
-                communityId,
-                info,
-                CommunityInfo::getAvatar,
-                CommunityInfo::setAvatar,
-                communityInfoRepository::save
-        );
-    }
-
-    @Transactional
-    public void setBannerForCommunity(
-            Long communityId,
-            MultipartFile file
-    ) {
-        CommunityInfo info = communityInfoRepository
-                .findByCommunityId(communityId)
-                .orElseThrow(()
-                        -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
-
-        this.replace(
-                ImageKind.COMMUNITY_BANNER,
-                file,
-                communityId,
-                info,
-                CommunityInfo::getBanner,
-                CommunityInfo::setBanner,
-                communityInfoRepository::save
         );
     }
 

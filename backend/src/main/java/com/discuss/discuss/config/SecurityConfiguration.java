@@ -20,6 +20,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -36,6 +38,15 @@ public class SecurityConfiguration {
 
     @Value("${jwt.secret}")
     private String jwtKey;
+
+    @Value("${app.cors.allowed-origins}")
+    private String allowedOrigins;
+
+    @Value("${app.cookie.secure}")
+    private boolean secureCookies;
+
+    @Value("${app.cookie.same-site}")
+    private String cookieSameSite;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -55,12 +66,22 @@ public class SecurityConfiguration {
                 "/auth/**"
         };
 
+        CookieCsrfTokenRepository csrfTokenRepository =
+                CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfTokenRepository.setCookiePath("/");
+        csrfTokenRepository.setCookieCustomizer(cookie ->
+                cookie.secure(secureCookies).sameSite(cookieSameSite));
+
         http
-                .csrf(c -> c.disable())
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(csrfTokenRepository)
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(
                         authz -> authz
+                                .requestMatchers("/auth/change-password").authenticated()
                                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                                .requestMatchers("/users/by-username/**", "/users/search").permitAll()
                                 .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
@@ -82,10 +103,13 @@ public class SecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:5173/"));
+        configuration.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList());
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept",
-                "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+                "Origin", "X-XSRF-TOKEN", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
         configuration
                 .setExposedHeaders(Arrays.asList("Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"));
         configuration.setAllowCredentials(true);
@@ -103,6 +127,19 @@ public class SecurityConfiguration {
     @Bean
     public BearerTokenResolver bearerTokenResolver() {
         return request -> {
+            String path = request.getServletPath();
+            if (path.equals("/auth/login")
+                    || path.equals("/auth/register")
+                    || path.equals("/auth/verify-email")
+                    || path.equals("/auth/resend-otp")
+                    || path.equals("/auth/refresh")
+                    || path.equals("/auth/logout")
+                    || path.equals("/auth/csrf")
+                    || path.startsWith("/auth/social/")
+                    || path.startsWith("/auth/forgot-password")) {
+                return null;
+            }
+
             if (request.getCookies() != null) {
                 String tokenFromCookie = Arrays.stream(request.getCookies())
                         .filter(c -> ACCESS_TOKEN_COOKIE.equals(c.getName()))

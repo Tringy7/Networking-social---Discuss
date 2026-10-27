@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+import apiClient from './apiClient';
+
 const MINIO_ENDPOINT = import.meta.env.VITE_MINIO_ENDPOINT || 'http://localhost:9000';
 const MINIO_BUCKET = import.meta.env.VITE_MINIO_BUCKET || 'discuss-media';
 
@@ -35,24 +36,23 @@ export interface CoverKeys {
   height: number;
 }
 
+export interface StoredPostImage {
+  objectKey: string;
+  url: string;
+  contentType: string;
+  width: number;
+  height: number;
+  size: number;
+}
+
 /**
- * Upload ảnh bài viết tối ưu đa kích thước (large, medium, thumb) theo chuẩn Facebook/Instagram
+ * Uploads a cropped post image and returns its persisted media URL.
  */
-export async function uploadPostImage(file: File): Promise<PostImageKeys> {
+export async function uploadPostImage(file: File): Promise<StoredPostImage> {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch(`${API_BASE_URL}/media/images`, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(errorData || `Upload post image failed with status ${response.status}`);
-  }
-
-  return response.json();
+  return apiClient.post<StoredPostImage>('/media/post-image', formData);
 }
 
 /**
@@ -62,17 +62,7 @@ export async function uploadAvatar(file: File, size: number = 400): Promise<Avat
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch(`${API_BASE_URL}/media/avatar?size=${size}`, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(errorData || `Upload avatar failed with status ${response.status}`);
-  }
-
-  return response.json();
+  return apiClient.post<AvatarKeys>(`/media/avatar?size=${size}`, formData);
 }
 
 /**
@@ -82,17 +72,7 @@ export async function uploadCover(file: File): Promise<CoverKeys> {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch(`${API_BASE_URL}/media/cover`, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(errorData || `Upload cover failed with status ${response.status}`);
-  }
-
-  return response.json();
+  return apiClient.post<CoverKeys>('/media/cover', formData);
 }
 
 /**
@@ -103,17 +83,7 @@ export async function uploadMedia(file: File, folder: string = 'posts'): Promise
   formData.append('file', file);
   formData.append('folder', folder);
 
-  const response = await fetch(`${API_BASE_URL}/media/upload`, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(errorData || `Upload failed with status ${response.status}`);
-  }
-
-  return response.json();
+  return apiClient.post<FileUploadResponse>('/media/upload', formData);
 }
 
 /**
@@ -124,17 +94,7 @@ export async function uploadMultipleMedia(files: File[], folder: string = 'posts
   files.forEach((file) => formData.append('files', file));
   formData.append('folder', folder);
 
-  const response = await fetch(`${API_BASE_URL}/media/upload/multiple`, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(errorData || `Upload failed with status ${response.status}`);
-  }
-
-  return response.json();
+  return apiClient.post<FileUploadResponse[]>('/media/upload/multiple', formData);
 }
 
 /**

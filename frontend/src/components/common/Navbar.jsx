@@ -39,8 +39,8 @@ export default function Navbar({
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName)}&background=6366f1&color=fff`;
 
   return (
-    <header className="sticky top-0 z-40 bg-[#1a1a1b]/95 backdrop-blur-md border-b border-[#343536]">
-      <div className="w-full px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 bg-[#12151B]/95 backdrop-blur-md border-b border-[#262C3A]">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 h-[72px] flex items-center justify-between gap-4">
         {/* Left: Mobile hamburger & Logo */}
         <div className="flex items-center gap-3">
           <button

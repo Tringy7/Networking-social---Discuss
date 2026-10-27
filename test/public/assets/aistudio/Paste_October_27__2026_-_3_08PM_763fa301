@@ -1,0 +1,1113 @@
+# PROJECT: DISCUSS — Complete Community Social Network UI
+
+## 1. ROLE & OBJECTIVE
+
+Act as a senior UI/UX designer, product designer, and senior React frontend engineer.
+
+Build a complete, polished, production-style frontend for **DISCUSS**, a community-based social networking platform inspired by Reddit.
+
+The platform allows users to discover communities, join discussions, publish posts, comment, react to content, manage communities, customize their profiles, and interact with other users.
+
+This is not a simple landing page or static mockup. Build a complete multi-page application with reusable components, consistent design, realistic mock data, functional interactions, responsive layouts, animations, and comprehensive settings.
+
+The design must feel like a real, modern social networking product that could be presented in a university graduation project.
+
+Use the provided screenshot as the primary visual reference for the general DISCUSS layout:
+- Dark charcoal background.
+- Bright orange accents.
+- Persistent top navigation.
+- Left sidebar navigation.
+- Large community discovery hero section.
+- Rounded cards and pill-shaped buttons.
+- Clear hierarchy and generous spacing.
+
+Do not copy Reddit's branding or use Reddit's logo. Create an original DISCUSS identity.
+
+## 2. TECHNOLOGY STACK
+
+Use the following stack:
+
+- React.js
+- Vite
+- TypeScript
+- Tailwind CSS
+- React Router for navigation
+- Framer Motion for animations
+- Lucide React for icons
+- React Hook Form and Zod for forms and validation
+- Axios for API integration
+- Zustand or React Context for shared UI and authentication state
+- Recharts for charts in the admin dashboard if needed
+
+Use modular, reusable components and maintainable code.
+
+Do not build the entire application inside one component.
+
+Suggested structure:
+
+src/
+  assets/
+  components/
+    layout/
+    navigation/
+    community/
+    post/
+    comment/
+    profile/
+    forms/
+    settings/
+    ui/
+  layouts/
+  pages/
+    home/
+    explore/
+    community/
+    post/
+    profile/
+    auth/
+    settings/
+    notifications/
+    messages/
+    admin/
+    moderation/
+  hooks/
+  services/
+  store/
+  types/
+  utils/
+  mocks/
+  routes/
+
+Use environment variables for API configuration.
+
+Initially use mock data and local mock services so the entire application works without a backend. Keep API service functions separate from UI components so they can later be replaced with calls to the existing Spring Boot REST API.
+
+Do not introduce Firebase, Supabase, or another backend. The existing backend is Spring Boot.
+
+## 3. BRAND IDENTITY & DESIGN SYSTEM
+
+### Brand
+
+Product name: DISCUSS
+
+Tagline: "Reddit Style Community"
+
+Brand personality:
+- Modern
+- Community-driven
+- Developer-friendly
+- Trustworthy
+- Energetic
+- Minimal but expressive
+
+Create a custom logo:
+- Circular orange icon with a white letter D.
+- DISCUSS wordmark in bold white typography.
+- Small orange dot after the wordmark.
+- Optional tagline underneath on desktop.
+
+### Color palette
+
+Use a centralized design token system. All pages must share the same design tokens.
+
+Dark theme:
+- Main background: #0D0F10
+- Top navigation: #191A1B
+- Sidebar background: #101112
+- Primary surface: #191A1C
+- Elevated surface: #222426
+- Hover surface: #292B2E
+- Borders: #303235
+- Primary text: #F5F5F5
+- Secondary text: #9A9DA3
+- Muted text: #70747C
+- Primary orange: #FF5700
+- Orange hover: #E94B00
+- Orange soft background: rgba(255, 87, 0, 0.12)
+- Success: #22C55E
+- Warning: #F59E0B
+- Error: #EF4444
+- Information: #3B82F6
+
+Light theme:
+- Main background: #F5F6F7
+- Surface: #FFFFFF
+- Elevated surface: #F0F1F3
+- Borders: #E2E4E7
+- Primary text: #17181A
+- Secondary text: #626873
+- Primary orange remains #FF5700
+
+Rules:
+- Orange is the primary accent, not the background of every component.
+- Use orange for primary actions, active navigation, links, selected filters, badges, and important indicators.
+- Maintain strong contrast and accessible text sizes.
+- Avoid excessive gradients, random colors, or inconsistent accent colors.
+- Use semantic status colors only for success, warning, error, and informational states.
+- Every page, modal, dropdown, form, sidebar, and card must follow the same design system.
+- Use consistent radii, spacing, shadows, borders, typography, and hover states.
+- Avoid unnecessary glassmorphism and overly colorful gradients.
+
+### Typography
+
+Use Inter or a similar modern sans-serif font.
+
+Establish a consistent typography scale:
+- Page title: 32–40px
+- Section title: 20–24px
+- Card title: 16–20px
+- Body: 14–16px
+- Metadata: 12–13px
+
+Use font weights and spacing to establish hierarchy rather than making everything bold.
+
+### Layout
+
+Desktop:
+- Fixed or sticky top navigation, approximately 72–86px tall.
+- Left sidebar, approximately 250–280px wide.
+- Main content area with a maximum readable width.
+- Optional right sidebar for recommendations and trending content.
+- Consistent content alignment and page gutters.
+
+Responsive:
+- Desktop: full navigation and sidebar.
+- Tablet: collapsible sidebar and compact search.
+- Mobile: compact top bar and bottom navigation or drawer.
+- No horizontal overflow.
+- Forms and modals must fit small screens.
+
+## 4. GLOBAL APPLICATION LAYOUT
+
+Build a reusable authenticated and public application shell.
+
+### Top navigation
+
+Include:
+- DISCUSS logo.
+- Global search input.
+- Search suggestions dropdown.
+- Explore button.
+- Create post shortcut where appropriate.
+- Notifications icon with unread count.
+- Messages icon where appropriate.
+- Theme toggle.
+- User avatar dropdown for authenticated users.
+- Login and Register buttons for guests.
+
+Search should support:
+- Posts.
+- Communities.
+- Users.
+- Recent searches.
+- Trending suggestions.
+
+Provide keyboard navigation, a clear button, loading feedback, and an empty state.
+
+### Left sidebar
+
+Include:
+- Home feed.
+- Explore communities.
+- Popular or trending content.
+- My communities.
+- Recent communities.
+- Saved posts.
+- Profile.
+- Settings.
+- Moderation tools when authorized.
+- Admin dashboard when authorized.
+
+For guests, show a friendly login prompt instead of private joined-community data.
+
+For authenticated users, display joined communities with small avatars and unread indicators if appropriate.
+
+Allow the sidebar to collapse and remember the preference during the current session.
+
+### Right sidebar
+
+Where useful, show:
+- Trending discussions.
+- Suggested communities.
+- Popular posts.
+- Community recommendations.
+- Relevant rules or contextual information.
+
+Do not force the right sidebar onto every page. Use page-specific layouts.
+
+## 5. ALL REQUIRED PAGES
+
+Implement every page listed below. Each page must have its own route, layout, loading state, error state where relevant, empty state, and responsive design.
+
+### A. PUBLIC PAGES
+
+#### 1. Home Feed — `/`
+
+Create a Reddit-style feed.
+
+Features:
+- Feed tabs: For You, Latest, Popular.
+- Post cards.
+- Community avatar and name.
+- Author name and timestamp.
+- Post title and content preview.
+- Image or media preview.
+- Heart reaction.
+- Comment count.
+- Save post.
+- Share action.
+- Report action.
+- Sort options.
+- Community recommendations.
+- Trending topics.
+- Guest prompts to sign in when performing restricted actions.
+
+Use realistic Vietnamese mock content related to programming, gaming, education, and technology.
+
+Post cards should be compact, readable, and consistent. Avoid giant cards that waste vertical space.
+
+Interactions:
+- Open post details.
+- Open community details.
+- Toggle reactions.
+- Save and unsave.
+- Open comments.
+- Open share dialog.
+- Open report dialog.
+- Switch feed tabs.
+- Infinite scroll simulation or pagination.
+
+#### 2. Explore Communities — `/explore`
+
+Use the uploaded screenshot as the closest visual reference for this page.
+
+Hero section:
+- Small orange compass icon.
+- Eyebrow text: "KHÁM PHÁ THẾ GIỚI DISCUSS".
+- Heading: "Tìm cộng đồng yêu thích của bạn".
+- Supporting text explaining that users can discover and join communities.
+- Subtle warm dark-brown/orange glow, without reducing readability.
+
+Below the hero:
+- Community search input.
+- Category filter chips.
+- Sort dropdown.
+- Responsive community grid.
+- Community cards showing avatar, name, display name, description, category, member count, and Join/View button.
+- Loading skeletons.
+- Empty state with a clear reset-filters action.
+- Pagination or load more.
+
+Suggested categories:
+- Lập trình
+- Frontend
+- Backend
+- Công nghệ
+- Thiết kế
+- Giải trí
+- Games
+- Giáo dục
+
+Create community cards that remain visually consistent across all categories.
+
+Add hover effects, subtle border highlights, and animated filter transitions.
+
+#### 3. Search Results — `/search`
+
+Build a dedicated search page with:
+- Search query displayed at the top.
+- Tabs: All, Posts, Communities, People.
+- Sort and date filters.
+- Search result cards appropriate to each result type.
+- Recent search suggestions.
+- No-results state.
+- Clear filters button.
+- Pagination.
+
+Support URLs such as:
+`/search?q=spring+boot&type=posts`
+
+#### 4. Community Detail — `/c/:communityName`
+
+Create a complete community page.
+
+Header:
+- Banner image.
+- Community avatar.
+- Display name and community name.
+- Description.
+- Category.
+- Member count.
+- Join or Leave button.
+- Create Post button when permitted.
+- More actions menu.
+
+Main content:
+- Posts feed.
+- Sorting: Latest, Popular.
+- Post type filters if relevant.
+- About section.
+- Community rules.
+- Moderators.
+- Related communities.
+
+Support:
+- Public community browsing.
+- Private community access-request UI if the design includes it.
+- Member and non-member states.
+- Owner and moderator actions.
+- Community settings shortcut for authorized users.
+
+Do not allow guests to create posts or join communities without authentication.
+
+#### 5. Post Detail — `/post/:postId`
+
+Create a dedicated post page.
+
+Features:
+- Community information.
+- Post title and full content.
+- Image or media gallery.
+- Author information.
+- Timestamp.
+- Heart reaction.
+- Save.
+- Share.
+- Report.
+- Comment composer.
+- Nested comments and replies.
+- Sort comments by newest or oldest.
+- Edit/delete actions for the post owner.
+- Appropriate moderation actions.
+
+Comment features:
+- Reply to comment.
+- Edit/delete own comment.
+- React to comments if enabled by the product design.
+- Collapse and expand reply threads.
+- Display nesting clearly.
+- Empty comments state.
+
+Use smooth transitions when expanding comment threads.
+
+#### 6. Public User Profile — `/u/:username`
+
+Show:
+- Avatar and banner.
+- Display name and username.
+- Bio.
+- Join date.
+- Location and birthday only when allowed by privacy settings.
+- Tabs for Posts and Comments.
+- Public community activity where permitted.
+- Follow UI only if a follow feature is explicitly included; do not invent backend requirements.
+
+For the current user, show Edit Profile and Settings buttons.
+
+For another user, show a contextual action menu and report option.
+
+Respect privacy settings in the mock rendering.
+
+### B. AUTHENTICATION PAGES
+
+#### 7. Login — `/login`
+
+Create a premium split-screen authentication layout.
+
+This page is particularly important.
+
+Desktop layout:
+- Full viewport height.
+- Two balanced columns.
+- Left panel: approximately 52–55% width.
+- Right panel: approximately 45–48% width.
+- No main application sidebar or top navigation on authentication pages.
+- Minimal visual clutter.
+
+LEFT PANEL — BRAND EXPERIENCE
+
+Design the left side with the same visual role as the Facebook login landing page, but with an original DISCUSS identity and a modern dark/orange visual style.
+
+Include:
+- Large DISCUSS logo at the upper-left.
+- Circular orange D symbol.
+- Bold wordmark with orange dot.
+- Main headline: "Nơi những cộng đồng tạo nên khác biệt."
+- Supporting text: "Khám phá sở thích, chia sẻ kiến thức và kết nối với những người cùng đam mê."
+- A beautiful custom visual composition illustrating community discussions.
+- Floating mock post cards.
+- Small community avatars.
+- Floating reaction icons.
+- Decorative abstract circles and subtle orange glows.
+- Optional mini cards showing trending communities and recent discussions.
+- Small footer text such as "Kết nối đam mê. Chia sẻ tri thức."
+
+The left side must look intentional and branded, not like an empty background or a generic illustration pasted into a column.
+
+Use CSS shapes, reusable components, and tasteful visual elements. Avoid relying on random external image URLs.
+
+RIGHT PANEL — LOGIN FORM
+
+Place the actual login form on the right side.
+
+Include:
+- Heading: "Chào mừng trở lại!"
+- Supporting text: "Đăng nhập để tiếp tục tham gia cộng đồng."
+- Email or username field.
+- Password field with show/hide toggle.
+- Remember me checkbox.
+- Forgot password link.
+- Primary orange Login button.
+- Loading state during submission.
+- Validation errors.
+- API error feedback.
+- Divider with "Hoặc tiếp tục với".
+- Google sign-in button UI.
+- Link to Register.
+- Terms and privacy links in the footer.
+
+Keep the form at a comfortable width of approximately 380–440px.
+
+The form should be vertically centered in the right panel.
+
+Mobile:
+- Hide or greatly simplify the decorative left panel.
+- Keep the logo and a compact brand introduction above the form.
+- Use a single-column layout.
+
+#### 8. Register — `/register`
+
+Reuse the same split-screen authentication design system as Login.
+
+Left panel:
+- DISCUSS branding.
+- Headline: "Tìm đúng cộng đồng. Chia sẻ điều bạn yêu thích."
+- Community cards and decorative elements.
+- Short benefits of joining DISCUSS.
+
+Right panel:
+- Display name or username as required by the API.
+- Email.
+- Password.
+- Confirm password.
+- Password visibility toggle.
+- Terms acceptance checkbox.
+- Register button.
+- Validation and loading states.
+- Link to Login.
+- Google registration/sign-in UI.
+
+Do not create a visually unrelated registration page. Login and Register must clearly belong to the same product.
+
+#### 9. Email Verification — `/verify-email`
+
+Include:
+- OTP input with separate digit boxes or a well-designed single input.
+- Email address display.
+- Verify button.
+- Resend code action.
+- Countdown timer for resend cooldown.
+- Invalid or expired code states.
+- Success state.
+- Return-to-login action.
+
+#### 10. Forgot Password — `/forgot-password`
+
+Include:
+- Email input.
+- Send verification code button.
+- Success feedback.
+- Validation and error states.
+- Link back to Login.
+
+#### 11. Reset Password — `/reset-password`
+
+Include:
+- New password.
+- Confirm password.
+- Password visibility controls.
+- Password strength indicator.
+- Submit button.
+- Invalid or expired reset session state.
+- Success confirmation.
+
+Reuse the authentication design system.
+
+### C. AUTHENTICATED USER PAGES
+
+#### 12. Notifications — `/notifications`
+
+Features:
+- All and Unread tabs.
+- Notification list.
+- Avatar, event description, and timestamp.
+- Mark as read.
+- Mark all as read.
+- Filter notifications.
+- Empty state.
+- Subtle unread indicator.
+
+Use realistic examples such as replies to posts, community invitations, and moderation updates.
+
+#### 13. Messages — `/messages`
+
+Create a simple private messaging interface if included in the prototype.
+
+Layout:
+- Conversation list on the left.
+- Active conversation on the right.
+- Message bubbles.
+- Timestamps.
+- Message composer.
+- Empty conversation state.
+- Search conversations.
+- Mobile-responsive conversation navigation.
+
+Use mock data only. Do not claim that real-time messaging is implemented.
+
+If this feature is outside the core backend scope, keep it clearly separated as a prototype.
+
+#### 14. Saved Posts — `/saved`
+
+Include:
+- Saved post feed.
+- Remove from saved.
+- Open post.
+- Filter and sort.
+- Empty state with a link to Explore.
+
+#### 15. Edit Profile — `/settings/profile`
+
+Include:
+- Avatar upload preview.
+- Banner upload preview.
+- Display name.
+- Bio.
+- Date of birth.
+- Gender.
+- Location.
+- Save changes.
+- Cancel.
+- Character counters.
+- Validation.
+- Unsaved changes warning.
+
+Use realistic image placeholders and local preview behavior.
+
+#### 16. Privacy Settings — `/settings/privacy`
+
+Include:
+- Show date of birth.
+- Show location.
+- Show posts on profile.
+- Clearly explained toggle switches.
+- Save changes.
+- Reset to defaults.
+- Success and error feedback.
+
+Use the same settings layout as other settings pages.
+
+#### 17. Account Settings — `/settings/account`
+
+Include:
+- Email and username information.
+- Change password.
+- Linked sign-in provider information.
+- Active sessions UI if supported by the API.
+- Logout.
+- Account security information.
+
+Do not expose password values or sensitive tokens.
+
+#### 18. Appearance Settings — `/settings/appearance`
+
+Provide a comprehensive visual configuration page.
+
+Include:
+- Theme: Dark, Light, System.
+- Accent color: DISCUSS Orange by default.
+- Density: Comfortable or Compact.
+- Font size: Small, Medium, Large.
+- Animation intensity: Full, Reduced, Off.
+- Sidebar behavior: Expanded or Collapsed.
+- Feed layout preferences if supported by the design.
+- Live preview panel.
+- Reset to defaults.
+- Save preferences.
+
+Persist non-sensitive preferences using localStorage.
+
+Use CSS variables or design tokens so theme and accent changes apply consistently throughout the application, not only on the settings page.
+
+For the initial version, support the dark and light themes fully. Accent customization may offer a small curated palette, but DISCUSS Orange must remain the default brand color.
+
+#### 19. General Settings — `/settings`
+
+Create a settings hub with a consistent sidebar.
+
+Sections:
+- Profile.
+- Account.
+- Privacy.
+- Appearance.
+- Notifications.
+- Security.
+
+Use clear icons, short descriptions, active navigation states, and responsive behavior.
+
+#### 20. Notification Settings — `/settings/notifications`
+
+Include:
+- Reply notifications.
+- Comment notifications.
+- Community activity.
+- Product announcements.
+- Email notification preferences.
+- In-app notification preferences.
+- Save and reset actions.
+
+Clearly distinguish between UI preferences and actual email delivery functionality.
+
+### D. COMMUNITY MANAGEMENT PAGES
+
+#### 21. Create Community — `/communities/create`
+
+Create a polished multi-section form.
+
+Fields:
+- Community name.
+- Display name.
+- Description.
+- Category.
+- Visibility: Public or Private.
+- Avatar upload.
+- Banner upload.
+- Community rules.
+
+Include:
+- Live community preview.
+- Validation.
+- Name availability simulation.
+- Image previews.
+- Cancel and Create buttons.
+- Confirmation dialog.
+- Success navigation to the new community.
+
+Use validation rules:
+- Community name: 3–21 characters.
+- Allow letters, numbers, and underscores.
+- Show a helpful message when invalid.
+- Reserved names should be rejected in the mock service.
+
+#### 22. Edit Community — `/c/:communityName/settings`
+
+Include:
+- General information.
+- Display name.
+- Description.
+- Category.
+- Avatar and banner.
+- Visibility.
+- Community rules.
+- Save changes.
+- Discard changes.
+- Confirmation for destructive actions.
+
+Community name is immutable after creation. Do not provide an edit-name field.
+
+#### 23. Community Members — `/c/:communityName/members`
+
+Include:
+- Member search.
+- Member list.
+- Avatar and username.
+- Membership role.
+- Joined date.
+- Role filters.
+- Moderator and owner badges.
+- Contextual actions based on permissions.
+
+Roles:
+- Member.
+- Moderator.
+- Owner.
+
+The owner can appoint or remove moderators where permitted.
+
+#### 24. Community Moderation — `/c/:communityName/moderation`
+
+Include:
+- Pending reports.
+- Reported posts and comments.
+- Report reason.
+- Reporter information when appropriate.
+- Report status.
+- Approve/resolve and reject actions.
+- Remove violating content.
+- Ban and unban member UI.
+- Confirmation dialogs.
+- Moderation action history.
+
+Only render controls authorized for the current mock role.
+
+Do not allow ordinary members to see owner-only or moderator-only actions.
+
+#### 25. My Communities — `/communities/mine`
+
+Include:
+- Communities created by the user.
+- Communities joined by the user.
+- Role badges.
+- Community status.
+- Quick links to community settings.
+- Leave community action.
+- Create community shortcut.
+
+Use tabs and filters for Owned and Joined.
+
+### E. ADMIN PAGES
+
+#### 26. Admin Dashboard — `/admin`
+
+Create a separate administration layout that remains visually consistent with DISCUSS.
+
+Include:
+- Admin sidebar.
+- Overview cards for users, communities, posts, and pending reports.
+- Recent platform activity.
+- Moderation statistics.
+- User growth chart using mock data.
+- Recent reports.
+- Quick action shortcuts.
+
+Use restrained charts and readable data visualization.
+
+#### 27. User Management — `/admin/users`
+
+Include:
+- Search by username or email.
+- Filter by role and account status.
+- Paginated table.
+- User details drawer.
+- Account status.
+- Created date.
+- Ban/suspend action if supported.
+- Confirmation dialog.
+- Empty and loading states.
+
+#### 28. Community Management — `/admin/communities`
+
+Include:
+- Search communities.
+- Filter by category and status.
+- Community details.
+- Owner.
+- Member count.
+- Visibility.
+- Created date.
+- Ban/unban community actions.
+- Confirmation dialogs.
+
+Preserve the community name as a reserved identifier even when a community is banned.
+
+#### 29. Report Management — `/admin/reports`
+
+Include:
+- Report table.
+- Filters by content type and status.
+- Report details panel.
+- Reported post/comment/community.
+- Reason.
+- Resolution notes.
+- Resolve or reject actions.
+- Moderation history.
+
+Use report statuses:
+- PENDING.
+- RESOLVED.
+- REJECTED.
+
+Use content types:
+- POST.
+- COMMENT.
+- COMMUNITY.
+
+#### 30. Access Denied / Not Found
+
+Create branded pages for:
+- `/403` Access Denied.
+- `/404` Page Not Found.
+- General application error states.
+
+Include a short explanation, a helpful illustration or CSS composition, and a button to return home.
+
+## 6. INTERACTIONS & FUNCTIONAL REQUIREMENTS
+
+Every visible control must have meaningful behavior.
+
+Implement:
+- Client-side routing.
+- Search filtering.
+- Category filtering.
+- Sort controls.
+- Pagination or load more.
+- Dropdown menus.
+- Tabs.
+- Modal dialogs.
+- Form validation.
+- Password visibility.
+- Theme switching.
+- Appearance customization.
+- Sidebar collapse.
+- Reaction toggles.
+- Save/unsave.
+- Join/leave community.
+- Create post modal or page.
+- Nested comment expand/collapse.
+- Notifications read state.
+- Mock login and logout.
+- Role-based UI visibility.
+- Confirmation dialogs.
+- Toast notifications.
+- Loading skeletons.
+- Empty states.
+- Error states.
+
+Do not leave buttons that do nothing.
+
+If an action is not implemented because it requires a backend, provide a clearly labeled mock interaction or disabled state with a helpful explanation. Do not falsely claim that data was persisted to a real server.
+
+Use mock authentication to demonstrate guest, user, moderator, owner, and admin experiences.
+
+Provide a development-only role switcher so the reviewer can preview different roles without implementing real authorization. Make clear that this is only for UI testing and never a substitute for backend security.
+
+## 7. ANIMATIONS & MICRO-INTERACTIONS
+
+Use Framer Motion consistently.
+
+Animation goals:
+- Smooth and premium.
+- Fast enough for a social network.
+- Subtle rather than distracting.
+- Consistent across every page.
+
+Implement:
+- Page transition fade and slight vertical movement.
+- Staggered entrance for lists and community cards.
+- Card hover lift of approximately 2–4px.
+- Smooth color and border transitions.
+- Button hover and pressed states.
+- Animated sidebar collapse.
+- Modal scale/fade entrance and exit.
+- Dropdown entrance and exit.
+- Expand/collapse comment threads.
+- Toast slide-in and fade-out.
+- Skeleton shimmer.
+- Loading spinners.
+- Tab indicator transitions.
+- Heart reaction animation.
+- Subtle orange glow around focused elements.
+- Animated loading states for forms.
+
+Use short transitions, typically 150–300ms, and avoid animating large layout areas unnecessarily.
+
+Support `prefers-reduced-motion`.
+
+Provide a global animation setting:
+- Full.
+- Reduced.
+- Off.
+
+When animation is disabled, preserve instant and accessible state changes.
+
+Do not overuse parallax, bouncing, spinning, or continuous background animations.
+
+## 8. ACCESSIBILITY & USABILITY
+
+Ensure:
+- Keyboard navigation.
+- Visible focus states.
+- Semantic HTML.
+- Proper form labels.
+- Accessible modal behavior.
+- Escape closes dialogs where appropriate.
+- Sufficient contrast.
+- Descriptive icon button labels.
+- Responsive touch targets.
+- Reduced-motion support.
+- Clear validation messages.
+- No critical information conveyed by color alone.
+
+## 9. DATA MODELS FOR MOCK DATA
+
+Create typed mock models for:
+
+User:
+- id
+- username
+- displayName
+- avatarUrl
+- bannerUrl
+- bio
+- location
+- dateOfBirth
+- privacy settings
+- role
+- status
+- createdAt
+
+Community:
+- id
+- name
+- displayName
+- description
+- avatarUrl
+- bannerUrl
+- category
+- visibility
+- status
+- memberCount
+- currentUserRole
+- createdAt
+
+Post:
+- id
+- community
+- author
+- title
+- content
+- media
+- heartCount
+- commentCount
+- isHearted
+- isSaved
+- createdAt
+
+Comment:
+- id
+- postId
+- author
+- content
+- parentCommentId
+- heartCount
+- replies
+- createdAt
+
+Report:
+- id
+- contentType
+- contentId
+- reason
+- status
+- createdAt
+
+Use coherent relationships between mock records. Member counts, comment counts, role badges, and feed content should appear realistic.
+
+Use Vietnamese mock content across the application. Keep interface labels in Vietnamese, while code identifiers remain in English.
+
+## 10. API INTEGRATION PREPARATION
+
+The actual backend is Spring Boot.
+
+Prepare a service layer with functions such as:
+- authService.login()
+- authService.register()
+- authService.logout()
+- userService.getMe()
+- userService.getProfile()
+- userService.updateProfile()
+- communityService.list()
+- communityService.getByName()
+- communityService.create()
+- communityService.join()
+- communityService.leave()
+- postService.list()
+- postService.getById()
+- postService.create()
+- commentService.list()
+- commentService.create()
+- reportService.create()
+
+Use an Axios instance with:
+- Base URL from `VITE_API_BASE_URL`.
+- `withCredentials: true` for cookie-based authentication.
+- Centralized response/error handling.
+- Consistent loading and error states.
+
+Do not hardcode access tokens or refresh tokens in localStorage. The backend uses HTTP-only cookies where configured.
+
+Keep mock and real API implementations interchangeable through a clear configuration setting.
+
+Do not invent undocumented endpoints and claim they are implemented. Separate frontend-only prototype features from actual backend capabilities.
+
+## 11. QUALITY REQUIREMENTS
+
+The final result must:
+- Contain all required routes.
+- Have consistent branding on every page.
+- Have reusable shared components.
+- Have a complete dark theme and usable light theme.
+- Include working navigation.
+- Include realistic mock content.
+- Include interactive settings and customization.
+- Include polished authentication pages.
+- Include subtle animations.
+- Be responsive on desktop, tablet, and mobile.
+- Avoid broken images and dead links.
+- Avoid excessive placeholder text.
+- Avoid giant empty areas.
+- Avoid unrelated visual styles between pages.
+- Avoid implementing every page as a duplicate template.
+- Avoid putting the entire app into a single component.
+- Compile and run without TypeScript errors.
+
+## 12. IMPLEMENTATION WORKFLOW
+
+Work in phases while preserving the same design system.
+
+Phase 1:
+- Establish the design tokens.
+- Build the global layout.
+- Build reusable navigation, cards, buttons, inputs, dialogs, and toasts.
+- Build the login and registration split-screen layouts.
+
+Phase 2:
+- Build Home, Explore, Search, Community Detail, Post Detail, and Public Profile.
+
+Phase 3:
+- Build Notifications, Saved Posts, Messages prototype, and all Settings pages.
+
+Phase 4:
+- Build Community Creation, Community Settings, Members, and Moderation.
+
+Phase 5:
+- Build Admin Dashboard, User Management, Community Management, and Report Management.
+
+Phase 6:
+- Implement animations, responsive behavior, empty states, error states, accessibility, and mock interactions.
+
+Phase 7:
+- Test all routes and interactions.
+- Fix compilation errors.
+- Verify theme consistency.
+- Verify that all buttons have meaningful behavior.
+- Verify that authentication pages have no main app sidebar.
+- Verify that the Login and Register pages use the same split-screen design.
+
+Do not stop after generating the Home or Explore page. Continue until every requested page has been implemented.
+
+## FINAL DELIVERABLE
+
+Deliver a fully navigable DISCUSS frontend prototype that feels like one coherent product.
+
+Prioritize:
+1. Consistent black and orange branding.
+2. Complete page coverage.
+3. Excellent Login/Register split-screen design.
+4. Realistic Reddit-style community interactions.
+5. Working appearance and privacy settings.
+6. Smooth, accessible animations.
+7. Clean React architecture.
+8. Easy integration with the existing Spring Boot backend.
+
+Start by implementing the shared design system and application shell, then continue through all pages. Do not merely return a plan or a design description; implement the application.

@@ -1,0 +1,7 @@
+{
+  "name": "DISCUSS - Reddit Style Community",
+  "description": "Nền tảng mạng xã hội cộng đồng hiện đại - khám phá sở thích, chia sẻ kiến thức và kết nối đam mê.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

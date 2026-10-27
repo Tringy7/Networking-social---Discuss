@@ -17,7 +17,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -33,6 +36,11 @@ public class AuthController {
     public record SocialLoginRequestDTO(@NotBlank String token) {}
     public record ResendOtpRequestDTO(@NotBlank @Email String email) {}
     public record RequestEmailDTO(@NotBlank @Email String email) {}
+
+    @GetMapping("/csrf")
+    public Map<String, String> csrfToken(CsrfToken csrfToken) {
+        return Map.of("token", csrfToken.getToken());
+    }
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
@@ -144,7 +152,10 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse> logout() {
+    public ResponseEntity<ApiResponse> logout(
+            @CookieValue(name = CookieUtil.REFRESH_TOKEN_COOKIE, defaultValue = "") String refreshToken) {
+        tokenService.revokeRefreshToken(refreshToken);
+
         ResponseCookie accessCookie =
                 cookieUtil.clearCookie(CookieUtil.ACCESS_TOKEN_COOKIE, "/");
 

@@ -4,6 +4,7 @@ import com.discuss.discuss.dto.media.StoredImageDTO;
 import com.discuss.discuss.dto.user.PublicUserProfileResponseDTO;
 import com.discuss.discuss.dto.user.UpdateProfileRequestDTO;
 import com.discuss.discuss.dto.user.UserInfoResponseDTO;
+import com.discuss.discuss.dto.user.UserSearchResultDTO;
 import com.discuss.discuss.service.media.ImageService;
 import com.discuss.discuss.service.user.UserProfileService;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
 
 @RestController
 @RequestMapping("/users")
@@ -45,6 +47,16 @@ public class UserController {
     @GetMapping("/{userId}")
     public ResponseEntity<PublicUserProfileResponseDTO> getPublicUserProfile(@PathVariable Long userId ) {
         return ResponseEntity.ok( userProfileService.getPublicUserProfile(userId) );
+    }
+
+    @GetMapping("/by-username/{username}")
+    public ResponseEntity<PublicUserProfileResponseDTO> getPublicUserProfileByUsername(@PathVariable String username) {
+        return ResponseEntity.ok(userProfileService.getPublicUserProfileByUsername(username));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<UserSearchResultDTO>> searchUsers(@RequestParam String q) {
+        return ResponseEntity.ok(userProfileService.searchUsers(q));
     }
 
     @PatchMapping("/me/profile")

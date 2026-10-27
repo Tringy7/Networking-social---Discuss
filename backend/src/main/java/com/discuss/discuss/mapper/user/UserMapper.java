@@ -44,7 +44,8 @@ public class UserMapper {
         if (privacySettings != null) {
             privacySettingsDTO = new UserInfoResponseDTO.PrivacySettings(
                     privacySettings.isShowDateOfBirth(),
-                    privacySettings.isShowLocation()
+                    privacySettings.isShowLocation(),
+                    privacySettings.isShowPostsOnProfile()
             );
         }
 
@@ -89,7 +90,9 @@ public class UserMapper {
                 user.getUsername(),
                 user.getCreatedAt(),
                 profileDTO,
-                statistics
+                statistics,
+                user.getRole().name(),
+                true
         );
     }
 }

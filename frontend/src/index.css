@@ -1,52 +1,354 @@
 @import "tailwindcss";
 
-:root {
-  font-size: 16px;
-  color-scheme: dark;
-}
-
 @layer base {
-  body {
-    font-size: 1rem;
-    line-height: 1.5;
-    background-color: #0e1113;
-    color: #d7dadc;
+  button:not(:disabled),
+  a[href],
+  [role="button"]:not([aria-disabled="true"]),
+  input[type="button"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="reset"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  :root {
+    --bg-main: #FFFFFF;
+    --bg-nav: #FFFFFF;
+    --bg-sidebar: #F8FAFC;
+    --bg-surface: #FFFFFF;
+    --bg-elevated: #F8FAFC;
+    --bg-hover: #F1F5F9;
+    --border-color: #E5E7EB;
+    --border-hover: #CBD5E1;
+    --text-primary: #171717;
+    --text-secondary: #64748B;
+    --text-muted: #64748B;
+    --color-code: #15803D;
+
+    --color-orange: #F97316;
+    --color-orange-hover: #EA580C;
+    --color-orange-soft: rgba(249, 115, 22, 0.10);
+    --color-orange-border: rgba(249, 115, 22, 0.24);
+    --toast-bg: #FFFFFF;
+    --toast-border: #E2E8F0;
+    --toast-text: #334155;
+    --toast-icon-bg: #F8FAFC;
+    --toast-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+    --toast-success: #15803D;
+    --toast-error: #BE123C;
+    --toast-warning: #B45309;
+    --toast-info: #0369A1;
+    --hero-gradient: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+
+  .dark {
+    --bg-main: #0C0E12;
+    --bg-nav: #12151B;
+    --bg-sidebar: #0F1217;
+    --bg-surface: #161922;
+    --bg-elevated: #1E232F;
+    --bg-hover: #252B3A;
+    --border-color: #262C3A;
+    --border-hover: #343C4E;
+    --text-primary: #F1F3F7;
+    --text-secondary: #959DAA;
+    --text-muted: #6C7482;
+    --color-code: #22C55E;
+    --color-orange: #F97316;
+    --color-orange-hover: #EA580C;
+    --color-orange-soft: rgba(249, 115, 22, 0.12);
+    --color-orange-border: rgba(249, 115, 22, 0.28);
+    --toast-bg: #1A1E29;
+    --toast-border: #343C4E;
+    --toast-text: #F1F3F7;
+    --toast-icon-bg: #252B3A;
+    --toast-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    --toast-success: #4ADE80;
+    --toast-error: #FB7185;
+    --toast-warning: #FBBF24;
+    --toast-info: #38BDF8;
+    --hero-gradient: linear-gradient(180deg, #1C1715 0%, #141720 50%, #0C0E12 100%);
+  }
+
+  .light {
+    --bg-main: #FFFFFF;
+    --bg-nav: #FFFFFF;
+    --bg-sidebar: #F8FAFC;
+    --bg-surface: #FFFFFF;
+    --bg-elevated: #F8FAFC;
+    --bg-hover: #F1F5F9;
+    --border-color: #E5E7EB;
+    --border-hover: #CBD5E1;
+    --text-primary: #171717;
+    --text-secondary: #64748B;
+    --text-muted: #64748B;
+    --color-code: #15803D;
+    --color-orange: #F97316;
+    --color-orange-hover: #EA580C;
+    --color-orange-soft: rgba(249, 115, 22, 0.10);
+    --color-orange-border: rgba(249, 115, 22, 0.24);
+    --toast-bg: #FFFFFF;
+    --toast-border: #E2E8F0;
+    --toast-text: #334155;
+    --toast-icon-bg: #F8FAFC;
+    --toast-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+    --toast-success: #15803D;
+    --toast-error: #BE123C;
+    --toast-warning: #B45309;
+    --toast-info: #0369A1;
+    --hero-gradient: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+  }
+
+  /* Font size scale */
+  .font-size-sm {
+    font-size: 16px;
+  }
+  .font-size-md {
+    font-size: 18px;
+  }
+  .font-size-lg {
+    font-size: 20px;
+  }
+
+  /* Density options */
+  .density-compact .density-py {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+  .density-compact .density-p {
+    padding: 0.65rem;
   }
 }
 
-@layer components {
-  /* Reusable Buttons - Reddit Dark Theme */
-  .btn-primary {
-    @apply px-5 py-2.5 bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white font-semibold rounded-full shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-sm disabled:opacity-50;
-  }
+/* Custom scrollbars with harmonious rounded aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FFFFFF;
+}
 
-  .btn-secondary {
-    @apply px-4 py-2 text-[#d7dadc] bg-[#272729] hover:bg-[#343536] font-semibold rounded-full border border-[#343536] transition-all flex items-center justify-center gap-2 cursor-pointer text-sm;
-  }
+.light ::-webkit-scrollbar-thumb {
+  background: #AEB4BE;
+}
+.light ::-webkit-scrollbar-thumb:hover {
+  background: #858D9A;
+}
 
-  .btn-danger {
-    @apply px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-full shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-sm disabled:opacity-50;
-  }
+/* Tabular numbers for clean numeric layout */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
 
-  .btn-outline {
-    @apply px-4 py-2 text-[#818384] hover:text-[#d7dadc] hover:bg-[#272729] rounded-full font-semibold transition cursor-pointer text-sm border border-[#343536];
-  }
+/* Focus outline */
+.focus-orange {
+  outline: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.focus-orange:focus {
+  border-color: var(--color-orange);
+  box-shadow: 0 0 0 3px var(--color-orange-soft);
+}
 
-  /* Form Inputs - Reddit Dark */
-  .input-field {
-    @apply w-full px-4 py-2.5 bg-[#272729] border border-[#343536] text-[#d7dadc] placeholder-[#818384] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all;
-  }
+/* Body global default */
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
 
-  .input-with-icon {
-    @apply w-full pl-11 pr-4 py-2.5 bg-[#272729] border border-[#343536] text-[#d7dadc] placeholder-[#818384] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all;
-  }
+/* Keep older page-specific Tailwind colors aligned with the shared light palette. */
+.light [class~="bg-[#0C0E12]"],
+.light [class~="bg-[#0D0F10]"],
+.light [class~="bg-[#101112]"],
+.light [class~="bg-[#101218]"],
+.light [class~="bg-[#F6F7F9]"],
+.light [class~="bg-[#F0F2F5]"] {
+  background-color: var(--bg-main) !important;
+}
 
-  /* Layout Cards & Labels */
-  .card-box {
-    @apply bg-white rounded-2xl border border-slate-200/80 shadow-xs;
-  }
+.light [class~="bg-[#12151B]"] {
+  background-color: var(--bg-nav) !important;
+}
 
-  .form-label {
-    @apply block text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider mb-1.5;
-  }
+.light [class~="bg-[#0F1217]"] {
+  background-color: var(--bg-sidebar) !important;
+}
+
+.light [class~="bg-[#141517]"],
+.light [class~="bg-[#161922]"],
+.light [class~="bg-[#191A1C]"],
+.light [class~="bg-[#1A1E29]"] {
+  background-color: var(--bg-surface) !important;
+}
+
+.light [class~="bg-[#1E232F]"],
+.light [class~="bg-[#222426]"],
+.light [class~="bg-[#262C3A]"] {
+  background-color: var(--bg-elevated) !important;
+}
+
+.light [class~="bg-[#252B3A]"],
+.light [class~="bg-[#292B2E]"] {
+  background-color: var(--bg-hover) !important;
+}
+
+.light [class~="bg-[#FF5700]"] {
+  background-color: var(--color-orange) !important;
+}
+
+.light [class~="bg-[#FF5700]/15"] {
+  background-color: var(--color-orange-soft) !important;
+}
+
+.light [class~="hover:bg-[#161922]"]:hover,
+.light [class~="hover:bg-[#191A1C]"]:hover,
+.light [class~="hover:bg-[#1A1E29]"]:hover,
+.light [class~="hover:bg-[#1C202B]"]:hover,
+.light [class~="hover:bg-[#1E2023]"]:hover,
+.light [class~="hover:bg-[#1E232F]"]:hover,
+.light [class~="hover:bg-[#222426]"]:hover,
+.light [class~="hover:bg-[#252B3A]"]:hover,
+.light [class~="hover:bg-[#292B2E]"]:hover {
+  background-color: var(--bg-hover) !important;
+}
+
+.light [class~="border-[#191A1C]"],
+.light [class~="border-[#262C3A]"],
+.light [class~="border-[#303235]"],
+.light [class~="border-[#59616E]"] {
+  border-color: var(--border-color) !important;
+}
+
+.light [class~="border-[#FF5700]"] {
+  border-color: var(--color-orange-border) !important;
+}
+
+.light [class~="border-[#FF5700]/30"],
+.light [class~="border-[#FF5700]/40"] {
+  border-color: var(--color-orange-border) !important;
+}
+
+.light [class~="hover:border-[#303235]"]:hover,
+.light [class~="hover:border-[#343C4E]"]:hover,
+.light [class~="hover:border-[#353D50]"]:hover,
+.light [class~="hover:border-[#384052]"]:hover,
+.light [class~="hover:border-[#45474B]"]:hover {
+  border-color: var(--border-hover) !important;
+}
+
+.light [class~="text-[#F1F3F7]"],
+.light [class~="text-[#F5F5F5]"],
+.light [class~="text-[#F0F2F5]"],
+.light [class~="text-[#1A1D23]"],
+.light [class~="text-[#D8DEE8]"],
+.light [class~="text-white"]:not([class~="text-white-keep"]) {
+  color: var(--text-primary) !important;
+}
+
+.light [class~="hover:text-[#F1F3F7]"]:hover,
+.light [class~="hover:text-[#F5F5F5]"]:hover,
+.light .group:hover [class~="group-hover:text-white"] {
+  color: var(--text-primary) !important;
+}
+
+.light [class~="text-[#959DAA]"],
+.light [class~="text-[#9A9DA3]"],
+.light [class~="text-[#D1D5DB]"],
+.light [class~="text-[#5E6573]"] {
+  color: var(--text-secondary) !important;
+}
+
+.light [class~="text-[#6C7482]"],
+.light [class~="text-[#70747C]"],
+.light [class~="text-[#8991A0]"] {
+  color: var(--text-muted) !important;
+}
+
+.light [class~="text-[#FF5700]"] {
+  color: var(--color-orange) !important;
+}
+
+.light [class~="accent-[#FF5700]"] {
+  accent-color: var(--color-orange) !important;
+}
+
+.light [class~="focus:border-[#FF5700]"]:focus {
+  border-color: var(--color-orange) !important;
+}
+
+.light [class~="shadow-[#FF5700]/25"] {
+  --tw-shadow-color: var(--color-orange-border) !important;
+}
+
+.light [class~="hover:text-[#9A9DA3]"]:hover {
+  color: var(--text-secondary) !important;
+}
+
+.light [class~="placeholder-[#6C7482]"]::placeholder,
+.light [class~="placeholder-[#70747C]"]::placeholder {
+  color: var(--text-muted) !important;
+}
+
+.light [class~="bg-[#22C55E]"][class~="text-white"],
+.light [class~="bg-[#3B82F6]"][class~="text-white"],
+.light [class~="bg-[#EF4444]"][class~="text-white"],
+.light [class~="bg-[#F59E0B]"][class~="text-white"],
+.light [class~="bg-[#FF5700]"][class~="text-white"],
+.light button[class~="bg-[var(--color-orange)]"],
+.light a[class~="bg-[var(--color-orange)]"] {
+  background-color: #C2410C !important;
+  color: #FFFFFF !important;
+}
+
+.light button[class~="bg-[var(--color-orange)]"]:hover,
+.light a[class~="bg-[var(--color-orange)]"]:hover {
+  background-color: #9A3412 !important;
+}
+
+.light button[class~="bg-[var(--color-orange)]"] *,
+.light a[class~="bg-[var(--color-orange)]"] * {
+  color: #FFFFFF !important;
+}
+
+.light input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.light textarea,
+.light select {
+  background-color: #FFFFFF !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.light input::placeholder,
+.light textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+.light input:focus,
+.light textarea:focus,
+.light select:focus {
+  border-color: var(--color-orange) !important;
+  box-shadow: 0 0 0 3px var(--color-orange-soft);
+}
+
+.light [class~="from-[#0F1217]"] {
+  background-image: var(--hero-gradient) !important;
+}
+
+.light [class~="to-black/30"],
+.light [class~="to-black/25"],
+.light [class~="to-black/20"] {
+  --tw-gradient-to: rgba(0, 0, 0, 0.04) var(--tw-gradient-to-position) !important;
+}
+
+.site-footer {
+  display: none !important;
 }
