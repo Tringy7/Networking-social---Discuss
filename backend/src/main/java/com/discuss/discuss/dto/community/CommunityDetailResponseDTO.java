@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Getter
 @Setter
@@ -34,5 +33,5 @@ public class CommunityDetailResponseDTO {
     private long memberCount;
     private LocalDateTime createdAt;
 
-    private List<CommunityMemberResponseDTO> moderators;
+    private CommunityOwnerResponseDTO owner;
 }

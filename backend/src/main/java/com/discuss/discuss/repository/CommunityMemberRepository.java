@@ -51,18 +51,16 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
     // Uses an explicit CASE instead of "ORDER BY cm.role DESC" so the order does not
     // depend on the enum's @Enumerated mapping (ORDINAL vs STRING) or its alphabetical order.
     @Query("""
-        SELECT cm FROM CommunityMember cm
-        JOIN FETCH cm.user
-        WHERE cm.community = :community
-          AND cm.role IN :roles
-          AND cm.status = :status
-        ORDER BY
-          CASE WHEN cm.role = com.discuss.discuss.enums.CommunityRole.OWNER THEN 0 ELSE 1 END,
-          cm.joinedAt ASC
+    SELECT cm
+    FROM CommunityMember cm
+    WHERE cm.community = :community
+      AND cm.status = :status
+      AND (:role IS NULL OR cm.role = :role)
     """)
-    List<CommunityMember> findStaffMembers(
+    Page<CommunityMember> findCommunityMembers(
             @Param("community") Community community,
-            @Param("roles") Collection<CommunityRole> roles,
-            @Param("status") MembershipStatus status
+            @Param("status") MembershipStatus status,
+            @Param("role") CommunityRole role,
+            Pageable pageable
     );
 }

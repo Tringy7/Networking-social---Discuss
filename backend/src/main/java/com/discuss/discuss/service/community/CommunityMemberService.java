@@ -126,11 +126,17 @@ public class CommunityMemberService {
     }
 
     // Gets the ACTIVE Owner and Moderators of the community.
-    public List<CommunityMember> getStaffMembers(Community community) {
-        return memberRepository.findStaffMembers(
+    // Gets paginated active members of a community, optionally filtered by role.
+    public Page<CommunityMember> getCommunityMembers(
+            Community community,
+            CommunityRole role,
+            Pageable pageable
+    ) {
+        return memberRepository.findCommunityMembers(
                 community,
-                List.of(CommunityRole.OWNER, CommunityRole.MODERATOR),
-                MembershipStatus.ACTIVE
+                MembershipStatus.ACTIVE,
+                role,
+                pageable
         );
     }
 

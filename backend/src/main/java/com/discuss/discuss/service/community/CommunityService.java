@@ -2,16 +2,15 @@
 package com.discuss.discuss.service.community;
 
 import com.discuss.discuss.dto.common.PageResponseDTO;
-import com.discuss.discuss.dto.community.CommunityDetailResponseDTO;
-import com.discuss.discuss.dto.community.CommunityPreviewResponseDTO;
-import com.discuss.discuss.dto.community.CreateCommunityRequestDTO;
-import com.discuss.discuss.dto.community.UpdateCommunityRequestDTO;
+import com.discuss.discuss.dto.community.*;
 import com.discuss.discuss.entity.*;
+import com.discuss.discuss.enums.CommunityRole;
 import com.discuss.discuss.enums.CommunityStatus;
 import com.discuss.discuss.enums.CommunityVisibility;
 import com.discuss.discuss.exception.community.CommunityErrorCode;
 import com.discuss.discuss.exception.community.CommunityException;
 import com.discuss.discuss.mapper.community.CommunityMapper;
+import com.discuss.discuss.mapper.community.CommunityMemberMapper;
 import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.repository.CommunityRepository;
 import com.discuss.discuss.service.community.spectification.CommunitySpecifications;
@@ -48,6 +47,7 @@ public class CommunityService {
     private final PageMapper pageMapper;
     private final CommunitySpecifications communitySpecifications;
     private final CommunityNameNormalizer nameNormalizer;
+    private final CommunityMemberMapper communityMemberMapper;
 
     /*
     * Create new community
@@ -87,10 +87,13 @@ public class CommunityService {
         CommunityInfo info =
                 communityInfoService.createCommunityInfo(community, req);
 
-        CommunityMember owner =
-                communityMemberService.addOwner(community, user);
+        communityMemberService.addOwner(community, user);
 
-        return communityMapper.toDetail(community, info, 1L, List.of(owner));
+        return communityMapper.toDetail(
+                community,
+                info,
+                1L
+        );
     }
 
     /*
@@ -113,17 +116,30 @@ public class CommunityService {
         long memberCount =
                 communityMemberService.countActiveMembers(community);
 
-        List<CommunityMember> staffMembers =
-                communityMemberService.getStaffMembers(community);
-
         return communityMapper.toDetail(
                 community,
                 info,
-                memberCount,
-                staffMembers
+                memberCount
         );
     }
 
+    /*
+     * Get paginated community members, optionally filtered by role.
+     */
+    public PageResponseDTO<CommunityMemberResponseDTO> getCommunityMembers(
+            Pageable pageable,
+            String name,
+            CommunityRole role
+    ) {
+        Community community = getCommunityByNameAndStatusActive(name);
+
+        Page<CommunityMemberResponseDTO> members =
+                communityMemberService
+                        .getCommunityMembers(community, role, pageable)
+                        .map(communityMemberMapper::toMemberDTO);
+
+        return pageMapper.toResponse(members);
+    }
 
 //    /*
 //    * Delete community with the name
@@ -150,10 +166,11 @@ public class CommunityService {
         long memberCount =
                 communityMemberService.countActiveMembers(community);
 
-        List<CommunityMember> staffMembers =
-                communityMemberService.getStaffMembers(community);
-
-        return communityMapper.toDetail(community, info, memberCount, staffMembers);
+        return communityMapper.toDetail(
+                community,
+                info,
+                memberCount
+        );
     }
 
     /*

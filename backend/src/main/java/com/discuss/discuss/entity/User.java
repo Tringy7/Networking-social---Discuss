@@ -48,6 +48,9 @@ public class User {
     @Builder.Default
     private Provider provider = Provider.LOCAL;
 
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private UserProfile profile;
+
     @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
     @Builder.Default
     private List<Community> ownedCommunities = new ArrayList<>();

@@ -1,13 +1,19 @@
 package com.discuss.discuss.controller.community;
 
 import com.discuss.discuss.dto.common.ApiResponse;
+import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.community.CommunityDetailResponseDTO;
+import com.discuss.discuss.dto.community.CommunityMemberResponseDTO;
 import com.discuss.discuss.dto.community.CreateCommunityRequestDTO;
 import com.discuss.discuss.dto.community.UpdateCommunityRequestDTO;
+import com.discuss.discuss.enums.CommunityRole;
 import com.discuss.discuss.service.community.CommunityService;
 import com.discuss.discuss.service.media.ImageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -94,5 +100,26 @@ public class CommunityController {
         return ResponseEntity.ok(
                 communityService.getCommunityDetail(name)
         );
+    }
+
+    /* Get member of communities by name */
+    @GetMapping("/{name}/members")
+    public ResponseEntity<PageResponseDTO<CommunityMemberResponseDTO>> getCommunityMembers(
+            @PathVariable String name,
+            @RequestParam(required = false) CommunityRole role,
+            @PageableDefault(
+                    size = 10,
+                    sort = "joinedAt",
+                    direction = Sort.Direction.DESC
+            ) Pageable pageable
+    ) {
+        PageResponseDTO<CommunityMemberResponseDTO> response =
+                communityService.getCommunityMembers(
+                        pageable,
+                        name,
+                        role
+                );
+
+        return ResponseEntity.ok().body(response);
     }
 }
