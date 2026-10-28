@@ -310,7 +310,11 @@ export const Navbar: React.FC = () => {
                     </div>
 
                     <div className="space-y-2 max-h-72 overflow-y-auto">
-                      {notifications.slice(0, 5).map((n) => (
+                      {notifications.length === 0 ? (
+                        <p className="py-4 text-center text-xs text-[var(--text-secondary)]">
+                      Chưa có thông báo mới.
+                        </p>
+                      ) : notifications.slice(0, 5).map((n) => (
                         <Link
                           key={n.id}
                           to={n.targetUrl}

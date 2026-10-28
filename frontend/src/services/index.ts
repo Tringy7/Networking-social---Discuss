@@ -1,5 +1,6 @@
 import apiClient from './apiClient';
 import { Community, CommunityMember, Post, Comment, User, Report, NotificationItem, Conversation, ChatMessage } from '../types';
+import { demoConversations, demoNotifications } from '../mocks/demoContent';
 interface AuthResponse {
   message?: string;
   data?: Partial<User>;
@@ -43,7 +44,6 @@ interface PublicUserProfileResponse {
   } | null;
   statistics: { postCount: number; commentCount: number; communityCount: number };
   role: User['role'];
-  showPostsOnProfile: boolean;
 }
 
 export interface UserSearchResult {
@@ -61,6 +61,21 @@ const API_GENDERS: Record<string, string> = {
   'Không muốn tiết lộ': 'PREFER_NOT_TO_SAY',
 };
 
+export const POSTS_AVAILABLE = false;
+export const NOTIFICATIONS_AVAILABLE = false;
+export const MESSAGES_AVAILABLE = false;
+
+export const POSTS_UNAVAILABLE_MESSAGE = 'Tính năng bài viết hiện chưa khả dụng vì backend chưa có API.';
+export const NOTIFICATIONS_UNAVAILABLE_MESSAGE = 'Tính năng thông báo hiện chưa khả dụng vì backend chưa có API.';
+
+const postsUnavailableError = () => new Error(POSTS_UNAVAILABLE_MESSAGE);
+const notificationsUnavailableError = () => new Error(NOTIFICATIONS_UNAVAILABLE_MESSAGE);
+let localConversations = demoConversations.map((conversation) => ({
+  ...conversation,
+  participant: { ...conversation.participant },
+  messages: conversation.messages.map((message) => ({ ...message })),
+}));
+
 export const authService = {
   login: (emailOrUsername: string, password: string) =>
     apiClient.post<AuthResponse>('/auth/login', {
@@ -76,12 +91,14 @@ export const authService = {
     email: string;
     password: string;
     confirmPassword: string;
+    displayName?: string;
   }) =>
     apiClient.post<AuthResponse>('/auth/register', {
       username: data.username.trim(),
       email: data.email.trim().toLowerCase(),
       password: data.password,
       confirmPassword: data.confirmPassword,
+      displayName: data.displayName,
     }),
 
   verifyEmail: (data: { email: string; code: string }) =>
@@ -116,12 +133,12 @@ export const authService = {
 };
 
 export const userService = {
-  getMe: () => apiClient.get<UserResponse>('/users/me'),
+  getMe: () => apiClient.get<UserResponse>('/user/me'),
   search: (query: string) =>
     apiClient.get<UserSearchResult[]>(`/users/search?q=${encodeURIComponent(query)}`),
   getPublicProfile: async (username: string): Promise<User> => {
     const response = await apiClient.get<PublicUserProfileResponse>(
-      `/users/by-username/${encodeURIComponent(username)}`
+      `/user/${encodeURIComponent(username)}`
     );
     const profile = response.profile;
     return {
@@ -138,7 +155,7 @@ export const userService = {
       privacy: {
         showDateOfBirth: Boolean(profile?.dateOfBirth),
         showLocation: Boolean(profile?.location),
-        showPostsOnProfile: response.showPostsOnProfile,
+        showPostsOnProfile: true,
       },
       role: response.role,
       status: 'ACTIVE',
@@ -148,7 +165,7 @@ export const userService = {
   },
 
   updateProfile: (data: Partial<User>) =>
-    apiClient.patch<UserResponse>('/users/me/profile', {
+    apiClient.patch<UserResponse>('/user/me/profile', {
       displayName: data.displayName,
       bio: data.bio,
       location: data.location,
@@ -162,13 +179,13 @@ export const userService = {
   uploadAvatar: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return apiClient.put<UserResponse>('/users/me/avatar', formData);
+    return apiClient.put<UserResponse>('/user/me/avatar', formData);
   },
 
   uploadBanner: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return apiClient.put<UserResponse>('/users/me/banner', formData);
+    return apiClient.put<UserResponse>('/user/me/banner', formData);
   },
 };
 
@@ -182,14 +199,21 @@ interface CommunityApiResponse {
   category?: string | null;
   categoryName?: string | null;
   visibility: Community['visibility'];
-  status?: Community['status'];
+  status?: string;
+  communityStatus?: string;
   memberCount: number;
   currentUserRole?: Community['currentUserRole'] | null;
   myRole?: Community['currentUserRole'] | null;
   joined?: boolean;
   ownerId?: string | number;
   ownerUsername?: string;
+  owner?: { userId?: string | number; username?: string };
   createdAt: string;
+}
+
+interface CommunityPageResponse {
+  content: CommunityApiResponse[];
+  totalPages: number;
 }
 
 function mapCommunity(value: CommunityApiResponse): Community {
@@ -202,14 +226,48 @@ function mapCommunity(value: CommunityApiResponse): Community {
     bannerUrl: value.bannerUrl || '',
     category: value.category || value.categoryName || 'Công nghệ',
     visibility: value.visibility,
-    status: value.status === 'DISABLED' ? 'BANNED' : value.status || 'ACTIVE',
+    status: mapCommunityStatus(value.status || value.communityStatus),
     memberCount: value.memberCount,
     currentUserRole: value.currentUserRole || value.myRole || (value.joined ? 'MEMBER' : 'NONE'),
-    ownerId: String(value.ownerId || ''),
-    ownerUsername: value.ownerUsername || '',
+    ownerId: String(value.ownerId || value.owner?.userId || ''),
+    ownerUsername: value.ownerUsername || value.owner?.username || '',
     createdAt: value.createdAt,
     rules: [],
   };
+}
+
+function mapCommunityStatus(status?: string): Community['status'] {
+  if (status === 'BANED' || status === 'BANNED' || status === 'DISABLED') return 'BANNED';
+  if (status === 'RESTRICTED') return 'RESTRICTED';
+  return 'ACTIVE';
+}
+
+async function getAllCommunityPages(path: string): Promise<CommunityApiResponse[]> {
+  const pageSize = 100;
+  const firstPage = await apiClient.get<CommunityPageResponse>(
+    `${path}?page=0&size=${pageSize}`
+  );
+  const remainingPages = await Promise.all(
+    Array.from({ length: Math.max(0, firstPage.totalPages - 1) }, (_, index) =>
+      apiClient.get<CommunityPageResponse>(`${path}?page=${index + 1}&size=${pageSize}`)
+    )
+  );
+
+  return [
+    ...firstPage.content,
+    ...remainingPages.flatMap((page) => page.content),
+  ];
+}
+
+async function getCommunitiesWithRole(
+  path: string,
+  role: Community['currentUserRole']
+): Promise<Community[]> {
+  const communities = await getAllCommunityPages(path);
+  return communities.map((community) => ({
+    ...mapCommunity(community),
+    currentUserRole: role,
+  }));
 }
 
 export const categoryService = {
@@ -218,9 +276,14 @@ export const categoryService = {
 
 export const communityService = {
   list: async (): Promise<Community[]> =>
-    (await apiClient.get<CommunityApiResponse[]>('/communities')).map(mapCommunity),
-  mine: async (): Promise<Community[]> =>
-    (await apiClient.get<CommunityApiResponse[]>('/communities/mine')).map(mapCommunity),
+    (await getAllCommunityPages('/explore')).map(mapCommunity),
+  mine: async (): Promise<Community[]> => {
+    const [owned, joined] = await Promise.all([
+      getCommunitiesWithRole('/user/me/owned', 'OWNER'),
+      getCommunitiesWithRole('/user/me/joined', 'MEMBER'),
+    ]);
+    return [...owned, ...joined];
+  },
   getByName: async (name: string): Promise<Community | undefined> => {
     const response = await apiClient.get<CommunityApiResponse>(`/communities/${encodeURIComponent(name)}`);
     return mapCommunity(response);
@@ -278,12 +341,12 @@ export const communityService = {
 };
 
 export const postService = {
-  list: async (tab: string = 'for-you'): Promise<Post[]> => {
-    return apiClient.get<Post[]>(`/posts?tab=${encodeURIComponent(tab)}`);
-  },
-  getById: async (postId: string): Promise<Post | undefined> => {
-    return apiClient.get<Post>(`/posts/${postId}`);
-  },
+  list: async (tab: string = 'for-you'): Promise<Post[]> =>
+    POSTS_AVAILABLE
+      ? apiClient.get<Post[]>(`/posts?tab=${encodeURIComponent(tab)}`)
+      : [],
+  getById: async (postId: string): Promise<Post | undefined> =>
+    POSTS_AVAILABLE ? apiClient.get<Post>(`/posts/${postId}`) : undefined,
   create: async (data: {
     communityName: string;
     title: string;
@@ -292,29 +355,43 @@ export const postService = {
     mediaUrl?: string;
     mediaType?: Post['mediaType'];
     codeSnippet?: Post['codeSnippet'];
-  }) => {
+  }): Promise<Post> => {
+    if (!POSTS_AVAILABLE) throw postsUnavailableError();
     return apiClient.post<Post>('/posts', data);
   },
-  toggleHeart: async (postId: string, isHearted: boolean) => {
+  toggleHeart: async (postId: string, isHearted: boolean): Promise<{ isHearted: boolean }> => {
+    if (!POSTS_AVAILABLE) throw postsUnavailableError();
     return apiClient.put<{ isHearted: boolean }>(`/posts/${postId}/vote`, {
       voteType: isHearted ? 0 : 1,
     });
   },
-  toggleSave: async (postId: string) =>
-    apiClient.put<{ isSaved: boolean }>(`/posts/${postId}/save`),
-  delete: async (postId: string) => apiClient.delete<void>(`/posts/${postId}`),
-  listSaved: async (): Promise<Post[]> => apiClient.get<Post[]>('/posts/saved'),
+  toggleSave: async (postId: string): Promise<{ isSaved: boolean }> => {
+    if (!POSTS_AVAILABLE) throw postsUnavailableError();
+    return apiClient.put<{ isSaved: boolean }>(`/posts/${postId}/save`);
+  },
+  delete: async (postId: string): Promise<void> => {
+    if (!POSTS_AVAILABLE) throw postsUnavailableError();
+    return apiClient.delete<void>(`/posts/${postId}`);
+  },
+  listSaved: async (): Promise<Post[]> =>
+    POSTS_AVAILABLE ? apiClient.get<Post[]>('/posts/saved') : [],
 };
 
 export const commentService = {
-  list: async (postId: string): Promise<Comment[]> => {
-    return apiClient.get<Comment[]>(`/posts/${postId}/comments`);
-  },
-  create: async (postId: string, content: string, parentCommentId?: string): Promise<Comment> => {
+  list: async (postId: string): Promise<Comment[]> =>
+    POSTS_AVAILABLE ? apiClient.get<Comment[]>(`/posts/${postId}/comments`) : [],
+  create: async (
+    postId: string,
+    content: string,
+    parentCommentId?: string
+  ): Promise<Comment> => {
+    if (!POSTS_AVAILABLE) throw postsUnavailableError();
     return apiClient.post<Comment>(`/posts/${postId}/comments`, { content, parentCommentId });
   },
-  toggleHeart: async (postId: string, commentId: string) =>
-    apiClient.put<{ isHearted: boolean }>(`/posts/${postId}/comments/${commentId}/vote`),
+  toggleHeart: async (postId: string, commentId: string): Promise<{ isHearted: boolean }> => {
+    if (!POSTS_AVAILABLE) throw postsUnavailableError();
+    return apiClient.put<{ isHearted: boolean }>(`/posts/${postId}/comments/${commentId}/vote`);
+  },
 };
 
 export const reportService = {
@@ -392,13 +469,26 @@ export const adminService = {
 };
 
 export const notificationService = {
-  list: async (): Promise<NotificationItem[]> => apiClient.get<NotificationItem[]>('/notifications'),
-  markRead: async (id: string) => apiClient.put<void>(`/notifications/${id}/read`),
-  markAllRead: async () => apiClient.put<void>('/notifications/read-all'),
-  getPreferences: async (): Promise<NotificationPreferences> =>
-    apiClient.get<NotificationPreferences>('/notifications/preferences'),
-  savePreferences: async (preferences: NotificationPreferences): Promise<NotificationPreferences> =>
-    apiClient.put<NotificationPreferences>('/notifications/preferences', preferences),
+  list: async (): Promise<NotificationItem[]> =>
+    NOTIFICATIONS_AVAILABLE
+      ? apiClient.get<NotificationItem[]>('/notifications')
+      : demoNotifications.map((notification) => ({ ...notification })),
+  markRead: async (id: string): Promise<void> => {
+    if (!NOTIFICATIONS_AVAILABLE) throw notificationsUnavailableError();
+    return apiClient.put<void>(`/notifications/${id}/read`);
+  },
+  markAllRead: async (): Promise<void> => {
+    if (!NOTIFICATIONS_AVAILABLE) throw notificationsUnavailableError();
+    return apiClient.put<void>('/notifications/read-all');
+  },
+  getPreferences: async (): Promise<NotificationPreferences> => {
+    if (!NOTIFICATIONS_AVAILABLE) throw notificationsUnavailableError();
+    return apiClient.get<NotificationPreferences>('/notifications/preferences');
+  },
+  savePreferences: async (preferences: NotificationPreferences): Promise<NotificationPreferences> => {
+    if (!NOTIFICATIONS_AVAILABLE) throw notificationsUnavailableError();
+    return apiClient.put<NotificationPreferences>('/notifications/preferences', preferences);
+  },
 };
 
 export interface NotificationPreferences {
@@ -410,11 +500,72 @@ export interface NotificationPreferences {
 }
 
 export const messageService = {
-  list: async (): Promise<Conversation[]> => apiClient.get<Conversation[]>('/messages'),
-  get: async (conversationId: string): Promise<Conversation> =>
-    apiClient.get<Conversation>(`/messages/${conversationId}`),
-  createConversation: async (username: string): Promise<Conversation> =>
-    apiClient.post<Conversation>('/messages/conversations', { username }),
-  send: async (conversationId: string, text: string): Promise<ChatMessage> =>
-    apiClient.post<ChatMessage>(`/messages/${conversationId}`, { text }),
+  list: async (): Promise<Conversation[]> => MESSAGES_AVAILABLE
+    ? apiClient.get<Conversation[]>('/messages')
+    : localConversations.map((conversation) => ({
+        ...conversation,
+        participant: { ...conversation.participant },
+        messages: conversation.messages.map((message) => ({ ...message })),
+      })),
+  get: async (conversationId: string): Promise<Conversation> => {
+    if (MESSAGES_AVAILABLE) return apiClient.get<Conversation>(`/messages/${conversationId}`);
+    const conversation = localConversations.find((item) => item.id === conversationId);
+    if (!conversation) throw new Error('Không tìm thấy cuộc trò chuyện.');
+    return {
+      ...conversation,
+      participant: { ...conversation.participant },
+      messages: conversation.messages.map((message) => ({ ...message })),
+    };
+  },
+  createConversation: async (username: string): Promise<Conversation> => {
+    if (MESSAGES_AVAILABLE) {
+      return apiClient.post<Conversation>('/messages/conversations', { username });
+    }
+    const normalizedUsername = username.trim().replace(/^@/, '');
+    if (!normalizedUsername) throw new Error('Vui lòng nhập tên người dùng.');
+    const existing = localConversations.find(
+      (conversation) => conversation.participant.username === normalizedUsername
+    );
+    if (existing) return existing;
+    const conversation: Conversation = {
+      id: `demo-conversation-${Date.now()}`,
+      participant: {
+        id: `demo-user-${normalizedUsername}`,
+        username: normalizedUsername,
+        displayName: normalizedUsername,
+        avatarUrl: '',
+        status: 'offline',
+      },
+      lastMessage: '',
+      lastMessageTime: '',
+      unreadCount: 0,
+      messages: [],
+    };
+    localConversations = [conversation, ...localConversations];
+    return conversation;
+  },
+  send: async (conversationId: string, text: string): Promise<ChatMessage> => {
+    if (MESSAGES_AVAILABLE) {
+      return apiClient.post<ChatMessage>(`/messages/${conversationId}`, { text });
+    }
+    const conversation = localConversations.find((item) => item.id === conversationId);
+    const trimmedText = text.trim();
+    if (!conversation) throw new Error('Không tìm thấy cuộc trò chuyện.');
+    if (!trimmedText) throw new Error('Tin nhắn không được để trống.');
+    const timestamp = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const message: ChatMessage = {
+      id: `demo-message-${Date.now()}`,
+      senderId: 'demo-current-user',
+      senderUsername: 'ban',
+      text: trimmedText,
+      timestamp,
+      isMe: true,
+    };
+    localConversations = localConversations.map((item) =>
+      item.id === conversationId
+        ? { ...item, lastMessage: message.text, lastMessageTime: timestamp, messages: [...item.messages, message] }
+        : item
+    );
+    return message;
+  },
 };

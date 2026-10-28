@@ -10,6 +10,8 @@ import { usePostStore } from './store/usePostStore';
 export default function App() {
   const clearSession = useAuthStore((state) => state.clearSession);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const authStatus = useAuthStore((state) => state.authStatus);
+  const initializeSession = useAuthStore((state) => state.initializeSession);
   const addToast = useToastStore((state) => state.addToast);
   const hydrateCommunities = useCommunityStore((state) => state.hydrate);
   const hydratePosts = usePostStore((state) => state.hydrate);
@@ -29,6 +31,10 @@ export default function App() {
       window.removeEventListener('auth:expired', handleExpiredSession);
     };
   }, [addToast, clearSession]);
+
+  React.useEffect(() => {
+    void initializeSession();
+  }, [initializeSession]);
 
   React.useEffect(() => {
     if (!isAuthenticated) return;
@@ -56,7 +62,17 @@ export default function App() {
   return (
     <BrowserRouter>
       <>
-        <AppRoutes />
+        {authStatus === 'INITIALIZING' ? (
+          <main
+            className="flex min-h-screen items-center justify-center bg-[var(--bg-main)] text-sm text-[var(--text-secondary)]"
+            role="status"
+            aria-live="polite"
+          >
+            Đang khôi phục phiên đăng nhập...
+          </main>
+        ) : (
+          <AppRoutes />
+        )}
         <ToastContainer />
       </>
     </BrowserRouter>

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { usePostStore } from '../../store/usePostStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
-import PostCard from '../../components/post/PostCard';
+import PostCard from '../../components/post/PostCardView';
 import CommunityCard from '../../components/community/CommunityCard';
 import Avatar from '../../components/ui/Avatar';
 import Button from '../../components/ui/Button';

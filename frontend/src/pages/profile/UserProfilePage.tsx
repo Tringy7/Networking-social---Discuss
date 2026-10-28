@@ -5,7 +5,7 @@ import { usePostStore } from '../../store/usePostStore';
 import { useToastStore } from '../../store/useToastStore';
 import { userService } from '../../services';
 import { User } from '../../types';
-import PostCard from '../../components/post/PostCard';
+import PostCard from '../../components/post/PostCardView';
 import Avatar from '../../components/ui/Avatar';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';

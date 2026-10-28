@@ -57,8 +57,8 @@ export const VerifyEmailPage: React.FC = () => {
         throw new Error('Không tìm thấy email đăng ký. Vui lòng đăng ký lại.');
       }
       await verifyEmail(pendingEmail, code);
-      addToast('Xác thực email thành công! Chào mừng bạn gia nhập DISCUSS.', 'success');
-      navigate('/');
+      addToast('Xác thực email thành công! Bạn có thể đăng nhập ngay.', 'success');
+      navigate('/login', { replace: true });
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Xác thực email thất bại.');
     } finally {

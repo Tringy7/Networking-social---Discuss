@@ -203,6 +203,7 @@ export const EditProfilePage: React.FC = () => {
             <option value="Nam">Nam</option>
             <option value="Nữ">Nữ</option>
             <option value="Khác">Khác / Không muốn tiết lộ</option>
+            <option value="Không muốn tiết lộ">Không muốn tiết lộ</option>
           </select>
         </div>
       </div>

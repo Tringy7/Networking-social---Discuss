@@ -5,21 +5,37 @@ import { useToastStore } from '../../store/useToastStore';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { Mail, Lock, User, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { getApiFieldErrors } from '../../utils/apiFieldErrors';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
-  const { register } = useAuthStore();
+  const {
+    register,
+    registrationDraft,
+    updateRegistrationDraft,
+    clearRegistrationDraft,
+  } = useAuthStore();
   const { addToast } = useToastStore();
 
-  const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState(registrationDraft.username);
+  const [displayName, setDisplayName] = useState(registrationDraft.displayName);
+  const [email, setEmail] = useState(registrationDraft.email);
+  const [password, setPassword] = useState(registrationDraft.password);
+  const [confirmPassword, setConfirmPassword] = useState(registrationDraft.confirmPassword);
   const [showPassword, setShowPassword] = useState(false);
-  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(registrationDraft.agreeTerms);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const clearFieldError = (field: string) => {
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +52,8 @@ export const RegisterPage: React.FC = () => {
       return;
     }
     if (password !== confirmPassword) {
-      setError('Mật khẩu xác nhận không trùng khớp.');
+      setError('');
+      setFieldErrors({ confirmPassword: 'Mật khẩu xác nhận không trùng khớp.' });
       return;
     }
     if (!agreeTerms) {
@@ -45,6 +62,7 @@ export const RegisterPage: React.FC = () => {
     }
 
     setError('');
+    setFieldErrors({});
     setIsLoading(true);
     try {
       await register({
@@ -54,9 +72,11 @@ export const RegisterPage: React.FC = () => {
         confirmPassword,
         displayName: displayName.trim() || username.trim(),
       });
+      clearRegistrationDraft();
       addToast('Đăng ký tài khoản thành công! Mã OTP đã được gửi.', 'success');
       navigate('/verify-email');
     } catch (err: unknown) {
+      setFieldErrors(getApiFieldErrors(err));
       setError(err instanceof Error ? err.message : 'Đăng ký không thành công.');
     } finally {
       setIsLoading(false);
@@ -87,10 +107,13 @@ export const RegisterPage: React.FC = () => {
           value={username}
           onChange={(e) => {
             setUsername(e.target.value);
+            updateRegistrationDraft({ username: e.target.value });
             setError('');
+            clearFieldError('username');
           }}
           leftIcon={<User className="w-4 h-4" />}
-          placeholder="huutri_dev"
+          placeholder="dev_user123"
+          error={fieldErrors.username}
           required
         />
 
@@ -98,8 +121,13 @@ export const RegisterPage: React.FC = () => {
           label="Tên hiển thị (Display Name)"
           type="text"
           value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
-          placeholder="Hữu Trí"
+          onChange={(e) => {
+            setDisplayName(e.target.value);
+            updateRegistrationDraft({ displayName: e.target.value });
+            clearFieldError('displayName');
+          }}
+          placeholder="Người dùng mẫu"
+          error={fieldErrors.displayName}
         />
 
         <Input
@@ -108,10 +136,13 @@ export const RegisterPage: React.FC = () => {
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
+            updateRegistrationDraft({ email: e.target.value });
             setError('');
+            clearFieldError('email');
           }}
           leftIcon={<Mail className="w-4 h-4" />}
-          placeholder="huutria22005@gmail.com"
+          placeholder="user@example.com"
+          error={fieldErrors.email}
           required
         />
 
@@ -121,7 +152,9 @@ export const RegisterPage: React.FC = () => {
           value={password}
           onChange={(e) => {
             setPassword(e.target.value);
+            updateRegistrationDraft({ password: e.target.value });
             setError('');
+            clearFieldError('password');
           }}
           leftIcon={<Lock className="w-4 h-4" />}
           rightIcon={
@@ -134,6 +167,7 @@ export const RegisterPage: React.FC = () => {
             </button>
           }
           placeholder="Tối thiểu 8 ký tự"
+          error={fieldErrors.password}
           required
         />
 
@@ -143,10 +177,13 @@ export const RegisterPage: React.FC = () => {
           value={confirmPassword}
           onChange={(e) => {
             setConfirmPassword(e.target.value);
+            updateRegistrationDraft({ confirmPassword: e.target.value });
             setError('');
+            clearFieldError('confirmPassword');
           }}
           leftIcon={<Lock className="w-4 h-4" />}
           placeholder="Nhập lại mật khẩu"
+          error={fieldErrors.confirmPassword}
           required
         />
 
@@ -158,6 +195,7 @@ export const RegisterPage: React.FC = () => {
               checked={agreeTerms}
               onChange={(e) => {
                 setAgreeTerms(e.target.checked);
+                updateRegistrationDraft({ agreeTerms: e.target.checked });
                 setError('');
               }}
               className="mt-0.5 rounded accent-[var(--color-orange)]"

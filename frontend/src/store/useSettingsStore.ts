@@ -102,7 +102,7 @@ const getInitialSettings = (): AppearanceSettings => {
       return {
         ...DEFAULT_SETTINGS,
         ...parsed,
-        theme: parsed.theme === 'dark' ? 'light' : parsed.theme ?? 'light',
+        theme: parsed.theme ?? DEFAULT_SETTINGS.theme,
         accentColor:
           parsed.accentColor === '#F05A28' || parsed.accentColor === '#E04D1B'
             ? DEFAULT_SETTINGS.accentColor
@@ -119,7 +119,12 @@ const applyDOMClasses = (settings: AppearanceSettings) => {
   const root = document.documentElement;
   
   // Theme
-  if (settings.theme === 'dark') {
+  const isDark =
+    settings.theme === 'dark' ||
+    (settings.theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches);
+  if (isDark) {
     root.classList.add('dark');
     root.classList.remove('light');
   } else {
@@ -217,3 +222,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     },
   };
 });
+
+if (typeof window !== 'undefined') {
+  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+  systemTheme.addEventListener('change', () => {
+    const settings = useSettingsStore.getState().settings;
+    if (settings.theme === 'system') applyDOMClasses(settings);
+  });
+}

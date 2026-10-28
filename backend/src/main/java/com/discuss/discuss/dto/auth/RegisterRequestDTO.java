@@ -21,6 +21,9 @@ public class RegisterRequestDTO implements PasswordConfirmable {
     @UniqueUsername(message = "Username is already taken")
     private String username;
 
+    @Size(max = 50, message = "Display name must not exceed 50 characters")
+    private String displayName;
+
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
     private String email;

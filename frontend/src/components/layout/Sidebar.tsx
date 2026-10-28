@@ -10,6 +10,8 @@ import {
   Compass,
   TrendingUp,
   Bookmark,
+  Bell,
+  MessageSquare,
   Users,
   Settings,
   ShieldAlert,
@@ -102,6 +104,16 @@ export const Sidebar: React.FC = () => {
               <NavLink to="/communities/mine" className={navItemClass} title="Cộng đồng của tôi">
                 <Users className="w-4 h-4 shrink-0" />
                 {!isCollapsed && <span>Cộng đồng của tôi</span>}
+              </NavLink>
+
+              <NavLink to="/notifications" className={navItemClass} title="Thông báo">
+                <Bell className="w-4 h-4 shrink-0" />
+                {!isCollapsed && <span>Thông báo</span>}
+              </NavLink>
+
+              <NavLink to="/messages" className={navItemClass} title="Tin nhắn">
+                <MessageSquare className="w-4 h-4 shrink-0" />
+                {!isCollapsed && <span>Tin nhắn</span>}
               </NavLink>
             </div>
 

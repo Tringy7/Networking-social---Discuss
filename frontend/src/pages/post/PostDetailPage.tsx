@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { usePostStore } from '../../store/usePostStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
+import { POSTS_AVAILABLE } from '../../services';
 import { Comment } from '../../types';
 import Avatar from '../../components/ui/Avatar';
 import Badge from '../../components/ui/Badge';
@@ -67,8 +68,12 @@ export const PostDetailPage: React.FC = () => {
     }
     return (
       <div className="py-24 text-center space-y-4">
-        <h2 className="text-2xl font-bold text-[#F5F5F5]">Không tìm thấy bài viết</h2>
-        <p className="text-xs text-[#9A9DA3]">Bài viết có thể đã bị xóa hoặc không còn khả dụng.</p>
+        <h2 className="text-2xl font-bold text-[#F5F5F5]">
+          Không tìm thấy bài viết
+        </h2>
+        <p className="text-xs text-[#9A9DA3]">
+          Bài viết có thể đã bị xóa hoặc không còn khả dụng.
+        </p>
         <Link to="/">
           <Button variant="primary" size="sm">
             Về trang chủ
@@ -284,6 +289,11 @@ export const PostDetailPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 text-left pb-16">
+      {!POSTS_AVAILABLE && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+          Đang xem bài viết mẫu; thao tác chỉ được lưu trong phiên hiện tại.
+        </div>
+      )}
       {/* Back button */}
       <button
         onClick={() => navigate(-1)}

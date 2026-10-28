@@ -21,10 +21,12 @@ const NO_REFRESH_PATHS = [
   '/auth/social',
   '/auth/logout',
   '/auth/forgot-password',
+  '/auth/forgot-password/reset',
 ];
 
-let refreshPromise: Promise<unknown> | null = null;
+let refreshPromise: Promise<void> | null = null;
 let sessionAuthenticated = false;
+let refreshGeneration = 0;
 
 export function setApiSessionAuthenticated(authenticated: boolean): void {
   sessionAuthenticated = authenticated;
@@ -34,18 +36,22 @@ function isAccessTokenExpired(error: unknown): error is ApiError {
   return (
     error instanceof ApiError &&
     error.status === 401 &&
-    error.code === 'ACCESS_TOKEN_EXPIRED'
+    (error.code === 'ACCESS_TOKEN_EXPIRED' || error.code === 'API_ERROR')
   );
 }
 
 function notifyExpiredSession(error: unknown): void {
+  if (!sessionAuthenticated) return;
   sessionAuthenticated = false;
   window.dispatchEvent(new CustomEvent('auth:expired', { detail: error }));
 }
 
 async function refreshSession(): Promise<void> {
   if (!refreshPromise) {
-    const refresh = () => rawRequest('POST', '/auth/refresh');
+    const refresh = async () => {
+      await rawRequest('POST', '/auth/refresh');
+      refreshGeneration += 1;
+    };
     const operation =
       typeof navigator !== 'undefined' && navigator.locks
         ? navigator.locks.request('discuss-auth-refresh', refresh)
@@ -129,6 +135,7 @@ async function rawRequest<T>(method: string, path: string, body?: unknown): Prom
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const requestGeneration = refreshGeneration;
   try {
     return await rawRequest<T>(method, path, body);
   } catch (error) {
@@ -141,11 +148,15 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
       throw error;
     }
 
-    try {
-      await refreshSession();
-    } catch (refreshError) {
-      notifyExpiredSession(refreshError);
-      throw refreshError;
+    if (requestGeneration === refreshGeneration) {
+      try {
+        await refreshSession();
+      } catch (refreshError) {
+        if (refreshError instanceof ApiError && refreshError.status === 401) {
+          notifyExpiredSession(refreshError);
+        }
+        throw refreshError;
+      }
     }
 
     try {

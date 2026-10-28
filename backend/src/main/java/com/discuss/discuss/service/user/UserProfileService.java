@@ -50,6 +50,21 @@ public class UserProfileService {
     }
 
     @Transactional
+    public void createUserProfileIfAbsent(User user, String displayName) {
+        if (userProfileRepository.findByUser(user).isEmpty()) {
+            createUserProfile(user, displayName);
+        }
+    }
+
+    @Transactional
+    public void saveUserProfile(User user, String displayName) {
+        UserProfile profile = userProfileRepository.findByUser(user)
+                .orElseGet(() -> UserProfile.builder().user(user).build());
+        profile.setDisplayName(displayName);
+        userProfileRepository.save(profile);
+    }
+
+    @Transactional
     public void createUserPrivacy(User user) {
         UserPrivacySettings privacySettings = UserPrivacySettings.builder()
                 .user(user)

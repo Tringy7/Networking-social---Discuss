@@ -84,6 +84,18 @@ async function createCroppedImage(
   return new File([blob], `${fileName.replace(/\.[^.]+$/, '')}${extension}`, { type: outputType });
 }
 
+function readImageAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') resolve(reader.result);
+      else reject(new Error('Không thể đọc ảnh đã chọn.'));
+    };
+    reader.onerror = () => reject(new Error('Không thể đọc ảnh đã chọn.'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export const PostComposerModal: React.FC = () => {
   const { isCreateModalOpen, closeCreateModal, targetCommunityName, addPost } = usePostStore();
   const { communities } = useCommunityStore();
@@ -215,13 +227,22 @@ export const PostComposerModal: React.FC = () => {
         .map((t) => t.trim())
         .filter(Boolean);
       const uploadedImage = activeTab === 'media' && imageFile
-        ? await uploadPostImage(imageFile)
+        ? !POSTS_AVAILABLE
+          ? { url: await readImageAsDataUrl(imageFile) }
+          : await uploadPostImage(imageFile)
         : null;
 
       await addPost({
         communityName: currentCommunity.name,
         communityDisplayName: currentCommunity.displayName,
         communityAvatar: currentCommunity.avatarUrl,
+        author: {
+          id: user?.id ?? 'demo-current-user',
+          username: user?.username ?? 'ban',
+          displayName: user?.displayName ?? 'Bạn',
+          avatarUrl: user?.avatarUrl ?? '',
+          role: user?.role,
+        },
         title: title.trim(),
         content: content.trim(),
         tags: parsedTags.length > 0 ? parsedTags : [currentCommunity.category],

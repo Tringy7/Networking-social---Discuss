@@ -41,9 +41,9 @@ public class AuthController {
     }
 
     @PostMapping("/verify-email")
-    public ResponseEntity<AuthResponseDTO> verifyEmail(@Valid @RequestBody VerifyEmailRequestDTO request) {
-        AuthResponseDTO result = localAuthService.verifyEmailAndIssueTokens(request.getEmail(), request.getCode());
-        return ResponseEntity.ok().body(result);
+    public ResponseEntity<ApiResponse> verifyEmail(@Valid @RequestBody VerifyEmailRequestDTO request) {
+        localAuthService.verifyEmailAndIssueTokens(request.getEmail(), request.getCode());
+        return ResponseEntity.ok().body(new ApiResponse("Email verified successfully"));
     }
 
     @PostMapping("/resend-otp")

@@ -6,7 +6,7 @@ import AppLayout from '../layouts/AppLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import SettingsLayout from '../layouts/SettingsLayout';
 import AdminLayout from '../layouts/AdminLayout';
-import ProtectedRoute from '../components/common/ProtectedRoute';
+import ProtectedRoute from '../components/common/StoreProtectedRoute';
 
 // Public & Feed Pages
 import HomePage from '../pages/home/HomePage';

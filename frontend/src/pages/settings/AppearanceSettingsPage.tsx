@@ -6,6 +6,7 @@ import {
   Palette,
   Sun,
   Moon,
+  Monitor,
   Sparkles,
   Check,
   RotateCcw,
@@ -55,7 +56,7 @@ export const AppearanceSettingsPage: React.FC = () => {
         <label className="text-xs font-bold text-[#F1F3F7] uppercase tracking-wider">
           1. Chế độ màu nền (Theme)
         </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Dark Mode */}
           <button
             type="button"
@@ -78,6 +79,29 @@ export const AppearanceSettingsPage: React.FC = () => {
               </div>
               <p className="text-xs text-[#959DAA] mt-1">
                 Gam than đá phiến ấm #0C0E12 dịu mắt, chiều sâu không gian cao, chống lóa khi đọc lâu.
+              </p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTheme('system')}
+            className={`p-4 rounded-2xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
+              settings.theme === 'system'
+                ? 'bg-[#161922] border-[var(--color-orange)] ring-2 ring-[var(--color-orange-soft)] shadow-lg'
+                : 'bg-[#12151B] border-[#262C3A] hover:border-[#343C4E]'
+            }`}
+          >
+            <div className="p-2.5 rounded-xl bg-[#0C0E12] border border-[#262C3A] text-[var(--color-orange)]">
+              <Monitor className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-bold text-[#F1F3F7]">Theo thiết bị</span>
+                {settings.theme === 'system' && <Check className="w-4 h-4 text-[var(--color-orange)]" />}
+              </div>
+              <p className="text-xs text-[#959DAA] mt-1">
+                Tự động dùng chế độ sáng hoặc tối theo cài đặt hệ điều hành.
               </p>
             </div>
           </button>

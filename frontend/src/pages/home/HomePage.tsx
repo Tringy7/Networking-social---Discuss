@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { usePostStore } from '../../store/usePostStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import PostCard from '../../components/post/PostCard';
+import PostCard from '../../components/post/PostCardView';
 import RightSidebar from '../../components/layout/RightSidebar';
 import Avatar from '../../components/ui/Avatar';
 import Button from '../../components/ui/Button';
 import { Flame, Clock, Sparkles, Image, Code2, Link2, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToastStore } from '../../store/useToastStore';
+import { POSTS_AVAILABLE } from '../../services';
 
 export const HomePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -56,19 +57,19 @@ export const HomePage: React.FC = () => {
               readOnly
               onClick={() => openCreateModal()}
               placeholder="Bạn đang nghĩ gì? Chia sẻ thảo luận cùng cộng đồng..."
-              className="flex-1 bg-[var(--bg-main)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] hover:border-[var(--border-hover)] rounded-full px-4 py-2.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer transition-all"
+              className="flex-1 bg-[var(--bg-main)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] hover:border-[var(--border-hover)] rounded-full px-4 py-2.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer transition-all disabled:cursor-not-allowed"
             />
             <div className="flex items-center gap-1 text-[var(--text-muted)]">
               <button
                 onClick={() => openCreateModal()}
-                className="p-2 rounded-full hover:bg-[var(--bg-hover)] hover:text-[var(--color-orange)] transition-colors cursor-pointer"
+                className="p-2 rounded-full hover:bg-[var(--bg-hover)] hover:text-[var(--color-orange)] transition-colors cursor-pointer disabled:cursor-not-allowed"
                 title="Đăng ảnh"
               >
                 <Image className="w-4 h-4" />
               </button>
               <button
                 onClick={() => openCreateModal()}
-                className="p-2 rounded-full hover:bg-[var(--bg-hover)] hover:text-[#22C55E] transition-colors cursor-pointer"
+                className="p-2 rounded-full hover:bg-[var(--bg-hover)] hover:text-[#22C55E] transition-colors cursor-pointer disabled:cursor-not-allowed"
                 title="Đoạn mã code"
               >
                 <Code2 className="w-4 h-4" />
@@ -88,6 +89,12 @@ export const HomePage: React.FC = () => {
                 Đăng nhập
               </Button>
             </Link>
+          </div>
+        )}
+
+        {!POSTS_AVAILABLE && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+            Đang dùng dữ liệu mẫu; thao tác chỉ được lưu trong phiên hiện tại.
           </div>
         )}
 
@@ -146,8 +153,12 @@ export const HomePage: React.FC = () => {
           {visiblePosts.length === 0 && (
             <div className="py-16 text-center bg-[#161922] border border-[#262C3A] rounded-2xl p-8 space-y-3">
               <Sparkles className="w-8 h-8 text-[var(--color-orange)] mx-auto" />
-              <h4 className="text-base font-bold text-[#F5F5F5]">Chưa có bài viết nào</h4>
-              <p className="text-xs text-[#9A9DA3]">Hãy là người đầu tiên mở đầu chủ đề thảo luận!</p>
+              <h4 className="text-base font-bold text-[#F5F5F5]">
+                Chưa có bài viết nào
+              </h4>
+              <p className="text-xs text-[#9A9DA3]">
+                Hãy là người đầu tiên mở đầu chủ đề thảo luận!
+              </p>
             </div>
           )}
 

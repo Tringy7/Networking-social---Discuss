@@ -1,26 +1,24 @@
 import React, { useCallback, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { getApiFieldErrors } from '../../utils/apiFieldErrors';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { login, loginSocial } = useAuthStore();
   const { addToast } = useToastStore();
-  const redirectTo = (location.state as {
-    from?: { pathname: string; search: string; hash: string };
-  } | null)?.from;
 
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,12 +32,14 @@ export const LoginPage: React.FC = () => {
     }
 
     setError('');
+    setFieldErrors({});
     setIsLoading(true);
     try {
       await login(emailOrUsername, password);
       addToast('Chào mừng bạn quay trở lại DISCUSS!', 'success');
-      navigate(redirectTo || '/', { replace: true });
+      navigate('/', { replace: true });
     } catch (err: unknown) {
+      setFieldErrors(getApiFieldErrors(err));
       setError(err instanceof Error ? err.message : 'Đăng nhập không thành công.');
     } finally {
       setIsLoading(false);
@@ -48,12 +48,14 @@ export const LoginPage: React.FC = () => {
 
   const handleGoogleSignIn = useCallback(async (credential: string) => {
     setError('');
+    setFieldErrors({});
     setIsLoading(true);
     try {
       await loginSocial('google', credential);
       addToast('Đăng nhập với Google thành công!', 'success');
-      navigate(redirectTo || '/', { replace: true });
+      navigate('/', { replace: true });
     } catch (error: unknown) {
+      setFieldErrors(getApiFieldErrors(error));
       setError(error instanceof Error ? error.message : 'Đăng nhập Google không thành công.');
     } finally {
       setIsLoading(false);
@@ -80,15 +82,22 @@ export const LoginPage: React.FC = () => {
       {/* Login Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          label="Email hoặc Tên đăng nhập"
+          label="Tên đăng nhập"
           type="text"
           value={emailOrUsername}
           onChange={(e) => {
             setEmailOrUsername(e.target.value);
             setError('');
+            setFieldErrors((current) => {
+              const next = { ...current };
+              delete next.username;
+              delete next.emailOrUsername;
+              return next;
+            });
           }}
           leftIcon={<Mail className="w-4 h-4" />}
-          placeholder="huutria22005@gmail.com"
+          placeholder="Nhập tên đăng nhập"
+          error={fieldErrors.username || fieldErrors.emailOrUsername}
           required
         />
 
@@ -100,6 +109,11 @@ export const LoginPage: React.FC = () => {
             onChange={(e) => {
               setPassword(e.target.value);
               setError('');
+              setFieldErrors((current) => {
+                const next = { ...current };
+                delete next.password;
+                return next;
+              });
             }}
             leftIcon={<Lock className="w-4 h-4" />}
             rightIcon={
@@ -112,6 +126,7 @@ export const LoginPage: React.FC = () => {
               </button>
             }
             placeholder="••••••••••••"
+            error={fieldErrors.password}
             required
           />
         </div>

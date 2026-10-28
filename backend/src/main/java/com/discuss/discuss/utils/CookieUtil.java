@@ -71,17 +71,6 @@ public class CookieUtil {
                 .build();
     }
 
-
-    public ResponseCookie clearPasswordResetTokenCookie() {
-        return ResponseCookie.from("password_reset_token", "")
-                .httpOnly(true)
-                .secure(secure)
-                .sameSite("Strict")
-                .path("/auth/forgot-password/reset")
-                .maxAge(Duration.ZERO)
-                .build();
-    }
-
     public HttpHeaders buildAuthHeaders(AuthResult result) {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.SET_COOKIE,

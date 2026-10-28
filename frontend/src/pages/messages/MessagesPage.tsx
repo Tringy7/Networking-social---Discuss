@@ -3,7 +3,7 @@ import { Conversation } from '../../types';
 import Avatar from '../../components/ui/Avatar';
 import Button from '../../components/ui/Button';
 import { MessageSquare, Send, Search } from 'lucide-react';
-import { messageService } from '../../services';
+import { MESSAGES_AVAILABLE, messageService } from '../../services';
 import { useToastStore } from '../../store/useToastStore';
 
 export const MessagesPage: React.FC = () => {
@@ -66,6 +66,11 @@ export const MessagesPage: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto h-[calc(100vh-140px)] flex flex-col bg-[#191A1C] border border-[#303235] rounded-3xl overflow-hidden shadow-2xl text-left">
+      {!MESSAGES_AVAILABLE && (
+        <div className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-200">
+          Đang dùng hội thoại mẫu; tin nhắn chỉ được lưu trong phiên hiện tại.
+        </div>
+      )}
       <div className="flex-1 flex overflow-hidden">
         {/* CONVERSATION LIST (LEFT) */}
         <div className="w-full md:w-80 border-r border-[#303235] bg-[#141517] flex flex-col shrink-0">

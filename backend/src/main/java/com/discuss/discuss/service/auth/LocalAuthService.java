@@ -56,6 +56,11 @@ public class LocalAuthService {
                 .map(existingUser -> handleExistingUser(existingUser, request))
                 .orElseGet(() -> createPendingUser(request, normalizedEmail));
 
+        userProfileService.saveUserProfile(user, normalizeDisplayName(
+                request.getDisplayName(),
+                user.getUsername()
+        ));
+
         String message = emailVerificationService.generateAndSendOtp(
                 OtpPurpose.VERIFY_EMAIL,
                 user.getEmail(),
@@ -70,7 +75,7 @@ public class LocalAuthService {
     }
 
     @Transactional
-    public AuthResponseDTO verifyEmailAndIssueTokens(
+    public void verifyEmailAndIssueTokens(
             String email,
             String code
     ) {
@@ -89,11 +94,8 @@ public class LocalAuthService {
 
         user.setStatus(UserStatus.ACTIVE);
 
-        userProfileService.createUserProfile(user, user.getUsername());
+        userProfileService.createUserProfileIfAbsent(user, user.getUsername());
         userProfileService.createUserPrivacy(user);
-
-        return authMapper.toResponse(user, "Email verified successfully");
-
     }
 
     @Transactional
@@ -268,6 +270,12 @@ public class LocalAuthService {
         return email == null
                 ? null
                 : email.trim().toLowerCase();
+    }
+
+    private String normalizeDisplayName(String displayName, String username) {
+        return displayName == null || displayName.isBlank()
+                ? username
+                : displayName.trim().replaceAll("\\s+", "_");
     }
 
     private User handleExistingUser(

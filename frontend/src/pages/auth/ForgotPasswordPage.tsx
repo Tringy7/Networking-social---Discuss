@@ -14,10 +14,38 @@ export const ForgotPasswordPage: React.FC = () => {
   const { forgotPassword, verifyForgotPasswordOtp } = useAuthStore();
 
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(['', '', '', '', '', '']);
   const [step, setStep] = useState<RecoveryStep>('email');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const handleDigitChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const updatedCode = [...code];
+    updatedCode[index] = value.slice(-1);
+    setCode(updatedCode);
+    setError('');
+
+    if (value && index < 5) {
+      document.getElementById(`forgot-otp-box-${index + 1}`)?.focus();
+    }
+  };
+
+  const handleDigitKeyDown = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Backspace' && !code[index] && index > 0) {
+      document.getElementById(`forgot-otp-box-${index - 1}`)?.focus();
+    }
+  };
+
+  const handleCodePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedCode = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!pastedCode) return;
+
+    event.preventDefault();
+    setCode(Array.from({ length: 6 }, (_, index) => pastedCode[index] || ''));
+    setError('');
+    document.getElementById(`forgot-otp-box-${Math.min(pastedCode.length, 5)}`)?.focus();
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -30,10 +58,11 @@ export const ForgotPasswordPage: React.FC = () => {
         setStep('verify');
         addToast('Mã xác thực đã được gửi tới email của bạn.', 'success');
       } else if (step === 'verify') {
-        if (code.trim().length !== 6) {
+        const otp = code.join('');
+        if (!/^\d{6}$/.test(otp)) {
           throw new Error('Vui lòng nhập mã OTP 6 chữ số.');
         }
-        await verifyForgotPasswordOtp(email, code);
+        await verifyForgotPasswordOtp(email, otp);
         setStep('complete');
         addToast('Email đã được xác thực. Bạn có thể đặt lại mật khẩu.', 'success');
       }
@@ -95,15 +124,30 @@ export const ForgotPasswordPage: React.FC = () => {
               required
             />
           ) : (
-            <Input
-              label="Mã xác thực OTP"
-              type="text"
-              inputMode="numeric"
-              value={code}
-              onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="Nhập mã 6 chữ số"
-              required
-            />
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-[#9A9DA3]">
+                Mã xác thực OTP
+              </label>
+              <div className="flex justify-between gap-2">
+                {Array.from({ length: 6 }, (_, index) => (
+                  <input
+                    key={index}
+                    id={`forgot-otp-box-${index}`}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                    maxLength={1}
+                    value={code[index]}
+                    onChange={(event) => handleDigitChange(index, event.target.value)}
+                    onKeyDown={(event) => handleDigitKeyDown(index, event)}
+                    onPaste={handleCodePaste}
+                    aria-label={`Chữ số OTP thứ ${index + 1}`}
+                    className="w-11 sm:w-13 h-13 text-center text-lg font-mono font-bold bg-[#191A1C] border border-[#303235] focus:border-[#FF5700] rounded-xl text-[#F5F5F5] outline-none transition-all"
+                    required
+                  />
+                ))}
+              </div>
+            </div>
           )}
 
           <Button

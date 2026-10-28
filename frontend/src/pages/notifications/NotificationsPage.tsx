@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { NotificationItem } from '../../types';
 import { useToastStore } from '../../store/useToastStore';
 import { useNotificationStore } from '../../store/useNotificationStore';
+import { NOTIFICATIONS_AVAILABLE } from '../../services';
 import Avatar from '../../components/ui/Avatar';
 import Button from '../../components/ui/Button';
 import { Bell, CheckCheck, MessageSquare, UserPlus, Shield, Sparkles } from 'lucide-react';
@@ -63,10 +64,17 @@ export const NotificationsPage: React.FC = () => {
           </p>
         </div>
 
+        {!NOTIFICATIONS_AVAILABLE && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-700">
+            Đây là thông báo minh họa; trạng thái đã đọc chỉ được lưu trong phiên hiện tại.
+          </div>
+        )}
+
         <Button
           variant="secondary"
           size="sm"
           onClick={markAllAsRead}
+          disabled={notifications.length === 0}
           leftIcon={<CheckCheck className="h-4 w-4 text-emerald-600" />}
         >
           Đánh dấu tất cả đã đọc
@@ -136,7 +144,9 @@ export const NotificationsPage: React.FC = () => {
             <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-orange-soft)]">
               <Bell className="h-7 w-7 text-[var(--color-orange)]" />
             </span>
-            <h4 className="text-base font-bold text-[var(--text-primary)]">Bạn đã cập nhật!</h4>
+            <h4 className="text-base font-bold text-[var(--text-primary)]">
+              Bạn đã cập nhật!
+            </h4>
             <p className="text-sm text-[var(--text-secondary)]">
               Bạn đã xem hết tất cả thông báo trong mục này.
             </p>

@@ -4,7 +4,8 @@ import { useCommunityStore } from '../../store/useCommunityStore';
 import { usePostStore } from '../../store/usePostStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
-import PostCard from '../../components/post/PostCard';
+import { POSTS_AVAILABLE } from '../../services';
+import PostCard from '../../components/post/PostCardView';
 import Avatar from '../../components/ui/Avatar';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
@@ -192,6 +193,11 @@ export const CommunityDetailPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Posts Feed */}
         <div className="lg:col-span-2 space-y-4">
+          {!POSTS_AVAILABLE && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+              Bài viết và tương tác đang dùng dữ liệu mẫu trong phiên hiện tại.
+            </div>
+          )}
           {/* Feed Filter Bar */}
           <div className="flex items-center justify-between p-1 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl text-xs font-semibold">
             <div className="flex items-center gap-1">
@@ -233,9 +239,17 @@ export const CommunityDetailPage: React.FC = () => {
             {sortedPosts.length === 0 && (
               <div className="py-16 text-center bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-3xl p-8 space-y-3">
                 <BookOpen className="w-8 h-8 text-[var(--color-orange)] mx-auto opacity-70" />
-                <h4 className="text-base font-bold text-[var(--text-primary)]">Chưa có bài viết nào trong cộng đồng này</h4>
-                <p className="text-xs text-[var(--text-secondary)]">Hãy viết bài chia sẻ đầu tiên để bắt đầu thảo luận!</p>
-                <Button variant="primary" size="sm" onClick={() => openCreateModal(community.name)}>
+                <h4 className="text-base font-bold text-[var(--text-primary)]">
+                  Chưa có bài viết nào trong cộng đồng này
+                </h4>
+                <p className="text-xs text-[var(--text-secondary)]">
+                  Hãy viết bài chia sẻ đầu tiên để bắt đầu thảo luận!
+                </p>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => openCreateModal(community.name)}
+                >
                   Tạo bài viết ngay
                 </Button>
               </div>
