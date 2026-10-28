@@ -56,7 +56,7 @@ export default function PostDetailModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`c/${community.slug}`} maxWidth="max-w-3xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={`community/${community.slug}`} maxWidth="max-w-3xl">
       <div className="space-y-6">
         {/* Pinned banner if active */}
         {post.isPinned && (

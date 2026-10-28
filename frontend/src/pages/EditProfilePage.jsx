@@ -120,7 +120,7 @@ export default function EditProfilePage({
         </button>
 
         <span className="text-xs text-[#818384] font-mono hidden sm:inline">
-          u/{currentUser?.username}
+          user/{currentUser?.username}
         </span>
       </div>
 

@@ -100,7 +100,7 @@ export default function PostCard({
                 }}
                 className="font-bold text-[#d7dadc] hover:underline transition-colors cursor-pointer flex items-center gap-1"
               >
-                <span>c/{community.slug}</span>
+                <span>community/{community.slug}</span>
               </button>
               <span className="text-[#343536]">•</span>
               
@@ -120,7 +120,7 @@ export default function PostCard({
                   alt={author.name}
                   className="w-4 h-4 rounded-full object-cover border border-[#343536]"
                 />
-                <span className="font-medium text-[#818384] group-hover/author:text-[#d7dadc]">u/{author.username}</span>
+                <span className="font-medium text-[#818384] group-hover/author:text-[#d7dadc]">user/{author.username}</span>
               </button>
               <span className="text-[#343536]">•</span>
               

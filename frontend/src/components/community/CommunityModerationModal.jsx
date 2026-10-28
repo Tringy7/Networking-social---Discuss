@@ -32,7 +32,7 @@ export default function CommunityModerationModal({ isOpen, onClose, community })
   const getUser = (userId) => allUsers.find(u => u.id === userId) || { name: 'Người dùng', username: userId, avatar: '' };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Quản lý Điều hành viên - c/${community.slug}`} maxWidth="max-w-xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Quản lý Điều hành viên - community/${community.slug}`} maxWidth="max-w-xl">
       <div className="space-y-6">
         <div>
           <h4 className="text-xs font-bold text-[#d7dadc] uppercase tracking-wider mb-2 flex items-center gap-1.5">

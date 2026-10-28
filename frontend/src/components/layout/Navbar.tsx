@@ -140,7 +140,7 @@ export const Navbar: React.FC = () => {
                         {filteredCommunities.map((c) => (
                           <Link
                             key={c.id}
-                            to={`/c/${c.name}`}
+                            to={`/community/${c.name}`}
                             onClick={() => setIsSearchOpen(false)}
                             className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-[#222426] transition-colors"
                           >
@@ -370,7 +370,7 @@ export const Navbar: React.FC = () => {
                     </div>
 
                     <Link
-                      to={`/u/${user.username}`}
+                      to={`/user/${user.username}`}
                       onClick={() => setIsUserMenuOpen(false)}
                       className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#9A9DA3] hover:text-[#F5F5F5] hover:bg-[#222426] rounded-xl transition-colors"
                     >

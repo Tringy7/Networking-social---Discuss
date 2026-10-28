@@ -96,7 +96,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, showCommunity = true }
 
             {showCommunity && (
               <Link
-                to={`/c/${post.communityName}`}
+                to={`/community/${post.communityName}`}
                 onClick={(e) => e.stopPropagation()}
                 className="flex items-center gap-1.5 font-bold text-[#F1F3F7] hover:text-[var(--color-orange)] transition-colors"
               >
@@ -109,7 +109,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, showCommunity = true }
 
             {/* Author */}
             <Link
-              to={`/u/${post.author.username}`}
+              to={`/user/${post.author.username}`}
               onClick={(e) => e.stopPropagation()}
               className="text-[#959DAA] hover:text-[#F1F3F7] transition-colors flex items-center gap-1"
             >

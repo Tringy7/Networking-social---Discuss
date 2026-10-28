@@ -48,7 +48,7 @@ export default function UserProfileRightSidebar({
             {userDisplayName}
           </div>
           <div className="text-xs text-orange-400 font-mono">
-            u/{targetUser?.username}
+            user/{targetUser?.username}
           </div>
           {userEmail && (
             <div className="flex items-center gap-1.5 text-xs text-[#818384] font-mono mt-1 truncate" title={userEmail}>

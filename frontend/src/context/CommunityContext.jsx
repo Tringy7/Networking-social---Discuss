@@ -79,7 +79,7 @@ export function CommunityProvider({ children }) {
       const { community, membership } = await communityService.createCommunity(formData, currentUser.id);
       setCommunities(prev => [community, ...prev]);
       setMemberships(prev => [...prev, membership]);
-      success(`Tạo cộng đồng c/${community.slug} thành công! Bạn là Chủ sở hữu (Owner).`);
+      success(`Tạo cộng đồng community/${community.slug} thành công! Bạn là Chủ sở hữu (Owner).`);
       return community;
     } catch (err) {
       toastError(err.message || 'Không thể tạo cộng đồng');
@@ -370,7 +370,7 @@ export function CommunityProvider({ children }) {
     try {
       const res = await adminService.toggleCommunityStatus(communityId, comm.status);
       setCommunities(prev => prev.map(c => c.id === communityId ? { ...c, status: res.status } : c));
-      success(`Đã ${res.status === 'LOCKED' ? 'khóa' : 'mở khóa'} cộng đồng c/${comm.slug}`);
+      success(`Đã ${res.status === 'LOCKED' ? 'khóa' : 'mở khóa'} cộng đồng community/${comm.slug}`);
     } catch (err) {
       toastError(err.message || 'Lỗi khi thay đổi trạng thái');
     }

@@ -75,7 +75,7 @@ export default function CreatePostModal({ isOpen, onClose, defaultCommunityId, o
           >
             {communities.map((c) => (
               <option key={c.id} value={c.id}>
-                c/{c.slug} - {c.name}
+                community/{c.slug} - {c.name}
               </option>
             ))}
           </select>

@@ -52,7 +52,9 @@ public class SecurityConfiguration {
             BearerTokenResolver bearerTokenResolver) throws Exception {
 
         String[] PUBLIC_ENDPOINTS = {
-                "/auth/**"
+            "/auth/**",
+            "/explore",
+            "/explore/**"
         };
 
         http
@@ -96,8 +98,8 @@ public class SecurityConfiguration {
     }
 
     /**
-     * Đọc JWT từ cookie "access_token" thay vì header Authorization.
-     * Nếu không tìm thấy cookie, fallback về header Authorization (hữu ích cho
+     * Đọc JWT từ cookie "access_token" thay vì header Authorization. Nếu không
+     * tìm thấy cookie, fallback về header Authorization (hữu ích cho
      * Postman/testing/mobile app).
      */
     @Bean

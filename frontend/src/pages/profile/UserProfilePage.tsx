@@ -127,7 +127,7 @@ async function createCroppedBanner(
 
 export const UserProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
-  const { user: currentUser, uploadAvatar, uploadBanner } = useAuthStore();
+  const { user: currentUser, authStatus, uploadAvatar, uploadBanner } = useAuthStore();
   const { posts } = usePostStore();
   const { addToast } = useToastStore();
 
@@ -154,11 +154,41 @@ export const UserProfilePage: React.FC = () => {
   const isMe = currentUser?.username === username;
 
   useEffect(() => {
-    if (!username) return;
+    // Wait for session restoration so a link to our own profile does not first
+    // issue a public-profile request using the username from the URL.
+    if (authStatus === 'INITIALIZING') return;
+    if (!username) {
+      setProfileUser(null);
+      setProfileLoading(false);
+      return;
+    }
     let active = true;
     setProfileLoading(true);
-    const request = isMe && currentUser
-      ? Promise.resolve(currentUser)
+    // The URL contains a username for shareable profile links, but the signed-in
+    // user's profile must come from the authenticated endpoint. This also keeps
+    // the page fresh after profile edits in another tab/session.
+    const request = isMe
+      ? userService.getMe().then((response): User => ({
+          id: response.id || currentUser?.id || response.username,
+          username: response.username,
+          displayName: response.profile?.displayName || response.username,
+          email: response.email,
+          avatarUrl: response.profile?.avatar || '',
+          bannerUrl: response.profile?.banner || '',
+          bio: response.profile?.bio || '',
+          location: response.profile?.location || undefined,
+          dateOfBirth: response.profile?.dateOfBirth || undefined,
+          gender: response.profile?.gender || undefined,
+          privacy: {
+            showDateOfBirth: response.privacySettings?.showDateOfBirth ?? false,
+            showLocation: response.privacySettings?.showLocation ?? false,
+            showPostsOnProfile: response.privacySettings?.showPostsOnProfile ?? true,
+          },
+          role: response.role,
+          status: response.status,
+          createdAt: response.createdAt || new Date().toISOString(),
+          karma: currentUser?.karma ?? 0,
+        }))
       : userService.getPublicProfile(username);
     request.then((profile) => {
       if (active) setProfileUser(profile);
@@ -173,7 +203,7 @@ export const UserProfilePage: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [addToast, currentUser, isMe, username]);
+  }, [addToast, authStatus, currentUser, isMe, username]);
 
   useEffect(() => {
     if (!avatarPreviewUrl) return;
@@ -361,14 +391,7 @@ export const UserProfilePage: React.FC = () => {
                   Thêm ảnh bìa
                 </span>
               )}
-              <span className="absolute inset-0 flex items-end justify-end bg-black/0 p-3 transition-colors group-hover:bg-black/10 group-focus-visible:bg-black/10">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-black/55 text-white shadow-sm backdrop-blur">
-                  <ImageIcon className="h-4 w-4" />
-                  <span className="sr-only">
-                    {profileUser.bannerUrl ? 'Đổi ảnh bìa' : 'Thêm ảnh bìa'}
-                  </span>
-                </span>
-              </span>
+              <span className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10 group-focus-visible:bg-black/10" />
             </button>
           )}
           {!isMe && (
@@ -517,7 +540,19 @@ export const UserProfilePage: React.FC = () => {
 
         <aside className="border-t border-[var(--border-color)] py-4 sm:py-5 lg:border-l lg:border-t-0 lg:pl-5">
           <section className="space-y-4">
-            <h2 className="text-sm font-bold text-[var(--text-primary)]">Giới thiệu</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-bold text-[var(--text-primary)]">Giới thiệu</h2>
+              {isMe && (
+                <Link
+                  to="/settings/profile"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border-color)] text-[var(--text-secondary)] transition-colors hover:border-[var(--color-orange)] hover:text-[var(--color-orange)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-orange)]"
+                  title="Cài đặt hồ sơ"
+                  aria-label="Cài đặt hồ sơ"
+                >
+                  <Settings className="h-4 w-4" />
+                </Link>
+              )}
+            </div>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[var(--text-secondary)]">
               {profileUser.bio || 'Chưa có phần giới thiệu.'}
             </p>
@@ -544,13 +579,6 @@ export const UserProfilePage: React.FC = () => {
               <span>{profileUser.karma} bài viết</span>
             </div>
           </section>
-          {isMe && (
-            <Link to="/settings/profile" className="block">
-              <Button variant="secondary" size="sm" className="w-full" leftIcon={<Settings className="h-4 w-4" />}>
-                Cài đặt hồ sơ
-              </Button>
-            </Link>
-          )}
         </aside>
       </div>
       </section>

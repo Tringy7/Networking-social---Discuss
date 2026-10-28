@@ -41,8 +41,8 @@ export const CommunityManagementPage: React.FC = () => {
       ));
       addToast(
         nextStatus === 'ACTIVE'
-          ? `Đã mở khóa cộng đồng c/${comm.name}`
-          : `Đã tạm khóa cộng đồng c/${comm.name}. Tên định danh vẫn được bảo lưu.`,
+          ? `Đã mở khóa cộng đồng community/${comm.name}`
+          : `Đã tạm khóa cộng đồng community/${comm.name}. Tên định danh vẫn được bảo lưu.`,
         nextStatus === 'ACTIVE' ? 'success' : 'warning'
       );
       setCommToToggle(null);
@@ -111,12 +111,12 @@ export const CommunityManagementPage: React.FC = () => {
                       <Avatar src={c.avatarUrl} alt={c.displayName} size="sm" shape="rounded" />
                       <div>
                         <Link
-                          to={`/c/${c.name}`}
+                          to={`/community/${c.name}`}
                           className="font-bold text-[#F5F5F5] hover:text-[#FF5700] transition-colors"
                         >
                           {c.displayName}
                         </Link>
-                        <div className="text-[11px] text-[#70747C] font-mono">c/{c.name}</div>
+                        <div className="text-[11px] text-[#70747C] font-mono">community/{c.name}</div>
                       </div>
                     </div>
                   </td>
@@ -142,7 +142,7 @@ export const CommunityManagementPage: React.FC = () => {
                   </td>
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Link to={`/c/${c.name}`}>
+                      <Link to={`/community/${c.name}`}>
                         <Button variant="ghost" size="sm">
                           Xem
                         </Button>
@@ -172,7 +172,7 @@ export const CommunityManagementPage: React.FC = () => {
           title={commToToggle.status === 'ACTIVE' ? 'Đình chỉ hoạt động cộng đồng' : 'Khôi phục hoạt động'}
           message={`Bạn có chắc chắn muốn ${
             commToToggle.status === 'ACTIVE' ? 'đình chỉ' : 'khôi phục'
-          } cộng đồng "${commToToggle.displayName}"? Tên định danh c/${commToToggle.name} vẫn được giữ nguyên để chống chiếm quyền.`}
+          } cộng đồng "${commToToggle.displayName}"? Tên định danh community/${commToToggle.name} vẫn được giữ nguyên để chống chiếm quyền.`}
           confirmLabel={commToToggle.status === 'ACTIVE' ? 'Xác nhận đình chỉ' : 'Khôi phục'}
           variant={commToToggle.status === 'ACTIVE' ? 'danger' : 'primary'}
         />

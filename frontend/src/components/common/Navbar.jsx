@@ -148,7 +148,7 @@ export default function Navbar({
                     {userDisplayName}
                   </span>
                   <span className="text-[10px] text-[#818384] font-mono">
-                    u/{currentUser?.username}
+                    user/{currentUser?.username}
                   </span>
                 </div>
               </button>

@@ -28,12 +28,19 @@ export const CommunityDetailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const { communities, joinCommunity, leaveCommunity } = useCommunityStore();
+  const { communities, joinCommunity, leaveCommunity, hydrateCommunity } = useCommunityStore();
   const { posts, openCreateModal } = usePostStore();
   const { user, isAuthenticated, activeRole } = useAuthStore();
   const { addToast } = useToastStore();
 
   const [tab, setTab] = useState<'latest' | 'popular'>('latest');
+  const [isMembershipUpdating, setIsMembershipUpdating] = useState(false);
+
+  React.useEffect(() => {
+    if (communityName) hydrateCommunity(communityName).catch((error: unknown) => {
+      addToast(error instanceof Error ? error.message : 'Không thể tải cộng đồng.', 'error');
+    });
+  }, [addToast, communityName, hydrateCommunity]);
 
   const community = communities.find((c) => c.name === communityName);
 
@@ -47,8 +54,7 @@ export const CommunityDetailPage: React.FC = () => {
   if (!community) {
     return (
       <div className="py-24 text-center space-y-4">
-        <h2 className="text-2xl font-bold text-[var(--text-primary)]">Không tìm thấy cộng đồng</h2>
-        <p className="text-xs text-[var(--text-secondary)]">Cộng đồng c/{communityName} không tồn tại hoặc đã bị xóa.</p>
+        <h2 className="text-2xl font-bold text-[var(--text-primary)]">Đang tải cộng đồng community/{communityName}…</h2>
         <Link to="/explore">
           <Button variant="primary" size="sm">
             Khám phá cộng đồng khác
@@ -75,11 +81,13 @@ export const CommunityDetailPage: React.FC = () => {
   });
 
   const handleJoinToggle = async () => {
+    if (isMembershipUpdating) return;
     if (!isAuthenticated) {
       addToast('Vui lòng đăng nhập để tham gia cộng đồng', 'warning');
       navigate('/login');
       return;
     }
+    setIsMembershipUpdating(true);
     try {
       if (isJoined) {
         await leaveCommunity(community.name);
@@ -90,6 +98,8 @@ export const CommunityDetailPage: React.FC = () => {
       }
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Không thể cập nhật thành viên cộng đồng.', 'error');
+    } finally {
+      setIsMembershipUpdating(false);
     }
   };
 
@@ -128,7 +138,7 @@ export const CommunityDetailPage: React.FC = () => {
                     {community.category}
                   </span>
                 </div>
-                <div className="text-xs text-[var(--text-muted)] font-mono">c/{community.name}</div>
+                <div className="text-xs text-[var(--text-muted)] font-mono">community/{community.name}</div>
               </div>
             </div>
 
@@ -138,6 +148,7 @@ export const CommunityDetailPage: React.FC = () => {
                 variant={isJoined ? 'secondary' : 'primary'}
                 size="md"
                 onClick={handleJoinToggle}
+                isLoading={isMembershipUpdating}
                 leftIcon={isJoined ? <Check className="w-4 h-4 text-[#22C55E]" /> : undefined}
               >
                 {isJoined ? 'Đã tham gia' : 'Tham gia'}
@@ -153,7 +164,7 @@ export const CommunityDetailPage: React.FC = () => {
               </Button>
 
               {isManager && (
-                <Link to={`/c/${community.name}/settings`}>
+                <Link to={`/community/${community.name}/settings`}>
                   <Button variant="secondary" size="md" leftIcon={<Settings className="w-4 h-4" />}>
                     Cài đặt
                   </Button>
@@ -291,7 +302,7 @@ export const CommunityDetailPage: React.FC = () => {
               </h3>
               {isManager && (
                 <Link
-                  to={`/c/${community.name}/members`}
+                  to={`/community/${community.name}/members`}
                   className="text-xs text-[var(--color-orange)] hover:underline"
                 >
                   Quản lý
@@ -301,7 +312,7 @@ export const CommunityDetailPage: React.FC = () => {
 
             <div className="space-y-2.5">
               <Link
-                to={`/u/${community.ownerUsername}`}
+                to={`/user/${community.ownerUsername}`}
                 className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-[var(--bg-hover)] transition-colors"
               >
                 <Avatar alt={community.ownerUsername} size="xs" />
@@ -316,7 +327,7 @@ export const CommunityDetailPage: React.FC = () => {
 
             {isManager && (
               <div className="pt-2 border-t border-[var(--border-color)]">
-                <Link to={`/c/${community.name}/moderation`} className="block">
+                <Link to={`/community/${community.name}/moderation`} className="block">
                   <Button
                     variant="secondary"
                     size="sm"

@@ -73,7 +73,7 @@ export default function CommunityManagementTab({ onSelectCommunity }) {
                           />
                           <div>
                             <div className="font-bold text-slate-900 group-hover:text-indigo-600 transition">
-                              c/{c.slug}
+                              community/{c.slug}
                             </div>
                             <div className="text-[11px] text-slate-500">
                               {c.name}

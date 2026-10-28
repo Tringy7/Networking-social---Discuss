@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -37,6 +37,21 @@ export const Sidebar: React.FC = () => {
   const joinedCommunities = communities.filter(
     (c) => c.currentUserRole === 'OWNER' || c.currentUserRole === 'MODERATOR' || c.currentUserRole === 'MEMBER'
   );
+  const communityIdsKey = joinedCommunities.map((community) => community.id).sort().join(',');
+  const shuffledCommunityIds = useMemo(() => {
+    const shuffled = joinedCommunities.map((community) => community.id);
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+    }
+    return shuffled;
+  // Keep the random order stable until the membership list changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [communityIdsKey]);
+  const communitiesById = new Map(joinedCommunities.map((community) => [community.id, community]));
+  const visibleCommunities = shuffledCommunityIds.slice(0, 5)
+    .map((id) => communitiesById.get(id))
+    .filter((community): community is (typeof joinedCommunities)[number] => Boolean(community));
 
   const navItemClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-colors duration-150 select-none ${
@@ -70,6 +85,11 @@ export const Sidebar: React.FC = () => {
             {!isCollapsed && <span>Khám phá cộng đồng</span>}
           </NavLink>
 
+          <NavLink to="/communities/create" className={navItemClass} title="Tạo cộng đồng">
+            <PlusCircle className="w-4 h-4 shrink-0" />
+            {!isCollapsed && <span>Bắt đầu cộng đồng</span>}
+          </NavLink>
+
           <NavLink
             to="/?tab=popular"
             end
@@ -96,7 +116,7 @@ export const Sidebar: React.FC = () => {
                 {!isCollapsed && <span>Bài viết đã lưu</span>}
               </NavLink>
 
-              <NavLink to={`/u/${user.username}`} className={navItemClass} title="Trang cá nhân">
+              <NavLink to={`/user/${user.username}`} className={navItemClass} title="Trang cá nhân">
                 <UserIcon className="w-4 h-4 shrink-0" />
                 {!isCollapsed && <span>Trang cá nhân</span>}
               </NavLink>
@@ -133,10 +153,10 @@ export const Sidebar: React.FC = () => {
               </div>
 
               <div className="space-y-0.5">
-                {joinedCommunities.map((c) => (
+                {visibleCommunities.map((c) => (
                   <NavLink
                     key={c.id}
-                    to={`/c/${c.name}`}
+                    to={`/community/${c.name}`}
                     className={navItemClass}
                     title={c.displayName}
                   >
@@ -147,6 +167,14 @@ export const Sidebar: React.FC = () => {
                   </NavLink>
                 ))}
               </div>
+              {!isCollapsed && joinedCommunities.length > 5 && (
+                <Link
+                  to="/communities/mine"
+                  className="mt-1 block rounded-lg px-3.5 py-2 text-xs font-semibold text-[#959DAA] transition-colors hover:bg-[#1A1E29] hover:text-[var(--color-orange)]"
+                >
+                  Xem thêm
+                </Link>
+              )}
             </div>
 
             {/* Moderation & Admin */}
@@ -159,7 +187,7 @@ export const Sidebar: React.FC = () => {
                 )}
 
                 <NavLink
-                  to="/c/lap-trinh-viet-nam/moderation"
+                  to="/community/lap-trinh-viet-nam/moderation"
                   className={navItemClass}
                   title="Kiểm duyệt cộng đồng"
                 >

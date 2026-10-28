@@ -194,7 +194,7 @@ export const PostDetailPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <Avatar src={cmt.author.avatarUrl} alt={cmt.author.displayName} size="xs" />
             <Link
-              to={`/u/${cmt.author.username}`}
+              to={`/user/${cmt.author.username}`}
               className="font-bold text-[#F5F5F5] hover:text-[var(--color-orange)] transition-colors"
             >
               {cmt.author.displayName}
@@ -308,18 +308,18 @@ export const PostDetailPage: React.FC = () => {
         {/* Community & Author Header */}
         <div className="flex items-center justify-between gap-4 border-b border-[#262C3A] pb-4">
           <div className="flex items-center gap-3">
-            <Link to={`/c/${post.communityName}`}>
+            <Link to={`/community/${post.communityName}`}>
               <Avatar src={post.communityAvatar} alt={post.communityDisplayName} size="md" shape="rounded" />
             </Link>
             <div>
               <Link
-                to={`/c/${post.communityName}`}
+                to={`/community/${post.communityName}`}
                 className="text-xs font-bold text-[#F5F5F5] hover:text-[var(--color-orange)] transition-colors block"
               >
                 {post.communityDisplayName}
               </Link>
               <div className="text-[11px] text-[#70747C] flex items-center gap-1.5">
-                <Link to={`/u/${post.author.username}`} className="hover:text-[#9A9DA3]">
+                <Link to={`/user/${post.author.username}`} className="hover:text-[#9A9DA3]">
                   @{post.author.username}
                 </Link>
                 {post.author.role === 'OWNER' && <Badge role="OWNER" size="sm" />}

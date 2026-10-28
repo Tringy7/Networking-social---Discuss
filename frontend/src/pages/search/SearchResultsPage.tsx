@@ -3,7 +3,7 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { usePostStore } from '../../store/usePostStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import PostCard from '../../components/post/PostCardView';
-import CommunityCard from '../../components/community/CommunityCard';
+import CommunityCard from '../../components/community/CommunityCard.tsx';
 import Avatar from '../../components/ui/Avatar';
 import Button from '../../components/ui/Button';
 import { userService, type UserSearchResult } from '../../services';
@@ -167,7 +167,7 @@ export const SearchResultsPage: React.FC = () => {
               {matchingPeople.map((person) => (
                 <Link
                   key={person.username}
-                  to={`/u/${person.username}`}
+                  to={`/user/${person.username}`}
                   className="p-3 bg-[#191A1C] border border-[#303235] hover:border-[#45474B] rounded-2xl flex items-center justify-between gap-3 transition-colors"
                 >
                   <div className="flex items-center gap-3">

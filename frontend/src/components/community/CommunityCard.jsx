@@ -59,7 +59,7 @@ export default function CommunityCard({ community, onSelectCommunity }) {
         </div>
 
         <h3 className="font-bold text-[#d7dadc] group-hover:text-orange-400 transition-colors line-clamp-1 text-base">
-          c/{community.slug}
+          community/{community.slug}
         </h3>
         <p className="text-xs font-medium text-[#818384] mb-2">
           {community.name}

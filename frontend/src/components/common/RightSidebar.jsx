@@ -38,7 +38,7 @@ export default function RightSidebar({ onSelectCommunity, onSelectTag }) {
               return (
                 <Link
                   key={c.id}
-                  to={`/c/${c.slug || c.id}`}
+                  to={`/community/${c.slug || c.id}`}
                   className="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-[#272729] transition cursor-pointer group"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -49,7 +49,7 @@ export default function RightSidebar({ onSelectCommunity, onSelectTag }) {
                     />
                     <div className="min-w-0">
                       <h4 className="font-bold text-xs text-[#d7dadc] group-hover:text-orange-400 transition truncate">
-                        c/{c.slug}
+                        community/{c.slug}
                       </h4>
                       <p className="text-[11px] text-[#818384] truncate">
                         {formatNumber(c.memberCount || 0)} thành viên

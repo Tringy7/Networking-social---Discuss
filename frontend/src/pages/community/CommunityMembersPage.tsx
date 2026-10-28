@@ -13,7 +13,7 @@ export const CommunityMembersPage: React.FC = () => {
   const { communityName } = useParams<{ communityName: string }>();
   const navigate = useNavigate();
 
-  const { communities, members, updateMemberRole, banMember, hydrateMembers } = useCommunityStore();
+  const { communities, members, updateMemberRole, kickMember, transferOwnership, hydrateMembers, hydrateCommunity } = useCommunityStore();
   const { activeRole } = useAuthStore();
   const { addToast } = useToastStore();
 
@@ -22,10 +22,13 @@ export const CommunityMembersPage: React.FC = () => {
 
   useEffect(() => {
     if (!communityName) return;
+    hydrateCommunity(communityName).catch((error: unknown) => {
+      addToast(error instanceof Error ? error.message : 'Không thể tải cộng đồng.', 'error');
+    });
     hydrateMembers(communityName).catch((error: unknown) => {
       addToast(error instanceof Error ? error.message : 'Không thể tải danh sách thành viên.', 'error');
     });
-  }, [addToast, communityName, hydrateMembers]);
+  }, [addToast, communityName, hydrateMembers, hydrateCommunity]);
 
   const community = communities.find((c) => c.name === communityName);
   const memberList = members[communityName || ''] || members['lap-trinh-viet-nam'] || [];
@@ -44,30 +47,40 @@ export const CommunityMembersPage: React.FC = () => {
     return matchesSearch && matchesRole;
   });
 
-  const handlePromoteMod = async (memberId: string, username: string) => {
+  const handlePromoteMod = async (username: string) => {
     try {
-      await updateMemberRole(community.name, memberId, 'MODERATOR');
+      await updateMemberRole(community.name, username, 'MODERATOR');
       addToast(`Đã bổ nhiệm @${username} làm Kiểm duyệt viên (Mod)!`, 'success');
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Không thể cập nhật quyền thành viên.', 'error');
     }
   };
 
-  const handleDemoteMod = async (memberId: string, username: string) => {
+  const handleDemoteMod = async (username: string) => {
     try {
-      await updateMemberRole(community.name, memberId, 'MEMBER');
+      await updateMemberRole(community.name, username, 'MEMBER');
       addToast(`Đã gỡ quyền Kiểm duyệt viên của @${username}.`, 'info');
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Không thể cập nhật quyền thành viên.', 'error');
     }
   };
 
-  const handleBanMember = async (memberId: string, username: string) => {
+  const handleKickMember = async (username: string) => {
     try {
-      await banMember(community.name, memberId);
-      addToast(`Đã chặn tài khoản @${username} khỏi cộng đồng.`, 'warning');
+      await kickMember(community.name, username);
+      addToast(`Đã xóa @${username} khỏi cộng đồng.`, 'warning');
     } catch (error) {
-      addToast(error instanceof Error ? error.message : 'Không thể chặn thành viên.', 'error');
+      addToast(error instanceof Error ? error.message : 'Không thể xóa thành viên.', 'error');
+    }
+  };
+
+  const handleTransferOwnership = async (username: string) => {
+    if (!window.confirm(`Chuyển quyền chủ cộng đồng cho @${username}?`)) return;
+    try {
+      await transferOwnership(community.name, username);
+      addToast(`Đã chuyển quyền chủ cho @${username}.`, 'success');
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Không thể chuyển quyền sở hữu.', 'error');
     }
   };
 
@@ -76,7 +89,7 @@ export const CommunityMembersPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate(`/c/${community.name}`)}
+            onClick={() => navigate(`/community/${community.name}`)}
             className="p-2 rounded-xl bg-[#191A1C] border border-[#303235] text-[#9A9DA3] hover:text-[#F5F5F5] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -84,7 +97,7 @@ export const CommunityMembersPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-[#F5F5F5] flex items-center gap-2">
               <Users className="w-5 h-5 text-[#FF5700]" />
-              <span>Thành viên cộng đồng c/{community.name}</span>
+              <span>Thành viên cộng đồng community/{community.name}</span>
             </h1>
             <p className="text-xs text-[#9A9DA3] mt-0.5">
               Danh sách thành viên, ban kiểm duyệt và quản lý quyền hạn
@@ -136,7 +149,7 @@ export const CommunityMembersPage: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <Link
-                      to={`/u/${member.username}`}
+                      to={`/user/${member.username}`}
                       className="text-xs sm:text-sm font-bold text-[#F5F5F5] hover:text-[#FF5700] transition-colors"
                     >
                       {member.displayName}
@@ -161,7 +174,7 @@ export const CommunityMembersPage: React.FC = () => {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => handlePromoteMod(member.id, member.username)}
+                      onClick={() => handlePromoteMod(member.username)}
                       leftIcon={<ShieldPlus className="w-3.5 h-3.5 text-[#3B82F6]" />}
                     >
                       Bổ nhiệm Mod
@@ -170,7 +183,7 @@ export const CommunityMembersPage: React.FC = () => {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => handleDemoteMod(member.id, member.username)}
+                      onClick={() => handleDemoteMod(member.username)}
                       leftIcon={<ShieldMinus className="w-3.5 h-3.5 text-[#F59E0B]" />}
                     >
                       Gỡ Mod
@@ -181,13 +194,14 @@ export const CommunityMembersPage: React.FC = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleBanMember(member.id, member.username)}
+                      onClick={() => handleKickMember(member.username)}
                       className="text-[#EF4444] hover:bg-[#EF4444]/10"
-                      title="Chặn khỏi cộng đồng"
+                      title="Xóa khỏi cộng đồng"
                     >
                       <UserX className="w-4 h-4" />
                     </Button>
                   )}
+                  {isOwner && <Button variant="ghost" size="sm" onClick={() => handleTransferOwnership(member.username)} title="Chuyển quyền chủ"><Crown className="w-4 h-4" /></Button>}
                 </div>
               )}
             </div>

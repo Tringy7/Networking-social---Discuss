@@ -196,11 +196,12 @@ interface CommunityApiResponse {
   description?: string | null;
   avatarUrl?: string | null;
   bannerUrl?: string | null;
-  category?: string | null;
+  category?: string | { id?: number; name?: string; slug?: string } | null;
   categoryName?: string | null;
   visibility: Community['visibility'];
   status?: string;
   communityStatus?: string;
+  categoryId?: number | null;
   memberCount: number;
   currentUserRole?: Community['currentUserRole'] | null;
   myRole?: Community['currentUserRole'] | null;
@@ -216,15 +217,37 @@ interface CommunityPageResponse {
   totalPages: number;
 }
 
+interface CommunityMemberApiResponse {
+  userId: string | number;
+  username: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  role: CommunityMember['role'];
+  joinedAt: string;
+}
+
+interface CommunityMemberPageResponse {
+  content: CommunityMemberApiResponse[];
+  totalPages: number;
+}
+
 function mapCommunity(value: CommunityApiResponse): Community {
+  const categoryName = typeof value.category === 'string'
+    ? value.category
+    : value.category?.name;
+  const displayName = value.displayName || value.name
+    .split('-')
+    .map((part) => part ? `${part[0].toLocaleUpperCase('vi-VN')}${part.slice(1)}` : part)
+    .join(' ');
+
   return {
     id: String(value.id),
     name: value.name,
-    displayName: value.displayName || value.name,
+    displayName,
     description: value.description || '',
     avatarUrl: value.avatarUrl || '',
     bannerUrl: value.bannerUrl || '',
-    category: value.category || value.categoryName || 'Công nghệ',
+    category: (value.categoryName || categoryName || 'Công nghệ') as Community['category'],
     visibility: value.visibility,
     status: mapCommunityStatus(value.status || value.communityStatus),
     memberCount: value.memberCount,
@@ -259,6 +282,35 @@ async function getAllCommunityPages(path: string): Promise<CommunityApiResponse[
   ];
 }
 
+async function getAllCommunityMemberPages(
+  name: string,
+  role?: CommunityMember['role']
+): Promise<CommunityMember[]> {
+  const pageSize = 100;
+  const roleQuery = role ? `&role=${encodeURIComponent(role)}` : '';
+  const path = `/communities/${encodeURIComponent(name)}/members`;
+  const firstPage = await apiClient.get<CommunityMemberPageResponse>(
+    `${path}?page=0&size=${pageSize}${roleQuery}`
+  );
+  const remainingPages = await Promise.all(
+    Array.from({ length: Math.max(0, firstPage.totalPages - 1) }, (_, index) =>
+      apiClient.get<CommunityMemberPageResponse>(
+        `${path}?page=${index + 1}&size=${pageSize}${roleQuery}`
+      )
+    )
+  );
+
+  return [firstPage, ...remainingPages].flatMap((page) => page.content).map((member) => ({
+    id: String(member.userId),
+    username: member.username,
+    displayName: member.displayName || member.username,
+    avatarUrl: member.avatarUrl || '',
+    role: member.role,
+    joinedAt: member.joinedAt,
+    status: 'ACTIVE',
+  }));
+}
+
 async function getCommunitiesWithRole(
   path: string,
   role: Community['currentUserRole']
@@ -277,6 +329,8 @@ export const categoryService = {
 export const communityService = {
   list: async (): Promise<Community[]> =>
     (await getAllCommunityPages('/explore')).map(mapCommunity),
+  listByCategory: async (slug: string): Promise<Community[]> =>
+    (await getAllCommunityPages(`/explore/${encodeURIComponent(slug)}`)).map(mapCommunity),
   mine: async (): Promise<Community[]> => {
     const [owned, joined] = await Promise.all([
       getCommunitiesWithRole('/user/me/owned', 'OWNER'),
@@ -288,33 +342,31 @@ export const communityService = {
     const response = await apiClient.get<CommunityApiResponse>(`/communities/${encodeURIComponent(name)}`);
     return mapCommunity(response);
   },
-  create: async (data: Omit<Community, 'id' | 'status' | 'memberCount' | 'currentUserRole' | 'ownerId' | 'ownerUsername' | 'createdAt' | 'rules'>) => {
-    const categories = await categoryService.list();
-    const category = categories.find((item) => item.name === data.category);
-    if (!category) {
-      throw new Error(`Không tìm thấy danh mục "${data.category}".`);
-    }
+  create: async (data: {
+    name: string;
+    description: string;
+    categoryId: number;
+    visibility: Community['visibility'];
+  }) => {
     const response = await apiClient.post<CommunityApiResponse>('/communities', {
       name: data.name,
-      displayName: data.displayName,
       description: data.description,
-      categoryId: category.id,
+      categoryId: data.categoryId,
       visibility: data.visibility,
     });
-    return mapCommunity(response);
+    return { ...mapCommunity(response), currentUserRole: 'OWNER' };
   },
   update: async (name: string, data: Partial<Community>) => {
     let categoryId: number | undefined;
     if (data.category) {
       const categories = await categoryService.list();
-      const category = categories.find((item) => item.name === data.category);
+      const category = categories.find((item) => item.name === data.category || item.slug === data.category);
       if (!category) throw new Error(`Không tìm thấy danh mục "${data.category}".`);
       categoryId = category.id;
     }
-    const response = await apiClient.put<CommunityApiResponse>(
+    const response = await apiClient.patch<CommunityApiResponse>(
       `/communities/${encodeURIComponent(name)}`,
       {
-        displayName: data.displayName,
         description: data.description,
         categoryId,
         visibility: data.visibility,
@@ -322,20 +374,38 @@ export const communityService = {
     );
     return mapCommunity(response);
   },
-  members: async (name: string): Promise<CommunityMember[]> =>
-    apiClient.get<CommunityMember[]>(`/communities/${encodeURIComponent(name)}/members`),
-  setStatus: async (name: string, status: Community['status']) =>
-    apiClient.patch(`/communities/${encodeURIComponent(name)}/status`, { status }),
-  updateMemberRole: async (name: string, memberId: string, role: CommunityMember['role']) =>
-    apiClient.patch(`/communities/${encodeURIComponent(name)}/members/${memberId}/role`, { role }),
-  setMemberStatus: async (name: string, memberId: string, status: CommunityMember['status']) =>
-    apiClient.patch(`/communities/${encodeURIComponent(name)}/members/${memberId}/status`, { status }),
+  uploadAvatar: async (name: string, file: File): Promise<Community> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.put<CommunityApiResponse>(
+      `/communities/${encodeURIComponent(name)}/avatar`, formData
+    );
+    return mapCommunity(response);
+  },
+  uploadBanner: async (name: string, file: File): Promise<Community> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.put<CommunityApiResponse>(
+      `/communities/${encodeURIComponent(name)}/banner`, formData
+    );
+    return mapCommunity(response);
+  },
+  members: async (name: string, role?: CommunityMember['role']): Promise<CommunityMember[]> =>
+    getAllCommunityMemberPages(name, role),
+  appointModerator: async (name: string, username: string) =>
+    apiClient.put(`/communities/${encodeURIComponent(name)}/moderators/${encodeURIComponent(username)}`),
+  removeModerator: async (name: string, username: string) =>
+    apiClient.delete(`/communities/${encodeURIComponent(name)}/moderators/${encodeURIComponent(username)}`),
+  kickMember: async (name: string, username: string) =>
+    apiClient.delete(`/communities/${encodeURIComponent(name)}/members/${encodeURIComponent(username)}`),
+  transferOwnership: async (name: string, username: string) =>
+    apiClient.put(`/communities/communities/${encodeURIComponent(name)}/owner`, { username }),
   join: async (name: string) => {
-    await apiClient.post(`/communities/${encodeURIComponent(name)}/join`);
+    await apiClient.post(`/communities/${encodeURIComponent(name)}/members`);
     return true;
   },
   leave: async (name: string) => {
-    await apiClient.post(`/communities/${encodeURIComponent(name)}/leave`);
+    await apiClient.delete(`/communities/${encodeURIComponent(name)}/members/me`);
     return true;
   },
 };

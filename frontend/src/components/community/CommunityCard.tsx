@@ -42,7 +42,7 @@ export const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
 
   return (
     <div
-      onClick={() => navigate(`/c/${community.name}`)}
+      onClick={() => navigate(`/community/${community.name}`)}
       className="group relative bg-[#161922] hover:bg-[#1C202B] border border-[#262C3A] hover:border-[var(--color-orange-border)] rounded-2xl p-5 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md flex flex-col justify-between text-left space-y-4"
     >
       <div className="space-y-3">
@@ -60,7 +60,7 @@ export const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
               {community.displayName}
             </h3>
             <span className="text-xs text-[#6C7482] font-mono block">
-              c/{community.name}
+              community/{community.name}
             </span>
             <div className="mt-1">
               <span className="text-[11px] font-semibold text-[var(--color-orange)] bg-[var(--color-orange-soft)] px-2 py-0.5 rounded-full inline-block">

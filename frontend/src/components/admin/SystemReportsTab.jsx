@@ -112,7 +112,7 @@ export default function SystemReportsTab({ onOpenPostDetail }) {
                   <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 flex items-start justify-between gap-3">
                     <div>
                       <div className="text-[11px] font-semibold text-slate-500 mb-0.5">
-                        Bài viết tại c/{comm?.slug || 'cộng đồng'}:
+                        Bài viết tại community/{comm?.slug || 'cộng đồng'}:
                       </div>
                       <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-1">
                         {post.title}

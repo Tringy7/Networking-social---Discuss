@@ -44,7 +44,7 @@ export default function CommunityMembersModal({ isOpen, onClose, community }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Thành viên c/${community.slug}`} maxWidth="max-w-2xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Thành viên community/${community.slug}`} maxWidth="max-w-2xl">
       <div className="space-y-4">
         {/* Search Input */}
         <div className="relative">

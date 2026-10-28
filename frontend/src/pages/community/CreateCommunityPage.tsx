@@ -1,88 +1,78 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
-import { CommunityCategory } from '../../types';
-import Input from '../../components/ui/Input';
+import { categoryService } from '../../services';
 import Button from '../../components/ui/Button';
-import Avatar from '../../components/ui/Avatar';
-import { Users, Globe, Lock, Sparkles, Check, ArrowLeft, Image } from 'lucide-react';
+import { BookOpen, BriefcaseBusiness, Check, Code2, Cpu, Gamepad2, Globe, Layers3, Lock, Palette, Sparkles, Users, X } from 'lucide-react';
+
+interface Category { id: number; name: string; slug: string }
+
+const categoryIcons = [Code2, Cpu, Palette, BookOpen, Gamepad2, BriefcaseBusiness, Sparkles, Layers3];
 
 export const CreateCommunityPage: React.FC = () => {
   const navigate = useNavigate();
   const { createCommunity, communities } = useCommunityStore();
   const { isAuthenticated } = useAuthStore();
   const { addToast } = useToastStore();
-
-  const [name, setName] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<CommunityCategory>('Lập trình');
+  const [step, setStep] = useState(1);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryId, setCategoryId] = useState<number | null>(null);
   const [visibility, setVisibility] = useState<'PUBLIC' | 'PRIVATE'>('PUBLIC');
-  const [avatarUrl, setAvatarUrl] = useState('');
-  const [bannerUrl, setBannerUrl] = useState('');
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [createdName, setCreatedName] = useState('');
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Validate slug name
-  const isNameAvailable = !communities.some(
-    (c) => c.name.toLowerCase() === name.toLowerCase().trim()
-  );
+  useEffect(() => {
+    let active = true;
+    categoryService.list().then((items) => {
+      if (!active) return;
+      setCategories(items);
+      setCategoryId(items[0]?.id ?? null);
+    }).catch((loadError: unknown) => {
+      if (active) setError(loadError instanceof Error ? loadError.message : 'Không thể tải danh mục.');
+    }).finally(() => { if (active) setLoadingCategories(false); });
+    return () => { active = false; };
+  }, []);
 
-  const categories: CommunityCategory[] = [
-    'Lập trình',
-    'Frontend',
-    'Backend',
-    'Công nghệ',
-    'Thiết kế',
-    'Giải trí',
-    'Games',
-    'Giáo dục',
-  ];
+  const selectedCategory = categories.find((item) => item.id === categoryId);
+  const cleanName = name.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
+  const nameAvailable = !communities.some((item) => item.name.toLowerCase() === cleanName);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const nextStep = () => {
+    setError('');
+    if (step === 1 && !categoryId) return setError('Vui lòng chọn danh mục cho cộng đồng.');
+    if (step === 3) {
+      if (cleanName.length < 3 || cleanName.length > 21) return setError('Tên cộng đồng phải từ 3 đến 21 ký tự (chữ thường, số, dấu gạch dưới).');
+      if (!nameAvailable) return setError('Tên cộng đồng này đã được sử dụng.');
+      if (!description.trim()) return setError('Vui lòng nhập mô tả cộng đồng.');
+    }
+    setStep((current) => Math.min(current + 1, 3));
+  };
+
+  const handleCreate = async () => {
     if (!isAuthenticated) {
-      addToast('Vui lòng đăng nhập để tạo cộng đồng', 'warning');
+      addToast('Vui lòng đăng nhập để tạo cộng đồng.', 'warning');
       navigate('/login');
       return;
     }
-
-    const cleanName = name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9_-]/g, '');
-
-    if (cleanName.length < 3 || cleanName.length > 21) {
-      setError('Tên định danh cộng đồng phải từ 3 đến 21 ký tự (chữ thường, số, dấu gạch ngang).');
-      return;
-    }
-
-    if (!isNameAvailable) {
-      setError('Tên cộng đồng này đã được sử dụng. Vui lòng chọn tên khác.');
-      return;
-    }
-
-    if (!displayName.trim() || !description.trim()) {
-      setError('Vui lòng nhập tên hiển thị và mô tả cộng đồng.');
-      return;
-    }
-
+    if (!selectedCategory) return setError('Danh mục không còn khả dụng. Vui lòng tải lại trang.');
     setIsLoading(true);
     setError('');
     try {
       const created = await createCommunity({
         name: cleanName,
-        displayName: displayName.trim(),
         description: description.trim(),
-        category,
+        categoryId: selectedCategory.id,
         visibility,
-        avatarUrl,
-        bannerUrl,
       });
-      addToast(`Cộng đồng c/${created.name} đã được tạo thành công!`, 'success');
-      navigate(`/c/${created.name}`);
+      setCreatedName(created.name);
+      setStep(4);
+      addToast(`Cộng đồng community/${created.name} đã được tạo thành công!`, 'success');
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : 'Không thể tạo cộng đồng.');
     } finally {
@@ -90,178 +80,47 @@ export const CreateCommunityPage: React.FC = () => {
     }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-6 text-left pb-16">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 rounded-xl bg-[#191A1C] border border-[#303235] text-[#9A9DA3] hover:text-[#F5F5F5] transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-[#F5F5F5]">Tạo cộng đồng mới</h1>
-          <p className="text-xs text-[#9A9DA3] mt-0.5">
-            Xây dựng không gian thảo luận cho riêng bạn và kết nối những người cùng sở thích
-          </p>
+  const steps = ['Danh mục', 'Quyền riêng tư', 'Thông tin', 'Hoàn tất'];
+  const closeWizard = () => navigate('/explore');
+
+  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-3 sm:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) closeWizard(); }}>
+    <section role="dialog" aria-modal="true" aria-labelledby="create-community-title" className="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-y-auto rounded-3xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-5 text-left shadow-2xl sm:p-7 lg:p-8">
+      <button type="button" onClick={closeWizard} aria-label="Đóng" className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><X className="h-5 w-5" /></button>
+      <header className="mb-6 pr-12"><h1 id="create-community-title" className="text-xl font-bold text-[var(--text-primary)] sm:text-2xl">{step === 1 ? 'Cộng đồng của bạn sẽ nói về điều gì?' : step === 2 ? 'Cộng đồng này hoạt động như thế nào?' : step === 3 ? 'Giới thiệu cộng đồng của bạn' : 'Tạo cộng đồng thành công'}</h1><p className="mt-2 text-sm text-[var(--text-secondary)]">{step === 1 ? 'Chọn một chủ đề để mọi người dễ tìm thấy cộng đồng.' : step === 2 ? 'Chọn ai có thể xem và tham gia cộng đồng.' : step === 3 ? 'Tên và mô tả giúp mọi người hiểu cộng đồng của bạn.' : 'Cộng đồng đã sẵn sàng để bắt đầu.'}</p></header>
+      {error && <div role="alert" className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3.5 text-xs font-medium text-red-500">{error}</div>}
+
+      <div className="min-h-[300px] flex-1 text-[var(--text-primary)]">
+      {step === 1 && <div className="space-y-5">
+        {loadingCategories ? <p className="text-sm text-[var(--text-secondary)]">Đang tải danh mục…</p> : categories.length === 0 ? <p className="text-sm text-red-500">Không có danh mục để chọn. Kiểm tra backend rồi tải lại.</p> : <div className="flex flex-wrap gap-2">
+          {categories.map((item, index) => { const CategoryIcon = categoryIcons[index % categoryIcons.length]; return <button key={item.id} type="button" onClick={() => setCategoryId(item.id)} aria-pressed={categoryId === item.id} className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${categoryId === item.id ? 'border-[var(--color-orange)] bg-[var(--color-orange-soft)] text-[var(--color-orange)]' : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-secondary)] hover:border-[var(--color-orange-border)] hover:text-[var(--text-primary)]'}`}><CategoryIcon className="h-3.5 w-3.5" />{item.name}</button>; })}
+        </div>}
+      </div>}
+
+      {step === 2 && <div className="space-y-5">
+        <div className="grid sm:grid-cols-2 gap-4">
+          {(['PUBLIC', 'PRIVATE'] as const).map((value) => <button key={value} type="button" onClick={() => setVisibility(value)} aria-pressed={visibility === value} className={`rounded-2xl border p-5 text-left transition-colors ${visibility === value ? 'border-[var(--color-orange)] bg-[var(--color-orange-soft)]' : 'border-[var(--border-color)] bg-[var(--bg-main)] hover:border-[var(--color-orange-border)]'}`}>
+            <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">{value === 'PUBLIC' ? <Globe className="w-4 h-4 text-[var(--color-orange)]" /> : <Lock className="w-4 h-4 text-[var(--color-orange)]" />}{value === 'PUBLIC' ? 'Công khai' : 'Riêng tư'}</span>
+            <span className="mt-2 block text-xs text-[var(--text-secondary)]">{value === 'PUBLIC' ? 'Mọi người có thể tìm thấy và tham gia cộng đồng.' : 'Chỉ thành viên được mời mới có thể tham gia.'}</span>
+          </button>)}
         </div>
+      </div>}
+
+      {step === 3 && <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="space-y-5"><div className="flex flex-wrap gap-2"><span className="rounded-full bg-[var(--color-orange-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-orange)]">{selectedCategory?.name}</span><span className="rounded-full bg-[var(--bg-elevated)] px-3 py-1 text-xs font-semibold text-[var(--text-secondary)]">{visibility === 'PUBLIC' ? 'Công khai' : 'Riêng tư'}</span></div>
+        <label className="block space-y-1.5"><span className="text-xs font-semibold text-[var(--text-secondary)]">Tên cộng đồng</span><input value={name} onChange={(event) => { setName(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setError(''); }} placeholder="lap_trinh_rust" maxLength={21} className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--color-orange)]" /><span className="text-[11px] text-[var(--text-muted)]">Từ 3 đến 21 ký tự, chỉ gồm chữ thường, số và dấu gạch dưới · discuss.vn/community/{cleanName || 'ten_cong_dong'}</span>{cleanName && !nameAvailable && <span className="block text-[11px] text-red-500">Tên này đã được sử dụng.</span>}</label>
+        <label className="block space-y-1.5"><span className="text-xs font-semibold text-[var(--text-secondary)]">Mô tả</span><textarea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} placeholder="Cộng đồng này dành cho chủ đề gì?" className="w-full resize-y rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--color-orange)]" /><span className="text-[11px] text-[var(--text-muted)]">{description.length}/500 ký tự</span></label></div>
+        <aside className="self-start rounded-2xl border border-[var(--border-color)] bg-[var(--bg-elevated)] p-5"><h3 className="text-sm font-bold text-[var(--text-primary)]">Trước khi tạo</h3><p className="mt-2 text-xs leading-relaxed text-[var(--text-secondary)]">Tên cộng đồng sẽ là địa chỉ cố định. Mô tả và danh mục giúp thành viên biết đây có phải là nơi phù hợp với họ.</p><div className="mt-4 space-y-2 border-t border-[var(--border-color)] pt-4 text-xs text-[var(--text-secondary)]"><div className="flex justify-between gap-3"><span>Danh mục</span><span className="font-semibold text-[var(--text-primary)]">{selectedCategory?.name}</span></div><div className="flex justify-between gap-3"><span>Quyền riêng tư</span><span className="font-semibold text-[var(--text-primary)]">{visibility === 'PUBLIC' ? 'Công khai' : 'Riêng tư'}</span></div></div></aside>
+      </div>}
+
+      {step === 4 && <div className="min-h-[270px] flex flex-col items-center justify-center space-y-4 text-center"><span className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-orange-soft)] text-[var(--color-orange)]"><Check className="h-7 w-7" /></span><div><h2 className="text-xl font-bold text-[var(--text-primary)]">Tạo cộng đồng thành công!</h2><p className="mt-2 text-sm text-[var(--text-secondary)]">community/{createdName} đã sẵn sàng. Bạn là chủ sở hữu cộng đồng.</p></div></div>}
+
       </div>
-
-      {error && (
-        <div className="p-3.5 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/30 text-xs text-[#EF4444] font-medium">
-          {error}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Form fields (2 Cols) */}
-        <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-5 bg-[#191A1C] border border-[#303235] rounded-3xl p-6 sm:p-8">
-          {/* Community Name slug */}
-          <div className="space-y-1.5">
-            <Input
-              label="Tên định danh cộng đồng (c/name)"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''));
-                setError('');
-              }}
-              placeholder="lap-trinh-rust"
-              helperText="Tên này là cố định và không thể thay đổi sau khi tạo (3–21 ký tự)."
-              required
-            />
-            {name && (
-              <div className="text-[11px] flex items-center gap-1 font-mono">
-                URL xem trước: <span className="text-[#FF5700]">discuss.vn/c/{name}</span>
-                {isNameAvailable ? (
-                  <span className="text-[#22C55E] ml-2 flex items-center gap-0.5">
-                    <Check className="w-3 h-3" /> Hợp lệ
-                  </span>
-                ) : (
-                  <span className="text-[#EF4444] ml-2">Đã tồn tại</span>
-                )}
-              </div>
-            )}
-          </div>
-
-          <Input
-            label="Tên hiển thị công khai (Display Name)"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Ví dụ: Cộng đồng Lập trình Rust Việt Nam"
-            required
-          />
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#9A9DA3]">Mô tả cộng đồng</label>
-            <textarea
-              rows={4}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Giới thiệu mục tiêu của cộng đồng, đối tượng tham gia và những chủ đề thường được thảo luận..."
-              required
-              className="w-full bg-[#101112] border border-[#303235] focus:border-[#FF5700] rounded-xl p-3 text-xs text-[#F5F5F5] placeholder-[#70747C] outline-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#9A9DA3]">Chủ đề / Chuyên mục</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value as CommunityCategory)}
-                className="w-full bg-[#101112] border border-[#303235] focus:border-[#FF5700] rounded-xl p-2.5 text-xs text-[#F5F5F5] outline-none cursor-pointer"
-              >
-                {categories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#9A9DA3]">Quyền riêng tư</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setVisibility('PUBLIC')}
-                  className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
-                    visibility === 'PUBLIC'
-                      ? 'bg-[#FF5700]/15 border-[#FF5700] text-[#FF5700]'
-                      : 'bg-[#101112] border-[#303235] text-[#9A9DA3]'
-                  }`}
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  <span>Công khai</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setVisibility('PRIVATE')}
-                  className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
-                    visibility === 'PRIVATE'
-                      ? 'bg-[#FF5700]/15 border-[#FF5700] text-[#FF5700]'
-                      : 'bg-[#101112] border-[#303235] text-[#9A9DA3]'
-                  }`}
-                >
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Riêng tư</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#303235]">
-            <Button type="button" variant="ghost" size="md" onClick={() => navigate(-1)}>
-              Hủy bỏ
-            </Button>
-            <Button type="submit" variant="primary" size="md" isLoading={isLoading}>
-              Tạo cộng đồng ngay
-            </Button>
-          </div>
-        </form>
-
-        {/* Live Preview Card (Right Column) */}
-        <div className="space-y-4">
-          <span className="text-xs font-bold text-[#70747C] uppercase tracking-wider block">
-            Xem trước thẻ cộng đồng
-          </span>
-          <div className="bg-[#191A1C] border border-[#303235] rounded-2xl p-5 space-y-4 text-left shadow-lg">
-            <div className="flex items-start gap-3">
-              <Avatar src={avatarUrl} alt={displayName || 'D'} size="lg" shape="rounded" />
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-[#F5F5F5] truncate">
-                  {displayName || 'Tên cộng đồng của bạn'}
-                </h3>
-                <span className="text-xs text-[#70747C] font-mono">
-                  c/{name || 'ten-cong-dong'}
-                </span>
-                <div className="mt-1">
-                  <span className="text-[11px] font-semibold text-[#FF5700] bg-[#FF5700]/10 px-2 py-0.5 rounded-full inline-block">
-                    {category}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <p className="text-xs text-[#9A9DA3] line-clamp-3 leading-relaxed">
-              {description || 'Mô tả ngắn về cộng đồng của bạn sẽ hiển thị ở đây để thu hút thành viên mới.'}
-            </p>
-
-            <div className="pt-3 border-t border-[#303235]/60 flex items-center justify-between gap-3 text-xs text-[#70747C]">
-              <div className="flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-[#9A9DA3]" />
-                <span className="font-semibold text-[#9A9DA3]">1</span> thành viên
-              </div>
-              <Button variant="primary" size="sm" className="py-1 px-4 text-xs font-bold">
-                Tham gia
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+      <footer className="mt-6 flex items-center justify-between gap-3 border-t border-[var(--border-color)] pt-5">
+        <div className="flex items-center gap-1.5" aria-label={`Bước ${step} trên 4`}>{steps.map((label, index) => <span key={label} className={`h-2 w-2 rounded-full ${step === index + 1 ? 'bg-[var(--color-orange)]' : step > index + 1 ? 'bg-[var(--color-orange-border)]' : 'bg-[var(--border-color)]'}`} />)}</div>
+        {step === 4 ? <Button variant="primary" size="md" onClick={() => navigate(`/community/${createdName}`)} leftIcon={<Users className="w-4 h-4" />}>Vào cộng đồng</Button> : <div className="flex gap-3"><Button type="button" variant="ghost" size="md" onClick={() => step === 1 ? closeWizard() : setStep(step - 1)}>{step === 1 ? 'Hủy' : 'Quay lại'}</Button>{step < 3 ? <Button type="button" variant="primary" size="md" disabled={step === 1 && (!categoryId || loadingCategories)} onClick={nextStep}>Tiếp tục</Button> : <Button type="button" variant="primary" size="md" isLoading={isLoading} onClick={handleCreate}>Tạo cộng đồng</Button>}</div>}
+      </footer>
+    </section>
+  </div>;
 };
 
 export default CreateCommunityPage;

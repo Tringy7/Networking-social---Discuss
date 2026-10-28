@@ -76,7 +76,7 @@ export default function CommunityHeader({
             <div className="pb-1">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <h1 className="text-xl sm:text-2xl font-black text-[#d7dadc] tracking-tight">
-                  c/{community.slug}
+                  community/{community.slug}
                 </h1>
                 {role && <RoleBadge role={role} size="md" />}
               </div>
@@ -215,7 +215,7 @@ export default function CommunityHeader({
               Chủ sở hữu không thể rời trực tiếp
             </h3>
             <p className="text-xs text-[#818384] leading-relaxed mb-4">
-              Bạn hiện là Chủ sở hữu (Owner) của <strong>c/{community.slug}</strong>. Vui lòng chuyển giao quyền Owner cho thành viên khác trước khi rời khỏi cộng đồng.
+              Bạn hiện là Chủ sở hữu (Owner) của <strong>community/{community.slug}</strong>. Vui lòng chuyển giao quyền Owner cho thành viên khác trước khi rời khỏi cộng đồng.
             </p>
             <div className="flex items-center justify-end gap-2">
               <button

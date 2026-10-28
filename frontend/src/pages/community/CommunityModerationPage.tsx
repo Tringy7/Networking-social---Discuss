@@ -68,7 +68,7 @@ export const CommunityModerationPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate(`/c/${communityName}`)}
+            onClick={() => navigate(`/community/${communityName}`)}
             className="p-2 rounded-xl bg-[#191A1C] border border-[#303235] text-[#9A9DA3] hover:text-[#F5F5F5] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -76,7 +76,7 @@ export const CommunityModerationPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-[#F5F5F5] flex items-center gap-2">
               <ShieldAlert className="w-5 h-5 text-[#3B82F6]" />
-              <span>Hàng đợi kiểm duyệt c/{communityName}</span>
+              <span>Hàng đợi kiểm duyệt community/{communityName}</span>
             </h1>
             <p className="text-xs text-[#9A9DA3] mt-0.5">
               Xem xét các nội dung bị báo cáo bởi thành viên và xử phạt vi phạm

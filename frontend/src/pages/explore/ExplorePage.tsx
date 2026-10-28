@@ -1,30 +1,46 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useCommunityStore } from '../../store/useCommunityStore';
-import CommunityCard from '../../components/community/CommunityCard';
+import { useToastStore } from '../../store/useToastStore';
+import CommunityCard from '../../components/community/CommunityCard.tsx';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
-import { CommunityCategory } from '../../types';
-import { Compass, Search, Sparkles, SlidersHorizontal, RotateCcw } from 'lucide-react';
+import { Compass, Search, Sparkles, SlidersHorizontal, RotateCcw, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { categoryService } from '../../services';
+import { useNavigate, useParams } from 'react-router-dom';
 
 export const ExplorePage: React.FC = () => {
-  const { communities } = useCommunityStore();
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const { communities, hydrate, hydrateByCategory } = useCommunityStore();
+  const { addToast } = useToastStore();
+  const [isLoadingCommunities, setIsLoadingCommunities] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('Tất cả');
+  const [categories, setCategories] = useState<Array<{ id: number; name: string; slug: string }>>([]);
   const [sortBy, setSortBy] = useState<'members' | 'newest' | 'alphabetical'>('members');
 
-  const categories = [
-    'Tất cả',
-    'Lập trình',
-    'Frontend',
-    'Backend',
-    'Công nghệ',
-    'Thiết kế',
-    'Giải trí',
-    'Games',
-    'Giáo dục',
-  ];
+  useEffect(() => {
+    categoryService.list().then(setCategories).catch(() => setCategories([]));
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    setIsLoadingCommunities(true);
+    const loadCommunities = slug ? hydrateByCategory(slug) : hydrate();
+    loadCommunities
+      .catch((error: unknown) => {
+        if (active) {
+          addToast(error instanceof Error ? error.message : 'Không thể tải danh sách cộng đồng.', 'error');
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoadingCommunities(false);
+      });
+    return () => { active = false; };
+  }, [addToast, hydrate, hydrateByCategory, slug]);
+
+  const selectedCategory = slug || '';
 
   const filteredCommunities = useMemo(() => {
     return communities
@@ -34,8 +50,8 @@ export const ExplorePage: React.FC = () => {
           c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           c.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-        const matchesCategory =
-          selectedCategory === 'Tất cả' || c.category === (selectedCategory as CommunityCategory);
+        const selectedCategoryName = categories.find((item) => item.slug === selectedCategory)?.name;
+        const matchesCategory = !selectedCategory || c.category === selectedCategoryName;
 
         return matchesQuery && matchesCategory;
       })
@@ -44,11 +60,11 @@ export const ExplorePage: React.FC = () => {
         if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         return a.displayName.localeCompare(b.displayName);
       });
-  }, [communities, searchQuery, selectedCategory, sortBy]);
+  }, [communities, categories, searchQuery, selectedCategory, sortBy]);
 
   const handleResetFilters = () => {
     setSearchQuery('');
-    setSelectedCategory('Tất cả');
+    navigate('/explore');
     setSortBy('members');
   };
 
@@ -108,17 +124,19 @@ export const ExplorePage: React.FC = () => {
 
         {/* Category Filter Chips */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {categories.map((cat) => (
+          {[{ id: 0, name: 'Tất cả', slug: '' }, ...categories].map((cat) => (
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
+              key={cat.id}
+              onClick={() => {
+                navigate(cat.slug ? `/explore/${encodeURIComponent(cat.slug)}` : '/explore');
+              }}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 whitespace-nowrap cursor-pointer ${
-                selectedCategory === cat
+                selectedCategory === cat.slug
                   ? 'bg-[var(--color-orange)] text-white shadow-sm'
                   : 'bg-[#161922] border border-[#262C3A] text-[#959DAA] hover:text-[#F1F3F7] hover:border-[#343C4E]'
               }`}
             >
-              {cat}
+              {cat.name}
             </button>
           ))}
         </div>
@@ -130,7 +148,7 @@ export const ExplorePage: React.FC = () => {
           <div className="text-xs font-bold text-[#9A9DA3]">
             Hiển thị <span className="text-[#F5F5F5]">{filteredCommunities.length}</span> cộng đồng
           </div>
-          {(selectedCategory !== 'Tất cả' || searchQuery) && (
+          {(selectedCategory !== '' || searchQuery) && (
             <button
               onClick={handleResetFilters}
               className="flex items-center gap-1.5 text-xs text-[#FF5700] hover:underline cursor-pointer"
@@ -141,7 +159,12 @@ export const ExplorePage: React.FC = () => {
           )}
         </div>
 
-        {filteredCommunities.length > 0 ? (
+        {isLoadingCommunities ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-[#303235] bg-[#191A1C] py-16 text-sm text-[#9A9DA3]">
+            <Loader2 className="h-6 w-6 animate-spin text-[var(--color-orange)]" />
+            <span>Đang tải danh sách cộng đồng...</span>
+          </div>
+        ) : filteredCommunities.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredCommunities.map((community, index) => (
               <motion.div

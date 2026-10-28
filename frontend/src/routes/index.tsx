@@ -62,9 +62,12 @@ export const AppRoutes: React.FC = () => {
         {/* Core Feeds */}
         <Route path="/" element={<HomePage />} />
         <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/explore/:slug" element={<ExplorePage />} />
         <Route path="/search" element={<SearchResultsPage />} />
+        <Route path="/community/:communityName" element={<CommunityDetailPage />} />
         <Route path="/c/:communityName" element={<CommunityDetailPage />} />
         <Route path="/post/:postId" element={<PostDetailPage />} />
+        <Route path="/user/:username" element={<UserProfilePage />} />
         <Route path="/u/:username" element={<UserProfilePage />} />
 
         <Route element={<ProtectedRoute />}>
@@ -76,6 +79,9 @@ export const AppRoutes: React.FC = () => {
           {/* Community Management */}
           <Route path="/communities/create" element={<CreateCommunityPage />} />
           <Route path="/communities/mine" element={<MyCommunitiesPage />} />
+          <Route path="/community/:communityName/settings" element={<EditCommunityPage />} />
+          <Route path="/community/:communityName/members" element={<CommunityMembersPage />} />
+          <Route path="/community/:communityName/moderation" element={<CommunityModerationPage />} />
           <Route path="/c/:communityName/settings" element={<EditCommunityPage />} />
           <Route path="/c/:communityName/members" element={<CommunityMembersPage />} />
           <Route path="/c/:communityName/moderation" element={<CommunityModerationPage />} />

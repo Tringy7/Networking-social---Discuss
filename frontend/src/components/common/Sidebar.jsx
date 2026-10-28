@@ -147,12 +147,12 @@ export default function Sidebar({
           ) : (
             <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
               {myCommunities.map((c) => {
-                const isSelected = location.pathname === `/c/${c.slug}` || location.pathname === `/c/${c.id}`;
+                const isSelected = location.pathname === `/community/${c.slug}` || location.pathname === `/community/${c.id}`;
 
                 return (
                   <Link
                     key={c.id}
-                    to={`/c/${c.slug || c.id}`}
+                    to={`/community/${c.slug || c.id}`}
                     onClick={() => {
                       if (onCloseMobile) onCloseMobile();
                     }}
@@ -168,7 +168,7 @@ export default function Sidebar({
                         alt=""
                         className="w-5 h-5 rounded-md object-cover shrink-0 border border-[#343536]"
                       />
-                      <span className="truncate font-medium">c/{c.slug}</span>
+                      <span className="truncate font-medium">community/{c.slug}</span>
                     </div>
 
                     <RoleBadge role={c.role} size="xs" />

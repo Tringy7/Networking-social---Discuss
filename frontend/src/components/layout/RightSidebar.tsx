@@ -67,7 +67,7 @@ export const RightSidebar: React.FC = () => {
           <div className="space-y-3">
             {suggested.map((c) => (
               <div key={c.id} className="flex items-center justify-between gap-2.5">
-                <Link to={`/c/${c.name}`} className="flex items-center gap-2.5 truncate flex-1">
+                <Link to={`/community/${c.name}`} className="flex items-center gap-2.5 truncate flex-1">
                   <Avatar src={c.avatarUrl} alt={c.displayName} size="sm" shape="rounded" />
                   <div className="truncate">
                     <div className="text-xs font-semibold text-[#F5F5F5] truncate hover:text-[var(--color-orange)] transition-colors">
@@ -98,7 +98,7 @@ export const RightSidebar: React.FC = () => {
           <Link to="/explore" className="hover:text-[#9A9DA3]">Cộng đồng</Link>
           <Link to="/settings/privacy" className="hover:text-[#9A9DA3]">Quyền riêng tư</Link>
           <Link to="/settings" className="hover:text-[#9A9DA3]">Cài đặt</Link>
-          <Link to="/c/lap-trinh-viet-nam" className="hover:text-[#9A9DA3]">Nội quy</Link>
+          <Link to="/community/lap-trinh-viet-nam" className="hover:text-[#9A9DA3]">Nội quy</Link>
         </div>
         <p>© 2026 DISCUSS Community Network. Nền tảng chia sẻ tri thức công nghệ.</p>
       </div>

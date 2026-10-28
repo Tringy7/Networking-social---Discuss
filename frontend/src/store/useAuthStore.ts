@@ -136,7 +136,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     const generation = sessionGeneration;
-    setApiSessionAuthenticated(hasPersistedAuthSession());
+    const hasPersistedSession = hasPersistedAuthSession();
+    setApiSessionAuthenticated(hasPersistedSession);
+    if (!hasPersistedSession) {
+      initializationComplete = true;
+      initializationPromise = null;
+      initializationPromiseGeneration = -1;
+      set({
+        user: null,
+        activeRole: 'GUEST',
+        isAuthenticated: false,
+        authStatus: 'UNAUTHENTICATED',
+      });
+      return Promise.resolve();
+    }
+
     initializationPromiseGeneration = generation;
     const operation = (async () => {
       try {

@@ -54,7 +54,7 @@ export default function CommunityDetailPage({
       {/* Community Post Feed */}
       <div className="mb-3">
         <h3 className="text-xs font-bold text-[#818384] uppercase tracking-wider mb-2">
-          Các bài thảo luận trong c/{community.slug}
+          Các bài thảo luận trong community/{community.slug}
         </h3>
       </div>
 

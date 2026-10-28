@@ -14,6 +14,7 @@ export default function App() {
   const initializeSession = useAuthStore((state) => state.initializeSession);
   const addToast = useToastStore((state) => state.addToast);
   const hydrateCommunities = useCommunityStore((state) => state.hydrate);
+  const hydrateMyCommunities = useCommunityStore((state) => state.hydrateMine);
   const hydratePosts = usePostStore((state) => state.hydrate);
 
   React.useEffect(() => {
@@ -48,6 +49,11 @@ export default function App() {
         );
       }
     });
+    if (isAuthenticated) {
+      hydrateMyCommunities().catch((error: unknown) => {
+        addToast(error instanceof Error ? error.message : 'Không thể tải cộng đồng của bạn.', 'error');
+      });
+    }
     hydratePosts().catch((error: unknown) => {
       if (active) {
         addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error');
@@ -57,7 +63,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [addToast, hydrateCommunities, hydratePosts, isAuthenticated]);
+  }, [addToast, hydrateCommunities, hydrateMyCommunities, hydratePosts, isAuthenticated]);
 
   return (
     <BrowserRouter>

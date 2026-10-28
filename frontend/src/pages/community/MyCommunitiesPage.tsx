@@ -97,22 +97,22 @@ export const MyCommunitiesPage: React.FC = () => {
       </div>
 
       {/* Community List */}
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {displayedList.map((comm) => {
           const isOwner = comm.currentUserRole === 'OWNER' || comm.ownerUsername === user?.username;
 
           return (
             <div
               key={comm.id}
-              className="p-4 sm:p-5 rounded-2xl bg-[#191A1C] border border-[#303235] hover:border-[#45474B] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              className="flex min-w-0 flex-col rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 transition-all hover:border-[var(--color-orange-border)]"
             >
-              <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                <Avatar src={comm.avatarUrl} alt={comm.displayName} size="lg" shape="rounded" />
+              <div className="flex min-w-0 items-center gap-3">
+                <Avatar src={comm.avatarUrl} alt={comm.displayName} size="md" shape="rounded" />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Link
-                      to={`/c/${comm.name}`}
-                      className="text-sm sm:text-base font-bold text-[#F5F5F5] hover:text-[#FF5700] transition-colors truncate"
+                      to={`/community/${comm.name}`}
+                      className="truncate text-sm font-bold text-[var(--text-primary)] transition-colors hover:text-[var(--color-orange)]"
                     >
                       {comm.displayName}
                     </Link>
@@ -124,15 +124,20 @@ export const MyCommunitiesPage: React.FC = () => {
                       <Badge role="MEMBER" size="sm" />
                     )}
                   </div>
-                  <div className="text-xs text-[#70747C] font-mono mt-0.5">c/{comm.name}</div>
-                  <p className="text-xs text-[#9A9DA3] line-clamp-1 mt-1">{comm.description}</p>
+                  <div className="mt-0.5 truncate font-mono text-[11px] text-[var(--text-muted)]">community/{comm.name}</div>
                 </div>
               </div>
 
+              <p className="mt-3 min-h-10 line-clamp-2 text-xs leading-relaxed text-[var(--text-secondary)]">{comm.description || 'Chưa có mô tả cộng đồng.'}</p>
+              <div className="mt-3 flex items-center justify-between border-t border-[var(--border-color)] pt-3 text-[11px] text-[var(--text-muted)]">
+                <span className="truncate">{comm.category}</span>
+                <span className="shrink-0">{comm.memberCount} thành viên</span>
+              </div>
+
               {/* Actions */}
-              <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
+              <div className="mt-3 flex items-center justify-end gap-2 border-t border-[var(--border-color)] pt-3">
                 {isOwner ? (
-                  <Link to={`/c/${comm.name}/settings`}>
+                  <Link to={`/community/${comm.name}/settings`}>
                     <Button variant="secondary" size="sm" leftIcon={<Settings className="w-3.5 h-3.5" />}>
                       Cài đặt nhóm
                     </Button>
@@ -149,7 +154,7 @@ export const MyCommunitiesPage: React.FC = () => {
                   </Button>
                 )}
 
-                <Link to={`/c/${comm.name}`}>
+                <Link to={`/community/${comm.name}`}>
                   <Button variant="primary" size="sm">
                     Truy cập
                   </Button>

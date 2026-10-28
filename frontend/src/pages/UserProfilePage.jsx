@@ -331,7 +331,7 @@ export default function UserProfilePage({
                     <h1 className="text-xl font-bold text-[#d7dadc]">{userDisplayName}</h1>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-[#818384] font-mono">
-                    <span>u/{targetUser?.username}</span>
+                    <span>user/{targetUser?.username}</span>
                     {isMe && targetUser?.email && (
                       <>
                         <span className="text-[#343536]">•</span>
@@ -390,7 +390,7 @@ export default function UserProfilePage({
                     />
                     <div className="min-w-0">
                       <h4 className="font-bold text-xs text-[#d7dadc] group-hover:text-orange-400 transition truncate">
-                        c/{c.slug}
+                        community/{c.slug}
                       </h4>
                       <p className="text-[11px] text-[#818384] truncate">
                         {c.name}

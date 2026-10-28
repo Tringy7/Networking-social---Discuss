@@ -34,7 +34,7 @@ export default function TransferOwnerModal({ isOpen, onClose, community }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Chuyển quyền Chủ sở hữu (Owner) - c/${community.slug}`} maxWidth="max-w-lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Chuyển quyền Chủ sở hữu (Owner) - community/${community.slug}`} maxWidth="max-w-lg">
       <div className="space-y-4">
         <div className="p-3.5 bg-amber-950/40 border border-amber-900/50 rounded-xl text-xs text-amber-300 leading-relaxed flex items-start gap-2.5">
           <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
@@ -91,7 +91,7 @@ export default function TransferOwnerModal({ isOpen, onClose, community }) {
             className="mt-0.5 rounded border-[#343536] bg-[#272729] text-orange-500 focus:ring-orange-500"
           />
           <span className="text-xs text-[#d7dadc]">
-            Tôi xác nhận muốn chuyển giao quyền Chủ sở hữu của cộng đồng <strong>c/{community.slug}</strong> cho thành viên này.
+            Tôi xác nhận muốn chuyển giao quyền Chủ sở hữu của cộng đồng <strong>community/{community.slug}</strong> cho thành viên này.
           </span>
         </label>
 

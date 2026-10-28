@@ -57,7 +57,7 @@ export default function EditCommunityModal({ isOpen, onClose, community }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Chỉnh sửa c/${community?.slug}`} maxWidth="max-w-xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Chỉnh sửa community/${community?.slug}`} maxWidth="max-w-xl">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-semibold text-[#818384] uppercase tracking-wider mb-1">
