@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { PrivacySettings, User, UserRole } from '../types';
-import { ApiError, setApiSessionAuthenticated } from '../services/apiClient';
+import {
+  ApiError,
+  hasPersistedAuthSession,
+  setApiSessionAuthenticated,
+} from '../services/apiClient';
 import { authService, userService } from '../services';
 
 type AuthStatus = 'INITIALIZING' | 'AUTHENTICATED' | 'UNAUTHENTICATED' | 'ERROR';
@@ -132,7 +136,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     const generation = sessionGeneration;
-    setApiSessionAuthenticated(true);
+    setApiSessionAuthenticated(hasPersistedAuthSession());
     initializationPromiseGeneration = generation;
     const operation = (async () => {
       try {
@@ -145,6 +149,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isAuthenticated: true,
           authStatus: 'AUTHENTICATED',
         });
+        setApiSessionAuthenticated(true);
       } catch (error) {
         if (generation !== sessionGeneration) return;
         if (error instanceof ApiError && error.status === 401) {

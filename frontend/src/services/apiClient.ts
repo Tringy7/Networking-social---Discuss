@@ -24,12 +24,38 @@ const NO_REFRESH_PATHS = [
   '/auth/forgot-password/reset',
 ];
 
+const AUTH_SESSION_KEY = 'discuss_auth_session';
+
+function readPersistedAuthSession(): boolean {
+  if (typeof localStorage === 'undefined') return false;
+  try {
+    return localStorage.getItem(AUTH_SESSION_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
 let refreshPromise: Promise<void> | null = null;
-let sessionAuthenticated = false;
+let sessionAuthenticated = readPersistedAuthSession();
 let refreshGeneration = 0;
 
 export function setApiSessionAuthenticated(authenticated: boolean): void {
   sessionAuthenticated = authenticated;
+  if (typeof localStorage === 'undefined') return;
+
+  try {
+    if (authenticated) {
+      localStorage.setItem(AUTH_SESSION_KEY, 'true');
+    } else {
+      localStorage.removeItem(AUTH_SESSION_KEY);
+    }
+  } catch {
+    // Keep in-memory authentication state when browser storage is unavailable.
+  }
+}
+
+export function hasPersistedAuthSession(): boolean {
+  return readPersistedAuthSession();
 }
 
 function isAccessTokenExpired(error: unknown): error is ApiError {
