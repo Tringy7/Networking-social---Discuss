@@ -1,12 +1,16 @@
 package com.discuss.discuss.service.media;
 
 import com.discuss.discuss.dto.media.StoredImageDTO;
+import com.discuss.discuss.entity.Community;
+import com.discuss.discuss.entity.CommunityInfo;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserProfile;
 import com.discuss.discuss.enums.ImageKind;
 import com.discuss.discuss.exception.auth.AuthErrorCode;
 import com.discuss.discuss.exception.auth.AuthException;
+import com.discuss.discuss.repository.CommunityInfoRepository;
 import com.discuss.discuss.repository.UserProfileRepository;
+import com.discuss.discuss.service.community.CommunityService;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,7 +29,9 @@ public class ImageService {
 
     private final MediaStorageService storage;
     private final UserService userService;
+    private final CommunityService communityService;
     private final UserProfileRepository profileRepository;
+    private final CommunityInfoRepository communityInfoRepository;
 
     // ==================== USER ====================
     @Transactional
@@ -66,6 +72,49 @@ public class ImageService {
         );
     }
 
+    // ==================== COMMUNITY ====================
+    @Transactional
+    public void setAvatarForCommunity(
+            String communityName,
+            MultipartFile file
+    ) {
+        Community community =
+                communityService.getCommunityByNameAndStatusActive(communityName);
+
+        CommunityInfo info = community.getInfo();
+
+        this.replace(
+                ImageKind.COMMUNITY_AVATAR,
+                file,
+                community.getId(),
+                info,
+                CommunityInfo::getAvatar,
+                CommunityInfo::setAvatar,
+                communityInfoRepository::save
+        );
+    }
+
+    @Transactional
+    public void setBannerForCommunity(
+            String communityName,
+            MultipartFile file
+    ) {
+        Community community =
+                communityService.getCommunityByNameAndStatusActive(communityName);
+
+        CommunityInfo info = community.getInfo();
+
+        this.replace(
+                ImageKind.COMMUNITY_BANNER,
+                file,
+                community.getId(),
+                info,
+                CommunityInfo::getBanner,
+                CommunityInfo::setBanner,
+                communityInfoRepository::save
+        );
+    }
+
     // ==================== SHARED ====================
     private <T> void replace(
             ImageKind kind,
@@ -92,22 +141,22 @@ public class ImageService {
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
 
-            @Override
-            public void afterCommit() {
-                if (oldKey != null
-                        && oldKey.startsWith(ownerPrefix)
-                        && !oldKey.equals(stored.getObjectKey())) {
-                    storage.safeDelete(oldKey);
-                }
-            }
+                    @Override
+                    public void afterCommit() {
+                        if (oldKey != null
+                                && oldKey.startsWith(ownerPrefix)
+                                && !oldKey.equals(stored.getObjectKey())) {
+                            storage.safeDelete(oldKey);
+                        }
+                    }
 
-            @Override
-            public void afterCompletion(int status) {
-                if (status == STATUS_ROLLED_BACK) {
-                    storage.safeDelete(stored.getObjectKey());
+                    @Override
+                    public void afterCompletion(int status) {
+                        if (status == STATUS_ROLLED_BACK) {
+                            storage.safeDelete(stored.getObjectKey());
+                        }
+                    }
                 }
-            }
-        }
         );
     }
 }

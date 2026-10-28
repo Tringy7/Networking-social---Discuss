@@ -17,10 +17,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -147,10 +144,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse> logout(
-            @CookieValue(name = CookieUtil.REFRESH_TOKEN_COOKIE, defaultValue = "") String refreshToken) {
-        tokenService.revokeRefreshToken(refreshToken);
-
+    public ResponseEntity<ApiResponse> logout() {
         ResponseCookie accessCookie =
                 cookieUtil.clearCookie(CookieUtil.ACCESS_TOKEN_COOKIE, "/");
 

@@ -4,14 +4,13 @@ import com.discuss.discuss.dto.auth.AuthResponseDTO;
 import com.discuss.discuss.dto.auth.AuthResult;
 import com.discuss.discuss.entity.RefreshToken;
 import com.discuss.discuss.entity.User;
-import com.discuss.discuss.enums.UserStatus;
 import com.discuss.discuss.exception.auth.AuthErrorCode;
 import com.discuss.discuss.exception.auth.AuthException;
 import com.discuss.discuss.repository.RefreshTokenRepository;
 import com.discuss.discuss.repository.UserRepository;
+import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,7 +66,7 @@ public class TokenService {
 
         try {
             decodedToken = jwtService.verifyRefreshToken(rawToken);
-        } catch (JwtException e) {
+        } catch (Exception e) {
             throw new AuthException(
                     AuthErrorCode.INVALID_REFRESH_TOKEN
             );
@@ -79,16 +78,6 @@ public class TokenService {
                 .orElseThrow(() ->
                         new AuthException(AuthErrorCode.USER_NOT_FOUND)
                 );
-
-        if (user.getStatus() == UserStatus.LOCKED) {
-            throw new AuthException(AuthErrorCode.ACCOUNT_LOCKED);
-        }
-        if (user.getStatus() == UserStatus.PENDING) {
-            throw new AuthException(AuthErrorCode.ACCOUNT_NOT_VERIFIED);
-        }
-        if (user.getStatus() == UserStatus.DELETED) {
-            throw new AuthException(AuthErrorCode.USER_NOT_FOUND);
-        }
 
         String tokenHash = jwtService.hashToken(rawToken);
 
@@ -113,16 +102,6 @@ public class TokenService {
         storedToken.setRevoked(true);
 
         return issueTokens(user);
-    }
-
-    @Transactional
-    public void revokeRefreshToken(String rawToken) {
-        if (rawToken == null || rawToken.isBlank()) {
-            return;
-        }
-
-        refreshTokenRepository.findByToken(jwtService.hashToken(rawToken))
-                .ifPresent(token -> token.setRevoked(true));
     }
 
     @Transactional

@@ -19,8 +19,6 @@ public class PublicUserProfileResponseDTO {
 
     private Profile profile;
     private Statistics statistics;
-    private String role;
-    private boolean showPostsOnProfile;
 
     @Data
     @NoArgsConstructor

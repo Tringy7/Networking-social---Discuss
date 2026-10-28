@@ -6,8 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.time.LocalDateTime;
-import java.util.List;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
@@ -18,5 +16,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
             String username,
             UserStatus status
     );
-    List<User> findByCreatedAtAfter(LocalDateTime createdAt);
 }

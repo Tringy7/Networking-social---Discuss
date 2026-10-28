@@ -28,7 +28,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -52,14 +51,8 @@ public class UserService {
                 );
     }
 
-    public Optional<User> getCurrentUserIfAuthenticated() {
-        return jwtService.getCurrentUserLogin()
-                .flatMap(userRepository::findByUsername)
-                .filter(user -> user.getStatus() == UserStatus.ACTIVE);
-    }
-
-    public User getUserActive(Long userId) {
-        return userRepository.findById(userId)
+    public User getUserActive(String username) {
+        return userRepository.findByUsername(username)
                 .filter(existingUser -> existingUser.getStatus() == UserStatus.ACTIVE)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
     }
