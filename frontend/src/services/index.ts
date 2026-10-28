@@ -267,12 +267,13 @@ function mapCommunityStatus(status?: string): Community['status'] {
 
 async function getAllCommunityPages(path: string): Promise<CommunityApiResponse[]> {
   const pageSize = 100;
+  const pageUrl = (page: number) => `${path}${path.includes('?') ? '&' : '?'}page=${page}&size=${pageSize}`;
   const firstPage = await apiClient.get<CommunityPageResponse>(
-    `${path}?page=0&size=${pageSize}`
+    pageUrl(0)
   );
   const remainingPages = await Promise.all(
     Array.from({ length: Math.max(0, firstPage.totalPages - 1) }, (_, index) =>
-      apiClient.get<CommunityPageResponse>(`${path}?page=${index + 1}&size=${pageSize}`)
+      apiClient.get<CommunityPageResponse>(pageUrl(index + 1))
     )
   );
 
@@ -331,6 +332,11 @@ export const communityService = {
     (await getAllCommunityPages('/explore')).map(mapCommunity),
   listByCategory: async (slug: string): Promise<Community[]> =>
     (await getAllCommunityPages(`/explore/${encodeURIComponent(slug)}`)).map(mapCommunity),
+  search: async (query: string): Promise<Community[]> => {
+    const escapedQuery = query.trim().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const filter = `name ~~ '%${escapedQuery}%' or info.description ~~ '%${escapedQuery}%'`;
+    return (await getAllCommunityPages(`/explore/search?filter=${encodeURIComponent(filter)}`)).map(mapCommunity);
+  },
   mine: async (): Promise<Community[]> => {
     const [owned, joined] = await Promise.all([
       getCommunitiesWithRole('/user/me/owned', 'OWNER'),
@@ -399,7 +405,7 @@ export const communityService = {
   kickMember: async (name: string, username: string) =>
     apiClient.delete(`/communities/${encodeURIComponent(name)}/members/${encodeURIComponent(username)}`),
   transferOwnership: async (name: string, username: string) =>
-    apiClient.put(`/communities/communities/${encodeURIComponent(name)}/owner`, { username }),
+    apiClient.put(`/communities/${encodeURIComponent(name)}/owner`, { username }),
   join: async (name: string) => {
     await apiClient.post(`/communities/${encodeURIComponent(name)}/members`);
     return true;

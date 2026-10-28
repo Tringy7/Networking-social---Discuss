@@ -12,11 +12,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 export const ExplorePage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { communities, hydrate, hydrateByCategory } = useCommunityStore();
+  const { communities, hydrate, hydrateByCategory, hydrateSearch } = useCommunityStore();
   const { addToast } = useToastStore();
   const [isLoadingCommunities, setIsLoadingCommunities] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [categories, setCategories] = useState<Array<{ id: number; name: string; slug: string }>>([]);
   const [sortBy, setSortBy] = useState<'members' | 'newest' | 'alphabetical'>('members');
 
@@ -25,9 +26,18 @@ export const ExplorePage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const timeoutId = window.setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
+    return () => window.clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  useEffect(() => {
     let active = true;
     setIsLoadingCommunities(true);
-    const loadCommunities = slug ? hydrateByCategory(slug) : hydrate();
+    const loadCommunities = debouncedSearch && !slug
+      ? hydrateSearch(debouncedSearch)
+      : slug
+        ? hydrateByCategory(slug)
+        : hydrate();
     loadCommunities
       .catch((error: unknown) => {
         if (active) {
@@ -38,7 +48,7 @@ export const ExplorePage: React.FC = () => {
         if (active) setIsLoadingCommunities(false);
       });
     return () => { active = false; };
-  }, [addToast, hydrate, hydrateByCategory, slug]);
+  }, [addToast, debouncedSearch, hydrate, hydrateByCategory, hydrateSearch, slug]);
 
   const selectedCategory = slug || '';
 

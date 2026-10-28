@@ -33,7 +33,7 @@ public class CommunityMemberController {
                 .body(new ApiResponse("Joined community successfully"));
     }
 
-    @PutMapping("{communitiesName}/moderators/{username}")
+    @PutMapping("/{communitiesName}/moderators/{username}")
     public ResponseEntity<ApiResponse> appointModerator(
             @PathVariable String communitiesName,
             @PathVariable String username
@@ -45,7 +45,7 @@ public class CommunityMemberController {
                 .body(new ApiResponse("Moderator appointed successfully"));
     }
 
-    @DeleteMapping("/{name}/moderators/{userId}")
+    @DeleteMapping("/{name}/moderators/{username}")
     public ResponseEntity<ApiResponse> removeModerator(
             @PathVariable String name,
             @PathVariable String username
@@ -67,7 +67,7 @@ public class CommunityMemberController {
                 .ok(new ApiResponse("Left community successfully"));
     }
 
-    @DeleteMapping("/{communitiesName}/members/{userId}")
+    @DeleteMapping("/{communitiesName}/members/{username}")
     public ResponseEntity<ApiResponse> kickMember(
             @PathVariable String communitiesName,
             @PathVariable String username
@@ -79,7 +79,7 @@ public class CommunityMemberController {
         );
     }
 
-    @PutMapping("/communities/{name}/owner")
+    @PutMapping("/{name}/owner")
     public ResponseEntity<Void> transferOwnership(
             @PathVariable("name") String name,
             @Valid @RequestBody TransferOwnerRequest request

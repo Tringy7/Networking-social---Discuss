@@ -16,6 +16,7 @@ interface CommunityState {
   members: Record<string, CommunityMember[]>;
   hydrate: () => Promise<void>;
   hydrateByCategory: (slug: string) => Promise<void>;
+  hydrateSearch: (query: string) => Promise<void>;
   hydrateCommunity: (communityName: string) => Promise<void>;
   hydrateMine: () => Promise<void>;
   hydrateMembers: (communityName: string) => Promise<void>;
@@ -54,6 +55,18 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
 
   hydrateByCategory: async (slug) => {
     const communities = await communityService.listByCategory(slug);
+    set((state) => ({
+      communities: communities.map((community) => {
+        const existing = state.communities.find((item) => item.id === community.id);
+        return existing && existing.currentUserRole !== 'NONE'
+          ? { ...community, currentUserRole: existing.currentUserRole }
+          : community;
+      }),
+    }));
+  },
+
+  hydrateSearch: async (query) => {
+    const communities = await communityService.search(query);
     set((state) => ({
       communities: communities.map((community) => {
         const existing = state.communities.find((item) => item.id === community.id);
