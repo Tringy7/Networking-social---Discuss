@@ -3,7 +3,6 @@ import { NavLink, Outlet, Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import Logo from '../components/common/Logo';
 import Avatar from '../components/ui/Avatar';
-import { useToastStore } from '../store/useToastStore';
 import {
   LayoutDashboard,
   Users,
@@ -11,47 +10,11 @@ import {
   FolderKanban,
   ArrowLeft,
   Shield,
-  Loader2,
 } from 'lucide-react';
 
 export const AdminLayout: React.FC = () => {
-  const { user, activeRole, isAuthenticated, authLoading, authStatus, authError, hydrate } =
-    useAuthStore();
+  const { user, activeRole, isAuthenticated } = useAuthStore();
   const location = useLocation();
-  const addToast = useToastStore((state) => state.addToast);
-
-  if (!isAuthenticated && (authLoading || authStatus === 'initializing')) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--color-orange)]" />
-        <p className="text-sm text-[var(--text-secondary)]">Đang kiểm tra phiên đăng nhập...</p>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated && authStatus === 'error') {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8 text-center">
-        <p className="text-sm text-[var(--text-secondary)]">
-          {authError || 'Không thể xác minh phiên đăng nhập. Vui lòng thử lại.'}
-        </p>
-        <button
-          type="button"
-          className="rounded-lg bg-[var(--color-orange)] px-4 py-2 text-sm font-semibold text-white"
-          onClick={() => {
-            void hydrate().catch((error: unknown) =>
-              addToast(
-                error instanceof Error ? error.message : 'Không thể khôi phục phiên đăng nhập.',
-                'error'
-              )
-            );
-          }}
-        >
-          Thử lại
-        </button>
-      </div>
-    );
-  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;

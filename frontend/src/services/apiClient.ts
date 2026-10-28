@@ -24,27 +24,22 @@ const NO_REFRESH_PATHS = [
 ];
 
 let refreshPromise: Promise<unknown> | null = null;
-let csrfToken: string | null = null;
-let csrfTokenPromise: Promise<string> | null = null;
+let sessionAuthenticated = false;
+
+export function setApiSessionAuthenticated(authenticated: boolean): void {
+  sessionAuthenticated = authenticated;
+}
 
 function isAccessTokenExpired(error: unknown): error is ApiError {
   return (
     error instanceof ApiError &&
     error.status === 401 &&
-    (error.code === 'ACCESS_TOKEN_EXPIRED' || error.code === 'ACCESS_TOKEN_MISSING')
-  );
-}
-
-function isTerminalRefreshError(error: unknown): error is ApiError {
-  return (
-    error instanceof ApiError &&
-    ((error.status === 401 &&
-      ['INVALID_REFRESH_TOKEN', 'REFRESH_TOKEN_EXPIRED', 'REFRESH_TOKEN_REUSED', 'REFRESH_TOKEN_MISSING', 'USER_NOT_FOUND'].includes(error.code)) ||
-      (error.status === 403 && ['ACCOUNT_LOCKED', 'ACCOUNT_NOT_VERIFIED'].includes(error.code)))
+    error.code === 'ACCESS_TOKEN_EXPIRED'
   );
 }
 
 function notifyExpiredSession(error: unknown): void {
+  sessionAuthenticated = false;
   window.dispatchEvent(new CustomEvent('auth:expired', { detail: error }));
 }
 
@@ -62,36 +57,11 @@ async function refreshSession(): Promise<void> {
   await refreshPromise;
 }
 
-async function getCsrfToken(): Promise<string> {
-  if (csrfToken) return csrfToken;
-
-  if (!csrfTokenPromise) {
-    csrfTokenPromise = rawRequest<{ token?: string }>('GET', '/auth/csrf')
-      .then((response) => {
-        if (!response.token) {
-          throw new ApiError('CSRF_TOKEN_MISSING', 500, 'Không thể khởi tạo mã bảo vệ yêu cầu');
-        }
-        csrfToken = response.token;
-        return response.token;
-      })
-      .finally(() => {
-        csrfTokenPromise = null;
-      });
-  }
-
-  return csrfTokenPromise;
-}
-
 async function rawRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
-  const methodRequiresCsrf = !['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method.toUpperCase());
-  const requestCsrfToken = methodRequiresCsrf ? await getCsrfToken() : null;
   const headers: Record<string, string> = {};
   if (!isFormData && body !== undefined) {
     headers['Content-Type'] = 'application/json';
-  }
-  if (requestCsrfToken) {
-    headers['X-XSRF-TOKEN'] = requestCsrfToken;
   }
 
   let response: Response;
@@ -163,6 +133,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     return await rawRequest<T>(method, path, body);
   } catch (error) {
     const canRefresh =
+      sessionAuthenticated &&
       isAccessTokenExpired(error) &&
       !NO_REFRESH_PATHS.some((noRefreshPath) => path.startsWith(noRefreshPath));
 
@@ -173,9 +144,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     try {
       await refreshSession();
     } catch (refreshError) {
-      if (isTerminalRefreshError(refreshError)) {
-        notifyExpiredSession(refreshError);
-      }
+      notifyExpiredSession(refreshError);
       throw refreshError;
     }
 

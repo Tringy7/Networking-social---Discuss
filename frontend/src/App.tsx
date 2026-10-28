@@ -8,23 +8,32 @@ import { useCommunityStore } from './store/useCommunityStore';
 import { usePostStore } from './store/usePostStore';
 
 export default function App() {
-  const hydrate = useAuthStore((state) => state.hydrate);
   const clearSession = useAuthStore((state) => state.clearSession);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const addToast = useToastStore((state) => state.addToast);
   const hydrateCommunities = useCommunityStore((state) => state.hydrate);
   const hydratePosts = usePostStore((state) => state.hydrate);
 
   React.useEffect(() => {
-    let active = true;
+    const handleExpiredSession = (event: Event) => {
+      clearSession();
+      const detail = (event as CustomEvent<unknown>).detail;
+      addToast(
+        detail instanceof Error ? detail.message : 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+        'warning'
+      );
+    };
 
-    hydrate().catch((error: unknown) => {
-      if (active) {
-        addToast(
-          error instanceof Error ? error.message : 'Không thể khôi phục phiên đăng nhập.',
-          'error'
-        );
-      }
-    });
+    window.addEventListener('auth:expired', handleExpiredSession);
+    return () => {
+      window.removeEventListener('auth:expired', handleExpiredSession);
+    };
+  }, [addToast, clearSession]);
+
+  React.useEffect(() => {
+    if (!isAuthenticated) return;
+
+    let active = true;
     hydrateCommunities().catch((error: unknown) => {
       if (active) {
         addToast(
@@ -39,21 +48,10 @@ export default function App() {
       }
     });
 
-    const handleExpiredSession = (event: Event) => {
-      clearSession();
-      const detail = (event as CustomEvent<unknown>).detail;
-      addToast(
-        detail instanceof Error ? detail.message : 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
-        'warning'
-      );
-    };
-
-    window.addEventListener('auth:expired', handleExpiredSession);
     return () => {
       active = false;
-      window.removeEventListener('auth:expired', handleExpiredSession);
     };
-  }, [addToast, clearSession, hydrate, hydrateCommunities, hydratePosts]);
+  }, [addToast, hydrateCommunities, hydratePosts, isAuthenticated]);
 
   return (
     <BrowserRouter>

@@ -21,11 +21,11 @@ export const HomePage: React.FC = () => {
   const [displayCount, setDisplayCount] = useState(6);
 
   useEffect(() => {
-    if (currentTab === 'for-you') return;
+    if (!isAuthenticated || currentTab === 'for-you') return;
     hydrate(currentTab).catch((error: unknown) => {
       addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error');
     });
-  }, [addToast, currentTab, hydrate]);
+  }, [addToast, currentTab, hydrate, isAuthenticated]);
 
   // Sorting based on tab
   const sortedPosts = [...posts].sort((a, b) => {

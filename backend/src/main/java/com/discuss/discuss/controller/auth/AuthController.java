@@ -37,11 +37,6 @@ public class AuthController {
     public record ResendOtpRequestDTO(@NotBlank @Email String email) {}
     public record RequestEmailDTO(@NotBlank @Email String email) {}
 
-    @GetMapping("/csrf")
-    public Map<String, String> csrfToken(CsrfToken csrfToken) {
-        return Map.of("token", csrfToken.getToken());
-    }
-
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
         AuthResponseDTO result = localAuthService.register(request);
