@@ -1,6 +1,7 @@
 package com.discuss.discuss.controller.community;
 
 import com.discuss.discuss.dto.common.ApiResponse;
+import com.discuss.discuss.dto.community.RequestBanDTO;
 import com.discuss.discuss.service.community.CommunityMemberService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -86,5 +87,15 @@ public class CommunityMemberController {
     ) {
         communityMemberService.transferOwnership(name, request.username());
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{name}/bans")
+    public ResponseEntity<ApiResponse> bans(
+            @PathVariable String name,
+            @Valid @RequestBody RequestBanDTO requestBanDTO
+    ) {
+        communityMemberService.banMember(name, requestBanDTO);
+
+        return ResponseEntity.ok(new ApiResponse("Member banned successfully"));
     }
 }

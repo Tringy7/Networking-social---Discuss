@@ -2,6 +2,8 @@ package com.discuss.discuss.service.community;
 
 import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.entity.CommunityMember;
+import com.discuss.discuss.entity.BanHistory;
+import com.discuss.discuss.dto.community.RequestBanDTO;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.CommunityRole;
 import com.discuss.discuss.enums.CommunityStatus;
@@ -11,6 +13,7 @@ import com.discuss.discuss.exception.community.CommunityErrorCode;
 import com.discuss.discuss.exception.community.CommunityException;
 import com.discuss.discuss.repository.CommunityMemberRepository;
 import com.discuss.discuss.repository.CommunityRepository;
+import com.discuss.discuss.repository.BanHistoryRepository;
 import com.discuss.discuss.service.community.support.CommunityNameNormalizer;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,8 @@ public class CommunityMemberService {
     private final CommunityRepository communityRepository;
     private final CommunityNameNormalizer nameNormalizer;
     private final UserService userService;
+    private final CommunityAuthorizationService authorizationService;
+    private final BanHistoryRepository banHistoryRepository;
 
     // Creates the initial Owner membership when a community is created.
     @Transactional
@@ -198,6 +203,47 @@ public class CommunityMemberService {
         member.setStatus(MembershipStatus.KICKED);
         member.setLeftAt(LocalDateTime.now());
         memberRepository.save(member);
+    }
+
+    // Bans an active member and records who initiated the ban and why.
+    @Transactional
+    public void banMember(String communityName, RequestBanDTO request) {
+        User moderator = userService.getCurrentUser();
+        Community community = getCommunityByNameAndStatusActive(communityName);
+        authorizationService.requireModeratorOrOwner(community, moderator);
+
+        User targetUser = userService.getUserActive(request.getUsername().trim());
+        CommunityMember targetMembership = getExistingMembership(community, targetUser);
+        validateActiveMembership(targetMembership);
+
+        if (targetMembership.getRole() == CommunityRole.OWNER) {
+            throw new CommunityException(
+                    CommunityErrorCode.FORBIDDEN,
+                    "The community owner cannot be banned"
+            );
+        }
+
+        CommunityMember moderatorMembership = getExistingMembership(community, moderator);
+        if (moderatorMembership.getRole() != CommunityRole.OWNER
+                && targetMembership.getRole() == CommunityRole.MODERATOR) {
+            throw new CommunityException(
+                    CommunityErrorCode.FORBIDDEN,
+                    "Only the community owner can ban a moderator"
+            );
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        targetMembership.setStatus(MembershipStatus.BANNED);
+        targetMembership.setLeftAt(now);
+        memberRepository.save(targetMembership);
+
+        banHistoryRepository.save(BanHistory.builder()
+                .community(community)
+                .user(targetUser)
+                .moderator(moderator)
+                .reason(request.getReason() == null ? null : request.getReason().trim())
+                .startedAt(now)
+                .build());
     }
 
     // Transfers ownership to another ACTIVE member; only the current Owner can do this.
