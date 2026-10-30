@@ -28,7 +28,7 @@ export const Avatar: React.FC<AvatarProps> = ({
     '2xl': 'w-28 h-28 text-3xl font-bold',
   };
 
-  const rounded = shape === 'circle' ? 'rounded-full' : 'rounded-2xl';
+  const rounded = shape === 'circle' ? 'rounded-full' : 'rounded-[var(--radius-card)]';
   const initials = alt
     ? alt
         .split(' ')
@@ -50,15 +50,15 @@ export const Avatar: React.FC<AvatarProps> = ({
         />
       ) : (
         <div
-          className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-[#FF5700]/30 to-[#FF5700]/10 border border-[#FF5700]/30 text-[#FF5700] font-bold ${rounded}`}
+          className={`w-full h-full flex items-center justify-center bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] font-semibold ${rounded}`}
         >
           {initials}
         </div>
       )}
       {isOnline !== undefined && (
         <span
-          className={`absolute bottom-0 right-0 block w-2.5 h-2.5 rounded-full ring-2 ring-[#0D0F10] ${
-            isOnline ? 'bg-[#22C55E]' : 'bg-[#70747C]'
+          className={`absolute bottom-0 right-0 block w-2.5 h-2.5 rounded-full ring-2 ring-[var(--bg-main)] ${
+            isOnline ? 'bg-[var(--color-success)]' : 'bg-[var(--text-muted)]'
           }`}
         />
       )}

@@ -65,16 +65,16 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="space-y-6 text-left">
       <div className="space-y-1.5">
-        <h2 className="text-2xl sm:text-3xl font-black text-[#F5F5F5] tracking-tight">
-          Chào mừng trở lại!
-        </h2>
-        <p className="text-xs sm:text-sm text-[#9A9DA3]">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--text-primary)]">
+          Đăng nhập DISCUSS
+        </h1>
+        <p className="text-sm text-[var(--text-secondary)]">
           Đăng nhập để tiếp tục tham gia cộng đồng thảo luận.
         </p>
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/30 text-xs text-[#EF4444] font-medium">
+        <div role="alert" className="p-3 rounded-xl bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 text-sm text-[var(--color-danger)] font-medium">
           {error}
         </div>
       )}
@@ -120,7 +120,8 @@ export const LoginPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="text-[#70747C] hover:text-[#F5F5F5] transition-colors cursor-pointer"
+                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -132,7 +133,7 @@ export const LoginPage: React.FC = () => {
         </div>
 
         <div className="flex justify-end text-xs pt-1">
-          <Link to="/forgot-password" className="text-[#FF5700] hover:underline font-medium">
+          <Link to="/forgot-password" className="text-[var(--color-orange-ink)] hover:underline font-medium">
             Quên mật khẩu?
           </Link>
         </div>
@@ -143,28 +144,21 @@ export const LoginPage: React.FC = () => {
           variant="primary"
           size="lg"
           isLoading={isLoading}
-          className="w-full text-sm font-bold shadow-lg shadow-[#FF5700]/25"
+          className="w-full text-sm font-semibold"
         >
           Đăng nhập vào DISCUSS
         </Button>
       </form>
 
       {/* Divider */}
-      <div className="relative flex items-center justify-center my-4">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-[var(--border-color)]" />
-        </div>
-        <span className="relative bg-[var(--bg-main)] px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-          Hoặc tiếp tục với
-        </span>
-      </div>
+      <p className="py-1 text-center text-xs font-medium text-[var(--text-muted)]">Hoặc tiếp tục với</p>
 
       <GoogleSignInButton disabled={isLoading} onCredential={handleGoogleSignIn} />
 
       {/* Link to Register */}
-      <div className="text-center text-xs text-[#9A9DA3] pt-2">
+      <div className="text-center text-sm text-[var(--text-secondary)] pt-2">
         Chưa có tài khoản?{' '}
-        <Link to="/register" className="text-[#FF5700] hover:underline font-bold">
+        <Link to="/register" className="text-[var(--color-orange-ink)] hover:underline font-semibold">
           Đăng ký miễn phí ngay
         </Link>
       </div>

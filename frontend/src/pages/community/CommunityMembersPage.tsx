@@ -19,22 +19,60 @@ export const CommunityMembersPage: React.FC = () => {
 
   const [searchMember, setSearchMember] = useState('');
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'OWNER' | 'MODERATOR' | 'MEMBER'>('ALL');
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     if (!communityName) return;
+    let active = true;
+    setIsLoading(true);
+    setLoadFailed(false);
     hydrateCommunity(communityName).catch((error: unknown) => {
+      if (!active) return;
+      setLoadFailed(true);
       addToast(error instanceof Error ? error.message : 'Không thể tải cộng đồng.', 'error');
     });
-    hydrateMembers(communityName).catch((error: unknown) => {
-      addToast(error instanceof Error ? error.message : 'Không thể tải danh sách thành viên.', 'error');
-    });
+    hydrateMembers(communityName)
+      .catch((error: unknown) => {
+        if (!active) return;
+        setLoadFailed(true);
+        addToast(error instanceof Error ? error.message : 'Không thể tải danh sách thành viên.', 'error');
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => { active = false; };
   }, [addToast, communityName, hydrateMembers, hydrateCommunity]);
 
   const community = communities.find((c) => c.name === communityName);
   const memberList = members[communityName || ''] || members['lap-trinh-viet-nam'] || [];
 
   if (!community) {
-    return <div className="p-12 text-center text-xs">Cộng đồng không tồn tại.</div>;
+    return (
+      <section className="mx-auto flex min-h-64 max-w-xl flex-col items-center justify-center gap-4 px-4 py-16 text-center" aria-live="polite">
+        <h1 className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">
+          {loadFailed ? 'Không tải được danh sách thành viên' : isLoading ? 'Đang tải cộng đồng' : 'Không tìm thấy cộng đồng'}
+        </h1>
+        <p className="text-sm leading-6 text-[var(--text-secondary)]">
+          {loadFailed ? 'Hãy thử tải lại hoặc quay về trang cộng đồng.' : `community/${communityName || ''}`}
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          {loadFailed && communityName && <Button variant="secondary" size="sm" onClick={() => {
+            setIsLoading(true);
+            setLoadFailed(false);
+            Promise.all([hydrateCommunity(communityName), hydrateMembers(communityName)])
+              .catch((error: unknown) => {
+                setLoadFailed(true);
+                addToast(error instanceof Error ? error.message : 'Không thể tải danh sách thành viên.', 'error');
+              })
+              .finally(() => setIsLoading(false));
+          }}>Thử lại</Button>}
+          <Link to={communityName ? `/community/${communityName}` : '/explore'}>
+            <Button variant="primary" size="sm">Quay lại cộng đồng</Button>
+          </Link>
+        </div>
+      </section>
+    );
   }
 
   const isOwner = community.currentUserRole === 'OWNER' || activeRole === 'ADMIN';
@@ -90,16 +128,18 @@ export const CommunityMembersPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(`/community/${community.name}`)}
-            className="p-2 rounded-xl bg-[#191A1C] border border-[#303235] text-[#9A9DA3] hover:text-[#F5F5F5] transition-colors"
+            aria-label="Quay lại cộng đồng"
+            className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--bg-surface)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-[#F5F5F5] flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#FF5700]" />
-              <span>Thành viên cộng đồng community/{community.name}</span>
+            <p className="text-sm font-medium text-[var(--text-muted)]">community/{community.name}</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+              <Users className="w-5 h-5 text-[var(--color-orange-ink)]" />
+              <span>Thành viên</span>
             </h1>
-            <p className="text-xs text-[#9A9DA3] mt-0.5">
+            <p className="text-sm text-[var(--text-secondary)] mt-1">
               Danh sách thành viên, ban kiểm duyệt và quản lý quyền hạn
             </p>
           </div>
@@ -107,27 +147,27 @@ export const CommunityMembersPage: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex-1 w-full">
           <Input
             value={searchMember}
             onChange={(e) => setSearchMember(e.target.value)}
             leftIcon={<Search className="w-4 h-4" />}
             placeholder="Tìm theo tên hiển thị hoặc @username..."
-            className="bg-[#191A1C]"
+            className="bg-[var(--bg-main)]"
           />
         </div>
 
         {/* Role filter chips */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex max-w-full shrink-0 items-center gap-1.5 overflow-x-auto pb-1">
           {(['ALL', 'OWNER', 'MODERATOR', 'MEMBER'] as const).map((r) => (
             <button
               key={r}
               onClick={() => setRoleFilter(r)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                 roleFilter === r
-                  ? 'bg-[#FF5700]/15 text-[#FF5700] border border-[#FF5700]/30 font-bold'
-                  : 'bg-[#191A1C] border border-[#303235] text-[#9A9DA3] hover:text-[#F5F5F5]'
+                  ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] font-semibold'
+                  : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
               }`}
             >
               {r === 'ALL' ? 'Tất cả' : r === 'OWNER' ? 'Chủ nhóm' : r === 'MODERATOR' ? 'Mod' : 'Thành viên'}
@@ -137,12 +177,28 @@ export const CommunityMembersPage: React.FC = () => {
       </div>
 
       {/* Members Table / List */}
-      <div className="bg-[#191A1C] border border-[#303235] rounded-3xl overflow-hidden shadow-xl">
-        <div className="divide-y divide-[#303235]/60">
-          {filteredMembers.map((member) => (
+      <div className="overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
+        <div className="divide-y divide-[var(--border-color)]">
+          {isLoading ? (
+            <div role="status" className="px-5 py-12 text-center text-sm text-[var(--text-secondary)]">Đang tải danh sách thành viên…</div>
+          ) : loadFailed ? (
+            <div role="alert" className="flex flex-col items-center gap-3 px-5 py-12 text-center">
+              <p className="text-sm text-[var(--text-secondary)]">Không thể tải danh sách thành viên.</p>
+              <Button variant="secondary" size="sm" onClick={() => {
+                setIsLoading(true);
+                setLoadFailed(false);
+                Promise.all([hydrateCommunity(community.name), hydrateMembers(community.name)])
+                  .catch((error: unknown) => {
+                    setLoadFailed(true);
+                    addToast(error instanceof Error ? error.message : 'Không thể tải danh sách thành viên.', 'error');
+                  })
+                  .finally(() => setIsLoading(false));
+              }}>Thử lại</Button>
+            </div>
+          ) : filteredMembers.map((member) => (
             <div
               key={member.id}
-              className="p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-[#1E2023] transition-colors"
+              className="flex flex-col gap-3 p-4 transition-colors hover:bg-[var(--bg-hover)] sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
             >
               <div className="flex items-center gap-3.5">
                 <Avatar src={member.avatarUrl} alt={member.displayName} size="md" />
@@ -150,18 +206,18 @@ export const CommunityMembersPage: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Link
                       to={`/user/${member.username}`}
-                      className="text-xs sm:text-sm font-bold text-[#F5F5F5] hover:text-[#FF5700] transition-colors"
+                      className="text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange-ink)] transition-colors"
                     >
                       {member.displayName}
                     </Link>
                     <Badge role={member.role} size="sm" />
                     {member.status === 'BANNED' && (
-                      <span className="text-[10px] text-[#EF4444] bg-[#EF4444]/15 px-1.5 py-0.5 rounded font-bold">
+                      <span className="rounded-md bg-[var(--color-danger)]/10 px-2 py-1 text-xs font-semibold text-[var(--color-danger)]">
                         ĐÃ BỊ CHẶN
                       </span>
                     )}
                   </div>
-                  <div className="text-[11px] text-[#70747C]">
+                  <div className="text-xs text-[var(--text-muted)]">
                     @{member.username} · Tham gia {member.joinedAt}
                   </div>
                 </div>
@@ -169,13 +225,13 @@ export const CommunityMembersPage: React.FC = () => {
 
               {/* Owner actions */}
               {isOwner && member.role !== 'OWNER' && (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                   {member.role === 'MEMBER' ? (
                     <Button
                       variant="secondary"
                       size="sm"
                       onClick={() => handlePromoteMod(member.username)}
-                      leftIcon={<ShieldPlus className="w-3.5 h-3.5 text-[#3B82F6]" />}
+                      leftIcon={<ShieldPlus className="w-3.5 h-3.5 text-[var(--color-orange-ink)]" />}
                     >
                       Bổ nhiệm Mod
                     </Button>
@@ -184,7 +240,7 @@ export const CommunityMembersPage: React.FC = () => {
                       variant="secondary"
                       size="sm"
                       onClick={() => handleDemoteMod(member.username)}
-                      leftIcon={<ShieldMinus className="w-3.5 h-3.5 text-[#F59E0B]" />}
+                      leftIcon={<ShieldMinus className="w-3.5 h-3.5 text-[var(--color-warning)]" />}
                     >
                       Gỡ Mod
                     </Button>
@@ -195,7 +251,7 @@ export const CommunityMembersPage: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleKickMember(member.username)}
-                      className="text-[#EF4444] hover:bg-[#EF4444]/10"
+                      className="text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10"
                       title="Xóa khỏi cộng đồng"
                     >
                       <UserX className="w-4 h-4" />
@@ -207,9 +263,9 @@ export const CommunityMembersPage: React.FC = () => {
             </div>
           ))}
 
-          {filteredMembers.length === 0 && (
-            <div className="py-16 text-center text-xs text-[#70747C]">
-              Không tìm thấy thành viên nào phù hợp với tìm kiếm.
+          {!isLoading && !loadFailed && filteredMembers.length === 0 && (
+            <div className="py-16 px-5 text-center text-sm text-[var(--text-secondary)]">
+              {searchMember || roleFilter !== 'ALL' ? 'Không tìm thấy thành viên phù hợp với bộ lọc.' : 'Chưa có thành viên để hiển thị.'}
             </div>
           )}
         </div>

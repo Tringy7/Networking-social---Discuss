@@ -53,7 +53,7 @@ export const AppearanceSettingsPage: React.FC = () => {
 
       {/* 1. Theme Selection */}
       <div className="space-y-3">
-        <label className="text-xs font-bold text-[#F1F3F7] uppercase tracking-wider">
+        <label className="text-sm font-semibold text-[var(--text-secondary)]">
           1. Chế độ màu nền (Theme)
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -117,7 +117,7 @@ export const AppearanceSettingsPage: React.FC = () => {
             }`}
           >
             <div className="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E5E7EB] text-[var(--color-orange)]">
-              <Sun className="w-5 h-5 text-[#F59E0B]" />
+              <Sun className="w-5 h-5 text-[var(--color-warning)]" />
             </div>
             <div className="flex-1">
               <div className="flex items-center justify-between">
@@ -137,7 +137,7 @@ export const AppearanceSettingsPage: React.FC = () => {
       {/* 2. Harmonious Accent Color Presets */}
       <div className="space-y-3 pt-3 border-t border-[#262C3A]">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-[#F1F3F7] uppercase tracking-wider flex items-center gap-2">
+          <label className="text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[var(--color-orange)]" />
             <span>2. Bộ phối màu chủ đạo hài hòa (Color Palette)</span>
           </label>
@@ -183,8 +183,8 @@ export const AppearanceSettingsPage: React.FC = () => {
 
       {/* 3. Density */}
       <div className="space-y-3 pt-2 border-t border-[#262C3A]">
-        <label className="text-xs font-bold text-[#F1F3F7] uppercase tracking-wider flex items-center gap-2">
-          <Layout className="w-4 h-4 text-[#3B82F6]" />
+        <label className="text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-2">
+          <Layout className="w-4 h-4 text-[var(--color-info)]" />
           <span>3. Mật độ hiển thị khoảng cách (Density)</span>
         </label>
         <div className="grid grid-cols-2 gap-4">
@@ -218,8 +218,8 @@ export const AppearanceSettingsPage: React.FC = () => {
 
       {/* 4. Font size */}
       <div className="space-y-3 pt-2 border-t border-[#262C3A]">
-        <label className="text-xs font-bold text-[#F1F3F7] uppercase tracking-wider flex items-center gap-2">
-          <Type className="w-4 h-4 text-[#22C55E]" />
+        <label className="text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-2">
+          <Type className="w-4 h-4 text-[var(--color-success)]" />
           <span>4. Cỡ chữ văn bản (Font Size)</span>
         </label>
         <div className="grid grid-cols-3 gap-3">
@@ -244,7 +244,7 @@ export const AppearanceSettingsPage: React.FC = () => {
 
       {/* 5. Sidebar Display Preference */}
       <div className="space-y-3 pt-2 border-t border-[#262C3A]">
-        <label className="text-xs font-bold text-[#F1F3F7] uppercase tracking-wider flex items-center gap-2">
+        <label className="text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-2">
           <Layout className="w-4 h-4 text-[var(--color-orange)]" />
           <span>5. Trạng thái thanh điều hướng bên trái (Sidebar)</span>
         </label>
@@ -280,7 +280,7 @@ export const AppearanceSettingsPage: React.FC = () => {
 
       {/* 5. Live preview box */}
       <div className="p-4 rounded-2xl bg-[#12151B] border border-[#262C3A] space-y-2">
-        <span className="text-[11px] font-bold text-[#6C7482] uppercase tracking-wider block">
+        <span className="text-sm font-semibold text-[var(--text-secondary)] block">
           Xem trước giao diện thời gian thực (Live Preview)
         </span>
         <div className="p-4 rounded-xl bg-[#161922] border border-[#262C3A] space-y-2.5">

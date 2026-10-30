@@ -75,13 +75,13 @@ export const ForgotPasswordPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left">
-      <div className="w-12 h-12 rounded-2xl bg-[#FF5700]/15 border border-[#FF5700]/30 flex items-center justify-center text-[#FF5700]">
+      <div className="w-11 h-11 rounded-full bg-[var(--color-orange-soft)] flex items-center justify-center text-[var(--color-orange-ink)]">
         <KeyRound className="w-6 h-6" />
       </div>
 
       <div className="space-y-1.5">
-        <h2 className="text-2xl font-black text-[#F5F5F5] tracking-tight">Quên mật khẩu?</h2>
-        <p className="text-xs sm:text-sm text-[#9A9DA3]">
+        <h1 className="text-2xl font-semibold text-[var(--text-primary)] tracking-tight">Quên mật khẩu?</h1>
+        <p className="text-sm leading-6 text-[var(--text-secondary)]">
           {step === 'email'
             ? 'Nhập email đăng ký để nhận mã xác thực khôi phục mật khẩu.'
             : step === 'verify'
@@ -91,14 +91,14 @@ export const ForgotPasswordPage: React.FC = () => {
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/30 text-xs text-[#EF4444] font-medium">
+        <div role="alert" className="p-3 rounded-xl bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 text-sm text-[var(--color-danger)] font-medium">
           {error}
         </div>
       )}
 
       {step === 'complete' ? (
-        <div className="p-4 rounded-2xl bg-[#22C55E]/15 border border-[#22C55E]/30 space-y-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#22C55E]">
+        <div className="p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)] space-y-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-success)]">
             <CheckCircle2 className="w-4 h-4" />
             <span>Đã xác thực email</span>
           </div>
@@ -120,12 +120,12 @@ export const ForgotPasswordPage: React.FC = () => {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               leftIcon={<Mail className="w-4 h-4" />}
-              placeholder="name@example.com"
+              placeholder="linh.nguyen@gmail.com"
               required
             />
           ) : (
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-[#9A9DA3]">
+              <label className="block text-sm font-semibold text-[var(--text-secondary)]">
                 Mã xác thực OTP
               </label>
               <div className="flex justify-between gap-2">
@@ -142,7 +142,7 @@ export const ForgotPasswordPage: React.FC = () => {
                     onKeyDown={(event) => handleDigitKeyDown(index, event)}
                     onPaste={handleCodePaste}
                     aria-label={`Chữ số OTP thứ ${index + 1}`}
-                    className="w-11 sm:w-13 h-13 text-center text-lg font-mono font-bold bg-[#191A1C] border border-[#303235] focus:border-[#FF5700] rounded-xl text-[#F5F5F5] outline-none transition-all"
+                    className="h-12 w-11 rounded-lg border border-[var(--border-color)] bg-[var(--bg-main)] text-center text-lg font-code font-semibold text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] sm:w-12"
                     required
                   />
                 ))}
@@ -155,17 +155,17 @@ export const ForgotPasswordPage: React.FC = () => {
             variant="primary"
             size="lg"
             isLoading={isLoading}
-            className="w-full text-sm font-bold shadow-lg shadow-[#FF5700]/25"
+            className="w-full text-sm font-semibold"
           >
             {step === 'email' ? 'Gửi mã xác thực' : 'Xác thực email'}
           </Button>
         </form>
       )}
 
-      <div className="pt-4 border-t border-[#303235]">
+      <div className="pt-2">
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-[#9A9DA3] hover:text-[#F5F5F5] transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Quay lại trang Đăng nhập</span>

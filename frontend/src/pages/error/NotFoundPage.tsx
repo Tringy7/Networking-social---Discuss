@@ -12,7 +12,7 @@ export const NotFoundPage: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          <span className="text-xs font-mono font-bold text-[#FF5700] uppercase tracking-wider">
+          <span className="text-sm font-semibold text-[var(--color-orange-ink)]">
             Lỗi 404 · Page Not Found
           </span>
           <h1 className="text-2xl font-black text-[#F5F5F5]">Trang không tồn tại</h1>

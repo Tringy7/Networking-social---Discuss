@@ -6,6 +6,7 @@ interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   onClick?: () => void;
+  compactOnMobile?: boolean;
 }
 
 export const Logo: React.FC<LogoProps> = ({
@@ -13,6 +14,7 @@ export const Logo: React.FC<LogoProps> = ({
   size = 'md',
   className = '',
   onClick,
+  compactOnMobile = false,
 }) => {
   const iconSizes = {
     sm: 'w-7 h-7 text-sm font-black',
@@ -30,6 +32,7 @@ export const Logo: React.FC<LogoProps> = ({
     <Link
       to="/"
       onClick={onClick}
+      aria-label="DISCUSS, về trang chủ"
       className={`inline-flex items-center gap-2.5 group select-none whitespace-nowrap ${className}`}
     >
       <div
@@ -37,7 +40,7 @@ export const Logo: React.FC<LogoProps> = ({
       >
         <span>D</span>
       </div>
-      <div className="flex flex-col text-left">
+      <div className={`${compactOnMobile ? 'hidden sm:flex' : 'flex'} flex-col text-left`}>
         <div className={`tracking-tight text-white flex items-center ${textSizes[size]}`}>
           <span>DISCUSS</span>
           <span className="text-[var(--color-orange)] ml-0.5">.</span>

@@ -282,7 +282,7 @@ export const PostComposerModal: React.FC = () => {
         <div className="space-y-4">
         {/* 1. Community Selection */}
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block">
+          <label className="text-sm font-semibold text-[var(--text-secondary)] block">
             Chọn không gian cộng đồng
           </label>
           <div className="relative">
@@ -355,7 +355,7 @@ export const PostComposerModal: React.FC = () => {
         {/* 4. Tab Content */}
         {/* Main Content Area */}
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block">
+          <label className="text-sm font-semibold text-[var(--text-secondary)] block">
             Nội dung chi tiết
           </label>
           <textarea
@@ -443,12 +443,12 @@ export const PostComposerModal: React.FC = () => {
                 )}
               </select>
             </div>
-            <textarea
+            <textarea data-ui="code-editor"
               rows={4}
               value={codeSnippet}
               onChange={(e) => setCodeSnippet(e.target.value)}
               placeholder="// Dán đoạn mã hoặc câu lệnh của bạn tại đây..."
-              className="w-full font-mono text-xs bg-[var(--bg-surface)] border border-[var(--border-color)] focus:border-[var(--color-orange)] rounded-lg p-2.5 text-[var(--text-primary)] outline-none"
+              className="w-full font-code text-xs bg-[var(--bg-surface)] border border-[var(--border-color)] focus:border-[var(--color-orange)] rounded-lg p-2.5 text-[var(--text-primary)] outline-none"
             />
           </div>
         )}
@@ -641,7 +641,7 @@ export const PostComposerModal: React.FC = () => {
           />
         </label>
 
-        <div className="flex justify-end gap-2 border-t border-[var(--border-color)] pt-4">
+        <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="ghost" size="sm" onClick={() => setIsImageEditorOpen(false)}>
             Hủy
           </Button>

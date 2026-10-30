@@ -29,29 +29,30 @@ export const AdminLayout: React.FC = () => {
     { to: '/admin', end: true, label: 'Tổng quan hệ thống', icon: <LayoutDashboard className="w-4 h-4" /> },
     { to: '/admin/users', end: false, label: 'Quản lý người dùng', icon: <Users className="w-4 h-4" /> },
     { to: '/admin/communities', end: false, label: 'Quản lý cộng đồng', icon: <FolderKanban className="w-4 h-4" /> },
-    { to: '/admin/reports', end: false, label: 'Báo cáo vi phạm', icon: <ShieldAlert className="w-4 h-4 text-[#EF4444]" /> },
+    { to: '/admin/reports', end: false, label: 'Báo cáo vi phạm', icon: <ShieldAlert className="w-4 h-4 text-[var(--color-danger)]" /> },
   ];
 
   return (
     <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)] flex flex-col antialiased transition-colors duration-200">
       {/* Top Admin Header */}
-      <header className="h-16 bg-[var(--bg-nav)] border-b border-[var(--border-color)] px-6 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-4">
-          <Logo size="sm" />
+      <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-2 border-b border-[var(--border-color)] bg-[var(--bg-nav)] px-3 sm:px-6">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+          <Logo size="sm" compactOnMobile />
           <div className="h-4 w-px bg-[var(--border-color)]" />
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] text-xs font-bold">
-            <Shield className="w-3.5 h-3.5" />
-            <span>Admin Center</span>
+          <div className="flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/10 px-2 py-1 text-xs font-semibold text-[var(--color-danger)]">
+            <Shield className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Admin Center</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4">
           <Link
             to="/"
-            className="flex items-center gap-1.5 text-xs font-semibold text-[#959DAA] hover:text-[var(--text-primary)] transition-colors"
+            className="flex min-h-10 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+            aria-label="Quay lại trang chính"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Quay lại trang chính</span>
+            <span className="hidden sm:inline">Quay lại trang chính</span>
           </Link>
           {user && <Avatar src={user.avatarUrl} alt={user.displayName} size="sm" />}
         </div>
@@ -59,7 +60,7 @@ export const AdminLayout: React.FC = () => {
 
       <div className="flex-1 flex max-w-screen-2xl w-full mx-auto">
         {/* Admin Sidebar */}
-        <aside className="w-64 bg-[var(--bg-sidebar)] border-r border-[var(--border-color)] p-4 shrink-0 hidden md:block text-left space-y-6">
+        <aside aria-label="Điều hướng quản trị" className="hidden w-64 shrink-0 space-y-6 border-r border-[var(--border-color)] bg-[var(--bg-sidebar)] p-4 text-left md:block">
           <div className="space-y-1">
             <div className="text-[11px] font-bold text-[#70747C] uppercase px-3 mb-2 tracking-wider">
               Trung tâm kiểm soát
@@ -72,7 +73,7 @@ export const AdminLayout: React.FC = () => {
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors ${
                     isActive
-                      ? 'bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/30 font-bold'
+                      ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)] border border-[var(--color-danger)]/30 font-bold'
                       : 'text-[#9A9DA3] hover:text-[#F5F5F5] hover:bg-[#191A1C]'
                   }`
                 }
@@ -90,9 +91,24 @@ export const AdminLayout: React.FC = () => {
         </aside>
 
         {/* Content */}
-        <main className="flex-1 min-w-0 p-6 sm:p-8">
-          <Outlet />
-        </main>
+        <div className="min-w-0 flex-1">
+          <nav aria-label="Điều hướng quản trị" className="flex gap-1 overflow-x-auto border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] px-3 py-2 md:hidden">
+            {navLinks.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) => `flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors ${isActive ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'}`}
+              >
+                <span className="shrink-0">{item.icon}</span>
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+          <main id="main-content" className="min-w-0 p-4 sm:p-6 lg:p-8">
+            <Outlet />
+          </main>
+        </div>
       </div>
 
     </div>

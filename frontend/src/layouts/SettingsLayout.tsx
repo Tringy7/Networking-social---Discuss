@@ -13,27 +13,27 @@ export const SettingsLayout: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 text-left">
+    <div className="max-w-6xl mx-auto space-y-7 text-left">
       <div>
-        <h1 className="text-2xl font-bold text-[#F1F3F7]">Cài đặt hệ thống</h1>
-        <p className="text-xs text-[#959DAA] mt-1">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--text-primary)]">Cài đặt</h1>
+        <p className="text-sm text-[var(--text-secondary)] mt-1.5">
           Quản lý thông tin hồ sơ, tùy chỉnh giao diện, quyền riêng tư và thông báo của bạn.
         </p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6">
+      <div className="flex flex-col gap-4 md:flex-row md:gap-6">
         {/* Settings Sub-Sidebar */}
-        <aside className="w-full md:w-64 shrink-0 space-y-1">
+        <nav aria-label="Các mục cài đặt" className="flex w-full shrink-0 gap-1 overflow-x-auto pb-1 md:block md:w-60 md:space-y-1 md:overflow-visible md:pb-0">
           {tabs.map((tab) => (
             <NavLink
               key={tab.to}
               to={tab.to}
               end={tab.to === '/settings'}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors ${
+                `flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors md:w-full ${
                   isActive
-                    ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange)] border border-[var(--color-orange-border)] font-bold'
-                    : 'text-[#959DAA] hover:text-[#F1F3F7] hover:bg-[#1E232F]'
+                    ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] font-semibold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                 }`
               }
             >
@@ -41,10 +41,10 @@ export const SettingsLayout: React.FC = () => {
               <span>{tab.label}</span>
             </NavLink>
           ))}
-        </aside>
+        </nav>
 
         {/* Settings Content Area */}
-        <div className="flex-1 min-w-0 bg-[#161922] border border-[#262C3A] rounded-2xl p-6 sm:p-8">
+        <div className="min-w-0 flex-1 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 sm:p-6 lg:p-8">
           <Outlet />
         </div>
       </div>

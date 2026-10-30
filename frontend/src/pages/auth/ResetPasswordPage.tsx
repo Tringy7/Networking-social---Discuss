@@ -54,19 +54,19 @@ export const ResetPasswordPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left">
-      <div className="w-12 h-12 rounded-2xl bg-[#FF5700]/15 border border-[#FF5700]/30 flex items-center justify-center text-[#FF5700]">
+      <div className="w-11 h-11 rounded-full bg-[var(--color-orange-soft)] flex items-center justify-center text-[var(--color-orange-ink)]">
         <ShieldCheck className="w-6 h-6" />
       </div>
 
       <div className="space-y-1.5">
-        <h2 className="text-2xl font-black text-[#F5F5F5] tracking-tight">Đặt lại mật khẩu mới</h2>
-        <p className="text-xs sm:text-sm text-[#9A9DA3]">
+        <h1 className="text-2xl font-semibold text-[var(--text-primary)] tracking-tight">Đặt lại mật khẩu</h1>
+        <p className="text-sm text-[var(--text-secondary)]">
           Vui lòng tạo mật khẩu mạnh để bảo vệ tài khoản DISCUSS của bạn.
         </p>
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/30 text-xs text-[#EF4444] font-medium">
+        <div role="alert" className="p-3 rounded-xl bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 text-sm text-[var(--color-danger)] font-medium">
           {error}
         </div>
       )}
@@ -84,8 +84,9 @@ export const ResetPasswordPage: React.FC = () => {
           rightIcon={
             <button
               type="button"
+              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               onClick={() => setShowPassword(!showPassword)}
-              className="text-[#70747C] hover:text-[#F5F5F5] transition-colors cursor-pointer"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -97,23 +98,23 @@ export const ResetPasswordPage: React.FC = () => {
         {/* Strength Indicator */}
         {password && (
           <div className="space-y-1.5">
-            <div className="flex gap-1.5 h-1.5">
+            <div className="flex h-1.5 gap-1.5" role="meter" aria-label="Độ mạnh mật khẩu" aria-valuemin={0} aria-valuemax={4} aria-valuenow={strength}>
               {[1, 2, 3, 4].map((level) => (
                 <div
                   key={level}
-                  className={`flex-1 rounded-full transition-all ${
+                  className={`flex-1 rounded-full transition-colors duration-[var(--duration-fast)] ${
                     strength >= level
                       ? strength <= 1
                         ? 'bg-[#EF4444]'
                         : strength <= 2
                         ? 'bg-[#F59E0B]'
                         : 'bg-[#22C55E]'
-                      : 'bg-[#222426]'
+                      : 'bg-[var(--bg-elevated)]'
                   }`}
                 />
               ))}
             </div>
-            <div className="text-[10px] text-[#70747C]">
+            <div className="text-xs text-[var(--text-muted)]">
               {strength <= 1 ? 'Mật khẩu yếu' : strength <= 2 ? 'Mật khẩu trung bình' : 'Mật khẩu mạnh an toàn'}
             </div>
           </div>
@@ -137,16 +138,16 @@ export const ResetPasswordPage: React.FC = () => {
           variant="primary"
           size="lg"
           isLoading={isLoading}
-          className="w-full text-sm font-bold shadow-lg shadow-[#FF5700]/25 mt-2"
+          className="w-full text-sm font-semibold mt-2"
         >
           Lưu mật khẩu mới
         </Button>
       </form>
 
-      <div className="pt-4 border-t border-[#303235]">
+      <div className="pt-2">
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-[#9A9DA3] hover:text-[#F5F5F5] transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Quay lại trang Đăng nhập</span>

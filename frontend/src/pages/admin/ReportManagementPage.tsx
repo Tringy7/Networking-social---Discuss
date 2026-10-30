@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useReportStore } from '../../store/useReportStore';
 import { useToastStore } from '../../store/useToastStore';
-import { Report, ReportStatus, ReportContentType } from '../../types';
+import { Report } from '../../types';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
-import { ShieldAlert, CheckCircle2, XCircle, Clock, Filter, Eye } from 'lucide-react';
+import { ShieldAlert, CheckCircle2, XCircle, Eye } from 'lucide-react';
 
 export const ReportManagementPage: React.FC = () => {
   const { reports, resolveReport, rejectReport } = useReportStore();
@@ -14,11 +14,23 @@ export const ReportManagementPage: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [resolutionNote, setResolutionNote] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
-    useReportStore.getState().hydrate().catch((error: unknown) => {
-      addToast(error instanceof Error ? error.message : 'Không thể tải báo cáo.', 'error');
-    });
+    let active = true;
+    setIsLoading(true);
+    setLoadFailed(false);
+    useReportStore.getState().hydrate()
+      .catch((error: unknown) => {
+        if (!active) return;
+        setLoadFailed(true);
+        addToast(error instanceof Error ? error.message : 'Không thể tải báo cáo.', 'error');
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => { active = false; };
   }, [addToast]);
 
   const filteredReports = reports.filter((r) => {
@@ -52,11 +64,11 @@ export const ReportManagementPage: React.FC = () => {
   return (
     <div className="space-y-6 text-left pb-16">
       <div>
-        <h1 className="text-2xl font-bold text-[#F5F5F5] flex items-center gap-2">
-          <ShieldAlert className="w-6 h-6 text-[#EF4444]" />
+        <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+          <ShieldAlert className="w-5 h-5 text-[var(--color-danger)]" />
           <span>Quản lý báo cáo vi phạm toàn hệ thống</span>
         </h1>
-        <p className="text-xs text-[#9A9DA3] mt-0.5">
+        <p className="text-sm text-[var(--text-secondary)] mt-1">
           Theo dõi và xử lý các nội dung độc hại, bài viết spam hoặc tài khoản bị khiếu nại
         </p>
       </div>
@@ -66,7 +78,7 @@ export const ReportManagementPage: React.FC = () => {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-[#191A1C] border border-[#303235] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] outline-none cursor-pointer"
+          className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] cursor-pointer"
         >
           <option value="ALL">Mọi trạng thái</option>
           <option value="PENDING">Chờ xử lý (Pending)</option>
@@ -77,7 +89,7 @@ export const ReportManagementPage: React.FC = () => {
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="bg-[#191A1C] border border-[#303235] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] outline-none cursor-pointer"
+          className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] cursor-pointer"
         >
           <option value="ALL">Mọi loại nội dung</option>
           <option value="POST">Bài viết (POST)</option>
@@ -85,16 +97,16 @@ export const ReportManagementPage: React.FC = () => {
           <option value="COMMUNITY">Cộng đồng (COMMUNITY)</option>
         </select>
 
-        <span className="text-xs text-[#70747C] ml-auto">
+        <span className="ml-auto text-sm text-[var(--text-secondary)]">
           {filteredReports.length} báo cáo
         </span>
       </div>
 
       {/* Reports Table */}
-      <div className="bg-[#191A1C] border border-[#303235] rounded-3xl overflow-hidden shadow-xl">
+      <div className="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#141517] border-b border-[#303235] text-[11px] text-[#70747C] uppercase font-bold">
+          <table aria-label="Báo cáo vi phạm" className="w-full min-w-[820px] text-left text-sm">
+            <thead className="bg-[var(--bg-main)] text-xs font-semibold text-[var(--text-secondary)]">
               <tr>
                 <th className="p-4">Loại</th>
                 <th className="p-4">Nội dung báo cáo</th>
@@ -104,34 +116,34 @@ export const ReportManagementPage: React.FC = () => {
                 <th className="p-4 text-right">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#303235]/60">
+            <tbody className="divide-y divide-[var(--border-color)]">
               {filteredReports.map((rep) => (
-                <tr key={rep.id} className="hover:bg-[#1E2023] transition-colors">
+                <tr key={rep.id} className="transition-colors hover:bg-[var(--bg-hover)]">
                   <td className="p-4">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FF5700]/15 text-[#FF5700]">
+                    <span className="rounded-md bg-[var(--color-orange-soft)] px-2 py-1 text-xs font-semibold text-[var(--color-orange-ink)]">
                       {rep.contentType}
                     </span>
                   </td>
                   <td className="p-4 max-w-xs">
-                    <div className="font-bold text-[#F5F5F5] truncate">
+                    <div className="max-w-xs truncate font-semibold text-[var(--text-primary)]">
                       {rep.contentTitle || rep.contentId}
                     </div>
                     {rep.contentSnippet && (
-                      <div className="text-[11px] text-[#9A9DA3] truncate">
+                      <div className="max-w-xs truncate text-xs text-[var(--text-secondary)]">
                         "{rep.contentSnippet}"
                       </div>
                     )}
                   </td>
-                  <td className="p-4 text-[#F59E0B] font-medium">{rep.reason}</td>
-                  <td className="p-4 text-[#9A9DA3]">@{rep.reporterUsername}</td>
+                  <td className="max-w-xs p-4 font-medium text-[var(--color-warning)]">{rep.reason}</td>
+                  <td className="p-4 text-[var(--text-secondary)]">@{rep.reporterUsername}</td>
                   <td className="p-4">
                     <span
-                      className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                      className={`inline-block rounded-md px-2 py-1 text-xs font-semibold ${
                         rep.status === 'PENDING'
-                          ? 'bg-[#F59E0B]/15 text-[#F59E0B]'
+                          ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]'
                           : rep.status === 'RESOLVED'
-                          ? 'bg-[#22C55E]/15 text-[#22C55E]'
-                          : 'bg-[#70747C]/15 text-[#70747C]'
+                          ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
+                          : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'
                       }`}
                     >
                       {rep.status}
@@ -154,6 +166,33 @@ export const ReportManagementPage: React.FC = () => {
         </div>
       </div>
 
+      {!isLoading && !loadFailed && filteredReports.length === 0 && (
+        <div className="space-y-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-14 text-center">
+          <CheckCircle2 className="mx-auto h-8 w-8 text-[var(--color-success)]" />
+          <h2 className="text-base font-semibold text-[var(--text-primary)]">Không có báo cáo trong mục này</h2>
+          <p className="text-sm text-[var(--text-secondary)]">Hãy chọn trạng thái hoặc loại nội dung khác để lọc.</p>
+        </div>
+      )}
+      {isLoading && (
+        <div role="status" className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] py-12 text-center text-sm text-[var(--text-secondary)]">Đang tải báo cáo…</div>
+      )}
+      {loadFailed && (
+        <div role="alert" className="space-y-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-8 text-center">
+          <h2 className="text-base font-semibold text-[var(--text-primary)]">Không tải được báo cáo</h2>
+          <p className="text-sm text-[var(--text-secondary)]">Kiểm tra kết nối rồi thử lại.</p>
+          <Button variant="secondary" size="sm" onClick={() => {
+            setIsLoading(true);
+            setLoadFailed(false);
+            useReportStore.getState().hydrate()
+              .catch((error: unknown) => {
+                setLoadFailed(true);
+                addToast(error instanceof Error ? error.message : 'Không thể tải báo cáo.', 'error');
+              })
+              .finally(() => setIsLoading(false));
+          }}>Thử lại</Button>
+        </div>
+      )}
+
       {/* Report Review Drawer / Modal */}
       {selectedReport && (
         <Modal
@@ -163,37 +202,37 @@ export const ReportManagementPage: React.FC = () => {
           maxWidth="md"
         >
           <div className="space-y-4 text-left text-xs">
-            <div className="p-3.5 rounded-2xl bg-[#141517] border border-[#303235] space-y-2">
+            <div className="space-y-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-4">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-[#FF5700] bg-[#FF5700]/10 px-2 py-0.5 rounded">
+                <span className="rounded-md bg-[var(--color-orange-soft)] px-2 py-1 text-xs font-semibold text-[var(--color-orange-ink)]">
                   {selectedReport.contentType}
                 </span>
-                <span className="text-[11px] text-[#70747C]">Trạng thái: {selectedReport.status}</span>
+                <span className="text-xs text-[var(--text-muted)]">Trạng thái: {selectedReport.status}</span>
               </div>
-              <h4 className="text-sm font-bold text-[#F5F5F5]">
+              <h3 className="text-base font-semibold text-[var(--text-primary)]">
                 {selectedReport.contentTitle || selectedReport.contentId}
-              </h4>
+              </h3>
               {selectedReport.contentSnippet && (
-                <p className="text-[#D1D5DB] bg-[#101112] p-2.5 rounded-xl border border-[#303235]">
+                <p className="rounded-lg bg-[var(--bg-surface)] p-3 text-sm text-[var(--text-secondary)]">
                   "{selectedReport.contentSnippet}"
                 </p>
               )}
             </div>
 
             <div className="space-y-1">
-              <span className="text-[#70747C] font-semibold">Lý do khiếu nại:</span>
-              <p className="text-[#F59E0B] font-medium">{selectedReport.reason}</p>
+              <span className="font-semibold text-[var(--text-muted)]">Lý do khiếu nại:</span>
+              <p className="font-medium text-[var(--color-warning)]">{selectedReport.reason}</p>
             </div>
 
             {selectedReport.status === 'PENDING' && (
-              <div className="space-y-2 pt-2 border-t border-[#303235]">
-                <label className="text-xs font-semibold text-[#9A9DA3]">Ghi chú xử lý:</label>
+              <div className="space-y-2 pt-2">
+                <label className="text-sm font-semibold text-[var(--text-secondary)]">Ghi chú xử lý:</label>
                 <input
                   type="text"
                   value={resolutionNote}
                   onChange={(e) => setResolutionNote(e.target.value)}
                   placeholder="Nhập ghi chú cho người dùng hoặc biên bản xử phạt..."
-                  className="w-full bg-[#101112] border border-[#303235] focus:border-[#FF5700] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] outline-none"
+                  className="w-full rounded-lg border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
                 />
 
                 <div className="flex items-center justify-end gap-2.5 pt-2">

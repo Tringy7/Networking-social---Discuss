@@ -16,8 +16,8 @@ export const RightSidebar: React.FC = () => {
   return (
     <aside className="hidden xl:block w-72 space-y-4 shrink-0 text-left">
       {/* Trending discussions card */}
-      <div className="bg-[#161922] border border-[#262C3A] rounded-2xl p-4 space-y-3">
-        <div className="flex items-center gap-2 text-xs font-bold text-[#F5F5F5] uppercase tracking-wider">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-card)] p-4 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
           <TrendingUp className="w-4 h-4 text-[var(--color-orange)]" />
           <span>Thảo luận sôi nổi</span>
         </div>
@@ -29,8 +29,8 @@ export const RightSidebar: React.FC = () => {
               to={`/post/${post.id}`}
               className="block group p-2 -mx-2 rounded-xl hover:bg-[#1E232F] transition-colors"
             >
-              <div className="text-[11px] text-[#70747C] flex items-center gap-1.5 mb-1">
-                <span className="font-semibold text-[#9A9DA3] group-hover:text-[var(--color-orange)] transition-colors">
+              <div className="text-xs text-[var(--text-muted)] flex items-center gap-1.5 mb-1">
+                <span className="font-semibold text-[var(--text-secondary)] group-hover:text-[var(--color-orange-ink)] transition-colors">
                   {post.communityDisplayName}
                 </span>
                 <span>·</span>
@@ -39,10 +39,10 @@ export const RightSidebar: React.FC = () => {
                   {post.heartCount}
                 </span>
               </div>
-              <h5 className="text-xs font-semibold text-[#F5F5F5] line-clamp-2 group-hover:text-white leading-snug">
+              <h5 className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--text-primary)] leading-snug">
                 {post.title}
               </h5>
-              <div className="text-[11px] text-[#70747C] flex items-center gap-1 mt-1">
+              <div className="text-xs text-[var(--text-muted)] flex items-center gap-1 mt-1">
                 <MessageSquare className="w-3 h-3" />
                 <span>{post.commentCount} bình luận</span>
               </div>
@@ -53,13 +53,13 @@ export const RightSidebar: React.FC = () => {
 
       {/* Suggested communities card */}
       {suggested.length > 0 && (
-        <div className="bg-[#161922] border border-[#262C3A] rounded-2xl p-4 space-y-3">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-card)] p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#F5F5F5] uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
               <Sparkles className="w-4 h-4 text-[var(--color-orange)]" />
               <span>Gợi ý cho bạn</span>
             </div>
-            <Link to="/explore" className="text-xs text-[var(--color-orange)] hover:underline font-medium">
+            <Link to="/explore" className="text-sm text-[var(--color-orange-ink)] hover:underline font-medium">
               Tất cả
             </Link>
           </div>
@@ -70,10 +70,10 @@ export const RightSidebar: React.FC = () => {
                 <Link to={`/community/${c.name}`} className="flex items-center gap-2.5 truncate flex-1">
                   <Avatar src={c.avatarUrl} alt={c.displayName} size="sm" shape="rounded" />
                   <div className="truncate">
-                    <div className="text-xs font-semibold text-[#F5F5F5] truncate hover:text-[var(--color-orange)] transition-colors">
+                    <div className="text-sm font-semibold text-[var(--text-primary)] truncate hover:text-[var(--color-orange-ink)] transition-colors">
                       {c.displayName}
                     </div>
-                    <div className="text-[11px] text-[#70747C]">
+                    <div className="text-xs text-[var(--text-muted)]">
                       {c.memberCount.toLocaleString('vi-VN')} thành viên
                     </div>
                   </div>

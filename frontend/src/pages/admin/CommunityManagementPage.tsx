@@ -55,7 +55,7 @@ export const CommunityManagementPage: React.FC = () => {
     <div className="space-y-6 text-left pb-16">
       <div>
         <h1 className="text-2xl font-bold text-[#F5F5F5] flex items-center gap-2">
-          <FolderKanban className="w-6 h-6 text-[#3B82F6]" />
+          <FolderKanban className="w-6 h-6 text-[var(--color-info)]" />
           <span>Quản lý cộng đồng toàn hệ thống</span>
         </h1>
         <p className="text-xs text-[#9A9DA3] mt-0.5">
@@ -133,8 +133,8 @@ export const CommunityManagementPage: React.FC = () => {
                     <span
                       className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
                         c.status === 'ACTIVE'
-                          ? 'bg-[#22C55E]/15 text-[#22C55E]'
-                          : 'bg-[#EF4444]/15 text-[#EF4444]'
+                          ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
+                          : 'bg-[var(--color-danger)]/15 text-[var(--color-danger)]'
                       }`}
                     >
                       {c.status === 'ACTIVE' ? 'HOẠT ĐỘNG' : 'ĐÃ ĐÌNH CHỈ'}

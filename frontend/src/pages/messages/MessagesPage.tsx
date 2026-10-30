@@ -151,7 +151,7 @@ export const MessagesPage: React.FC = () => {
                   </h3>
                   <div className="text-[10px] text-[#70747C]">
                     @{activeConv.participant.username} ·{' '}
-                    <span className={activeConv.participant.status === 'online' ? 'text-[#22C55E]' : ''}>
+                    <span className={activeConv.participant.status === 'online' ? 'text-[var(--color-success)]' : ''}>
                       {activeConv.participant.status === 'online' ? 'Đang hoạt động' : 'Ngoại tuyến'}
                     </span>
                   </div>

@@ -21,28 +21,39 @@ export const SearchResultsPage: React.FC = () => {
   const { communities } = useCommunityStore();
   const { addToast } = useToastStore();
   const [matchingPeople, setMatchingPeople] = useState<UserSearchResult[]>([]);
+  const [isPeopleSearchLoading, setIsPeopleSearchLoading] = useState(false);
+  const [peopleSearchFailed, setPeopleSearchFailed] = useState(false);
+  const [searchRetry, setSearchRetry] = useState(0);
 
   useEffect(() => {
     let isCurrent = true;
     if (!query.trim()) {
       setMatchingPeople([]);
+      setIsPeopleSearchLoading(false);
+      setPeopleSearchFailed(false);
       return () => {
         isCurrent = false;
       };
     }
 
+    setMatchingPeople([]);
+    setIsPeopleSearchLoading(true);
+    setPeopleSearchFailed(false);
     userService.search(query).then((people) => {
       if (isCurrent) setMatchingPeople(people);
     }).catch((error: unknown) => {
       if (isCurrent) {
+        setPeopleSearchFailed(true);
         addToast(error instanceof Error ? error.message : 'Không thể tìm thành viên.', 'error');
       }
+    }).finally(() => {
+      if (isCurrent) setIsPeopleSearchLoading(false);
     });
 
     return () => {
       isCurrent = false;
     };
-  }, [query, addToast]);
+  }, [query, addToast, searchRetry]);
 
   const matchingPosts = useMemo(() => {
     if (!query) return posts;
@@ -73,6 +84,15 @@ export const SearchResultsPage: React.FC = () => {
   };
 
   const totalResults = matchingPosts.length + matchingCommunities.length + matchingPeople.length;
+  const visibleResultsCount = activeTab === 'posts'
+    ? matchingPosts.length
+    : activeTab === 'communities'
+      ? matchingCommunities.length
+      : activeTab === 'people'
+        ? matchingPeople.length
+        : totalResults;
+  const shouldWaitForPeople = isPeopleSearchLoading && (activeTab === 'all' || activeTab === 'people');
+  const shouldShowPeopleError = peopleSearchFailed && (activeTab === 'all' || activeTab === 'people');
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 text-left pb-16">
@@ -80,28 +100,30 @@ export const SearchResultsPage: React.FC = () => {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate(-1)}
-          className="p-2 rounded-xl bg-[#191A1C] border border-[#303235] text-[#9A9DA3] hover:text-[#F5F5F5] transition-colors"
+          aria-label="Quay lại"
+          className="p-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#F5F5F5]">
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
             Kết quả tìm kiếm cho "{query}"
           </h1>
-          <p className="text-xs text-[#9A9DA3] mt-0.5">
+          <p className="text-sm text-[var(--text-secondary)] mt-1">
             Tìm thấy {totalResults} kết quả phù hợp trên toàn hệ thống
           </p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-[#303235] pb-2 text-xs font-semibold">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 text-sm font-medium">
         <button
           onClick={() => setType('all')}
+          aria-pressed={activeTab === 'all'}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
             activeTab === 'all'
-              ? 'bg-[#FF5700]/15 text-[#FF5700] border border-[#FF5700]/30 font-bold'
-              : 'text-[#9A9DA3] hover:text-[#F5F5F5]'
+              ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] border border-[var(--color-orange-border)] font-semibold'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
@@ -110,10 +132,11 @@ export const SearchResultsPage: React.FC = () => {
 
         <button
           onClick={() => setType('posts')}
+          aria-pressed={activeTab === 'posts'}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
             activeTab === 'posts'
-              ? 'bg-[#FF5700]/15 text-[#FF5700] border border-[#FF5700]/30 font-bold'
-              : 'text-[#9A9DA3] hover:text-[#F5F5F5]'
+              ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] border border-[var(--color-orange-border)] font-semibold'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
           <FileText className="w-3.5 h-3.5" />
@@ -122,10 +145,11 @@ export const SearchResultsPage: React.FC = () => {
 
         <button
           onClick={() => setType('communities')}
+          aria-pressed={activeTab === 'communities'}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
             activeTab === 'communities'
-              ? 'bg-[#FF5700]/15 text-[#FF5700] border border-[#FF5700]/30 font-bold'
-              : 'text-[#9A9DA3] hover:text-[#F5F5F5]'
+              ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] border border-[var(--color-orange-border)] font-semibold'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
           <Users className="w-3.5 h-3.5" />
@@ -134,10 +158,11 @@ export const SearchResultsPage: React.FC = () => {
 
         <button
           onClick={() => setType('people')}
+          aria-pressed={activeTab === 'people'}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
             activeTab === 'people'
-              ? 'bg-[#FF5700]/15 text-[#FF5700] border border-[#FF5700]/30 font-bold'
-              : 'text-[#9A9DA3] hover:text-[#F5F5F5]'
+              ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] border border-[var(--color-orange-border)] font-semibold'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
           <User className="w-3.5 h-3.5" />
@@ -147,10 +172,21 @@ export const SearchResultsPage: React.FC = () => {
 
       {/* Results content */}
       <div className="space-y-6">
+        {shouldWaitForPeople && (
+          <div role="status" className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+            Đang tìm thành viên…
+          </div>
+        )}
+        {shouldShowPeopleError && (
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
+            <span className="text-sm text-[var(--text-secondary)]">Không thể tải kết quả tìm thành viên.</span>
+            <Button variant="secondary" size="sm" onClick={() => setSearchRetry((count) => count + 1)}>Thử lại</Button>
+          </div>
+        )}
         {/* COMMUNITIES SECTION */}
         {(activeTab === 'all' || activeTab === 'communities') && matchingCommunities.length > 0 && (
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-[#70747C] uppercase tracking-wider">Cộng đồng</h3>
+            <h2 className="text-sm font-semibold text-[var(--text-secondary)]">Cộng đồng</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {matchingCommunities.slice(0, activeTab === 'all' ? 2 : undefined).map((comm) => (
                 <CommunityCard key={comm.id} community={comm} />
@@ -162,21 +198,21 @@ export const SearchResultsPage: React.FC = () => {
         {/* PEOPLE SECTION */}
         {(activeTab === 'all' || activeTab === 'people') && matchingPeople.length > 0 && (
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-[#70747C] uppercase tracking-wider">Thành viên</h3>
+            <h2 className="text-sm font-semibold text-[var(--text-secondary)]">Thành viên</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {matchingPeople.map((person) => (
                 <Link
                   key={person.username}
                   to={`/user/${person.username}`}
-                  className="p-3 bg-[#191A1C] border border-[#303235] hover:border-[#45474B] rounded-2xl flex items-center justify-between gap-3 transition-colors"
+                  className="p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--border-hover)] rounded-xl flex items-center justify-between gap-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
                 >
                   <div className="flex items-center gap-3">
                     <Avatar src={person.avatarUrl} alt={person.displayName} size="md" />
                     <div>
-                      <div className="text-xs font-bold text-[#F5F5F5] hover:text-[#FF5700] transition-colors">
+                      <div className="text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange-ink)] transition-colors">
                         {person.displayName}
                       </div>
-                      <div className="text-[11px] text-[#70747C]">@{person.username}</div>
+                      <div className="text-xs text-[var(--text-muted)]">@{person.username}</div>
                     </div>
                   </div>
                   <Button variant="secondary" size="sm">
@@ -191,7 +227,7 @@ export const SearchResultsPage: React.FC = () => {
         {/* POSTS SECTION */}
         {(activeTab === 'all' || activeTab === 'posts') && matchingPosts.length > 0 && (
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-[#70747C] uppercase tracking-wider">Bài viết</h3>
+            <h2 className="text-sm font-semibold text-[var(--text-secondary)]">Bài viết</h2>
             <div className="space-y-4">
               {matchingPosts.map((post) => (
                 <PostCard key={post.id} post={post} />
@@ -201,13 +237,13 @@ export const SearchResultsPage: React.FC = () => {
         )}
 
         {/* Empty state */}
-        {totalResults === 0 && (
-          <div className="py-20 text-center bg-[#191A1C] border border-[#303235] rounded-3xl p-8 space-y-4">
+        {visibleResultsCount === 0 && !shouldWaitForPeople && !shouldShowPeopleError && (
+          <div className="py-16 text-center bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-8 space-y-4">
             <Search className="w-10 h-10 text-[#FF5700] mx-auto opacity-60" />
-            <h3 className="text-base font-bold text-[#F5F5F5]">
+            <h2 className="text-base font-semibold text-[var(--text-primary)]">
               Không tìm thấy kết quả nào cho "{query}"
-            </h3>
-            <p className="text-xs text-[#9A9DA3] max-w-sm mx-auto">
+            </h2>
+            <p className="text-sm text-[var(--text-secondary)] max-w-sm mx-auto">
               Hãy thử kiểm tra lại lỗi chính tả hoặc tìm kiếm bằng từ khóa chung hơn như "React", "Spring Boot", "Đồ án".
             </p>
             <Button

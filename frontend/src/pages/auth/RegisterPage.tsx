@@ -86,16 +86,16 @@ export const RegisterPage: React.FC = () => {
   return (
     <div className="space-y-5 text-left">
       <div className="space-y-1.5">
-        <h2 className="text-2xl sm:text-3xl font-black text-[#F5F5F5] tracking-tight">
-          Tạo tài khoản DISCUSS
-        </h2>
-        <p className="text-xs sm:text-sm text-[#9A9DA3]">
-          Khám phá và kết nối cùng cộng đồng công nghệ lớn nhất.
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--text-primary)]">
+          Tạo tài khoản
+        </h1>
+        <p className="text-sm text-[var(--text-secondary)]">
+          Tham gia cộng đồng theo chủ đề và chia sẻ điều bạn quan tâm.
         </p>
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/30 text-xs text-[#EF4444] font-medium">
+        <div role="alert" className="p-3 rounded-xl bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 text-sm text-[var(--color-danger)] font-medium">
           {error}
         </div>
       )}
@@ -141,7 +141,7 @@ export const RegisterPage: React.FC = () => {
             clearFieldError('email');
           }}
           leftIcon={<Mail className="w-4 h-4" />}
-          placeholder="user@example.com"
+          placeholder="minh.nguyen@gmail.com"
           error={fieldErrors.email}
           required
         />
@@ -161,7 +161,8 @@ export const RegisterPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="text-[#70747C] hover:text-[#F5F5F5] transition-colors cursor-pointer"
+              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -202,7 +203,7 @@ export const RegisterPage: React.FC = () => {
             />
             <span className="leading-snug">
               Tôi đồng ý với{' '}
-              <Link to="/terms" className="font-semibold text-[var(--color-orange)] hover:underline">
+              <Link to="/terms" className="font-semibold text-[var(--color-orange-ink)] hover:underline">
                 Điều khoản sử dụng
               </Link>{' '}
               và Quy chuẩn ứng xử cộng đồng.
@@ -216,16 +217,16 @@ export const RegisterPage: React.FC = () => {
           variant="primary"
           size="lg"
           isLoading={isLoading}
-          className="w-full text-sm font-bold shadow-lg shadow-[#FF5700]/25 mt-2"
+          className="w-full text-sm font-semibold mt-2"
         >
           Hoàn tất đăng ký
         </Button>
       </form>
 
       {/* Link to Login */}
-      <div className="text-center text-xs text-[#9A9DA3] pt-2 border-t border-[#303235]">
+      <div className="text-center text-sm text-[var(--text-secondary)] pt-3">
         Đã có tài khoản?{' '}
-        <Link to="/login" className="text-[#FF5700] hover:underline font-bold">
+        <Link to="/login" className="text-[var(--color-orange-ink)] hover:underline font-semibold">
           Đăng nhập ngay
         </Link>
       </div>

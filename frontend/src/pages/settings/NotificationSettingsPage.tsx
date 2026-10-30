@@ -23,7 +23,7 @@ export const NotificationSettingsPage: React.FC = () => {
     checked: boolean,
     onChange: (checked: boolean) => void
   ) => (
-    <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#141517] border border-[#303235]">
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-4">
       <div className="space-y-0.5 max-w-md">
         <h4 className="text-xs sm:text-sm font-bold text-[#F5F5F5]">{label}</h4>
         <p className="text-xs text-[#9A9DA3]">{desc}</p>
@@ -32,13 +32,14 @@ export const NotificationSettingsPage: React.FC = () => {
         type="button"
         role="switch"
         aria-checked={checked}
+      aria-label={label}
         onClick={() => onChange(!checked)}
         className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-          checked ? 'bg-[#FF5700]' : 'bg-[#CBD5E1]'
+          checked ? 'bg-[var(--color-orange)]' : 'bg-[var(--bg-elevated)]'
         }`}
       >
         <div
-          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+          className={`bg-white w-4 h-4 rounded-full transform transition-transform ${
             checked ? 'translate-x-6' : 'translate-x-0'
           }`}
         />
@@ -48,25 +49,25 @@ export const NotificationSettingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left">
-      <div className="pb-3 border-b border-[#303235]">
-        <h2 className="text-lg font-bold text-[#F5F5F5] flex items-center gap-2">
-          <Bell className="w-5 h-5 text-[#FF5700]" />
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <Bell className="w-5 h-5 text-[var(--color-orange-ink)]" />
           <span>Tùy chọn thông báo</span>
         </h2>
-        <p className="text-xs text-[#9A9DA3]">
+        <p className="text-sm text-[var(--text-secondary)]">
           Cấu hình thông báo hiển thị trên chuông in-app hoặc gửi đến email của bạn.
         </p>
       </div>
 
       {!NOTIFICATIONS_AVAILABLE && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+        <div role="status" className="rounded-xl border border-[var(--color-orange-border)] bg-[var(--color-orange-soft)] px-4 py-3 text-sm text-[var(--text-primary)]">
           Thay đổi được lưu trên thiết bị này; đồng bộ thông báo với máy chủ sẽ khả dụng sau.
         </div>
       )}
 
       {/* Section 1: In-App */}
       <div className="space-y-3">
-        <h3 className="text-xs font-bold text-[#F5F5F5] uppercase tracking-wider">
+        <h3 className="text-sm font-semibold text-[var(--text-primary)]">
           Thông báo trên ứng dụng (In-App)
         </h3>
         <div className="space-y-2.5">
@@ -92,8 +93,8 @@ export const NotificationSettingsPage: React.FC = () => {
       </div>
 
       {/* Section 2: Email */}
-      <div className="space-y-3 pt-2 border-t border-[#303235]">
-        <h3 className="text-xs font-bold text-[#F5F5F5] uppercase tracking-wider">
+      <div className="space-y-3 pt-2">
+        <h3 className="text-sm font-semibold text-[var(--text-primary)]">
           Thông báo qua Email
         </h3>
         <div className="space-y-2.5">
@@ -113,7 +114,7 @@ export const NotificationSettingsPage: React.FC = () => {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-between pt-4 border-t border-[#303235]">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
         <button
           type="button"
           onClick={handleReset}

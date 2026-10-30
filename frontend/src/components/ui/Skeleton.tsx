@@ -12,12 +12,13 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   const variants = {
     circular: 'rounded-full',
     rectangular: 'rounded-none',
-    rounded: 'rounded-xl',
+    rounded: 'rounded-[var(--radius-control)]',
   };
 
   return (
     <div
-      className={`animate-pulse bg-[#222426] border border-[#303235]/40 ${variants[variant]} ${className}`}
+      aria-hidden="true"
+      className={`bg-[var(--bg-elevated)] ${variants[variant]} ${className}`}
     />
   );
 };

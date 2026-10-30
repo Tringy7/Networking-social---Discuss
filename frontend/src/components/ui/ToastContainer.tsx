@@ -1,10 +1,11 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useToastStore } from '../../store/useToastStore';
 import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from 'lucide-react';
 
 export const ToastContainer: React.FC = () => {
   const { toasts, removeToast } = useToastStore();
+  const shouldReduceMotion = useReducedMotion();
 
   const icons = {
     success: <CheckCircle2 className="h-5 w-5 text-[var(--toast-success)]" />,
@@ -30,9 +31,10 @@ export const ToastContainer: React.FC = () => {
         {toasts.map((toast) => (
           <motion.div
             key={toast.id}
-            initial={{ opacity: 0, x: 16, scale: 0.98 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, x: 16, scale: 0.98 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+            exit={{ opacity: 0, scale: 0.95, transition: { duration: shouldReduceMotion ? 0 : 0.12 } }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.16 }}
             role={toast.type === 'error' ? 'alert' : 'status'}
             className="pointer-events-auto relative flex min-w-0 items-center gap-2.5 overflow-hidden rounded-xl border px-3 py-2.5 shadow-[var(--toast-shadow)]"
             style={{
@@ -52,7 +54,7 @@ export const ToastContainer: React.FC = () => {
             </div>
             <button
               onClick={() => removeToast(toast.id)}
-              className="shrink-0 rounded-md p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
               aria-label="Đóng thông báo"
             >
               <X className="h-3.5 w-3.5" />

@@ -7,18 +7,17 @@ export const AccessDeniedPage: React.FC = () => {
   return (
     <div className="min-h-[70vh] flex items-center justify-center p-6 text-center">
       <div className="max-w-md w-full p-8 rounded-3xl bg-[#191A1C] border border-[#303235] space-y-5 shadow-2xl">
-        <div className="w-16 h-16 rounded-full bg-[#EF4444]/15 border border-[#EF4444]/30 flex items-center justify-center text-[#EF4444] mx-auto">
+        <div className="w-16 h-16 rounded-full bg-[var(--color-danger)]/15 border border-[var(--color-danger)]/30 flex items-center justify-center text-[var(--color-danger)] mx-auto">
           <ShieldX className="w-8 h-8" />
         </div>
 
         <div className="space-y-2">
-          <span className="text-xs font-mono font-bold text-[#EF4444] uppercase tracking-wider">
+          <span className="text-sm font-semibold text-[var(--color-danger)]">
             Lỗi 403 · Access Denied
           </span>
           <h1 className="text-2xl font-black text-[#F5F5F5]">Không có quyền truy cập</h1>
           <p className="text-xs text-[#9A9DA3] leading-relaxed">
-            Khu vực này yêu cầu quyền Quản trị viên (ADMIN) hoặc Trưởng nhóm cộng đồng.
-            Bạn có thể sử dụng bộ chuyển đổi <strong className="text-[#FF5700]">Role Test</strong> ở góc trái để kiểm thử.
+            Khu vực này yêu cầu quyền Quản trị viên hoặc quyền quản lý cộng đồng phù hợp. Nếu bạn cần quyền truy cập, hãy liên hệ quản trị viên.
           </p>
         </div>
 

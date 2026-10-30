@@ -35,11 +35,24 @@ export const CommunityDetailPage: React.FC = () => {
 
   const [tab, setTab] = useState<'latest' | 'popular'>('latest');
   const [isMembershipUpdating, setIsMembershipUpdating] = useState(false);
+  const [isCommunityLoading, setIsCommunityLoading] = useState(true);
+  const [communityLoadFailed, setCommunityLoadFailed] = useState(false);
 
   React.useEffect(() => {
-    if (communityName) hydrateCommunity(communityName).catch((error: unknown) => {
-      addToast(error instanceof Error ? error.message : 'Không thể tải cộng đồng.', 'error');
-    });
+    if (!communityName) return;
+    let active = true;
+    setIsCommunityLoading(true);
+    setCommunityLoadFailed(false);
+    hydrateCommunity(communityName)
+      .catch((error: unknown) => {
+        if (!active) return;
+        setCommunityLoadFailed(true);
+        addToast(error instanceof Error ? error.message : 'Không thể tải cộng đồng.', 'error');
+      })
+      .finally(() => {
+        if (active) setIsCommunityLoading(false);
+      });
+    return () => { active = false; };
   }, [addToast, communityName, hydrateCommunity]);
 
   const community = communities.find((c) => c.name === communityName);
@@ -53,14 +66,41 @@ export const CommunityDetailPage: React.FC = () => {
 
   if (!community) {
     return (
-      <div className="py-24 text-center space-y-4">
-        <h2 className="text-2xl font-bold text-[var(--text-primary)]">Đang tải cộng đồng community/{communityName}…</h2>
-        <Link to="/explore">
+      <section className="mx-auto flex min-h-64 max-w-xl flex-col items-center justify-center gap-4 px-4 py-16 text-center" aria-live="polite">
+        <div className="text-sm font-medium text-[var(--text-muted)]">DISCUSS · Cộng đồng</div>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
+          {communityLoadFailed ? 'Cộng đồng chưa tải được' : isCommunityLoading ? 'Đang mở cộng đồng' : 'Không tìm thấy cộng đồng'}
+        </h1>
+        <p className="text-sm leading-6 text-[var(--text-secondary)]">
+          {communityLoadFailed
+            ? 'Đã xảy ra sự cố khi kết nối. Hãy thử tải lại hoặc quay lại khám phá cộng đồng.'
+            : isCommunityLoading
+              ? `Đang tải community/${communityName}.`
+              : `Không tìm thấy community/${communityName}.`}
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          {communityLoadFailed && (
+            <Button variant="secondary" size="sm" onClick={() => {
+              if (!communityName) return;
+              setIsCommunityLoading(true);
+              setCommunityLoadFailed(false);
+              hydrateCommunity(communityName)
+                .catch((error: unknown) => {
+                  setCommunityLoadFailed(true);
+                  addToast(error instanceof Error ? error.message : 'Không thể tải cộng đồng.', 'error');
+                })
+                .finally(() => setIsCommunityLoading(false));
+            }}>
+              Thử lại
+            </Button>
+          )}
+          <Link to="/explore">
           <Button variant="primary" size="sm">
             Khám phá cộng đồng khác
           </Button>
-        </Link>
-      </div>
+          </Link>
+        </div>
+      </section>
     );
   }
 
@@ -106,7 +146,7 @@ export const CommunityDetailPage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-6 text-left pb-16">
       {/* BANNER & HEADER */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-3xl overflow-hidden shadow-xl">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl overflow-hidden">
         {/* Banner Image */}
         <div className="h-44 sm:h-56 w-full relative bg-[var(--bg-main)]">
           <img
@@ -115,11 +155,10 @@ export const CommunityDetailPage: React.FC = () => {
             className="w-full h-full object-cover"
           />
           {/* Smooth fade into community card surface for both Light and Dark mode */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-surface)] via-transparent to-black/10" />
         </div>
 
         {/* Profile Header Bar */}
-        <div className="p-6 sm:p-8 -mt-16 sm:-mt-20 relative z-10 space-y-4">
+        <div className="p-4 sm:p-6 -mt-12 sm:-mt-16 relative z-10 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div className="flex items-end gap-4">
               <Avatar
@@ -127,29 +166,29 @@ export const CommunityDetailPage: React.FC = () => {
                 alt={community.displayName}
                 size="2xl"
                 shape="rounded"
-                className="border-4 border-[var(--bg-surface)] shadow-2xl bg-[var(--bg-surface)]"
+                className="border-4 border-[var(--bg-surface)] bg-[var(--bg-surface)]"
               />
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl sm:text-2xl font-black text-[var(--text-primary)]">
+                  <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
                     {community.displayName}
                   </h1>
                   <span className="text-xs font-semibold text-[var(--color-orange)] bg-[var(--color-orange-soft)] border border-[var(--color-orange-border)] px-2.5 py-0.5 rounded-full">
                     {community.category}
                   </span>
                 </div>
-                <div className="text-xs text-[var(--text-muted)] font-mono">community/{community.name}</div>
+                <div className="text-xs text-[var(--text-muted)]">community/{community.name}</div>
               </div>
             </div>
 
             {/* Header Action Buttons */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant={isJoined ? 'secondary' : 'primary'}
                 size="md"
                 onClick={handleJoinToggle}
                 isLoading={isMembershipUpdating}
-                leftIcon={isJoined ? <Check className="w-4 h-4 text-[#22C55E]" /> : undefined}
+                leftIcon={isJoined ? <Check className="w-4 h-4 text-[var(--color-success)]" /> : undefined}
               >
                 {isJoined ? 'Đã tham gia' : 'Tham gia'}
               </Button>
@@ -177,7 +216,7 @@ export const CommunityDetailPage: React.FC = () => {
             {community.description}
           </p>
 
-          <div className="flex items-center gap-6 pt-2 text-xs text-[var(--text-muted)]">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-2 text-sm text-[var(--text-muted)]">
             <span className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
               <Users className="w-4 h-4 text-[var(--color-orange)]" />
               <span className="tabular-nums">{community.memberCount.toLocaleString('vi-VN')}</span> thành viên
@@ -210,13 +249,13 @@ export const CommunityDetailPage: React.FC = () => {
             </div>
           )}
           {/* Feed Filter Bar */}
-          <div className="flex items-center justify-between p-1 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl text-xs font-semibold">
+          <div className="flex items-center justify-between gap-2 p-1 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl text-sm font-medium">
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setTab('latest')}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   tab === 'latest'
-                    ? 'bg-[var(--color-orange)] text-white font-bold shadow-xs'
+                    ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] font-bold'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                 }`}
               >
@@ -227,7 +266,7 @@ export const CommunityDetailPage: React.FC = () => {
                 onClick={() => setTab('popular')}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   tab === 'popular'
-                    ? 'bg-[var(--color-orange)] text-white font-bold shadow-xs'
+                    ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] font-bold'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                 }`}
               >
@@ -248,7 +287,7 @@ export const CommunityDetailPage: React.FC = () => {
             ))}
 
             {sortedPosts.length === 0 && (
-              <div className="py-16 text-center bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-3xl p-8 space-y-3">
+              <div className="py-16 text-center bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-8 space-y-3">
                 <BookOpen className="w-8 h-8 text-[var(--color-orange)] mx-auto opacity-70" />
                 <h4 className="text-base font-bold text-[var(--text-primary)]">
                   Chưa có bài viết nào trong cộng đồng này
@@ -272,15 +311,15 @@ export const CommunityDetailPage: React.FC = () => {
         <div className="space-y-5">
           {/* Rules Card */}
           <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-5 text-left space-y-3">
-            <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-[var(--color-orange)]" />
               <span>Nội quy cộng đồng</span>
             </h3>
 
             {community.rules && community.rules.length > 0 ? (
-              <ol className="space-y-2.5 text-xs">
+              <ol className="space-y-3 text-sm">
                 {community.rules.map((rule, index) => (
-                  <li key={rule.id} className="pb-2 border-b border-[var(--border-color)] last:border-none">
+                  <li key={rule.id} className="pb-1">
                     <div className="font-semibold text-[var(--text-primary)]">
                       {index + 1}. {rule.title}
                     </div>
@@ -296,8 +335,8 @@ export const CommunityDetailPage: React.FC = () => {
           {/* Moderators Card */}
           <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-5 text-left space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
-                <Shield className="w-4 h-4 text-[#3B82F6]" />
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <Shield className="w-4 h-4 text-[var(--color-info)]" />
                 <span>Ban quản trị & Mod</span>
               </h3>
               {isManager && (
@@ -326,13 +365,13 @@ export const CommunityDetailPage: React.FC = () => {
             </div>
 
             {isManager && (
-              <div className="pt-2 border-t border-[var(--border-color)]">
+              <div className="pt-2">
                 <Link to={`/community/${community.name}/moderation`} className="block">
                   <Button
                     variant="secondary"
                     size="sm"
                     className="w-full text-xs"
-                    leftIcon={<ShieldAlert className="w-3.5 h-3.5 text-[#3B82F6]" />}
+                    leftIcon={<ShieldAlert className="w-3.5 h-3.5 text-[var(--color-info)]" />}
                   >
                     Xem hàng đợi kiểm duyệt
                   </Button>

@@ -25,36 +25,37 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-semibold rounded-full transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100 select-none whitespace-nowrap cursor-pointer';
+      'inline-flex items-center justify-center gap-2 rounded-[var(--radius-control)] font-semibold transition-[background-color,border-color,color,transform] duration-[var(--duration-fast)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-orange-ink)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)] select-none whitespace-nowrap cursor-pointer';
 
     const sizes = {
-      sm: 'text-xs px-3 py-1.5 gap-1.5',
-      md: 'text-sm px-4 py-2 gap-2',
-      lg: 'text-base px-6 py-2.5 gap-2.5',
+      sm: 'min-h-8 text-sm px-3 py-1.5',
+      md: 'min-h-10 text-sm px-4 py-2',
+      lg: 'min-h-12 text-base px-6 py-3',
     };
 
     const variants = {
       primary:
-        'bg-[var(--color-orange)] hover:bg-[var(--color-orange-hover)] text-white shadow-sm hover:shadow-md hover:shadow-[var(--color-orange-soft)] focus-visible:ring-2 focus-visible:ring-[var(--color-orange)]/50',
+        'bg-[var(--color-orange)] hover:bg-[var(--color-orange-hover)] text-[#202124] dark:text-[#202124]',
       secondary:
-        'bg-[#1E232F] hover:bg-[#252B3A] text-[#F1F3F7] border border-[#262C3A] hover:border-[#343C4E]',
+        'bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-color)] hover:border-[var(--border-hover)]',
       outline:
-        'bg-transparent hover:bg-[var(--color-orange-soft)] text-[var(--color-orange)] border border-[var(--color-orange)] hover:border-[var(--color-orange-hover)]',
+        'bg-transparent hover:bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] border border-[var(--color-orange-border)] hover:border-[var(--color-orange-ink)]',
       ghost:
-        'bg-transparent hover:bg-[#1E232F] text-[#959DAA] hover:text-[#F1F3F7]',
+        'bg-transparent hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
       danger:
-        'bg-[#EF4444] hover:bg-[#DC2626] text-white focus-visible:ring-2 focus-visible:ring-red-500/50',
+        'bg-[var(--color-danger)] hover:brightness-95 text-[var(--color-danger-ink)]',
     };
 
     return (
       <button
         ref={ref}
         disabled={disabled || isLoading}
+        aria-busy={isLoading || undefined}
         className={`${baseStyles} ${sizes[size]} ${variants[variant]} ${className}`}
         {...props}
       >
         {isLoading ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
         ) : (
           leftIcon && <span className="shrink-0">{leftIcon}</span>
         )}

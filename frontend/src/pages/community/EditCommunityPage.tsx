@@ -19,10 +19,28 @@ export const EditCommunityPage: React.FC = () => {
   const [avatarFile, setAvatarFile] = useState<File>();
   const [bannerFile, setBannerFile] = useState<File>();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCommunityLoading, setIsCommunityLoading] = useState(true);
+  const [communityLoadFailed, setCommunityLoadFailed] = useState(false);
 
   useEffect(() => {
-    if (communityName) hydrateCommunity(communityName).catch((error: unknown) => addToast(error instanceof Error ? error.message : 'Không thể tải cộng đồng.', 'error'));
+    let active = true;
+    if (communityName) {
+      setIsCommunityLoading(true);
+      setCommunityLoadFailed(false);
+      hydrateCommunity(communityName)
+        .catch((error: unknown) => {
+          if (!active) return;
+          setCommunityLoadFailed(true);
+          addToast(error instanceof Error ? error.message : 'Không thể tải cộng đồng.', 'error');
+        })
+        .finally(() => {
+          if (active) setIsCommunityLoading(false);
+        });
+    } else {
+      setIsCommunityLoading(false);
+    }
     categoryService.list().then(setCategories).catch((error: unknown) => addToast(error instanceof Error ? error.message : 'Không thể tải danh mục.', 'error'));
+    return () => { active = false; };
   }, [addToast, communityName, hydrateCommunity]);
 
   useEffect(() => {
@@ -32,7 +50,39 @@ export const EditCommunityPage: React.FC = () => {
     setVisibility(community.visibility);
   }, [community?.id]);
 
-  if (!community) return <div className="py-24 text-center text-sm text-[#9A9DA3]">Đang tải cộng đồng…</div>;
+  if (!community) {
+    return (
+      <section className="mx-auto flex min-h-64 max-w-xl flex-col items-center justify-center gap-4 px-4 py-16 text-center" aria-live="polite">
+        <h1 className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">
+          {communityLoadFailed ? 'Không tải được cài đặt cộng đồng' : isCommunityLoading ? 'Đang tải cài đặt cộng đồng' : 'Không tìm thấy cộng đồng'}
+        </h1>
+        <p className="text-sm leading-6 text-[var(--text-secondary)]">
+          {communityLoadFailed
+            ? 'Hãy thử tải lại hoặc trở về trang cộng đồng.'
+            : isCommunityLoading
+              ? `Đang tải community/${communityName}.`
+              : `Không tìm thấy community/${communityName}.`}
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          {communityLoadFailed && communityName && (
+            <Button variant="secondary" size="sm" onClick={() => {
+              setIsCommunityLoading(true);
+              setCommunityLoadFailed(false);
+              hydrateCommunity(communityName)
+                .catch((error: unknown) => {
+                  setCommunityLoadFailed(true);
+                  addToast(error instanceof Error ? error.message : 'Không thể tải cộng đồng.', 'error');
+                })
+                .finally(() => setIsCommunityLoading(false));
+            }}>Thử lại</Button>
+          )}
+          <Link to={communityName ? `/community/${communityName}` : '/explore'}>
+            <Button variant="primary" size="sm">Quay lại cộng đồng</Button>
+          </Link>
+        </div>
+      </section>
+    );
+  }
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -50,27 +100,67 @@ export const EditCommunityPage: React.FC = () => {
     }
   };
 
-  return <div className="max-w-4xl mx-auto space-y-6 text-left pb-16">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(`/community/${community.name}`)} className="p-2 rounded-xl bg-[#191A1C] border border-[#303235] text-[#9A9DA3]"><ArrowLeft className="w-4 h-4" /></button>
-        <div><h1 className="text-2xl font-bold text-[#F5F5F5] flex items-center gap-2"><Settings className="w-5 h-5 text-[#FF5700]" />Cài đặt community/{community.name}</h1><p className="text-xs text-[#9A9DA3] mt-0.5">Tên định danh không thể thay đổi.</p></div>
-      </div>
-      <Link to={`/community/${community.name}/members`}><Button variant="secondary" size="sm">Quản lý thành viên</Button></Link>
+  return (
+    <div className="mx-auto max-w-4xl space-y-6 pb-16 text-left">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(`/community/${community.name}`)}
+            aria-label="Quay lại cộng đồng"
+            className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--bg-surface)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+          ><ArrowLeft className="h-4 w-4" /></button>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-[var(--text-muted)]">community/{community.name}</p>
+            <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
+              <Settings className="h-5 w-5 shrink-0 text-[var(--color-orange-ink)]" />
+              Cài đặt cộng đồng
+            </h1>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">Tên định danh không thể thay đổi.</p>
+          </div>
+        </div>
+        <Link to={`/community/${community.name}/members`}><Button variant="secondary" size="sm">Quản lý thành viên</Button></Link>
+      </header>
+
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 sm:p-6 lg:p-8">
+        <div className="space-y-2">
+          <label htmlFor="community-description" className="text-sm font-semibold text-[var(--text-secondary)]">Mô tả cộng đồng</label>
+          <textarea id="community-description" rows={4} value={description} onChange={(event) => setDescription(event.target.value)} required className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]" />
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="space-y-2 text-sm font-semibold text-[var(--text-secondary)]">Danh mục
+            <select value={category} onChange={(event) => setCategory(event.target.value)} className="block w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]">
+              {categories.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
+            </select>
+          </label>
+          <label className="space-y-2 text-sm font-semibold text-[var(--text-secondary)]">Ảnh đại diện
+            <input type="file" accept="image/*" onChange={(event) => setAvatarFile(event.target.files?.[0])} className="block w-full rounded-lg border border-[var(--border-color)] bg-[var(--bg-main)] p-2 text-sm text-[var(--text-secondary)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--color-orange-soft)] file:px-3 file:py-1.5 file:font-semibold file:text-[var(--color-orange-ink)]" />
+          </label>
+          <label className="space-y-2 text-sm font-semibold text-[var(--text-secondary)]">Ảnh bìa
+            <input type="file" accept="image/*" onChange={(event) => setBannerFile(event.target.files?.[0])} className="block w-full rounded-lg border border-[var(--border-color)] bg-[var(--bg-main)] p-2 text-sm text-[var(--text-secondary)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--color-orange-soft)] file:px-3 file:py-1.5 file:font-semibold file:text-[var(--color-orange-ink)]" />
+          </label>
+        </div>
+
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-semibold text-[var(--text-secondary)]">Quyền riêng tư</legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {(['PUBLIC', 'PRIVATE'] as const).map((value) => (
+              <button key={value} type="button" aria-pressed={visibility === value} onClick={() => setVisibility(value)} className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] ${visibility === value ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)]' : 'bg-[var(--bg-main)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}>
+                {value === 'PUBLIC' ? <Globe className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                {value === 'PUBLIC' ? 'Công khai' : 'Riêng tư'}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+
+        <div className="flex flex-wrap justify-end gap-3 pt-2">
+          <Button type="button" variant="ghost" size="md" onClick={() => navigate(-1)}>Hủy bỏ</Button>
+          <Button type="submit" variant="primary" size="md" isLoading={isLoading} leftIcon={<Check className="h-4 w-4" />}>Lưu thay đổi</Button>
+        </div>
+      </form>
     </div>
-    <form onSubmit={handleSubmit} className="space-y-6 bg-[#191A1C] border border-[#303235] rounded-3xl p-6 sm:p-8">
-      <div className="space-y-1.5"><label className="text-xs font-semibold text-[#9A9DA3]">Mô tả cộng đồng</label><textarea rows={4} value={description} onChange={(event) => setDescription(event.target.value)} required className="w-full bg-[#101112] border border-[#303235] focus:border-[#FF5700] rounded-xl p-3 text-xs text-[#F5F5F5] outline-none" /></div>
-      <div className="grid sm:grid-cols-2 gap-4">
-        <label className="space-y-1.5 text-xs font-semibold text-[#9A9DA3]">Danh mục<select value={category} onChange={(event) => setCategory(event.target.value)} className="block w-full mt-1 bg-[#101112] border border-[#303235] rounded-xl p-2.5 text-[#F5F5F5]">{categories.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}</select></label>
-        <label className="space-y-1.5 text-xs font-semibold text-[#9A9DA3]">Ảnh đại diện<input type="file" accept="image/*" onChange={(event) => setAvatarFile(event.target.files?.[0])} className="block w-full mt-1 text-xs" /></label>
-        <label className="space-y-1.5 text-xs font-semibold text-[#9A9DA3]">Ảnh bìa<input type="file" accept="image/*" onChange={(event) => setBannerFile(event.target.files?.[0])} className="block w-full mt-1 text-xs" /></label>
-      </div>
-      <div className="space-y-1.5"><label className="text-xs font-semibold text-[#9A9DA3]">Quyền riêng tư</label><div className="flex gap-3">
-        {(['PUBLIC', 'PRIVATE'] as const).map((value) => <button key={value} type="button" onClick={() => setVisibility(value)} className={`flex-1 p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 ${visibility === value ? 'bg-[#FF5700]/15 border-[#FF5700] text-[#FF5700]' : 'bg-[#101112] border-[#303235] text-[#9A9DA3]'}`}>{value === 'PUBLIC' ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}{value === 'PUBLIC' ? 'Công khai' : 'Riêng tư'}</button>)}
-      </div></div>
-      <div className="flex justify-end gap-3 pt-4 border-t border-[#303235]"><Button type="button" variant="ghost" size="md" onClick={() => navigate(-1)}>Hủy bỏ</Button><Button type="submit" variant="primary" size="md" isLoading={isLoading} leftIcon={<Check className="w-4 h-4" />}>Lưu thay đổi</Button></div>
-    </form>
-  </div>;
+  );
 };
 
 export default EditCommunityPage;

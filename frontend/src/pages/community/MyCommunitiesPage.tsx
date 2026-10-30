@@ -147,7 +147,7 @@ export const MyCommunitiesPage: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleLeave(comm.name, comm.displayName)}
-                    className="text-[#EF4444] hover:bg-[#EF4444]/10"
+                    className="text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10"
                     leftIcon={<LogOut className="w-3.5 h-3.5" />}
                   >
                     Rời nhóm

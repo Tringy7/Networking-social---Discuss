@@ -6,6 +6,7 @@ import { useToastStore } from '../../store/useToastStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import Avatar from '../ui/Avatar';
 import Badge from '../ui/Badge';
+import Card from '../ui/Card';
 import ReportModal from './ReportModal';
 import {
   Heart,
@@ -80,15 +81,24 @@ export const PostCard: React.FC<PostCardProps> = ({ post, showCommunity = true }
 
   return (
     <>
-      <article
+      <Card as="article" interactive
         onClick={() => navigate(`/post/${post.id}`)}
-        className="group relative bg-[#161922] hover:bg-[#1C202B] border border-[#262C3A] hover:border-[#353D50] rounded-2xl p-4 sm:p-5 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md text-left space-y-3"
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            navigate(`/post/${post.id}`);
+          }
+        }}
+        tabIndex={0}
+        aria-label={`Bài viết: ${post.title}`}
+        className="group relative p-4 sm:p-5 cursor-pointer text-left space-y-3"
       >
         {/* Header: Community info + Author info */}
         <div className="flex items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 flex-wrap">
             {post.pinned && (
-              <span className="flex items-center gap-1 font-bold text-[var(--color-orange)] text-[11px] bg-[var(--color-orange-soft)] px-2 py-0.5 rounded-full">
+              <span className="flex items-center gap-1 font-bold text-[var(--color-orange-ink)] text-xs bg-[var(--color-orange-soft)] px-2 py-0.5 rounded-full">
                 <Pin className="w-3 h-3" />
                 <span>Ghim</span>
               </span>
@@ -137,7 +147,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, showCommunity = true }
             {showMenu && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-7 w-40 bg-[#222426] border border-[#303235] rounded-xl shadow-xl p-1.5 z-20 space-y-0.5 text-xs"
+                data-ui="popover"
+                className="absolute right-0 top-7 w-40 border p-1.5 z-20 space-y-0.5 text-xs"
               >
                 <button
                   onClick={(e) => {
@@ -154,7 +165,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, showCommunity = true }
                     setShowMenu(false);
                     setIsReportOpen(true);
                   }}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors"
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 transition-colors"
                 >
                   <Flag className="w-3.5 h-3.5" />
                   <span>Báo cáo bài viết</span>
@@ -176,14 +187,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post, showCommunity = true }
 
         {/* Code Snippet Box */}
         {post.codeSnippet && (
-          <div className="bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-xl p-3 font-mono text-xs text-[var(--color-code)] overflow-x-auto">
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#303235] text-[10px] text-[#70747C] uppercase">
+          <div className="bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-xl p-3 text-xs text-[var(--color-code)] overflow-x-auto">
+            <div className="flex items-center justify-between pb-2 mb-2 text-xs text-[#70747C]">
               <span className="flex items-center gap-1.5">
                 <Code2 className="w-3.5 h-3.5 text-[#FF5700]" />
                 {post.codeSnippet.language}
               </span>
             </div>
-            <pre className="text-[var(--text-secondary)]">
+            <pre className="font-code text-[var(--text-secondary)]">
               <code>{post.codeSnippet.code}</code>
             </pre>
           </div>
@@ -211,7 +222,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, showCommunity = true }
                   e.stopPropagation();
                   navigate(`/search?q=${encodeURIComponent(tag)}&type=posts`);
                 }}
-                className="text-[11px] font-medium text-[var(--color-orange)] bg-[var(--color-orange-soft)] hover:bg-[var(--color-orange-border)] px-2 py-0.5 rounded-md transition-colors"
+                className="text-xs font-medium text-[var(--color-orange-ink)] bg-[var(--color-orange-soft)] hover:bg-[var(--color-orange-border)] px-2 py-0.5 rounded-md transition-colors"
               >
                 #{tag}
               </span>
@@ -220,12 +231,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post, showCommunity = true }
         )}
 
         {/* Footer Actions: Heart, Comments, Save, Share */}
-        <div className="flex items-center justify-between pt-2 border-t border-[#262C3A]/60 text-xs">
+        <div className="flex items-center justify-between pt-3 text-xs">
           <div className="flex items-center gap-2">
             {/* Heart Reaction */}
             <button
               onClick={handleHeartClick}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-[background-color,border-color,color] duration-[var(--duration-fast)] ${
                 post.isHearted
                   ? 'bg-[var(--color-orange-soft)] border-[var(--color-orange-border)] text-[var(--color-orange)] font-bold'
                   : 'bg-[#1E232F] border-[#262C3A] text-[#959DAA] hover:text-[var(--color-orange)] hover:border-[var(--color-orange-border)]'
@@ -276,7 +287,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, showCommunity = true }
             </button>
           </div>
         </div>
-      </article>
+      </Card>
 
       {/* Report Modal */}
       <ReportModal

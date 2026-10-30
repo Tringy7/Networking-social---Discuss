@@ -6,6 +6,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import Avatar from '../ui/Avatar';
 import Button from '../ui/Button';
+import Card from '../ui/Card';
 import { Users, Check } from 'lucide-react';
 
 interface CommunityCardProps {
@@ -41,9 +42,9 @@ export const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
   };
 
   return (
-    <div
+    <Card as="article" interactive
       onClick={() => navigate(`/community/${community.name}`)}
-      className="group relative bg-[#161922] hover:bg-[#1C202B] border border-[#262C3A] hover:border-[var(--color-orange-border)] rounded-2xl p-5 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md flex flex-col justify-between text-left space-y-4"
+      className="group relative p-5 cursor-pointer flex flex-col justify-between text-left space-y-4"
     >
       <div className="space-y-3">
         {/* Header: Avatar, Name & Category */}
@@ -59,7 +60,7 @@ export const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
             <h3 className="text-sm sm:text-base font-bold text-[#F1F3F7] group-hover:text-white truncate">
               {community.displayName}
             </h3>
-            <span className="text-xs text-[#6C7482] font-mono block">
+            <span className="text-xs text-[var(--text-muted)] block">
               community/{community.name}
             </span>
             <div className="mt-1">
@@ -77,7 +78,7 @@ export const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
       </div>
 
       {/* Footer: Member count & Join button */}
-      <div className="pt-3 border-t border-[#303235]/60 flex items-center justify-between gap-3 text-xs">
+      <div className="pt-3 flex items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-1.5 text-[#70747C]">
           <Users className="w-3.5 h-3.5 text-[#9A9DA3]" />
           <span className="font-semibold text-[#9A9DA3] tabular-nums">
@@ -90,13 +91,13 @@ export const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
           variant={isJoined ? 'secondary' : 'primary'}
           size="sm"
           onClick={handleJoinClick}
-          leftIcon={isJoined ? <Check className="w-3.5 h-3.5 text-[#22C55E]" /> : undefined}
+          leftIcon={isJoined ? <Check className="w-3.5 h-3.5 text-[var(--color-success)]" /> : undefined}
           className="py-1 px-4 text-xs font-bold"
         >
           {isJoined ? 'Đã tham gia' : 'Tham gia'}
         </Button>
       </div>
-    </div>
+    </Card>
   );
 };
 

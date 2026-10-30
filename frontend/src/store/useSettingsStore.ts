@@ -5,6 +5,7 @@ export interface AccentColorPreset {
   id: string;
   name: string;
   primary: string;
+  ink: string;
   hover: string;
   soft: string;
   border: string;
@@ -16,6 +17,7 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
     id: 'sunset',
     name: 'DISCUSS Orange (Mặc định)',
     primary: '#F97316',
+    ink: '#C2410C',
     hover: '#EA580C',
     soft: 'rgba(249, 115, 22, 0.10)',
     border: 'rgba(249, 115, 22, 0.24)',
@@ -25,6 +27,7 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
     id: 'tangerine',
     name: 'Vivid Tangerine',
     primary: '#FF5700',
+    ink: '#C2410C',
     hover: '#E94B00',
     soft: 'rgba(255, 87, 0, 0.12)',
     border: 'rgba(255, 87, 0, 0.28)',
@@ -34,6 +37,7 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
     id: 'blue',
     name: 'Sapphire Ocean',
     primary: '#2563EB',
+    ink: '#1D4ED8',
     hover: '#1D4ED8',
     soft: 'rgba(37, 99, 235, 0.12)',
     border: 'rgba(37, 99, 235, 0.28)',
@@ -43,6 +47,7 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
     id: 'emerald',
     name: 'Emerald Pine',
     primary: '#059669',
+    ink: '#047857',
     hover: '#047857',
     soft: 'rgba(5, 150, 105, 0.12)',
     border: 'rgba(5, 150, 105, 0.28)',
@@ -52,6 +57,7 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
     id: 'purple',
     name: 'Amethyst Violet',
     primary: '#7C3AED',
+    ink: '#6D28D9',
     hover: '#6D28D9',
     soft: 'rgba(124, 58, 237, 0.12)',
     border: 'rgba(124, 58, 237, 0.28)',
@@ -61,6 +67,7 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
     id: 'rose',
     name: 'Coral Rose',
     primary: '#E11D48',
+    ink: '#BE123C',
     hover: '#BE123C',
     soft: 'rgba(225, 29, 72, 0.12)',
     border: 'rgba(225, 29, 72, 0.28)',
@@ -135,6 +142,7 @@ const applyDOMClasses = (settings: AppearanceSettings) => {
   // Accent Color injection into CSS variables
   const matchedPreset = ACCENT_PRESETS.find((p) => p.primary === settings.accentColor) || ACCENT_PRESETS[0];
   root.style.setProperty('--color-orange', matchedPreset.primary);
+  root.style.setProperty('--color-orange-ink', isDark ? matchedPreset.primary : matchedPreset.ink);
   root.style.setProperty('--color-orange-hover', matchedPreset.hover);
   root.style.setProperty('--color-orange-soft', matchedPreset.soft);
   root.style.setProperty('--color-orange-border', matchedPreset.border);

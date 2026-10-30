@@ -5,6 +5,7 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import Avatar from '../ui/Avatar';
 import Button from '../ui/Button';
+import Tooltip from '../ui/Tooltip';
 import {
   Home,
   Compass,
@@ -56,13 +57,13 @@ export const Sidebar: React.FC = () => {
   const navItemClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-colors duration-150 select-none ${
       isActive
-        ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange)] border-[var(--color-orange-border)] font-bold'
-        : 'border-transparent text-[#959DAA] hover:text-[#F1F3F7] hover:bg-[#1A1E29]'
+        ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] border-[var(--color-orange-border)] font-bold'
+        : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
     } ${isCollapsed ? 'justify-center px-2' : ''}`;
 
   return (
     <aside
-      className={`sticky top-[72px] relative h-[calc(100vh-72px)] bg-[#0F1217] flex flex-col transition-all duration-300 z-30 shrink-0 border-r border-[#262C3A] ${
+      className={`hidden lg:sticky lg:top-[72px] lg:flex lg:h-[calc(100vh-72px)] bg-[var(--bg-sidebar)] flex-col transition-[width] duration-[var(--duration-normal)] z-30 shrink-0 border-r border-[var(--border-color)] ${
         isCollapsed ? 'w-16' : 'w-64'
       }`}
     >
@@ -104,7 +105,7 @@ export const Sidebar: React.FC = () => {
         {/* User Sections */}
         {isAuthenticated && user ? (
           <>
-            <div className="space-y-1 pt-2 border-t border-[#303235]">
+            <div className="space-y-1 pt-2 border-t border-[var(--border-color)]">
               {!isCollapsed && (
                 <div className="text-[11px] font-bold text-[#70747C] uppercase px-3 mb-2 tracking-wider">
                   Cá nhân
@@ -138,7 +139,7 @@ export const Sidebar: React.FC = () => {
             </div>
 
             {/* My Communities list */}
-            <div className="space-y-1 pt-2 border-t border-[#303235]">
+            <div className="space-y-1 pt-2 border-t border-[var(--border-color)]">
               <div className={`flex items-center justify-between px-3 mb-1.5 ${isCollapsed ? 'hidden' : ''}`}>
                 <span className="text-[11px] font-bold text-[#70747C] uppercase tracking-wider">
                   Đã tham gia ({joinedCommunities.length})
@@ -179,7 +180,7 @@ export const Sidebar: React.FC = () => {
 
             {/* Moderation & Admin */}
             {(activeRole === 'OWNER' || activeRole === 'MODERATOR' || activeRole === 'ADMIN') && (
-              <div className="space-y-1 pt-2 border-t border-[#303235]">
+              <div className="space-y-1 pt-2 border-t border-[var(--border-color)]">
                 {!isCollapsed && (
                   <div className="text-[11px] font-bold text-[#70747C] uppercase px-3 mb-2 tracking-wider">
                     Công cụ quản trị
@@ -191,13 +192,13 @@ export const Sidebar: React.FC = () => {
                   className={navItemClass}
                   title="Kiểm duyệt cộng đồng"
                 >
-                  <ShieldAlert className="w-4 h-4 shrink-0 text-[#3B82F6]" />
+                  <ShieldAlert className="w-4 h-4 shrink-0 text-[var(--color-info)]" />
                   {!isCollapsed && <span>Kiểm duyệt bài viết</span>}
                 </NavLink>
 
                 {activeRole === 'ADMIN' && (
                   <NavLink to="/admin" end className={navItemClass} title="Bảng điều khiển Admin">
-                    <ShieldCheck className="w-4 h-4 shrink-0 text-[#EF4444]" />
+                    <ShieldCheck className="w-4 h-4 shrink-0 text-[var(--color-danger)]" />
                     {!isCollapsed && <span>Admin Dashboard</span>}
                   </NavLink>
                 )}
@@ -206,9 +207,9 @@ export const Sidebar: React.FC = () => {
           </>
         ) : (
           /* Guest Banner */
-          <div className="pt-2 border-t border-[#303235]">
+          <div className="pt-2 border-t border-[var(--border-color)]">
             {!isCollapsed ? (
-              <div className="p-3 bg-[#191A1C] border border-[#303235] rounded-2xl space-y-2.5 text-left">
+              <div className="p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-card)] space-y-2.5 text-left">
                 <p className="text-xs text-[#9A9DA3]">
                   Đăng nhập để tham gia thảo luận, lưu bài viết và quản lý cộng đồng.
                 </p>
@@ -227,7 +228,7 @@ export const Sidebar: React.FC = () => {
         )}
 
         {/* Settings */}
-        <div className="space-y-1 pt-2 border-t border-[#262C3A]">
+        <div className="space-y-1 pt-2 border-t border-[var(--border-color)]">
           <NavLink to="/settings" className={navItemClass} title="Cài đặt">
             <Settings className="w-4 h-4 shrink-0" />
             {!isCollapsed && <span>Cài đặt hệ thống</span>}
@@ -235,15 +236,19 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={toggleSidebar}
-        className="absolute right-0 top-[30%] z-50 flex h-10 w-10 translate-x-1/2 items-center justify-center rounded-full border border-[#59616E] bg-[#0F1217] text-[#D8DEE8] shadow-lg transition-colors hover:border-[var(--color-orange)] hover:text-[var(--color-orange)]"
-        title={isCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
-        aria-label={isCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
+      <Tooltip
+        content={isCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
+        className="absolute right-0 top-[30%] z-50 translate-x-1/2"
       >
-        <Menu className="h-5 w-5" />
-      </button>
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-hover)] bg-[var(--bg-sidebar)] text-[var(--text-primary)] transition-colors hover:border-[var(--color-orange-ink)] hover:text-[var(--color-orange-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-orange-ink)]"
+          aria-label={isCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      </Tooltip>
     </aside>
   );
 };

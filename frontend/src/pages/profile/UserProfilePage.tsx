@@ -102,10 +102,10 @@ export const UserProfilePage: React.FC = () => {
   const closeAvatarEditor = () => setIsAvatarEditorOpen(false);
   const closeBannerEditor = () => setIsBannerEditorOpen(false);
   if (profileLoading) {
-    return <div className="py-24 text-center text-sm text-[#9A9DA3]">Đang tải hồ sơ...</div>;
+    return <div role="status" className="py-24 text-center text-sm text-[var(--text-secondary)]">Đang tải hồ sơ...</div>;
   }
   if (!profileUser) {
-    return <div className="py-24 text-center text-sm text-[#9A9DA3]">Không tìm thấy người dùng.</div>;
+    return <div role="status" className="py-24 text-center text-sm text-[var(--text-secondary)]">Không tìm thấy người dùng.</div>;
   }
 
   const userPosts = posts.filter((p) => p.author.username === profileUser.username);
@@ -120,14 +120,14 @@ export const UserProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl pb-16 text-left [zoom:0.9]">
-      <section>
-        <div className="relative h-28 w-full sm:h-36">
+    <div className="mx-auto w-full max-w-6xl space-y-5 pb-16 text-left">
+      <section className="overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
+        <div className="relative h-32 w-full bg-[var(--bg-elevated)] sm:h-44">
           {isMe && (
             <button
               type="button"
               onClick={() => setImageActionsTarget((target) => target === 'banner' ? null : 'banner')}
-              className="group absolute inset-0 z-10 overflow-hidden rounded-xl bg-[var(--bg-surface)] text-left"
+              className="group absolute inset-0 z-10 overflow-hidden bg-[var(--bg-surface)] text-left"
               aria-label="Chỉnh sửa ảnh bìa"
               title="Chỉnh sửa ảnh bìa"
             >
@@ -147,7 +147,7 @@ export const UserProfilePage: React.FC = () => {
           )}
           {!isMe && (
             <button type="button" onClick={() => setImageActionsTarget((target) => target === 'banner' ? null : 'banner')} aria-label="Tùy chọn ảnh bìa"
-              className="absolute inset-0 overflow-hidden rounded-xl bg-[var(--bg-surface)] text-left">
+              className="absolute inset-0 overflow-hidden bg-[var(--bg-surface)] text-left">
               {profileUser.bannerUrl && (
                 <img
                   src={profileUser.bannerUrl}
@@ -158,7 +158,7 @@ export const UserProfilePage: React.FC = () => {
             </button>
           )}
           {imageActionsTarget === 'banner' && (
-            <div className="absolute right-2 top-2 z-50 min-w-44 overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-1.5 shadow-xl">
+            <div data-ui="popover" className="absolute right-2 top-2 z-50 min-w-44 overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-1.5 shadow-xl">
               {profileUser.bannerUrl && (
                 <button type="button" onClick={() => { setPreviewKind('banner'); setImageActionsTarget(null); setIsAvatarPreviewOpen(true); }}
                   className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
@@ -177,7 +177,7 @@ export const UserProfilePage: React.FC = () => {
             <button
               type="button"
               onClick={() => setImageActionsTarget((target) => target === 'avatar' ? null : 'avatar')}
-              className="group relative h-full w-full rounded-full border-4 border-[var(--bg-main)] bg-[var(--bg-main)] shadow-lg"
+              className="group relative h-full w-full rounded-full border-4 border-[var(--bg-surface)] bg-[var(--bg-surface)]"
               aria-label="Tùy chọn ảnh đại diện"
               aria-expanded={imageActionsTarget === 'avatar'}
             >
@@ -187,7 +187,7 @@ export const UserProfilePage: React.FC = () => {
               </span>
             </button>
             {imageActionsTarget === 'avatar' && (
-              <div className="absolute left-0 top-full z-50 mt-1 min-w-44 overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-1.5 shadow-xl sm:mt-1">
+              <div data-ui="popover" className="absolute left-0 top-full z-50 mt-1 min-w-44 overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-1.5 shadow-xl sm:mt-1">
                 {profileUser.avatarUrl && (
                   <button type="button" onClick={() => { setPreviewKind('avatar'); setImageActionsTarget(null); setIsAvatarPreviewOpen(true); }}
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
@@ -205,11 +205,11 @@ export const UserProfilePage: React.FC = () => {
           </div>
         </div>
 
-        <div className="-mt-12 px-4 pb-4 pt-12 sm:-mt-14 sm:px-7 sm:pb-5 sm:pt-14">
+        <div className="-mt-12 px-4 pb-5 pt-12 sm:-mt-14 sm:px-7 sm:pb-6 sm:pt-14">
           <div className="flex min-h-12 items-center gap-2 sm:min-h-14 sm:gap-3">
             <span className="w-20 shrink-0 sm:w-28" aria-hidden="true" />
             <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
-              <h1 className="max-w-full truncate text-base font-black text-[var(--text-primary)] sm:text-xl">
+              <h1 className="max-w-full truncate text-lg font-semibold tracking-tight text-[var(--text-primary)] sm:text-2xl">
                 {profileUser.displayName}
               </h1>
               {profileUser.role === 'OWNER' && <Badge role="OWNER" />}
@@ -234,7 +234,7 @@ export const UserProfilePage: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsReportOpen(true)}
-                    className="text-[#EF4444]"
+                    className="text-[var(--color-danger)]"
                     title="Báo cáo tài khoản"
                   >
                     <Flag className="w-4 h-4" />
@@ -255,15 +255,15 @@ export const UserProfilePage: React.FC = () => {
 
         </div>
 
-      <div className="grid grid-cols-1 items-start border-y border-[var(--border-color)] lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
         <section className="min-w-0 space-y-4 py-4 sm:py-5 lg:pr-5">
-        <div className="flex items-center gap-1 border-b border-[var(--border-color)] text-sm font-semibold">
+        <div className="flex items-center gap-1 rounded-xl bg-[var(--bg-main)] p-1 text-sm font-semibold">
           <button
             onClick={() => setActiveTab('posts')}
-            className={`flex items-center gap-2 border-b-2 px-4 py-3 transition-colors cursor-pointer ${
+            className={`flex items-center gap-2 rounded-lg px-4 py-2.5 transition-colors cursor-pointer ${
               activeTab === 'posts'
-                ? 'border-[var(--color-orange)] text-[var(--text-primary)]'
-                : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)]'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
             }`}
           >
             <FileText className="h-4 w-4" />
@@ -272,10 +272,10 @@ export const UserProfilePage: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('comments')}
-            className={`flex items-center gap-2 border-b-2 px-4 py-3 transition-colors cursor-pointer ${
+            className={`flex items-center gap-2 rounded-lg px-4 py-2.5 transition-colors cursor-pointer ${
               activeTab === 'comments'
-                ? 'border-[var(--color-orange)] text-[var(--text-primary)]'
-                : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)]'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
             }`}
           >
             <MessageSquare className="h-4 w-4" />
@@ -310,7 +310,7 @@ export const UserProfilePage: React.FC = () => {
         )}
         </section>
 
-        <aside className="border-t border-[var(--border-color)] py-4 sm:py-5 lg:border-l lg:border-t-0 lg:pl-5">
+        <aside className="rounded-xl bg-[var(--bg-main)] px-4 py-4 sm:px-5 sm:py-5">
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-sm font-bold text-[var(--text-primary)]">Giới thiệu</h2>
@@ -328,7 +328,7 @@ export const UserProfilePage: React.FC = () => {
             <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[var(--text-secondary)]">
               {profileUser.bio || 'Chưa có phần giới thiệu.'}
             </p>
-            <div className="mt-4 space-y-3 border-t border-[var(--border-color)] pt-4 text-xs text-[var(--text-secondary)]">
+            <div className="mt-4 space-y-3 text-sm text-[var(--text-secondary)]">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
                 <span>Tham gia {joinedLabel}</span>
@@ -346,7 +346,7 @@ export const UserProfilePage: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="mt-4 flex items-center gap-2 border-t border-[var(--border-color)] pt-4 text-xs text-[var(--text-secondary)]">
+            <div className="mt-4 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
               <Award className="h-4 w-4 text-[var(--color-orange)]" />
               <span>{profileUser.karma} bài viết</span>
             </div>
@@ -371,7 +371,7 @@ export const UserProfilePage: React.FC = () => {
         maxWidth="4xl"
       >
         <div className="mx-auto max-w-4xl overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)]">
-          <div className="flex items-center gap-3 border-b border-[var(--border-color)] px-4 py-3">
+          <div className="flex items-center gap-3 px-4 py-3">
             <Avatar src={profileUser.avatarUrl} alt={profileUser.displayName} size="sm" />
             <div className="min-w-0">
               <div className="truncate text-sm font-semibold text-[var(--text-primary)]">{profileUser.displayName}</div>

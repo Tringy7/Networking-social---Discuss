@@ -51,19 +51,19 @@ export const PrivacySettingsPage: React.FC = () => {
 
   return (
     <form onSubmit={handleSave} className="space-y-6 text-left">
-      <div className="pb-3 border-b border-[#303235]">
-        <h2 className="text-lg font-bold text-[#F5F5F5] flex items-center gap-2">
-          <Lock className="w-5 h-5 text-[#22C55E]" />
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <Lock className="w-5 h-5 text-[var(--color-orange-ink)]" />
           <span>Quyền riêng tư & Bảo mật</span>
         </h2>
-        <p className="text-xs text-[#9A9DA3]">
+        <p className="text-sm text-[var(--text-secondary)]">
           Kiểm soát những thông tin nào có thể hiển thị công khai tới các thành viên khác trên DISCUSS.
         </p>
       </div>
 
       <div className="space-y-4">
         {/* Toggle 1: DOB */}
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-[#141517] border border-[#303235]">
+        <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)]">
           <div className="space-y-0.5 max-w-md">
             <h4 className="text-xs sm:text-sm font-bold text-[#F5F5F5]">Hiển thị ngày sinh trên hồ sơ</h4>
             <p className="text-xs text-[#9A9DA3]">
@@ -72,13 +72,16 @@ export const PrivacySettingsPage: React.FC = () => {
           </div>
           <button
             type="button"
+            role="switch"
+            aria-checked={showDOB}
+            aria-label="Hiển thị ngày sinh trên hồ sơ"
             onClick={() => setShowDOB(!showDOB)}
             className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-              showDOB ? 'bg-[#FF5700]' : 'bg-[#CBD5E1]'
+              showDOB ? 'bg-[var(--color-orange)]' : 'bg-[var(--bg-elevated)]'
             }`}
           >
             <div
-              className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+              className={`bg-white w-4 h-4 rounded-full transform transition-transform ${
                 showDOB ? 'translate-x-6' : 'translate-x-0'
               }`}
             />
@@ -86,7 +89,7 @@ export const PrivacySettingsPage: React.FC = () => {
         </div>
 
         {/* Toggle 2: Location */}
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-[#141517] border border-[#303235]">
+        <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)]">
           <div className="space-y-0.5 max-w-md">
             <h4 className="text-xs sm:text-sm font-bold text-[#F5F5F5]">Hiển thị vị trí / tỉnh thành</h4>
             <p className="text-xs text-[#9A9DA3]">
@@ -95,13 +98,16 @@ export const PrivacySettingsPage: React.FC = () => {
           </div>
           <button
             type="button"
+            role="switch"
+            aria-checked={showLocation}
+            aria-label="Hiển thị vị trí hoặc tỉnh thành"
             onClick={() => setShowLocation(!showLocation)}
             className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-              showLocation ? 'bg-[#FF5700]' : 'bg-[#CBD5E1]'
+              showLocation ? 'bg-[var(--color-orange)]' : 'bg-[var(--bg-elevated)]'
             }`}
           >
             <div
-              className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+              className={`bg-white w-4 h-4 rounded-full transform transition-transform ${
                 showLocation ? 'translate-x-6' : 'translate-x-0'
               }`}
             />
@@ -109,7 +115,7 @@ export const PrivacySettingsPage: React.FC = () => {
         </div>
 
         {/* Toggle 3: Posts on profile */}
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-[#141517] border border-[#303235]">
+        <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)]">
           <div className="space-y-0.5 max-w-md">
             <h4 className="text-xs sm:text-sm font-bold text-[#F5F5F5]">Hiển thị danh sách bài viết trên hồ sơ</h4>
             <p className="text-xs text-[#9A9DA3]">
@@ -118,13 +124,16 @@ export const PrivacySettingsPage: React.FC = () => {
           </div>
           <button
             type="button"
+            role="switch"
+            aria-checked={showPosts}
+            aria-label="Hiển thị danh sách bài viết trên hồ sơ"
             onClick={() => setShowPosts(!showPosts)}
             className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-              showPosts ? 'bg-[#FF5700]' : 'bg-[#CBD5E1]'
+              showPosts ? 'bg-[var(--color-orange)]' : 'bg-[var(--bg-elevated)]'
             }`}
           >
             <div
-              className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+              className={`bg-white w-4 h-4 rounded-full transform transition-transform ${
                 showPosts ? 'translate-x-6' : 'translate-x-0'
               }`}
             />
@@ -132,7 +141,7 @@ export const PrivacySettingsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-4 border-t border-[#303235]">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
         <button
           type="button"
           onClick={handleReset}

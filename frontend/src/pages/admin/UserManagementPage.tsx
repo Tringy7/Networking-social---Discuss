@@ -142,8 +142,8 @@ export const UserManagementPage: React.FC = () => {
                     <span
                       className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
                         u.status === 'ACTIVE'
-                          ? 'bg-[#22C55E]/15 text-[#22C55E]'
-                          : 'bg-[#EF4444]/15 text-[#EF4444]'
+                          ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
+                          : 'bg-[var(--color-danger)]/15 text-[var(--color-danger)]'
                       }`}
                     >
                       {u.status === 'ACTIVE'

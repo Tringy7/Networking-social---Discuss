@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useReportStore } from '../../store/useReportStore';
-import { useCommunityStore } from '../../store/useCommunityStore';
 import { useToastStore } from '../../store/useToastStore';
 import { ReportStatus } from '../../types';
 import Button from '../../components/ui/Button';
@@ -10,10 +9,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
-  Trash2,
   Clock,
-  UserX,
 } from 'lucide-react';
 
 export const CommunityModerationPage: React.FC = () => {
@@ -21,21 +17,28 @@ export const CommunityModerationPage: React.FC = () => {
   const navigate = useNavigate();
 
   const { reports, resolveReport, rejectReport, hydrateCommunity } = useReportStore();
-  const { communities } = useCommunityStore();
   const { addToast } = useToastStore();
 
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'RESOLVED' | 'REJECTED'>(
     'PENDING'
   );
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     if (!communityName) return;
+    let active = true;
+    setIsLoading(true);
+    setLoadFailed(false);
     hydrateCommunity(communityName).catch((error: unknown) => {
+      if (!active) return;
+      setLoadFailed(true);
       addToast(error instanceof Error ? error.message : 'Không thể tải hàng đợi kiểm duyệt.', 'error');
+    }).finally(() => {
+      if (active) setIsLoading(false);
     });
+    return () => { active = false; };
   }, [addToast, communityName, hydrateCommunity]);
-
-  const community = communities.find((c) => c.name === communityName);
 
   // Filter reports relevant to this community
   const communityReports = reports.filter((r) => {
@@ -62,6 +65,11 @@ export const CommunityModerationPage: React.FC = () => {
     }
   };
 
+  const formatReportDate = (value: string) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? 'Ngày không rõ' : date.toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' });
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 text-left pb-16">
       {/* Header */}
@@ -69,16 +77,18 @@ export const CommunityModerationPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(`/community/${communityName}`)}
-            className="p-2 rounded-xl bg-[#191A1C] border border-[#303235] text-[#9A9DA3] hover:text-[#F5F5F5] transition-colors"
+            aria-label="Quay lại cộng đồng"
+            className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--bg-surface)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-[#F5F5F5] flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-[#3B82F6]" />
-              <span>Hàng đợi kiểm duyệt community/{communityName}</span>
+            <p className="text-sm font-medium text-[var(--text-muted)]">community/{communityName}</p>
+            <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
+              <ShieldAlert className="w-5 h-5 text-[var(--color-orange-ink)]" />
+              <span>Hàng đợi kiểm duyệt</span>
             </h1>
-            <p className="text-xs text-[#9A9DA3] mt-0.5">
+            <p className="text-sm text-[var(--text-secondary)] mt-1">
               Xem xét các nội dung bị báo cáo bởi thành viên và xử phạt vi phạm
             </p>
           </div>
@@ -86,15 +96,15 @@ export const CommunityModerationPage: React.FC = () => {
       </div>
 
       {/* Status filter tabs */}
-      <div className="flex items-center gap-2 border-b border-[#303235] pb-2 text-xs font-semibold">
+      <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-[var(--bg-surface)] p-1 text-sm font-medium">
         {(['PENDING', 'RESOLVED', 'REJECTED', 'ALL'] as const).map((s) => (
           <button
             key={s}
             onClick={() => setStatusFilter(s)}
             className={`px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer ${
               statusFilter === s
-                ? 'bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6]/30 font-bold'
-                : 'text-[#9A9DA3] hover:text-[#F5F5F5]'
+                ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] font-semibold'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
             }`}
           >
             {s === 'PENDING'
@@ -110,24 +120,42 @@ export const CommunityModerationPage: React.FC = () => {
 
       {/* Reports Queue */}
       <div className="space-y-4">
-        {communityReports.map((report) => (
+        {isLoading ? (
+          <div role="status" className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] py-16 text-center text-sm text-[var(--text-secondary)]">Đang tải báo cáo…</div>
+        ) : loadFailed ? (
+          <div role="alert" className="space-y-3 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-8 text-center">
+            <h2 className="text-base font-semibold text-[var(--text-primary)]">Không tải được hàng đợi</h2>
+            <p className="text-sm text-[var(--text-secondary)]">Kiểm tra kết nối rồi thử tải lại.</p>
+            <Button variant="secondary" size="sm" onClick={() => {
+              if (!communityName) return;
+              setIsLoading(true);
+              setLoadFailed(false);
+              hydrateCommunity(communityName)
+                .catch((error: unknown) => {
+                  setLoadFailed(true);
+                  addToast(error instanceof Error ? error.message : 'Không thể tải hàng đợi kiểm duyệt.', 'error');
+                })
+                .finally(() => setIsLoading(false));
+            }}>Thử lại</Button>
+          </div>
+        ) : communityReports.map((report) => (
           <div
             key={report.id}
-            className="p-5 rounded-3xl bg-[#191A1C] border border-[#303235] space-y-3.5 shadow-md"
+            className="space-y-4 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 sm:p-5"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold text-[#FF5700] bg-[#FF5700]/10 px-2 py-0.5 rounded">
+                  <span className="rounded-md bg-[var(--color-orange-soft)] px-2 py-1 text-xs font-semibold text-[var(--color-orange-ink)]">
                     {report.contentType}
                   </span>
                   <span
-                    className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                    className={`rounded-md px-2 py-1 text-xs font-semibold ${
                       report.status === 'PENDING'
-                        ? 'bg-[#F59E0B]/15 text-[#F59E0B]'
+                        ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]'
                         : report.status === 'RESOLVED'
-                        ? 'bg-[#22C55E]/15 text-[#22C55E]'
-                        : 'bg-[#70747C]/15 text-[#70747C]'
+                        ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
+                        : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'
                     }`}
                   >
                     {report.status === 'PENDING'
@@ -137,40 +165,40 @@ export const CommunityModerationPage: React.FC = () => {
                       : 'ĐÃ BÁC BỎ'}
                   </span>
                 </div>
-                <h3 className="text-sm font-bold text-[#F5F5F5]">
+                <h2 className="text-base font-semibold text-[var(--text-primary)]">
                   {report.contentTitle || `Nội dung ID: ${report.contentId}`}
-                </h3>
+                </h2>
               </div>
 
-              <span className="text-[11px] text-[#70747C] flex items-center gap-1 shrink-0">
-                <Clock className="w-3.5 h-3.5" />
-                hôm nay
+              <span className="flex shrink-0 items-center gap-1 text-xs text-[var(--text-muted)]">
+                <Clock className="h-3.5 w-3.5" />
+                {formatReportDate(report.createdAt)}
               </span>
             </div>
 
             {/* Snippet / reason */}
-            <div className="p-3 rounded-2xl bg-[#101112] border border-[#303235] text-xs space-y-1.5">
-              <div className="text-[#9A9DA3]">
-                <strong className="text-[#F5F5F5]">Trích dẫn:</strong> "{report.contentSnippet}"
+            <div className="space-y-2 rounded-xl bg-[var(--bg-main)] p-4 text-sm">
+              <div className="text-[var(--text-secondary)]">
+                <strong className="text-[var(--text-primary)]">Trích dẫn:</strong> "{report.contentSnippet}"
               </div>
-              <div className="text-[#F59E0B] font-medium">
+              <div className="font-medium text-[var(--color-warning)]">
                 <strong>Lý do báo cáo:</strong> {report.reason}
               </div>
-              <div className="text-[11px] text-[#70747C]">
+              <div className="text-xs text-[var(--text-muted)]">
                 Người báo cáo: @{report.reporterUsername}{' '}
                 {report.targetUsername && `· Tài khoản bị tố cáo: @${report.targetUsername}`}
               </div>
             </div>
 
             {report.resolutionNote && (
-              <div className="text-xs text-[#22C55E] bg-[#22C55E]/10 p-2.5 rounded-xl border border-[#22C55E]/20">
+              <div className="rounded-xl bg-[var(--color-success)]/10 p-3 text-sm text-[var(--color-success)]">
                 <strong>Ghi chú xử lý:</strong> {report.resolutionNote}
               </div>
             )}
 
             {/* Mod Action Buttons */}
             {report.status === 'PENDING' && (
-              <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#303235]/60">
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -192,11 +220,11 @@ export const CommunityModerationPage: React.FC = () => {
           </div>
         ))}
 
-        {communityReports.length === 0 && (
-          <div className="py-20 text-center bg-[#191A1C] border border-[#303235] rounded-3xl p-8 space-y-3">
-            <CheckCircle2 className="w-10 h-10 text-[#22C55E] mx-auto opacity-70" />
-            <h4 className="text-base font-bold text-[#F5F5F5]">Hàng đợi kiểm duyệt trống!</h4>
-            <p className="text-xs text-[#9A9DA3]">
+        {!isLoading && !loadFailed && communityReports.length === 0 && (
+          <div className="space-y-3 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-16 text-center">
+            <CheckCircle2 className="mx-auto h-8 w-8 text-[var(--color-success)]" />
+            <h2 className="text-base font-semibold text-[var(--text-primary)]">Không có báo cáo trong mục này</h2>
+            <p className="text-sm text-[var(--text-secondary)]">
               Không có báo cáo nào đang chờ xử lý trong mục này.
             </p>
           </div>
