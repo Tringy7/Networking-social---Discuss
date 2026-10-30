@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { usePostStore } from '../../store/usePostStore';
@@ -11,6 +11,7 @@ import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import ReportModal from '../../components/post/ReportModal';
 import Modal from '../../components/ui/Modal';
+import ImageCropEditor from '../../components/profile/ImageCropEditor';
 import {
   Calendar,
   MapPin,
@@ -23,107 +24,8 @@ import {
   MessageSquare,
   Award,
   Camera,
-  ImagePlus,
-  RotateCcw,
-  RotateCw,
-  ZoomIn,
-  ZoomOut,
-  Image as ImageIcon,
+  Eye,
 } from 'lucide-react';
-
-interface CropOffset {
-  x: number;
-  y: number;
-}
-
-async function createCroppedAvatar(
-  src: string,
-  zoom: number,
-  rotation: number,
-  offset: CropOffset
-): Promise<File> {
-  const image = new Image();
-  await new Promise<void>((resolve, reject) => {
-    image.onload = () => resolve();
-    image.onerror = () => reject(new Error('Không thể đọc ảnh đã chọn.'));
-    image.src = src;
-  });
-
-  const size = 512;
-  const isQuarterTurn = Math.abs(rotation % 180) === 90;
-  const rotatedWidth = isQuarterTurn ? image.naturalHeight : image.naturalWidth;
-  const rotatedHeight = isQuarterTurn ? image.naturalWidth : image.naturalHeight;
-  const scale = Math.max(size / rotatedWidth, size / rotatedHeight) * zoom;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const context = canvas.getContext('2d');
-  if (!context) throw new Error('Trình duyệt không hỗ trợ chỉnh sửa ảnh.');
-
-  context.translate(size / 2 + offset.x * size, size / 2 + offset.y * size);
-  context.rotate((rotation * Math.PI) / 180);
-  context.drawImage(
-    image,
-    (-image.naturalWidth * scale) / 2,
-    (-image.naturalHeight * scale) / 2,
-    image.naturalWidth * scale,
-    image.naturalHeight * scale
-  );
-
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (result) => result ? resolve(result) : reject(new Error('Không thể xuất ảnh đã chỉnh sửa.')),
-      'image/jpeg',
-      0.92
-    );
-  });
-  return new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
-}
-
-async function createCroppedBanner(
-  src: string,
-  zoom: number,
-  rotation: number,
-  offset: CropOffset
-): Promise<File> {
-  const image = new Image();
-  await new Promise<void>((resolve, reject) => {
-    image.onload = () => resolve();
-    image.onerror = () => reject(new Error('Không thể đọc ảnh đã chọn.'));
-    image.src = src;
-  });
-
-  const width = 1920;
-  const height = 640;
-  const isQuarterTurn = Math.abs(rotation % 180) === 90;
-  const rotatedWidth = isQuarterTurn ? image.naturalHeight : image.naturalWidth;
-  const rotatedHeight = isQuarterTurn ? image.naturalWidth : image.naturalHeight;
-  const scale = Math.max(width / rotatedWidth, height / rotatedHeight) * zoom;
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext('2d');
-  if (!context) throw new Error('Trình duyệt không hỗ trợ chỉnh sửa ảnh.');
-
-  context.translate(width / 2 + offset.x * width, height / 2 + offset.y * height);
-  context.rotate((rotation * Math.PI) / 180);
-  context.drawImage(
-    image,
-    (-image.naturalWidth * scale) / 2,
-    (-image.naturalHeight * scale) / 2,
-    image.naturalWidth * scale,
-    image.naturalHeight * scale
-  );
-
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (result) => result ? resolve(result) : reject(new Error('Không thể xuất ảnh đã chỉnh sửa.')),
-      'image/jpeg',
-      0.92
-    );
-  });
-  return new File([blob], 'profile-banner.jpg', { type: 'image/jpeg' });
-}
 
 export const UserProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
@@ -134,22 +36,14 @@ export const UserProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isAvatarEditorOpen, setIsAvatarEditorOpen] = useState(false);
-  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState('');
-  const [avatarZoom, setAvatarZoom] = useState(1);
-  const [avatarRotation, setAvatarRotation] = useState(0);
-  const [avatarOffset, setAvatarOffset] = useState<CropOffset>({ x: 0, y: 0 });
+  const [imageActionsTarget, setImageActionsTarget] = useState<'avatar' | 'banner' | null>(null);
+  const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false);
+  const [previewKind, setPreviewKind] = useState<'avatar' | 'banner'>('avatar');
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [isBannerEditorOpen, setIsBannerEditorOpen] = useState(false);
-  const [bannerPreviewUrl, setBannerPreviewUrl] = useState('');
-  const [bannerZoom, setBannerZoom] = useState(1);
-  const [bannerRotation, setBannerRotation] = useState(0);
-  const [bannerOffset, setBannerOffset] = useState<CropOffset>({ x: 0, y: 0 });
   const [isSavingBanner, setIsSavingBanner] = useState(false);
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
-  const avatarInputRef = useRef<HTMLInputElement>(null);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
-  const dragPositionRef = useRef<{ x: number; y: number } | null>(null);
 
   const isMe = currentUser?.username === username;
 
@@ -205,151 +99,8 @@ export const UserProfilePage: React.FC = () => {
     };
   }, [addToast, authStatus, currentUser, isMe, username]);
 
-  useEffect(() => {
-    if (!avatarPreviewUrl) return;
-    return () => URL.revokeObjectURL(avatarPreviewUrl);
-  }, [avatarPreviewUrl]);
-
-  useEffect(() => {
-    if (!bannerPreviewUrl) return;
-    return () => URL.revokeObjectURL(bannerPreviewUrl);
-  }, [bannerPreviewUrl]);
-
-  const closeAvatarEditor = () => {
-    setIsAvatarEditorOpen(false);
-    setAvatarPreviewUrl('');
-    setAvatarZoom(1);
-    setAvatarRotation(0);
-    setAvatarOffset({ x: 0, y: 0 });
-    dragPositionRef.current = null;
-  };
-
-  const handleAvatarFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      addToast('Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.', 'error');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      addToast('Ảnh không được vượt quá 10 MB.', 'error');
-      return;
-    }
-    setAvatarPreviewUrl(URL.createObjectURL(file));
-    setAvatarZoom(1);
-    setAvatarRotation(0);
-    setAvatarOffset({ x: 0, y: 0 });
-  };
-
-  const closeBannerEditor = () => {
-    setIsBannerEditorOpen(false);
-    setBannerPreviewUrl('');
-    setBannerZoom(1);
-    setBannerRotation(0);
-    setBannerOffset({ x: 0, y: 0 });
-    dragPositionRef.current = null;
-  };
-
-  const handleBannerFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      addToast('Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.', 'error');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      addToast('Ảnh không được vượt quá 10 MB.', 'error');
-      return;
-    }
-    setBannerPreviewUrl(URL.createObjectURL(file));
-    setBannerZoom(1);
-    setBannerRotation(0);
-    setBannerOffset({ x: 0, y: 0 });
-  };
-
-  const handleSaveAvatar = async () => {
-    if (!avatarPreviewUrl) {
-      addToast('Chọn ảnh đại diện trước khi lưu.', 'warning');
-      return;
-    }
-    setIsSavingAvatar(true);
-    try {
-      const croppedAvatar = await createCroppedAvatar(
-        avatarPreviewUrl,
-        avatarZoom,
-        avatarRotation,
-        avatarOffset
-      );
-      await uploadAvatar(croppedAvatar);
-      const updatedUser = useAuthStore.getState().user;
-      if (updatedUser) setProfileUser(updatedUser);
-      addToast('Đã cập nhật ảnh đại diện.', 'success');
-      closeAvatarEditor();
-    } catch (error) {
-      addToast(error instanceof Error ? error.message : 'Không thể cập nhật ảnh đại diện.', 'error');
-    } finally {
-      setIsSavingAvatar(false);
-    }
-  };
-
-  const handleSaveBanner = async () => {
-    if (!bannerPreviewUrl) {
-      addToast('Chọn ảnh bìa trước khi lưu.', 'warning');
-      return;
-    }
-    setIsSavingBanner(true);
-    try {
-      const croppedBanner = await createCroppedBanner(
-        bannerPreviewUrl,
-        bannerZoom,
-        bannerRotation,
-        bannerOffset
-      );
-      await uploadBanner(croppedBanner);
-      const updatedUser = useAuthStore.getState().user;
-      if (updatedUser) setProfileUser(updatedUser);
-      addToast('Đã cập nhật ảnh bìa.', 'success');
-      closeBannerEditor();
-    } catch (error) {
-      addToast(error instanceof Error ? error.message : 'Không thể cập nhật ảnh bìa.', 'error');
-    } finally {
-      setIsSavingBanner(false);
-    }
-  };
-
-  const handleAvatarCropPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragPositionRef.current = { x: event.clientX, y: event.clientY };
-  };
-
-  const handleAvatarCropPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const previousPosition = dragPositionRef.current;
-    if (!previousPosition) return;
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const deltaX = (event.clientX - previousPosition.x) / bounds.width;
-    const deltaY = (event.clientY - previousPosition.y) / bounds.height;
-    dragPositionRef.current = { x: event.clientX, y: event.clientY };
-    setAvatarOffset((offset) => ({
-      x: Math.max(-0.5, Math.min(0.5, offset.x + deltaX)),
-      y: Math.max(-0.5, Math.min(0.5, offset.y + deltaY)),
-    }));
-  };
-
-  const handleBannerCropPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const previousPosition = dragPositionRef.current;
-    if (!previousPosition) return;
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const deltaX = (event.clientX - previousPosition.x) / bounds.width;
-    const deltaY = (event.clientY - previousPosition.y) / bounds.height;
-    dragPositionRef.current = { x: event.clientX, y: event.clientY };
-    setBannerOffset((offset) => ({
-      x: Math.max(-0.5, Math.min(0.5, offset.x + deltaX)),
-      y: Math.max(-0.5, Math.min(0.5, offset.y + deltaY)),
-    }));
-  };
-
+  const closeAvatarEditor = () => setIsAvatarEditorOpen(false);
+  const closeBannerEditor = () => setIsBannerEditorOpen(false);
   if (profileLoading) {
     return <div className="py-24 text-center text-sm text-[#9A9DA3]">Đang tải hồ sơ...</div>;
   }
@@ -375,7 +126,7 @@ export const UserProfilePage: React.FC = () => {
           {isMe && (
             <button
               type="button"
-              onClick={() => setIsBannerEditorOpen(true)}
+              onClick={() => setImageActionsTarget((target) => target === 'banner' ? null : 'banner')}
               className="group absolute inset-0 z-10 overflow-hidden rounded-xl bg-[var(--bg-surface)] text-left"
               aria-label="Chỉnh sửa ảnh bìa"
               title="Chỉnh sửa ảnh bìa"
@@ -395,7 +146,8 @@ export const UserProfilePage: React.FC = () => {
             </button>
           )}
           {!isMe && (
-            <div className="absolute inset-0 overflow-hidden rounded-xl bg-[var(--bg-surface)]">
+            <button type="button" onClick={() => setImageActionsTarget((target) => target === 'banner' ? null : 'banner')} aria-label="Tùy chọn ảnh bìa"
+              className="absolute inset-0 overflow-hidden rounded-xl bg-[var(--bg-surface)] text-left">
               {profileUser.bannerUrl && (
                 <img
                   src={profileUser.bannerUrl}
@@ -403,34 +155,54 @@ export const UserProfilePage: React.FC = () => {
                   className="h-full w-full object-cover"
                 />
               )}
+            </button>
+          )}
+          {imageActionsTarget === 'banner' && (
+            <div className="absolute right-2 top-2 z-50 min-w-44 overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-1.5 shadow-xl">
+              {profileUser.bannerUrl && (
+                <button type="button" onClick={() => { setPreviewKind('banner'); setImageActionsTarget(null); setIsAvatarPreviewOpen(true); }}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
+                  <Eye className="h-4 w-4" /> Xem ảnh bìa
+                </button>
+              )}
+              {isMe && (
+                <button type="button" onClick={() => { setImageActionsTarget(null); setIsBannerEditorOpen(true); }}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
+                  <Camera className="h-4 w-4" /> Chỉnh ảnh bìa
+                </button>
+              )}
             </div>
           )}
-          {isMe ? (
+          <div className="absolute bottom-0 left-5 z-30 h-24 w-24 translate-y-1/2 sm:left-7 sm:h-28 sm:w-28">
             <button
               type="button"
-              onClick={() => setIsAvatarEditorOpen(true)}
-              className="group absolute bottom-0 left-5 z-20 h-24 w-24 translate-y-1/2 rounded-full border-4 border-[var(--bg-main)] bg-[var(--bg-main)] shadow-lg sm:left-7 sm:h-28 sm:w-28"
-              aria-label="Chỉnh sửa ảnh đại diện"
-              title="Chỉnh sửa ảnh đại diện"
+              onClick={() => setImageActionsTarget((target) => target === 'avatar' ? null : 'avatar')}
+              className="group relative h-full w-full rounded-full border-4 border-[var(--bg-main)] bg-[var(--bg-main)] shadow-lg"
+              aria-label="Tùy chọn ảnh đại diện"
+              aria-expanded={imageActionsTarget === 'avatar'}
             >
-              <Avatar
-                src={profileUser.avatarUrl}
-                alt={profileUser.displayName}
-                size="2xl"
-                className="h-full w-full"
-              />
+              <Avatar src={profileUser.avatarUrl} alt={profileUser.displayName} size="2xl" className="h-full w-full" />
               <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-                <Camera className="h-6 w-6" />
+                {isMe ? <Camera className="h-6 w-6" /> : <Eye className="h-6 w-6" />}
               </span>
             </button>
-          ) : (
-            <Avatar
-              src={profileUser.avatarUrl}
-              alt={profileUser.displayName}
-              size="2xl"
-              className="absolute bottom-0 left-5 z-20 h-24 w-24 translate-y-1/2 border-4 border-[var(--bg-main)] bg-[var(--bg-main)] shadow-lg sm:left-7 sm:h-28 sm:w-28"
-            />
-          )}
+            {imageActionsTarget === 'avatar' && (
+              <div className="absolute left-0 top-full z-50 mt-1 min-w-44 overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-1.5 shadow-xl sm:mt-1">
+                {profileUser.avatarUrl && (
+                  <button type="button" onClick={() => { setPreviewKind('avatar'); setImageActionsTarget(null); setIsAvatarPreviewOpen(true); }}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
+                    <Eye className="h-4 w-4" /> Xem ảnh đại diện
+                  </button>
+                )}
+                {isMe && imageActionsTarget === 'avatar' && (
+                  <button type="button" onClick={() => { setImageActionsTarget(null); setIsAvatarEditorOpen(true); }}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
+                    <Camera className="h-4 w-4" /> Chỉnh ảnh đại diện
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="-mt-12 px-4 pb-4 pt-12 sm:-mt-14 sm:px-7 sm:pb-5 sm:pt-14">
@@ -593,256 +365,63 @@ export const UserProfilePage: React.FC = () => {
       </footer>
 
       <Modal
-        isOpen={isAvatarEditorOpen}
-        onClose={() => {
-          if (!isSavingAvatar) closeAvatarEditor();
-        }}
-        title="Chỉnh sửa ảnh đại diện"
-        description="Chọn ảnh, căn chỉnh khung tròn rồi lưu để cập nhật ảnh đại diện."
-        maxWidth="lg"
-      >
-        <input
-          ref={avatarInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={handleAvatarFileSelected}
-        />
-        <div className="space-y-5">
-          {avatarPreviewUrl ? (
-            <div
-              className="mx-auto h-56 w-56 touch-none cursor-grab overflow-hidden rounded-full border border-[var(--border-color)] bg-[var(--bg-elevated)] active:cursor-grabbing"
-              onPointerDown={handleAvatarCropPointerDown}
-              onPointerMove={handleAvatarCropPointerMove}
-              onPointerUp={() => { dragPositionRef.current = null; }}
-              onPointerCancel={() => { dragPositionRef.current = null; }}
-              aria-label="Kéo ảnh để căn chỉnh khung cắt"
-            >
-              <img
-                src={avatarPreviewUrl}
-                alt="Xem trước ảnh đại diện"
-                className="h-full w-full select-none object-cover"
-                draggable={false}
-                style={{
-                  transform: `translate(${avatarOffset.x * 100}%, ${avatarOffset.y * 100}%) scale(${avatarZoom}) rotate(${avatarRotation}deg)`,
-                }}
-              />
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => avatarInputRef.current?.click()}
-              className="flex min-h-56 w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-elevated)] px-6 text-center transition-colors hover:border-[var(--color-orange)]"
-            >
-              <ImagePlus className="h-9 w-9 text-[var(--color-orange)]" />
-              <span className="text-sm font-semibold text-[var(--text-primary)]">Chọn ảnh từ thiết bị</span>
-              <span className="text-xs text-[var(--text-secondary)]">JPG, PNG hoặc WebP · Tối đa 10 MB</span>
-            </button>
-          )}
-
-          {avatarPreviewUrl && (
-            <>
-              <p className="text-center text-xs text-[var(--text-secondary)]">
-                Kéo ảnh để căn vị trí; phần nằm trong khung tròn sẽ được lưu.
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setAvatarZoom((zoom) => Math.max(1, Number((zoom - 0.1).toFixed(1))))}
-                  className="rounded-lg border border-[var(--border-color)] p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                  aria-label="Thu nhỏ ảnh"
-                >
-                  <ZoomOut className="h-4 w-4" />
-                </button>
-                <input
-                  type="range"
-                  min="1"
-                  max="3"
-                  step="0.1"
-                  value={avatarZoom}
-                  onChange={(event) => setAvatarZoom(Number(event.target.value))}
-                  className="w-36 accent-[var(--color-orange)]"
-                  aria-label="Phóng to ảnh"
-                />
-                <button
-                  type="button"
-                  onClick={() => setAvatarZoom((zoom) => Math.min(3, Number((zoom + 0.1).toFixed(1))))}
-                  className="rounded-lg border border-[var(--border-color)] p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                  aria-label="Phóng to ảnh"
-                >
-                  <ZoomIn className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAvatarRotation((rotation) => (rotation - 90 + 360) % 360)}
-                  className="rounded-lg border border-[var(--border-color)] p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                  aria-label="Xoay ảnh sang trái"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAvatarRotation((rotation) => (rotation + 90) % 360)}
-                  className="rounded-lg border border-[var(--border-color)] p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                  aria-label="Xoay ảnh sang phải"
-                >
-                  <RotateCw className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => avatarInputRef.current?.click()}
-                  className="rounded-lg border border-[var(--border-color)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                >
-                  Chọn ảnh khác
-                </button>
-              </div>
-            </>
-          )}
-
-          <div className="flex justify-end gap-2 border-t border-[var(--border-color)] pt-4">
-            <Button type="button" variant="secondary" onClick={closeAvatarEditor} disabled={isSavingAvatar}>
-              Hủy
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={() => void handleSaveAvatar()}
-              disabled={!avatarPreviewUrl || isSavingAvatar}
-              leftIcon={<Camera className="h-4 w-4" />}
-            >
-              {isSavingAvatar ? 'Đang lưu...' : 'Lưu ảnh'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        isOpen={isBannerEditorOpen}
-        onClose={() => {
-          if (!isSavingBanner) closeBannerEditor();
-        }}
-        title="Chỉnh sửa ảnh bìa"
-        description="Chọn ảnh, kéo để căn khung ngang rồi lưu để cập nhật ảnh bìa."
+        isOpen={isAvatarPreviewOpen}
+        onClose={() => setIsAvatarPreviewOpen(false)}
+        title={`${previewKind === 'avatar' ? 'Ảnh đại diện' : 'Ảnh bìa'} của ${profileUser.displayName}`}
         maxWidth="4xl"
       >
-        <input
-          ref={bannerInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={handleBannerFileSelected}
-        />
-        <div className="space-y-5">
-          {bannerPreviewUrl ? (
-            <div
-              className="mx-auto aspect-[3/1] w-full touch-none cursor-grab overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-elevated)] active:cursor-grabbing"
-              onPointerDown={(event) => {
-                event.currentTarget.setPointerCapture(event.pointerId);
-                dragPositionRef.current = { x: event.clientX, y: event.clientY };
-              }}
-              onPointerMove={handleBannerCropPointerMove}
-              onPointerUp={() => { dragPositionRef.current = null; }}
-              onPointerCancel={() => { dragPositionRef.current = null; }}
-              aria-label="Kéo ảnh để căn chỉnh khung ảnh bìa"
-            >
-              <img
-                src={bannerPreviewUrl}
-                alt="Xem trước ảnh bìa"
-                className="h-full w-full select-none object-cover"
-                draggable={false}
-                style={{
-                  transform: `translate(${bannerOffset.x * 100}%, ${bannerOffset.y * 100}%) scale(${bannerZoom}) rotate(${bannerRotation}deg)`,
-                }}
-              />
+        <div className="mx-auto max-w-4xl overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)]">
+          <div className="flex items-center gap-3 border-b border-[var(--border-color)] px-4 py-3">
+            <Avatar src={profileUser.avatarUrl} alt={profileUser.displayName} size="sm" />
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-[var(--text-primary)]">{profileUser.displayName}</div>
+              <div className="text-xs text-[var(--text-muted)]">{previewKind === 'avatar' ? 'Ảnh đại diện' : 'Ảnh bìa'}</div>
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => bannerInputRef.current?.click()}
-              className="flex aspect-[3/1] w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-elevated)] px-6 text-center transition-colors hover:border-[var(--color-orange)]"
-            >
-              <ImagePlus className="h-9 w-9 text-[var(--color-orange)]" />
-              <span className="text-sm font-semibold text-[var(--text-primary)]">Chọn ảnh bìa từ thiết bị</span>
-              <span className="text-xs text-[var(--text-secondary)]">JPG, PNG hoặc WebP · Tối đa 10 MB</span>
-            </button>
-          )}
-
-          {bannerPreviewUrl && (
-            <>
-              <p className="text-center text-xs text-[var(--text-secondary)]">
-                Kéo ảnh để căn vị trí; vùng ngang hiển thị trong khung sẽ được lưu.
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setBannerZoom((zoom) => Math.max(1, Number((zoom - 0.1).toFixed(1))))}
-                  className="rounded-lg border border-[var(--border-color)] p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                  aria-label="Thu nhỏ ảnh bìa"
-                >
-                  <ZoomOut className="h-4 w-4" />
-                </button>
-                <input
-                  type="range"
-                  min="1"
-                  max="3"
-                  step="0.1"
-                  value={bannerZoom}
-                  onChange={(event) => setBannerZoom(Number(event.target.value))}
-                  className="w-36 accent-[var(--color-orange)]"
-                  aria-label="Phóng to ảnh bìa"
-                />
-                <button
-                  type="button"
-                  onClick={() => setBannerZoom((zoom) => Math.min(3, Number((zoom + 0.1).toFixed(1))))}
-                  className="rounded-lg border border-[var(--border-color)] p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                  aria-label="Phóng to ảnh bìa"
-                >
-                  <ZoomIn className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBannerRotation((rotation) => (rotation - 90 + 360) % 360)}
-                  className="rounded-lg border border-[var(--border-color)] p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                  aria-label="Xoay ảnh bìa sang trái"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBannerRotation((rotation) => (rotation + 90) % 360)}
-                  className="rounded-lg border border-[var(--border-color)] p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                  aria-label="Xoay ảnh bìa sang phải"
-                >
-                  <RotateCw className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => bannerInputRef.current?.click()}
-                  className="rounded-lg border border-[var(--border-color)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                >
-                  Chọn ảnh khác
-                </button>
-              </div>
-            </>
-          )}
-
-          <div className="flex justify-end gap-2 border-t border-[var(--border-color)] pt-4">
-            <Button type="button" variant="secondary" onClick={closeBannerEditor} disabled={isSavingBanner}>
-              Hủy
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={() => void handleSaveBanner()}
-              disabled={!bannerPreviewUrl || isSavingBanner}
-              leftIcon={<ImageIcon className="h-4 w-4" />}
-            >
-              {isSavingBanner ? 'Đang lưu...' : 'Lưu ảnh bìa'}
-            </Button>
+          </div>
+          <div className="flex min-h-48 items-center justify-center p-2 sm:p-4">
+            <img src={previewKind === 'avatar' ? profileUser.avatarUrl : profileUser.bannerUrl}
+              alt={`${previewKind === 'avatar' ? 'Ảnh đại diện' : 'Ảnh bìa'} của ${profileUser.displayName}`}
+              className="max-h-[70vh] max-w-full rounded-lg object-contain" />
           </div>
         </div>
       </Modal>
 
+      <ImageCropEditor
+        kind="avatar"
+        isOpen={isAvatarEditorOpen}
+        isSaving={isSavingAvatar}
+        onClose={closeAvatarEditor}
+        onSave={async (file) => {
+          setIsSavingAvatar(true);
+          try {
+            await uploadAvatar(file);
+            const updatedUser = useAuthStore.getState().user;
+            if (updatedUser) setProfileUser(updatedUser);
+            addToast('Đã cập nhật ảnh đại diện.', 'success');
+          } catch (error) {
+            addToast(error instanceof Error ? error.message : 'Không thể cập nhật ảnh đại diện.', 'error');
+            throw error;
+          } finally { setIsSavingAvatar(false); }
+        }}
+      />
+      <ImageCropEditor
+        kind="banner"
+        isOpen={isBannerEditorOpen}
+        isSaving={isSavingBanner}
+        onClose={closeBannerEditor}
+        onSave={async (file) => {
+          setIsSavingBanner(true);
+          try {
+            await uploadBanner(file);
+            const updatedUser = useAuthStore.getState().user;
+            if (updatedUser) setProfileUser(updatedUser);
+            addToast('Đã cập nhật ảnh bìa.', 'success');
+          } catch (error) {
+            addToast(error instanceof Error ? error.message : 'Không thể cập nhật ảnh bìa.', 'error');
+            throw error;
+          } finally { setIsSavingBanner(false); }
+        }}
+      />
       {/* Report Modal */}
       <ReportModal
         isOpen={isReportOpen}
