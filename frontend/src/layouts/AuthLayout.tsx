@@ -1,3 +1,4 @@
+import ThemeToggle from '../components/ui/ThemeToggle';
 import React from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import Logo from '../components/common/Logo';
@@ -17,7 +18,7 @@ export default function AuthLayout() {
       <div className="auth-colophon"><span>DISCUSS Community Network</span><span>Cộng đồng của bạn, câu chuyện của bạn.</span></div>
     </aside>
     <main className="auth-main" id="main-content">
-      <div className="auth-top"><div className="lg:hidden"><Logo /></div><Link to="/">Trang chủ <ArrowUpRight size={15} /></Link></div>
+      <div className="auth-top"><div className="lg:hidden"><Logo /></div><div className="flex items-center gap-3"><ThemeToggle /><Link to="/">Trang chủ <ArrowUpRight size={15} /></Link></div></div>
       <div className="auth-form"><PageTransition><Outlet /></PageTransition></div>
       <footer className="auth-legal">Bằng cách tiếp tục, bạn đồng ý với <Link to="/terms">Điều khoản dịch vụ</Link> và <Link to="/settings/privacy">Chính sách quyền riêng tư</Link> của DISCUSS.</footer>
     </main>

@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import { POSTS_AVAILABLE } from '../../services';
 import { Comment } from '../../types';
+import RightSidebar from '../../components/layout/RightSidebar';
 import Avatar from '../../components/ui/Avatar';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
@@ -291,7 +292,7 @@ export const PostDetailPage: React.FC = () => {
   const isPostOwner = user?.id === post.author.id;
 
   return (
-    <div className="post-reading-page space-y-5 text-left pb-8">
+    <div className="feed-layout"><div className="post-reading-page space-y-5 text-left pb-8">
       {!POSTS_AVAILABLE && (
         <div role="status" className="feed-notice text-xs text-[var(--text-primary)]">
           Đang xem bài viết mẫu; thao tác chỉ được lưu trong phiên hiện tại.
@@ -377,7 +378,7 @@ export const PostDetailPage: React.FC = () => {
               </span>
               <span>UTF-8</span>
             </div>
-            <pre className="text-emerald-400">
+            <pre className="text-[var(--text-primary)]">
               <code>{post.codeSnippet.code}</code>
             </pre>
           </div>
@@ -511,7 +512,7 @@ export const PostDetailPage: React.FC = () => {
         confirmLabel="Xóa vĩnh viễn"
         variant="danger"
       />
-    </div>
+    </div><RightSidebar /></div>
   );
 };
 

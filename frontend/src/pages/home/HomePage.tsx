@@ -39,7 +39,7 @@ export default function HomePage() {
   return <div className="feed-layout">
     <div className="feed-column">
       <header className="feed-heading">
-        <div><h1 className="editorial-title">Bảng tin</h1><p>Câu chuyện mới từ những cộng đồng bạn quan tâm.</p></div>
+        <div><h1 className="editorial-title"><MessageSquare size={22} aria-hidden="true" />Bảng tin</h1><p>Câu chuyện mới từ những cộng đồng bạn quan tâm.</p></div>
         <Link to="/explore" className="feed-discover">Khám phá cộng đồng <ArrowUpRight size={15} /></Link>
       </header>
       {isAuthenticated && user ? <div className="composer-strip">

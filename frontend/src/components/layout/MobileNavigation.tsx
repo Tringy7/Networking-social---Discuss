@@ -3,6 +3,8 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Bell, Compass, Home, Menu, MessageSquare, Plus, Settings, ShieldCheck, UserRound, Users, X, Bookmark, LogIn } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
+import NotificationBadge from '../ui/NotificationBadge';
+import { useNotificationStore } from '../../store/useNotificationStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { usePostStore } from '../../store/usePostStore';
@@ -16,6 +18,7 @@ export const MobileNavigation: React.FC = () => {
   const { user, isAuthenticated, activeRole } = useAuthStore();
   const { communities } = useCommunityStore();
   const openCreateModal = usePostStore((state) => state.openCreateModal);
+  const unreadCount = useNotificationStore((state) => state.notifications.filter((item) => !item.isRead).length);
   const navigate = useNavigate();
   const reduced = useReducedMotion();
   const intensity = useSettingsStore((state) => state.settings.animationIntensity);
@@ -122,7 +125,7 @@ export const MobileNavigation: React.FC = () => {
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--action-bg)] text-[var(--action-ink)]"><Plus className="h-5 w-5" /></span>
           <span>Đăng bài</span>
         </button>
-        <NavLink to={isAuthenticated ? '/notifications' : '/login'} className={itemClass} aria-label={isAuthenticated ? 'Thông báo' : 'Đăng nhập'}><Bell className="h-5 w-5" /><span>Thông báo</span></NavLink>
+        <NavLink to={isAuthenticated ? '/notifications' : '/login'} className={itemClass} aria-label={isAuthenticated ? `Thông báo, ${unreadCount} chưa đọc` : 'Đăng nhập'}><span className="relative"><Bell className="h-5 w-5" />{isAuthenticated && <NotificationBadge count={unreadCount} />}</span><span>Thông báo</span></NavLink>
         <button ref={moreButtonRef} type="button" onClick={() => isMoreOpen ? closeMoreMenu() : openMoreMenu()} aria-expanded={isMoreOpen} className={`${itemClass({ isActive: isMoreOpen })}`} aria-label="Mở thêm điều hướng">
           <Menu className="h-5 w-5" /><span>Thêm</span>
         </button>

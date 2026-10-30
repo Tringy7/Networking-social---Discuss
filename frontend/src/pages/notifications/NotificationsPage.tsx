@@ -46,7 +46,7 @@ export const NotificationsPage: React.FC = () => {
       <div className="notification-list">{filtered.map((item) => <Link key={item.id} to={item.targetUrl} onClick={() => void markAsRead(item.id)} className={`notification-row ${item.isRead ? '' : 'is-unread'}`}>
         <Avatar src={item.actor?.avatarUrl} alt={item.actor?.displayName || 'DISCUSS'} size="sm" />
         <div className="min-w-0 flex-1"><p><strong>{item.actor?.displayName || 'DISCUSS'}</strong> {item.message}</p><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleDateString('vi-VN', {day:'numeric',month:'short'})}</time></div>
-        {!item.isRead && <span className="unread-dot" aria-label="Chưa đọc" />}
+        {!item.isRead && <><span className="unread-dot" aria-hidden="true" /><span className="sr-only">Chưa đọc</span></>}
       </Link>)}</div>
       {!filtered.length && <section className="editorial-empty"><h2>Bạn đã cập nhật.</h2><p>Những phản hồi mới sẽ xuất hiện ở đây.</p></section>}
     </div>

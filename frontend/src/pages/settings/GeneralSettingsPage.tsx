@@ -25,7 +25,7 @@ export const GeneralSettingsPage: React.FC = () => {
     {
       to: '/settings/appearance',
       title: 'Giao diện & Hiệu ứng',
-      desc: 'Tùy chỉnh Dark/Light mode, màu điểm nhấn DISCUSS Orange, kích cỡ chữ và mật độ.',
+      desc: 'Tùy chỉnh màu điểm nhấn, kích cỡ chữ, mật độ nội dung và chuyển động.',
       icon: <Palette className="w-5 h-5 text-[var(--text-secondary)]" />,
     },
     {

@@ -1,3 +1,4 @@
+import ThemeToggle from '../components/ui/ThemeToggle';
 import React from 'react';
 import { NavLink, Outlet, Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
@@ -47,6 +48,7 @@ export const AdminLayout: React.FC = () => {
         </div>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+          <ThemeToggle />
           <Link
             to="/"
             className="flex min-h-10 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"

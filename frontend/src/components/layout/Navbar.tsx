@@ -1,5 +1,7 @@
+import ThemeToggle from '../ui/ThemeToggle';
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import NotificationBadge from '../ui/NotificationBadge';
 import Logo from '../common/Logo';
 import Avatar from '../ui/Avatar';
 import Button from '../ui/Button';
@@ -130,7 +132,7 @@ export const Navbar: React.FC = () => {
       <div className="navbar-inner">
         {/* ZONE 1: BRAND LOGO */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-          <Logo showTagline={false} size="md" />
+          <Logo showTagline={false} size="md" className="header-brand" />
           <Link to="/explore" className="masthead-link">Cùng sở thích, cùng kết nối <ArrowUpRight size={13} /></Link>
         </div>
 
@@ -289,6 +291,7 @@ export const Navbar: React.FC = () => {
 
         {/* ZONE 3: ACTIONS & USER MENU */}
         <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+          <ThemeToggle />
           <button
             type="button"
             onClick={() => {
@@ -322,7 +325,7 @@ export const Navbar: React.FC = () => {
                 aria-label="Tin nhắn riêng"
               >
                 <MessageSquare className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--color-orange)]" />
+
               </Link>
 
               {/* Notifications Dropdown */}
@@ -342,11 +345,7 @@ export const Navbar: React.FC = () => {
                   aria-expanded={isNotifOpen}
                 >
                   <Bell className="w-5 h-5" />
-                  {unreadNotifs > 0 && (
-                    <span className="absolute top-1 right-1 px-1.5 min-w-[16px] h-4 rounded-full bg-[var(--color-orange)] text-white text-xs font-semibold flex items-center justify-center">
-                      {unreadNotifs}
-                    </span>
-                  )}
+                  <NotificationBadge count={unreadNotifs} />
                 </button>
 
                 {isNotifOpen && (
@@ -355,7 +354,7 @@ export const Navbar: React.FC = () => {
                       <h4 className="text-sm font-semibold text-[var(--text-primary)]">Thông báo</h4>
                       {unreadNotifs > 0 && (
                         <span className="rounded-full bg-[var(--color-orange-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--color-orange)]">
-                          {unreadNotifs} mới
+                          {unreadNotifs > 99 ? '99+' : unreadNotifs} mới
                         </span>
                       )}
                       <Link
@@ -385,7 +384,7 @@ export const Navbar: React.FC = () => {
                             }
                           }}
                           className={`flex items-start gap-3 rounded-xl p-2.5 transition-colors hover:bg-[var(--bg-hover)] ${
-                            !n.isRead ? 'bg-orange-50/70 ring-1 ring-inset ring-orange-100' : ''
+                            !n.isRead ? 'notification-unread' : ''
                           }`}
                         >
                           <Avatar src={n.actor?.avatarUrl} alt={n.actor?.displayName || 'Discuss'} size="xs" />
@@ -415,9 +414,7 @@ export const Navbar: React.FC = () => {
                     <span className="text-xs font-semibold text-[var(--text-primary)] truncate max-w-[110px]">
                       {user.displayName}
                     </span>
-                    <span className="text-xs text-[var(--color-orange)] font-medium leading-none">
-                      {user.karma} karma
-                    </span>
+
                   </div>
                   <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                 </button>
@@ -487,7 +484,7 @@ export const Navbar: React.FC = () => {
                   Đăng nhập
                 </Button>
               </Link>
-              <Link to="/register">
+              <Link to="/register" className="hidden sm:block">
                 <Button variant="primary" size="sm">
                   Đăng ký
                 </Button>

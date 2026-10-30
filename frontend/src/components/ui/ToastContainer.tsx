@@ -6,6 +6,7 @@ import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from 'lucide-react'
 export const ToastContainer: React.FC = () => {
   const { toasts, removeToast } = useToastStore();
   const shouldReduceMotion = useReducedMotion();
+  const labels = { success: 'Thành công', error: 'Có lỗi xảy ra', warning: 'Cần chú ý', info: 'Thông tin' };
 
   const icons = {
     success: <CheckCircle2 className="h-5 w-5 text-[var(--toast-success)]" />,
@@ -36,7 +37,7 @@ export const ToastContainer: React.FC = () => {
             exit={{ opacity: 0, scale: 0.95, transition: { duration: shouldReduceMotion ? 0 : 0.12 } }}
             transition={{ duration: shouldReduceMotion ? 0 : 0.16 }}
             role={toast.type === 'error' ? 'alert' : 'status'}
-            className="pointer-events-auto relative flex min-w-0 items-center gap-2.5 overflow-hidden rounded-xl border px-3 py-2.5 shadow-[var(--toast-shadow)]"
+            className={`semantic-toast semantic-toast--${toast.type} pointer-events-auto relative flex min-w-0 items-center gap-2.5 overflow-hidden rounded-xl border px-3 py-2.5 shadow-[var(--toast-shadow)]`}
             style={{
               backgroundColor: 'var(--toast-bg)',
               borderColor: 'var(--toast-border)',
@@ -48,7 +49,8 @@ export const ToastContainer: React.FC = () => {
               {icons[toast.type]}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="line-clamp-2 break-words text-xs font-medium leading-snug text-[var(--toast-text)]">
+              <p className="toast-label">{labels[toast.type]}</p>
+              <p className="break-words text-sm font-medium leading-snug text-[var(--toast-text)]">
                 {toast.message}
               </p>
             </div>

@@ -1,3 +1,39 @@
+# Targeted DISCUSS refinement — latest pass
+
+This pass follows the latest targeted brief and supersedes the previous profile layout below. The attachment supplied text only; no reference screenshot was present, so the described earlier DISCUSS anatomy was restored and reviewed in browser screenshots.
+
+- Profile: full-width top banner, overlapping avatar, identity/actions underneath, activity tabs and a right-side Giới thiệu panel. Existing image menus, crop dialogs, profile privacy and upload handlers remain connected. Mobile stacks these sections.
+- Navigation: removed sidebar Settings and Đổi giao diện entries. Settings retain their horizontal section navigation and header user-menu access. A shared ThemeToggle icon appears once per main, authentication and administration header, with an accessible name and native tooltip; it uses the existing persisted settings store. Narrow guest headers retain login and the page's registration entry points.
+- Settings: neutral selected top tab, matching canvas and overview rows; removed the duplicate theme chooser. Accent, density, font, motion and navigation preferences remain available.
+- Content: gray code surfaces in both themes, separate inline-code treatment and scrollable multiline blocks. Bảng tin gains a compact discussion icon. Discovery descriptions now use two lines with consistent card/footer geometry.
+- Preview: one original local SVG image post is gated by import.meta.env.DEV inside the existing fallback demo dataset. It never replaces API-backed posts. Confirmed its identifier is absent from production JS.
+
+Verification: production build passes (existing initial-chunk size warning remains); 7/7 tests pass; 66 route/layout checks and 50 interaction checks pass. Browser review covers light/dark, desktop 1366/1440/1920, tablet 768 and mobile 390, plus guest header bounds at 320. Production inspector reports 0 failures/0 warnings at 1440/768/390. Screenshot artifacts and browser findings are under `.taste-skill/targeted-routes` and `.taste-skill/targeted-production`. Authenticated checks use browser-only fixtures; live backend authentication/upload end-to-end checks require a running backend and account. Routes, backend and API contracts are unchanged.
+
+Lint was run: 129 existing legacy JSX errors remain. ESLint currently targets JS/JSX only; no static TypeScript check is configured. `redesign-skill` and `output-skill` remain unavailable after searching installed user/Codex/plugin and project-local skill directories; neither was used. The installed project `design-taste-frontend` skill guided browser verification.
+
+Files touched in this targeted pass: `src/social.css`, `src/pages/profile/UserProfilePage.tsx` (restored to its tracked structure), `src/components/ui/ThemeToggle.tsx`, `src/components/layout/Navbar.tsx`, `src/components/layout/Sidebar.tsx`, `src/layouts/AuthLayout.tsx`, `src/layouts/AdminLayout.tsx`, `src/pages/settings/AppearanceSettingsPage.tsx`, `src/pages/settings/GeneralSettingsPage.tsx`, `src/pages/home/HomePage.tsx`, `src/components/community/CommunityCard.tsx`, `src/mocks/demoContent.ts`, and `public/images/discuss-state-map.svg`.
+
+---
+
+# Unified social canvas and layout consistency
+
+Current pass: one neutral canvas, shared geometry, standardized discovery cards, compact three-region profiles and visible semantic feedback. The older refinement notes below describe the preceding pass.
+
+- Shared layout tokens define a 64px header, 248px expanded navigation, 28/36px desktop gutters and a 300/320px contextual rail. Home and Post Detail use the same grid; a browser assertion verifies matching primary-column x position and width.
+- Resting post, context, community and settings wrappers were flattened to a shared canvas with subtle dividers. Both themes use a coordinated common canvas.
+- Discovery uses one consistent anatomy regardless of result count or cover availability: one anatomy independent of result count, fixed avatar dimensions, two-line name region, truncated identifier, three-line description region and aligned footer actions. Browser assertions verify equal heights and action alignment.
+- Profiles place identity and supported tabs centrally, with banner/avatar controls, bio and privacy-aware facts in the right information panel. All crop dialogs, uploads and role actions remain connected to their original handlers. No reference screenshot was attached; the supplied text's three-region structure guided implementation.
+- Desktop and mobile share `components/ui/NotificationBadge.tsx`; actual unread counts support 99+ with contrasting, unclipped badges. Unread rows and selected navigation/tabs have stronger emphasis. Toasts name their semantic state, retain recognizable icons and use semantic borders. Removed the unconditional message dot and unsupported navbar karma presentation.
+
+Verification: production build passed; existing tests 7/7 passed; 66 route/layout browser checks and 39 interaction checks passed. The production home inspector reported 0 failures and 0 warnings at 1440/768/390px. Representative light/dark/profile/thread/discovery screens were opened and reviewed. Route paths are preserved. No API/service, backend or legacy JSX files changed. Existing ESLint still reports 129 legacy JSX errors; no static TypeScript check is configured. Authenticated browser checks use isolated fixtures, so live backend end-to-end validation remains outstanding. The build retains the existing initial-chunk size warning.
+
+Additional checks verified badges at 0/9/99/120 unread items on desktop and mobile, long-text discovery-card alignment, and all four semantic toast labels. These use browser-only fixtures, never production data replacements. Result-count-specific card layout exceptions were removed. Administration now shares the 248px navigation width and canvas gutters.
+
+Primary files: `src/index.css`, `src/social.css`, `pages/post/PostDetailPage.tsx`, `pages/profile/UserProfilePage.tsx`, `components/community/CommunityCard.tsx`, `components/layout/Sidebar.tsx`, `components/layout/Navbar.tsx`, `components/layout/MobileNavigation.tsx`, `components/ui/NotificationBadge.tsx`, `pages/notifications/NotificationsPage.tsx`, and `components/ui/ToastContainer.tsx`.
+
+---
+
 # DISCUSS: friendly community UI refinement
 
 The approved direction is **Modern Friendly Community Social Network**, replacing the earlier editorial treatment. This refines the existing application rather than replacing its architecture.
