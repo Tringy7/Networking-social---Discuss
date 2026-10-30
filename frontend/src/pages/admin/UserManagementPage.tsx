@@ -62,7 +62,7 @@ export const UserManagementPage: React.FC = () => {
     <div className="space-y-6 text-left pb-16">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-[var(--text-primary)] flex items-center gap-2">
             <Users className="w-6 h-6 text-[var(--color-orange)]" />
             <span>Quản lý người dùng hệ thống</span>
           </h1>
@@ -112,7 +112,7 @@ export const UserManagementPage: React.FC = () => {
       <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-panel)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[var(--bg-surface)] border-b border-[var(--border-color)] text-xs text-[var(--text-muted)] font-bold">
+            <thead className="bg-[var(--bg-surface)] border-b border-[var(--border-color)] text-xs text-[var(--text-muted)] font-semibold">
               <tr>
                 <th className="p-4">Người dùng</th>
                 <th className="p-4">Email</th>
@@ -129,7 +129,7 @@ export const UserManagementPage: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <Avatar src={u.avatarUrl} alt={u.displayName} size="sm" />
                       <div>
-                        <div className="font-bold text-[var(--text-primary)]">{u.displayName}</div>
+                        <div className="font-semibold text-[var(--text-primary)]">{u.displayName}</div>
                         <div className="text-xs text-[var(--text-muted)]">@{u.username}</div>
                       </div>
                     </div>
@@ -140,7 +140,7 @@ export const UserManagementPage: React.FC = () => {
                   </td>
                   <td className="p-4">
                     <span
-                      className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
+                      className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
                         u.status === 'ACTIVE'
                           ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
                           : 'bg-[var(--color-danger)]/15 text-[var(--color-danger)]'
@@ -194,7 +194,7 @@ export const UserManagementPage: React.FC = () => {
             <div className="flex items-center gap-3.5 p-3 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
               <Avatar src={selectedUser.avatarUrl} alt={selectedUser.displayName} size="lg" />
               <div>
-                <h4 className="text-sm font-bold text-[var(--text-primary)]">{selectedUser.displayName}</h4>
+                <h4 className="text-sm font-semibold text-[var(--text-primary)]">{selectedUser.displayName}</h4>
                 <div className="text-[var(--text-muted)]">@{selectedUser.username}</div>
                 <div className="mt-1 flex gap-2">
                   <Badge role={selectedUser.role} size="sm" />

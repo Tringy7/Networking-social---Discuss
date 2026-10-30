@@ -87,8 +87,8 @@ export const ExplorePage: React.FC = () => {
     <div className="explore-page space-y-5 text-left pb-8">
       <header className="explore-heading">
         <div>
-          <h1 className="editorial-title">Tìm nơi bạn thuộc về.</h1>
-          <p className="mt-1.5 text-sm text-[var(--text-secondary)]">Theo dõi những không gian có cùng mối quan tâm.</p>
+          <h1 className="editorial-title">Khám phá cộng đồng</h1>
+          <p className="mt-1.5 text-sm text-[var(--text-secondary)]">Gặp những người cùng sở thích. Tìm một cộng đồng và tham gia nhé.</p>
         </div>
       </header>
 
@@ -175,12 +175,12 @@ export const ExplorePage: React.FC = () => {
           </div>
         ) : filteredCommunities.length > 0 ? (
           <div className="community-directory">
-            {filteredCommunities.map((community, index) => (
+            {filteredCommunities.map((community) => (
               <motion.div
                 key={community.id}
-                initial={shouldReduceMotion ? false : { opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: shouldReduceMotion ? 0 : 0.2, delay: shouldReduceMotion ? 0 : index * 0.04 }}
+                initial={shouldReduceMotion ? false : { opacity: 0.85 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.1 }}
               >
                 <CommunityCard community={community} />
               </motion.div>

@@ -254,6 +254,7 @@ export const UserProfilePage: React.FC = () => {
               </button>
             </div>
           </div>
+          <p className="profile-handle">@{profileUser.username}</p>
 
         </div>
 
@@ -291,7 +292,7 @@ export const UserProfilePage: React.FC = () => {
         <aside className="profile-about">
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-sm font-bold text-[var(--text-primary)]">Giới thiệu</h2>
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">Giới thiệu</h2>
               {isMe && (
                 <Link
                   to="/settings/profile"

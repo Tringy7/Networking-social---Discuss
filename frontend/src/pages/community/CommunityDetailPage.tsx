@@ -68,7 +68,7 @@ export const CommunityDetailPage: React.FC = () => {
       <section className="mx-auto flex min-h-64 max-w-xl flex-col items-center justify-center gap-4 px-4 py-16 text-center" aria-live="polite">
         <div className="text-sm font-medium text-[var(--text-muted)]">DISCUSS · Cộng đồng</div>
         <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-          {communityLoadFailed ? 'Cộng đồng chưa tải được' : isCommunityLoading ? 'Đang mở cộng đồng' : 'Không tìm thấy cộng đồng'}
+          {communityLoadFailed ? 'Chưa thể tải cộng đồng' : isCommunityLoading ? 'Đang mở cộng đồng' : 'Không tìm thấy cộng đồng'}
         </h1>
         <p className="text-sm leading-6 text-[var(--text-secondary)]">
           {communityLoadFailed
@@ -150,7 +150,7 @@ export const CommunityDetailPage: React.FC = () => {
           <Avatar src={community.avatarUrl} alt={community.displayName} size="xl" shape="rounded" />
           <div className="min-w-0 flex-1"><p className="community-category">{community.category} · c/{community.name}</p><h1 className="editorial-title">{community.displayName}</h1></div>
           <div className="community-actions">
-            <Button variant={isJoined ? 'secondary' : 'primary'} size="sm" isLoading={isMembershipUpdating} onClick={handleJoinToggle} leftIcon={isJoined ? <Check size={15} /> : <Plus size={15} />}>{isJoined ? 'Đã tham gia' : 'Tham gia'}</Button>
+            <Button variant={isJoined ? 'secondary' : 'primary'} size="sm" isLoading={isMembershipUpdating} onClick={handleJoinToggle} aria-pressed={isJoined} leftIcon={isJoined ? <Check size={15} /> : <Plus size={15} />}>{isJoined ? 'Đã tham gia' : 'Tham gia cộng đồng'}</Button>
             <Button variant="outline" size="sm" onClick={() => openCreateModal(community.name)} leftIcon={<Plus size={15} />}>Đăng bài</Button>
             {isManager && <Link className="icon-button" aria-label="Cài đặt cộng đồng" to={`/community/${community.name}/settings`}><Settings size={18} /></Link>}
           </div>
@@ -163,13 +163,13 @@ export const CommunityDetailPage: React.FC = () => {
           <EditorialTabs label="Sắp xếp bài viết cộng đồng" options={[{ id: 'latest', label: 'Mới nhất', icon: <Clock /> }, { id: 'popular', label: 'Sôi nổi', icon: <Flame /> }]} value={tab} onChange={setTab} trailing={`${sortedPosts.length} bài viết`} />
           {!POSTS_AVAILABLE && <p className="feed-notice">Bài viết mẫu · Tương tác được lưu trong phiên hiện tại.</p>}
           <div className="discussion-list">{sortedPosts.map((post) => <PostCard key={post.id} post={post} showCommunity={false} />)}</div>
-          {!sortedPosts.length && <div className="editorial-empty"><h2>Mở đầu cuộc trò chuyện.</h2><p>Chia sẻ câu hỏi hoặc góc nhìn đầu tiên cùng cộng đồng.</p><Button size="sm" className="mt-4" onClick={() => openCreateModal(community.name)}>Viết bài đầu tiên</Button></div>}
+          {!sortedPosts.length && <div className="editorial-empty"><h2>Chia sẻ bài viết đầu tiên</h2><p>Chia sẻ câu hỏi hoặc góc nhìn đầu tiên cùng cộng đồng.</p><Button size="sm" className="mt-4" onClick={() => openCreateModal(community.name)}>Viết bài đầu tiên</Button></div>}
         </section>
         <aside className="community-context">
           <section className="context-section"><div className="context-title"><h2>Nội quy cộng đồng</h2><BookOpen size={16} /></div>
             {community.rules?.length ? <ol className="community-rules">{community.rules.map((rule) => <li key={rule.id}><h3>{rule.title}</h3><p>{rule.description}</p></li>)}</ol> : <p className="text-sm text-[var(--text-secondary)]">Tôn trọng góc nhìn khác biệt và tuân thủ tiêu chuẩn cộng đồng DISCUSS.</p>}
           </section>
-          <section className="context-section"><div className="context-title"><h2>Người giữ cuộc trò chuyện</h2>{isManager && <Link to={`/community/${community.name}/members`}>Quản lý</Link>}</div>
+          <section className="context-section"><div className="context-title"><h2>Ban quản trị</h2>{isManager && <Link to={`/community/${community.name}/members`}>Quản lý</Link>}</div>
             <Link to={`/user/${community.ownerUsername}`} className="context-community"><Avatar alt={community.ownerUsername} size="sm" /><div className="community-info"><span className="text-sm font-semibold">@{community.ownerUsername}</span><p>Chủ cộng đồng</p></div></Link>
             {isManager && <Link to={`/community/${community.name}/moderation`} className="side-link"><ShieldAlert size={16} />Hàng đợi kiểm duyệt</Link>}
           </section>

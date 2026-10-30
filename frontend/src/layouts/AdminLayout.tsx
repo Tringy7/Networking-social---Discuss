@@ -63,7 +63,7 @@ export const AdminLayout: React.FC = () => {
         {/* Admin Sidebar */}
         <aside aria-label="Điều hướng quản trị" className="admin-sidebar hidden w-52 shrink-0 border-r border-[var(--border-color)] bg-[var(--bg-main)] p-3 text-left md:block">
           <div className="space-y-1">
-            <div className="text-xs font-bold text-[var(--text-muted)] px-3 mb-2 tracking-normal">
+            <div className="text-xs font-semibold text-[var(--text-muted)] px-3 mb-2 tracking-normal">
               Trung tâm kiểm soát
             </div>
             {navLinks.map((item) => (
@@ -74,7 +74,7 @@ export const AdminLayout: React.FC = () => {
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors ${
                     isActive
-                      ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] font-bold'
+                      ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] font-semibold'
                       : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
                   }`
                 }

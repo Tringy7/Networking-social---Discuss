@@ -131,7 +131,7 @@ export const Navbar: React.FC = () => {
         {/* ZONE 1: BRAND LOGO */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
           <Logo showTagline={false} size="md" />
-          <Link to="/explore" className="masthead-link">Cộng đồng & góc nhìn <ArrowUpRight size={13} /></Link>
+          <Link to="/explore" className="masthead-link">Cùng sở thích, cùng kết nối <ArrowUpRight size={13} /></Link>
         </div>
 
         {/* ZONE 2: SEARCH INPUT & AUTOCOMPLETE */}
@@ -171,7 +171,7 @@ export const Navbar: React.FC = () => {
                 <>
                   {filteredCommunities.length > 0 && (
                     <div>
-                      <div className="text-xs font-bold text-[var(--text-muted)] px-2 mb-1.5">
+                      <div className="text-xs font-semibold text-[var(--text-muted)] px-2 mb-1.5">
                         Cộng đồng gợi ý
                       </div>
                       <div className="space-y-1">
@@ -199,7 +199,7 @@ export const Navbar: React.FC = () => {
 
                   {filteredPosts.length > 0 && (
                     <div>
-                      <div className="text-xs font-bold text-[var(--text-muted)] px-2 mb-1.5">
+                      <div className="text-xs font-semibold text-[var(--text-muted)] px-2 mb-1.5">
                         Bài viết
                       </div>
                       <div className="space-y-1">
@@ -231,7 +231,7 @@ export const Navbar: React.FC = () => {
               ) : (
                 <>
                   <div>
-                    <div className="text-xs font-bold text-[var(--text-muted)] px-2 mb-1.5 flex items-center gap-1.5">
+                    <div className="text-xs font-semibold text-[var(--text-muted)] px-2 mb-1.5 flex items-center gap-1.5">
                       <TrendingUp className="w-3.5 h-3.5 text-[var(--color-orange)]" />
                       <span>Chủ đề thảo luận</span>
                     </div>
@@ -257,7 +257,7 @@ export const Navbar: React.FC = () => {
                     </div>
                   </div>
                   <div className="border-t border-[var(--border-color)] pt-2">
-                    <div className="text-xs font-bold text-[var(--text-muted)] px-2 mb-1 flex items-center gap-1.5">
+                    <div className="text-xs font-semibold text-[var(--text-muted)] px-2 mb-1 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" />
                       <span>Tìm kiếm gần đây</span>
                     </div>
@@ -343,7 +343,7 @@ export const Navbar: React.FC = () => {
                 >
                   <Bell className="w-5 h-5" />
                   {unreadNotifs > 0 && (
-                    <span className="absolute top-1 right-1 px-1.5 min-w-[16px] h-4 rounded-full bg-[var(--color-orange)] text-white text-xs font-bold flex items-center justify-center">
+                    <span className="absolute top-1 right-1 px-1.5 min-w-[16px] h-4 rounded-full bg-[var(--color-orange)] text-white text-xs font-semibold flex items-center justify-center">
                       {unreadNotifs}
                     </span>
                   )}
@@ -352,7 +352,7 @@ export const Navbar: React.FC = () => {
                 {isNotifOpen && (
                   <div data-ui="popover" className="absolute right-0 top-11 z-50 w-[min(20rem,calc(100vw-2rem))] space-y-3 border p-4 text-left sm:w-96">
                     <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
-                      <h4 className="text-sm font-bold text-[var(--text-primary)]">Thông báo</h4>
+                      <h4 className="text-sm font-semibold text-[var(--text-primary)]">Thông báo</h4>
                       {unreadNotifs > 0 && (
                         <span className="rounded-full bg-[var(--color-orange-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--color-orange)]">
                           {unreadNotifs} mới
@@ -412,7 +412,7 @@ export const Navbar: React.FC = () => {
                 >
                   <Avatar src={user.avatarUrl} alt={user.displayName} size="sm" isOnline />
                   <div className="hidden xl:flex flex-col text-left">
-                    <span className="text-xs font-bold text-[var(--text-primary)] truncate max-w-[110px]">
+                    <span className="text-xs font-semibold text-[var(--text-primary)] truncate max-w-[110px]">
                       {user.displayName}
                     </span>
                     <span className="text-xs text-[var(--color-orange)] font-medium leading-none">
@@ -425,7 +425,7 @@ export const Navbar: React.FC = () => {
                 {isUserMenuOpen && (
                   <div data-ui="popover" className="absolute right-0 top-12 w-64 border p-2 z-50 text-left space-y-1">
                     <div className="px-3 py-2 border-b border-[var(--border-color)] mb-1">
-                      <div className="text-xs font-bold text-[var(--text-primary)]">{user.displayName}</div>
+                      <div className="text-xs font-semibold text-[var(--text-primary)]">{user.displayName}</div>
                       <div className="text-xs text-[var(--text-muted)]">@{user.username}</div>
                     </div>
 
@@ -460,7 +460,7 @@ export const Navbar: React.FC = () => {
                       <Link
                         to="/admin"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl transition-colors border-t border-[var(--border-color)]"
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl transition-colors border-t border-[var(--border-color)]"
                       >
                         <Shield className="w-4 h-4" />
                         <span>Admin Dashboard</span>

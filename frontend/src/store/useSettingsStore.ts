@@ -147,6 +147,20 @@ const applyDOMClasses = (settings: AppearanceSettings) => {
   root.style.setProperty('--color-orange-hover', matchedPreset.hover);
   root.style.setProperty('--color-orange-soft', matchedPreset.soft);
   root.style.setProperty('--color-orange-border', matchedPreset.border);
+  // Keep filled actions readable for every existing user-selectable accent.
+  const rgb = matchedPreset.primary.match(/[a-f0-9]{2}/gi)!.map((channel) => {
+    const value = parseInt(channel, 16) / 255;
+    return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+  });
+  const luminance = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+  const darkInk = (luminance + 0.05) / 0.061 >= 1.05 / (luminance + 0.05);
+  root.style.setProperty('--action-ink', darkInk ? '#251A12' : '#FFFFFF');
+  const hover = matchedPreset.primary.match(/[a-f0-9]{2}/gi)!.map((channel) => {
+    const value = parseInt(channel, 16);
+    return Math.round(darkInk ? value + (255 - value) * 0.08 : value * 0.92).toString(16).padStart(2, '0');
+  }).join('');
+  root.style.setProperty('--action-hover', `#${hover}`);
+
 
   // Density
   root.classList.remove('density-comfortable', 'density-compact');

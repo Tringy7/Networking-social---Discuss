@@ -11,8 +11,8 @@ export default function PageTransition({ children }: { children: React.ReactNode
   const quiet = reduced || intensity !== 'full';
   return (
     <motion.div key={pathname} className="route-content"
-      initial={quiet ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: quiet ? 0 : 0.18, ease: 'easeOut' }}>
+      initial={quiet ? false : { opacity: 0.8 }} animate={{ opacity: 1 }}
+      transition={{ duration: quiet ? 0 : 0.12, ease: 'easeOut' }}>
       {children}
     </motion.div>
   );

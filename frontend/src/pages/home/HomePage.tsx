@@ -7,7 +7,7 @@ import PostCard from '../../components/post/PostCardView';
 import RightSidebar from '../../components/layout/RightSidebar';
 import Avatar from '../../components/ui/Avatar';
 import Button from '../../components/ui/Button';
-import { Flame, Clock, MessageSquare, ArrowUpRight, Plus } from 'lucide-react';
+import { Flame, Clock, MessageSquare, ArrowUpRight, ImagePlus } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useToastStore } from '../../store/useToastStore';
 import { POSTS_AVAILABLE } from '../../services';
@@ -39,16 +39,16 @@ export default function HomePage() {
   return <div className="feed-layout">
     <div className="feed-column">
       <header className="feed-heading">
-        <div><h1 className="editorial-title">Những góc nhìn mới.</h1><p>Cuộc trò chuyện hay bắt đầu từ sự tò mò.</p></div>
-        <span className="feed-edition">Bảng tin DISCUSS</span>
+        <div><h1 className="editorial-title">Bảng tin</h1><p>Câu chuyện mới từ những cộng đồng bạn quan tâm.</p></div>
+        <Link to="/explore" className="feed-discover">Khám phá cộng đồng <ArrowUpRight size={15} /></Link>
       </header>
       {isAuthenticated && user ? <div className="composer-strip">
-        <Avatar src={user.avatarUrl} alt={user.displayName} size="sm" />
-        <button className="composer-prompt" onClick={() => openCreateModal()}>Bạn muốn chia sẻ điều gì?</button>
-        <button className="icon-button" onClick={() => openCreateModal()} aria-label="Tạo bài viết"><Plus size={19} /></button>
+        <Avatar src={user.avatarUrl} alt={user.displayName} size="md" />
+        <button className="composer-prompt" onClick={() => openCreateModal()}>Bạn đang nghĩ gì? Chia sẻ với cộng đồng nhé.</button>
+        <button className="icon-button composer-media" onClick={() => openCreateModal()} aria-label="Tạo bài viết"><ImagePlus size={20} /></button>
       </div> : <div className="guest-strip">
-        <p><strong>Có chỗ cho góc nhìn của bạn.</strong> Đăng nhập để cùng thảo luận.</p>
-        <Link to="/login"><Button variant="ghost" size="sm" rightIcon={<ArrowUpRight size={15} />}>Tham gia</Button></Link>
+        <p><strong>Chào mừng đến với DISCUSS!</strong> Tìm cộng đồng của bạn và cùng trò chuyện.</p>
+        <Link to="/login"><Button variant="primary" size="sm" rightIcon={<ArrowUpRight size={15} />}>Tham gia ngay</Button></Link>
       </div>}
       <nav className="feed-tabs" aria-label="Sắp xếp bảng tin">
         {tabs.map(({ id, label, icon: Icon }) => <button key={id} type="button" aria-pressed={currentTab === id}
@@ -61,9 +61,9 @@ export default function HomePage() {
       </nav>
       {!POSTS_AVAILABLE && <p role="status" className="feed-notice">Bài viết mẫu · Tương tác được lưu trong phiên hiện tại.</p>}
       <div className="discussion-list">
-        {sorted.slice(0, displayCount).map((post, index) => <motion.div key={post.id}
-          initial={quiet ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: quiet ? 0 : 0.2, delay: quiet ? 0 : Math.min(index, 5) * 0.035 }}>
+        {sorted.slice(0, displayCount).map((post) => <motion.div key={post.id}
+          initial={quiet ? false : { opacity: 0.8 }} animate={{ opacity: 1 }}
+          transition={{ duration: quiet ? 0 : 0.12 }}>
           <PostCard post={post} />
         </motion.div>)}
       </div>

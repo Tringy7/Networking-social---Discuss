@@ -79,7 +79,7 @@ export const MessagesPage: React.FC = () => {
           {/* Header & Search */}
           <div className="p-4 border-b border-[var(--border-color)] space-y-3">
             <div className="flex items-center justify-between">
-              <h1 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
+              <h1 className="text-base font-semibold text-[var(--text-primary)] flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-[var(--color-orange)]" />
                 <span>Tin nhắn</span>
               </h1>
@@ -119,7 +119,7 @@ export const MessagesPage: React.FC = () => {
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-xs font-bold text-[var(--text-primary)] truncate">
+                    <span className="text-xs font-semibold text-[var(--text-primary)] truncate">
                       {conv.participant.displayName}
                     </span>
                     <span className="text-xs text-[var(--text-muted)] shrink-0">
@@ -150,7 +150,7 @@ export const MessagesPage: React.FC = () => {
                   isOnline={activeConv.participant.status === 'online'}
                 />
                 <div>
-                  <h3 className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">
+                  <h3 className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">
                     {activeConv.participant.displayName}
                   </h3>
                   <div className="text-xs text-[var(--text-muted)]">

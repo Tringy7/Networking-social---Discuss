@@ -25,7 +25,7 @@ export const NotificationSettingsPage: React.FC = () => {
   ) => (
     <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-4">
       <div className="space-y-0.5 max-w-md">
-        <h4 className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">{label}</h4>
+        <h4 className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">{label}</h4>
         <p className="text-xs text-[var(--text-secondary)]">{desc}</p>
       </div>
       <button

@@ -23,11 +23,12 @@ export const Avatar: React.FC<AvatarProps> = ({
     xs: 'w-6 h-6 text-xs',
     sm: 'w-8 h-8 text-xs',
     md: 'w-10 h-10 text-sm',
-    lg: 'w-14 h-14 text-base font-bold',
-    xl: 'w-20 h-20 text-xl font-bold',
-    '2xl': 'w-28 h-28 text-3xl font-bold',
+    lg: 'w-14 h-14 text-base font-semibold',
+    xl: 'w-20 h-20 text-xl font-semibold',
+    '2xl': 'w-28 h-28 text-3xl font-semibold',
   };
 
+  const tone = [...alt].reduce((total, character) => total + character.charCodeAt(0), 0) % 5;
   const rounded = shape === 'circle' ? 'rounded-full' : 'rounded-[var(--radius-card)]';
   const initials = alt
     ? alt
@@ -39,7 +40,7 @@ export const Avatar: React.FC<AvatarProps> = ({
     : 'D';
 
   return (
-    <div className={`relative inline-block shrink-0 ${sizes[size]} ${rounded} ${className}`}>
+    <div className={`avatar relative inline-block shrink-0 ${sizes[size]} ${rounded} ${className}`}>
       {src && src !== failedSrc ? (
         <img
           src={src}
@@ -50,7 +51,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         />
       ) : (
         <div
-          className={`w-full h-full flex items-center justify-center bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] font-semibold ${rounded}`}
+          className={`w-full h-full flex items-center justify-center avatar-fallback avatar-tone-${tone} font-semibold ${rounded}`}
         >
           {initials}
         </div>

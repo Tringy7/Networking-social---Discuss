@@ -195,13 +195,13 @@ export const PostDetailPage: React.FC = () => {
             <Avatar src={cmt.author.avatarUrl} alt={cmt.author.displayName} size="xs" />
             <Link
               to={`/user/${cmt.author.username}`}
-              className="font-bold text-[var(--text-primary)] hover:text-[var(--color-orange)] transition-colors"
+              className="font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange)] transition-colors"
             >
               {cmt.author.displayName}
             </Link>
             <span className="text-[var(--text-muted)]">@{cmt.author.username}</span>
             {cmt.author.isAuthor && (
-              <span className="text-xs font-bold text-[var(--color-orange)] bg-[var(--color-orange-soft)] px-1.5 py-0.5 rounded">
+              <span className="text-xs font-semibold text-[var(--color-orange)] bg-[var(--color-orange-soft)] px-1.5 py-0.5 rounded">
                 Tác giả
               </span>
             )}
@@ -230,7 +230,7 @@ export const PostDetailPage: React.FC = () => {
 
         {!isCollapsed && (
           <>
-            <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed pl-8">
+            <p className="thread-comment text-[var(--text-primary)] leading-relaxed pl-8">
               {cmt.content}
             </p>
 
@@ -239,7 +239,7 @@ export const PostDetailPage: React.FC = () => {
               <button
                 onClick={() => void handleCommentHeart(cmt.id)}
                 className={`flex items-center gap-1 hover:text-[var(--color-orange)] transition-colors ${
-                  cmt.isHearted ? 'text-[var(--color-orange)] font-bold' : ''
+                  cmt.isHearted ? 'text-[var(--color-orange)] font-semibold' : ''
                 }`}
               >
                 <Heart className={`w-3.5 h-3.5 ${cmt.isHearted ? 'fill-[var(--color-orange)]' : ''}`} />
@@ -310,25 +310,15 @@ export const PostDetailPage: React.FC = () => {
       <article className="post-reading-body space-y-5">
         {/* Community & Author Header */}
         <div className="flex items-center justify-between gap-4 pb-1">
-          <div className="flex items-center gap-3">
-            <Link to={`/community/${post.communityName}`}>
-              <Avatar src={post.communityAvatar} alt={post.communityDisplayName} size="md" shape="rounded" />
-            </Link>
-            <div>
-              <Link
-                to={`/community/${post.communityName}`}
-                className="text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange-ink)] transition-colors block"
-              >
-                {post.communityDisplayName}
-              </Link>
-              <div className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">
-                <Link to={`/user/${post.author.username}`} className="hover:text-[var(--text-secondary)]">
-                  @{post.author.username}
-                </Link>
+          <div className="thread-author flex min-w-0 items-center gap-3">
+            <Link to={`/user/${post.author.username}`}><Avatar src={post.author.avatarUrl} alt={post.author.displayName || post.author.username} size="md" /></Link>
+            <div className="min-w-0">
+              <Link to={`/community/${post.communityName}`} className="text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange-ink)] block truncate">{post.communityDisplayName}</Link>
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-muted)]">
+                <Link to={`/user/${post.author.username}`}>{post.author.displayName || post.author.username}</Link><span aria-hidden="true">·</span>
+                <time dateTime={post.createdAt}>{new Date(post.createdAt).toLocaleDateString('vi-VN', {day:'numeric',month:'short'})}</time>
                 {post.author.role === 'OWNER' && <Badge role="OWNER" size="sm" />}
                 {post.author.role === 'MODERATOR' && <Badge role="MODERATOR" size="sm" />}
-                <span>·</span>
-                <span>hôm nay</span>
               </div>
             </div>
           </div>
@@ -373,7 +363,7 @@ export const PostDetailPage: React.FC = () => {
         )}
 
         {/* Full Text Content */}
-        <div className="text-sm sm:text-base text-[var(--text-secondary)] leading-7 whitespace-pre-line space-y-4">
+        <div className="thread-content text-[var(--text-primary)] whitespace-pre-line space-y-4">
           {post.content}
         </div>
 
@@ -407,7 +397,7 @@ export const PostDetailPage: React.FC = () => {
               onClick={handleHeartClick}
               className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-[background-color,border-color,color,opacity,transform] ${
                 post.isHearted
-                  ? 'bg-[var(--color-orange-soft)] border-[var(--color-orange-border)] text-[var(--color-orange)] font-bold'
+                  ? 'bg-[var(--color-orange-soft)] border-[var(--color-orange-border)] text-[var(--color-orange)] font-semibold'
                   : 'bg-[var(--bg-elevated)] border-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--color-orange)]'
               }`}
             >

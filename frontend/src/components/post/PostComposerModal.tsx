@@ -308,7 +308,7 @@ export const PostComposerModal: React.FC = () => {
             onClick={() => setActiveTab('text')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-[background-color,border-color,color,opacity,transform] cursor-pointer ${
               activeTab === 'text'
-                ? 'bg-[var(--action-bg)] text-[var(--action-ink)] font-bold'
+                ? 'bg-[var(--action-bg)] text-[var(--action-ink)] font-semibold'
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
@@ -321,7 +321,7 @@ export const PostComposerModal: React.FC = () => {
             onClick={() => setActiveTab('media')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-[background-color,border-color,color,opacity,transform] cursor-pointer ${
               activeTab === 'media'
-                ? 'bg-[var(--action-bg)] text-[var(--action-ink)] font-bold'
+                ? 'bg-[var(--action-bg)] text-[var(--action-ink)] font-semibold'
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
@@ -334,7 +334,7 @@ export const PostComposerModal: React.FC = () => {
             onClick={() => setActiveTab('code')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-[background-color,border-color,color,opacity,transform] cursor-pointer ${
               activeTab === 'code'
-                ? 'bg-[var(--action-bg)] text-[var(--action-ink)] font-bold'
+                ? 'bg-[var(--action-bg)] text-[var(--action-ink)] font-semibold'
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
@@ -428,7 +428,7 @@ export const PostComposerModal: React.FC = () => {
         {activeTab === 'code' && (
           <div className="space-y-3 p-3.5 bg-[var(--bg-main)] border border-[var(--border-color)] rounded-xl">
             <div className="flex items-center justify-between gap-3">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Ngôn ngữ lập trình:</label>
+              <label className="text-xs font-semibold text-[var(--text-secondary)]">Ngôn ngữ lập trình:</label>
               <select
                 value={codeLanguage}
                 onChange={(e) => setCodeLanguage(e.target.value)}
@@ -486,7 +486,7 @@ export const PostComposerModal: React.FC = () => {
 
         <aside className="min-w-0">
           <div className="sticky top-0 space-y-3 rounded-[var(--radius-card)] border border-[var(--border-color)] bg-[var(--bg-main)] p-4">
-            <div className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
               <ImageIcon className="h-4 w-4 text-[var(--color-orange)]" />
               Xem trước bài viết
             </div>
@@ -494,7 +494,7 @@ export const PostComposerModal: React.FC = () => {
               <div className="flex items-center gap-2.5 p-3">
                 <Avatar src={user?.avatarUrl} alt={user?.displayName || 'Bạn'} size="sm" />
                 <div className="min-w-0">
-                  <div className="truncate text-xs font-bold text-[var(--text-primary)]">
+                  <div className="truncate text-xs font-semibold text-[var(--text-primary)]">
                     {user?.displayName || 'Tên của bạn'}
                   </div>
                   <div className="truncate text-xs text-[var(--text-muted)]">
@@ -503,7 +503,7 @@ export const PostComposerModal: React.FC = () => {
                 </div>
               </div>
               <div className="space-y-2 px-3 pb-3">
-                <h3 className="break-words text-base font-bold text-[var(--text-primary)]">
+                <h3 className="break-words text-base font-semibold text-[var(--text-primary)]">
                   {title.trim() || 'Tiêu đề bài viết'}
                 </h3>
                 <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-[var(--text-secondary)]">

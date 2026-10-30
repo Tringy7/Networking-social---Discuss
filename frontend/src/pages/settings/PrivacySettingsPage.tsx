@@ -65,7 +65,7 @@ export const PrivacySettingsPage: React.FC = () => {
         {/* Toggle 1: DOB */}
         <div className="flex items-center justify-between gap-4 setting-group">
           <div className="space-y-0.5 max-w-md">
-            <h4 className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">Hiển thị ngày sinh trên hồ sơ</h4>
+            <h4 className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">Hiển thị ngày sinh trên hồ sơ</h4>
             <p className="text-xs text-[var(--text-secondary)]">
               Cho phép các thành viên khác nhìn thấy ngày sinh của bạn trên trang cá nhân công khai.
             </p>
@@ -91,7 +91,7 @@ export const PrivacySettingsPage: React.FC = () => {
         {/* Toggle 2: Location */}
         <div className="flex items-center justify-between gap-4 setting-group">
           <div className="space-y-0.5 max-w-md">
-            <h4 className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">Hiển thị vị trí / tỉnh thành</h4>
+            <h4 className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">Hiển thị vị trí / tỉnh thành</h4>
             <p className="text-xs text-[var(--text-secondary)]">
               Hiển thị thông tin thành phố của bạn để kết nối với các lập trình viên cùng khu vực.
             </p>
@@ -117,7 +117,7 @@ export const PrivacySettingsPage: React.FC = () => {
         {/* Toggle 3: Posts on profile */}
         <div className="flex items-center justify-between gap-4 setting-group">
           <div className="space-y-0.5 max-w-md">
-            <h4 className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">Hiển thị danh sách bài viết trên hồ sơ</h4>
+            <h4 className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">Hiển thị danh sách bài viết trên hồ sơ</h4>
             <p className="text-xs text-[var(--text-secondary)]">
               Khi tắt tính năng này, người khác truy cập trang cá nhân của bạn sẽ không thấy danh sách bài viết đã đăng.
             </p>

@@ -110,7 +110,7 @@ export const Modal: React.FC<ModalProps> = ({
           >
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
-                {title && <h3 id={`${modalId}-title`} className="text-lg font-bold text-[var(--text-primary)]">{title}</h3>}
+                {title && <h3 id={`${modalId}-title`} className="text-lg font-semibold text-[var(--text-primary)]">{title}</h3>}
                 {description && <p id={`${modalId}-description`} className="text-sm text-[var(--text-secondary)] mt-1">{description}</p>}
               </div>
               <button

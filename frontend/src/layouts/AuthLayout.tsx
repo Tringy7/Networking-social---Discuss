@@ -9,12 +9,12 @@ export default function AuthLayout() {
     <aside className="auth-editorial">
       <Logo size="lg" />
       <div className="auth-manifesto">
-        <p className="auth-quote">Một câu hỏi.<br />Nhiều góc nhìn.</p>
-        <p className="auth-intro">Có những điều chỉ sáng tỏ khi ta cùng trò chuyện. Tìm cộng đồng của bạn, chia sẻ điều bạn biết và khám phá điều mới.</p>
+        <p className="auth-quote">Cùng sở thích.<br />Cùng kết nối.</p>
+        <p className="auth-intro">Tìm những người cùng mối quan tâm, chia sẻ câu chuyện của bạn và bắt đầu một cuộc trò chuyện mới.</p>
         <Link to="/explore" className="auth-explore">Khám phá các cộng đồng <ArrowUpRight size={17} /></Link>
       </div>
-      <div className="auth-conversation" aria-hidden="true"><MessageSquare size={19} /><span>Lắng nghe. Chia sẻ. Kết nối.</span></div>
-      <div className="auth-colophon"><span>DISCUSS Community Network</span><span>Kết nối qua từng góc nhìn.</span></div>
+      <div className="auth-conversation" aria-hidden="true"><MessageSquare size={19} /><span>Nơi mọi sở thích đều có thể thành một cộng đồng.</span></div>
+      <div className="auth-colophon"><span>DISCUSS Community Network</span><span>Cộng đồng của bạn, câu chuyện của bạn.</span></div>
     </aside>
     <main className="auth-main" id="main-content">
       <div className="auth-top"><div className="lg:hidden"><Logo /></div><Link to="/">Trang chủ <ArrowUpRight size={15} /></Link></div>

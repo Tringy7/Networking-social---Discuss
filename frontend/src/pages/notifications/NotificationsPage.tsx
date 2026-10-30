@@ -40,7 +40,7 @@ export const NotificationsPage: React.FC = () => {
 
   return (
     <div className="notifications-page utility-page">
-      <header className="utility-heading flex flex-wrap items-end justify-between gap-4"><div><h1>Cuộc trò chuyện tiếp nối.</h1><p className="mt-2 text-sm text-[var(--text-secondary)]">Phản hồi, lời mời và hoạt động dành cho bạn.</p></div><Button variant="ghost" size="sm" onClick={markAllAsRead} disabled={notifications.length === 0} leftIcon={<CheckCheck size={16} />}>Đánh dấu đã đọc</Button></header>
+      <header className="utility-heading flex flex-wrap items-end justify-between gap-4"><div><h1>Thông báo của bạn</h1><p className="mt-2 text-sm text-[var(--text-secondary)]">Phản hồi, lời mời và hoạt động dành cho bạn.</p></div><Button variant="ghost" size="sm" onClick={markAllAsRead} disabled={notifications.length === 0} leftIcon={<CheckCheck size={16} />}>Đánh dấu đã đọc</Button></header>
       <EditorialTabs label="Lọc thông báo" value={tab} onChange={setTab} options={[{id:'all',label:`Tất cả (${notifications.length})`},{id:'unread',label:`Chưa đọc (${notifications.filter((n) => !n.isRead).length})`}]} />
       {!NOTIFICATIONS_AVAILABLE && <p className="feed-notice">Thông báo mẫu · Trạng thái được lưu trong phiên hiện tại.</p>}
       <div className="notification-list">{filtered.map((item) => <Link key={item.id} to={item.targetUrl} onClick={() => void markAsRead(item.id)} className={`notification-row ${item.isRead ? '' : 'is-unread'}`}>

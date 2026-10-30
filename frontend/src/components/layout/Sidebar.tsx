@@ -38,8 +38,8 @@ export default function Sidebar() {
       </div>
       <div className="sidebar-scroll">
         <nav className="side-group">
-          {link('/', 'Bảng tin', Home, location.pathname === '/' && !popular, true)}
-          {link('/?tab=popular', 'Đang được bàn luận', TrendingUp, popular, true)}
+          {link('/', 'Trang chủ', Home, location.pathname === '/' && !popular, true)}
+          {link('/?tab=popular', 'Phổ biến', TrendingUp, popular, true)}
           {link('/explore', 'Khám phá cộng đồng', Compass)}
         </nav>
         {isAuthenticated && user ? <>
@@ -64,7 +64,7 @@ export default function Sidebar() {
             {activeRole === 'ADMIN' && link('/admin', 'Trung tâm quản trị', ShieldCheck)}
           </nav>}
         </> : !collapsed ? <div className="sidebar-invitation">
-          <span className="invitation-mark">“</span><p>Mỗi góc nhìn đều mở ra một cuộc trò chuyện.</p>
+          <p className="sidebar-invitation-title">Có cộng đồng dành cho bạn</p><p>Gặp những người cùng sở thích và chia sẻ câu chuyện của bạn.</p>
           <Link to="/register">Tham gia DISCUSS <ArrowUpRight size={16} /></Link>
         </div> : link('/login', 'Đăng nhập', LogIn)}
       </div>
@@ -73,7 +73,7 @@ export default function Sidebar() {
         <button type="button" className="side-link" onClick={() => setTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark')} aria-label="Chuyển giao diện sáng hoặc tối" title="Chuyển giao diện sáng hoặc tối">
           {settings.theme === 'dark' ? <Sun className="side-icon" /> : <Moon className="side-icon" />}{!collapsed && <span>Đổi giao diện</span>}
         </button>
-        {!collapsed && <span className="sidebar-signoff">DISCUSS · Kết nối qua góc nhìn.</span>}
+        {!collapsed && <span className="sidebar-signoff">DISCUSS · Cùng nhau kết nối.</span>}
       </div>
     </motion.aside>
   );

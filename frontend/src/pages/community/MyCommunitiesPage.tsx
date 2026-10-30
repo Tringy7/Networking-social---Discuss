@@ -46,7 +46,7 @@ export const MyCommunitiesPage: React.FC = () => {
     <div className="utility-page space-y-5 text-left pb-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2.5">
+          <h1 className="text-2xl font-semibold text-[var(--text-primary)] flex items-center gap-2.5">
             <Users className="w-6 h-6 text-[var(--color-orange)]" />
             <span>Cộng đồng của tôi</span>
           </h1>
@@ -68,7 +68,7 @@ export const MyCommunitiesPage: React.FC = () => {
           onClick={() => setTab('all')}
           className={`px-4 py-2 rounded-xl transition-colors cursor-pointer ${
             tab === 'all'
-              ? 'bg-[var(--color-orange)]/15 text-[var(--color-orange)] border border-[var(--color-orange)]/30 font-bold'
+              ? 'bg-[var(--color-orange)]/15 text-[var(--color-orange)] border border-[var(--color-orange)]/30 font-semibold'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
@@ -78,7 +78,7 @@ export const MyCommunitiesPage: React.FC = () => {
           onClick={() => setTab('owned')}
           className={`px-4 py-2 rounded-xl transition-colors cursor-pointer ${
             tab === 'owned'
-              ? 'bg-[var(--color-orange)]/15 text-[var(--color-orange)] border border-[var(--color-orange)]/30 font-bold'
+              ? 'bg-[var(--color-orange)]/15 text-[var(--color-orange)] border border-[var(--color-orange)]/30 font-semibold'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
@@ -88,7 +88,7 @@ export const MyCommunitiesPage: React.FC = () => {
           onClick={() => setTab('joined')}
           className={`px-4 py-2 rounded-xl transition-colors cursor-pointer ${
             tab === 'joined'
-              ? 'bg-[var(--color-orange)]/15 text-[var(--color-orange)] border border-[var(--color-orange)]/30 font-bold'
+              ? 'bg-[var(--color-orange)]/15 text-[var(--color-orange)] border border-[var(--color-orange)]/30 font-semibold'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
@@ -112,7 +112,7 @@ export const MyCommunitiesPage: React.FC = () => {
                   <div className="flex flex-wrap items-center gap-2">
                     <Link
                       to={`/community/${comm.name}`}
-                      className="truncate text-sm font-bold text-[var(--text-primary)] transition-colors hover:text-[var(--color-orange)]"
+                      className="truncate text-sm font-semibold text-[var(--text-primary)] transition-colors hover:text-[var(--color-orange)]"
                     >
                       {comm.displayName}
                     </Link>
@@ -167,7 +167,7 @@ export const MyCommunitiesPage: React.FC = () => {
         {displayedList.length === 0 && (
           <div className="py-10 text-center bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-panel)] p-8 space-y-4">
             <Users className="w-10 h-10 text-[var(--color-orange)] mx-auto opacity-60" />
-            <h3 className="text-base font-bold text-[var(--text-primary)]">Chưa có cộng đồng nào trong mục này</h3>
+            <h3 className="text-base font-semibold text-[var(--text-primary)]">Chưa có cộng đồng nào trong mục này</h3>
             <p className="text-xs text-[var(--text-secondary)]">
               Hãy khám phá các cộng đồng đang hoạt động sôi nổi hoặc tạo nhóm của riêng bạn.
             </p>

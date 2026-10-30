@@ -11,7 +11,7 @@ export default function AppearanceSettingsPage() {
   const { settings, setTheme, setAccentColor, setDensity, setFontSize, setAnimationIntensity, updateSettings, resetDefaults } = useSettingsStore();
   const addToast = useToastStore((state) => state.addToast);
   return <div className="appearance-page">
-    <div><h2>Không gian đọc của bạn.</h2><p className="text-sm text-[var(--text-secondary)]">Chọn giao diện phù hợp. Thay đổi được lưu tự động trên thiết bị này.</p></div>
+    <div><h2>Giao diện của bạn</h2><p className="text-sm text-[var(--text-secondary)]">Chọn giao diện phù hợp. Thay đổi được lưu tự động trên thiết bị này.</p></div>
     <section className="preference-row"><div><h3>Giao diện</h3><p>Sáng nhẹ, tối dịu hoặc đồng bộ với thiết bị.</p></div><div className="theme-choices" role="group" aria-label="Giao diện">
       {([{id:'light',label:'Sáng',icon:Sun},{id:'dark',label:'Tối',icon:Moon},{id:'system',label:'Theo thiết bị',icon:Monitor}] as const).map(({id,label,icon:Icon}) => <button key={id} type="button" onClick={() => setTheme(id)} aria-pressed={settings.theme === id}><Icon size={18} /><span>{label}</span>{settings.theme === id && <Check size={14} />}</button>)}
     </div></section>
@@ -22,7 +22,7 @@ export default function AppearanceSettingsPage() {
     <section className="preference-row"><div><h3>Cỡ chữ</h3><p>Chọn kích thước văn bản bạn thấy dễ đọc.</p></div><Choices label="Cỡ chữ" value={settings.fontSize} options={[{id:'small',label:'Nhỏ'},{id:'medium',label:'Vừa'},{id:'large',label:'Lớn'}]} onChange={setFontSize} /></section>
     <section className="preference-row"><div><h3>Chuyển động</h3><p>Luôn tôn trọng tùy chọn giảm chuyển động của thiết bị.</p></div><Choices label="Chuyển động" value={settings.animationIntensity} options={[{id:'full',label:'Đầy đủ'},{id:'reduced',label:'Giảm bớt'},{id:'off',label:'Tắt'}]} onChange={setAnimationIntensity} /></section>
     <section className="preference-row"><div><h3>Thanh điều hướng</h3><p>Giữ nhãn hiển thị hoặc dành thêm chỗ cho nội dung.</p></div><Choices label="Thanh điều hướng" value={settings.sidebarCollapsed ? 'collapsed' : 'expanded'} options={[{id:'expanded',label:'Đầy đủ'},{id:'collapsed',label:'Thu gọn'}]} onChange={(value) => updateSettings({sidebarHidden:false,sidebarCollapsed:value === 'collapsed'})} /></section>
-    <div className="appearance-preview"><span className="text-xs text-[var(--text-muted)]">Xem trước văn bản</span><p className="editorial-title">Một câu hỏi mở ra nhiều góc nhìn.</p><p className="discussion-excerpt">Một không gian để chia sẻ điều bạn biết và khám phá những điều mới qua từng cuộc trò chuyện.</p></div>
+    <div className="appearance-preview"><span className="text-xs text-[var(--text-muted)]">Xem trước văn bản</span><p className="editorial-title">Cùng chia sẻ, cùng kết nối.</p><p className="discussion-excerpt">Một không gian để chia sẻ điều bạn biết và khám phá những điều mới qua từng cuộc trò chuyện.</p></div>
     <div className="flex flex-wrap items-center justify-between gap-3 py-4"><Button variant="ghost" size="sm" leftIcon={<RotateCcw size={15} />} onClick={() => { resetDefaults(); addToast('Đã khôi phục giao diện mặc định.', 'info'); }}>Khôi phục mặc định</Button><Button size="sm" onClick={() => addToast('Tùy chọn giao diện đã được lưu.', 'success')}>Lưu tùy chọn</Button></div>
   </div>;
 }

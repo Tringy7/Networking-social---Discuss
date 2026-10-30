@@ -76,17 +76,25 @@ export default function PostCard({ post, showCommunity = true }: PostCardProps) 
   };
 
   const date = new Date(post.createdAt);
-  const time = Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short' });
+  const elapsedHours = Math.max(0, Math.floor((Date.now() - date.getTime()) / 3_600_000));
+  const time = Number.isNaN(date.getTime()) ? '' : elapsedHours < 1 ? 'Vừa xong' : elapsedHours < 24 ? `${elapsedHours} giờ trước` : date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short' });
+  const preview = expanded || post.content.length <= 180 ? post.content : `${post.content.slice(0, 180).trimEnd()}…`;
   return <>
     <article className="discussion-row" aria-labelledby={`post-title-${post.id}`}>
       <div className="discussion-byline">
-        {showCommunity ? <Link className="byline-community" to={`/community/${post.communityName}`}>
-          <Avatar src={post.communityAvatar} alt={post.communityDisplayName} size="xs" shape="rounded" /><span className="truncate">{post.communityDisplayName}</span>
-        </Link> : <Link to={`/user/${post.author.username}`}><Avatar src={post.author.avatarUrl} alt={post.author.displayName} size="xs" /><span>{post.author.displayName || post.author.username}</span></Link>}
-        {showCommunity && <Link className="byline-author" to={`/user/${post.author.username}`}>@{post.author.username}</Link>}
-        {(post.author.role === 'OWNER' || post.author.role === 'MODERATOR') && <span className="byline-role">{post.author.role === 'OWNER' ? 'Chủ cộng đồng' : 'Kiểm duyệt'}</span>}
-        {post.pinned && <span className="inline-flex items-center gap-1 text-[var(--color-orange-ink)]"><Pin size={12} /> Ghim</span>}
-        <time dateTime={post.createdAt}>{time}</time>
+        <Link to={`/user/${post.author.username}`} className="post-author-avatar" aria-label={`Hồ sơ ${post.author.displayName || post.author.username}`}>
+          <Avatar src={post.author.avatarUrl} alt={post.author.displayName || post.author.username} size="md" />
+        </Link>
+        <div className="post-identity">
+          <div className="post-community-line">
+            {showCommunity ? <Link className="byline-community" to={`/community/${post.communityName}`}><Avatar src={post.communityAvatar} alt={post.communityDisplayName} size="xs" shape="rounded" /><span>{post.communityDisplayName}</span></Link> : <Link className="post-author-name" to={`/user/${post.author.username}`}>{post.author.displayName || post.author.username}</Link>}
+            {post.pinned && <span className="post-pinned"><Pin size={12} />Ghim</span>}
+          </div>
+          <div className="post-author-line">
+            <Link to={`/user/${post.author.username}`}>{showCommunity ? (post.author.displayName || post.author.username) : `@${post.author.username}`}</Link><span aria-hidden="true">·</span><time dateTime={post.createdAt} title={date.toLocaleString('vi-VN')}>{time}</time>
+            {(post.author.role === 'OWNER' || post.author.role === 'MODERATOR') && <span className="byline-role">{post.author.role === 'OWNER' ? 'Chủ cộng đồng' : 'Kiểm duyệt'}</span>}
+          </div>
+        </div>
         <div ref={menuRef} className="relative">
           <button ref={menuButtonRef} className="icon-button" onClick={() => setShowMenu(!showMenu)} aria-expanded={showMenu} aria-label={`Tùy chọn bài viết ${post.title}`}><MoreHorizontal size={17} /></button>
           {showMenu && <div data-ui="popover" className="absolute right-0 top-full z-20 w-48 border p-2">
@@ -98,8 +106,8 @@ export default function PostCard({ post, showCommunity = true }: PostCardProps) 
       <div className={`discussion-body ${post.mediaUrl ? 'has-media' : ''}`}>
         <div className="min-w-0">
           <h2 id={`post-title-${post.id}`} className="discussion-title"><Link to={`/post/${post.id}`}>{post.title}</Link></h2>
-          <motion.p id={`post-excerpt-${post.id}`} key={expanded ? 'full' : 'preview'} initial={quiet ? false : { opacity: 0.5 }} animate={{ opacity: 1 }} transition={{ duration: quiet ? 0 : 0.15 }} className={`discussion-excerpt ${expanded ? '' : 'line-clamp-2'}`}>{post.content}</motion.p>
-          {post.content.length > 180 && <button type="button" className="discussion-expand" aria-expanded={expanded} aria-controls={`post-excerpt-${post.id}`} onClick={() => setExpanded(!expanded)}>{expanded ? 'Thu gọn' : 'Đọc tiếp'}</button>}
+          <motion.p id={`post-excerpt-${post.id}`} key={expanded ? 'full' : 'preview'} initial={quiet ? false : { opacity: 0.5 }} animate={{ opacity: 1 }} transition={{ duration: quiet ? 0 : 0.15 }} className={`discussion-excerpt ${expanded ? '' : 'line-clamp-3'}`}>{preview}</motion.p>
+          {post.content.length > 180 && <button type="button" className="discussion-expand" aria-expanded={expanded} aria-controls={`post-excerpt-${post.id}`} onClick={() => setExpanded(!expanded)}>{expanded ? 'Thu gọn' : 'Xem thêm'}</button>}
           {post.tags && post.tags.length > 0 && <div className="discussion-tags">{post.tags.map((tag) => <Link key={tag} to={`/search?q=${encodeURIComponent(tag)}&type=posts`}>#{tag}</Link>)}</div>}
         </div>
         {post.mediaUrl && <Link to={`/post/${post.id}`} className="discussion-media" aria-label={`Xem ảnh: ${post.title}`}><img src={post.mediaUrl} alt={post.title} loading="lazy" /></Link>}
@@ -108,11 +116,11 @@ export default function PostCard({ post, showCommunity = true }: PostCardProps) 
       <div className="discussion-actions">
         <motion.button type="button" className="discussion-action" onClick={handleHeartClick} aria-pressed={post.isHearted} disabled={heartPending}
           aria-label={`${post.isHearted ? 'Bỏ thích' : 'Thích'} bài viết, ${post.heartCount} lượt thích`} whileTap={quiet ? undefined : { scale: 0.9 }}>
-          <motion.span animate={quiet ? undefined : { scale: post.isHearted ? [1, 1.3, 1] : 1 }} transition={{ duration: 0.25 }}><Heart className="heart-icon" /></motion.span><span className="tabular-nums">{post.heartCount}</span>
+          <motion.span animate={quiet ? undefined : { scale: post.isHearted ? [1, 1.3, 1] : 1 }} transition={{ duration: 0.25 }}><Heart className="heart-icon" /></motion.span><span className="hidden sm:inline">Thích</span><span className="tabular-nums">{post.heartCount}</span>
         </motion.button>
         <Link to={`/post/${post.id}#comments`} className="discussion-action" aria-label={`${post.commentCount} bình luận`}><MessageSquare /><span>{post.commentCount}</span><span className="hidden sm:inline">bình luận</span></Link>
         <button type="button" className="discussion-action ml-auto" onClick={handleSaveClick} aria-pressed={post.isSaved} disabled={savePending} aria-label={post.isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}><Bookmark fill={post.isSaved ? 'currentColor' : 'none'} /><span className="hidden sm:inline">{post.isSaved ? 'Đã lưu' : 'Lưu'}</span></button>
-        <button type="button" className="discussion-action" onClick={handleShareClick} aria-label="Sao chép liên kết bài viết"><Share2 /></button>
+        <button type="button" className="discussion-action" onClick={handleShareClick} aria-label="Sao chép liên kết bài viết"><Share2 /><span className="hidden sm:inline">Chia sẻ</span></button>
       </div>
     </article>
     <ReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} contentType="POST" contentId={post.id} contentTitle={post.title} communityName={post.communityName} targetUsername={post.author.username} />

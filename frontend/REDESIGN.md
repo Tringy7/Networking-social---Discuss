@@ -1,75 +1,46 @@
-# DISCUSS editorial redesign
+# DISCUSS: friendly community UI refinement
 
-The implemented direction is 70% Editorial Social / 30% Modern Community OS, as approved. The application keeps its active TypeScript route tree and Zustand stores. Backend code, service contracts, authentication/refresh logic and React Context implementations were not modified.
+The approved direction is **Modern Friendly Community Social Network**, replacing the earlier editorial treatment. This refines the existing application rather than replacing its architecture.
 
-## Visual system
+## What changed
 
-- Be Vietnam Pro for interface text and Vietnamese readability; Newsreader for discussion titles and editorial identity. Literal code retains the system monospace face.
-- Low-chroma off-white navigation frame, white reading canvas, neutral charcoal dark surfaces, orange brand and interaction accents, and contrasting primary controls.
-- Open discussion rows, compact bylines and actions, underline filters, expandable previews, optional media thumbnails and collapsible code previews.
-- A 224px labeled sidebar that springs to a 72px rail. Mobile uses a bottom navigation and keyboard-accessible drawer. Search uses actual post tags and locally stored search history.
-- Community mastheads with contextual membership actions and rules; absent banners do not reserve an empty image area. Profiles pair a contributor identity column with activity, preserving image preview and crop editors.
-- Typographic split-screen authentication; horizontal settings navigation and compact preference rows; administration with a shared metric strip; a one-pane mobile inbox.
-- Framer Motion page, sidebar, filter, reaction, modal and drawer feedback. System reduced motion and the saved motion setting are respected. Modal exit is short; modal focus handling and Escape dismissal remain available.
-- All 39 explicit route paths and aliases are preserved. Pages load lazily. Initial JS decreased from roughly 1.08 MB to 505 KB uncompressed (156 KB gzip); the build retains a warning for the initial chunk just over 500 KB.
+- **One friendly font:** Nunito Sans, with Vietnamese glyph support, replaces Be Vietnam Pro and Newsreader. Interface weights are 400–600; the wordmark uses 700. Feed titles are 19px (18px on mobile), post content is 15px, metadata is 12–13px, and page titles are 24–26px. Code remains monospace.
+- **Social conversations:** a 40px author avatar, recognizable community identity, author names and relative timestamps, short expandable previews, familiar like/comment/save/share controls, larger in-flow media, and one soft surface per post.
+- **Community participation:** reusable Join/Leave controls call the existing Zustand membership actions from discovery cards and the feed rail. Pending/error feedback and guest login redirects are preserved. Discovery uses cards for multiple communities and a compact horizontal presentation for a single desktop result.
+- **Softer shared system:** neutral light surfaces, neutral charcoal Dark Mode, moderate corners, subtle borders, orange primary actions, and readable action text across all existing accent choices. Avatar fallback colors remain stable for each displayed identity.
+- **Familiar navigation:** Home, Explore, profile, notifications, messages and settings retain their routes. The existing collapsible sidebar and mobile navigation are preserved. Search, dropdowns, dialogs and controls share softer geometry.
+- **Other active screens:** social profile/activity composition, welcoming split-screen authentication, conversation-style post detail and comments, cleaner settings, and management screens using the same type and palette.
+- **Fast feedback:** Framer Motion remains in place for reactions, tabs, sidebar, membership labels and overlays. Route and list entrances are short opacity transitions. System reduced-motion and saved motion preferences are respected.
 
-## Skills and direction
-
-Used `.agents/skills/design-taste-frontend/SKILL.md` and its app-screen guidance. The draw selected `editorial-greeting`, seed `1881450156`, with brand palette/type retained. The approved brief takes precedence over the library's generic greeting/KPI composition: DISCUSS renders discussions rather than adding dashboard metrics. No redraws were used.
-
-`redesign-skill/SKILL.md` and `output-skill/SKILL.md` were not found after repeat searches of the project-local `.agents` directory, `C:/Users/hi/.agents/skills`, `C:/Users/hi/.codex/skills`, and the installed Codex plugin cache. They were not used. Proceeding without them was explicitly authorized.
-
-Idea: DISCUSS turns each community conversation into an editorial entry, with the practical controls close to its title, byline and response counts. The live element is the working feed: filtering, preview expansion, reactions and bookmarks using the existing stores.
+Shared tokens and base behavior live in `src/index.css`; the application presentation is in `src/social.css`. Existing internal selector names remain compatible with the active components; they no longer imply a serif/editorial appearance.
 
 ## Verification
 
 | Check | Result |
 | --- | --- |
 | Production build | Passed |
-| Existing Vitest suite | 7/7 passed |
-| Existing ESLint command | 129 pre-existing errors in untouched legacy JSX; current configuration excludes TypeScript |
-| Taste source scan of 78 active TS/TSX/CSS files | 0 failures, 15 warnings |
-| Production home visual inspection, 1440/768/390px | 0 failures, 1 warning |
-| Browser route/layout snapshots | 66 checks, no missing titles, unnamed visible buttons, empty main regions or horizontal overflow |
-| Browser interaction checks | 23/23 passed |
-| Route path comparison against HEAD | All 39 explicit paths preserved |
-| Whitespace check | `git diff --check` passed |
-| Backend changes | None |
+| Existing Vitest tests | 7/7 passed |
+| Route/layout browser checks | 66 passed; no horizontal overflow, empty main regions, missing titles or unnamed visible buttons |
+| Interaction browser checks | 27/27 passed |
+| Final production home inspector at 1440 / 768 / 390px | 0 failures, 0 warnings |
+| Active TS/TSX/CSS Taste source scan | 0 failures; warnings concern existing palettes, floating overlay shadows, hexadecimal formatting and punctuation |
+| Existing ESLint command | Still reports 129 pre-existing errors in untouched legacy JSX |
+| Existing route path comparison | All 39 explicit paths preserved |
+| Legacy JSX, API/service and backend changes | None |
+| `git diff --check` | Passed |
 
-The source-scan warnings are existing selectable accent colors, password-strength colors, floating overlay/crop-mask shadows, and punctuation. The existing purple preference remains selectable to preserve functionality; it is not the default brand palette. The production inspector's remaining warning counts the literal-code monospace face in addition to the two interface/editorial fonts.
+The browser sweep includes representative layouts at 1366, 1440, 1920, 768 and 390px and representative Light and Dark Mode screens. All final production-inspector screenshots were opened and reviewed. Additional community, profile, authentication, thread and dark-mode screenshots were reviewed and refined.
 
-The browser checks cover 1366, 1440, 1920, 768 and 390px layouts, plus representative light and dark screens. Public routes were checked against the production build. Authenticated layouts were checked on the development server using isolated browser-only fixtures for the user, community and management data. No fixture was added to production source or used to replace application API data.
+Interaction checks cover sidebar collapse/expand; like/unlike; bookmark state; preview expansion; URL sorting; composer opening/focus/Escape; theme and preference persistence; avatar crop-editor access; community wizard access/Escape; mobile inbox navigation; mobile drawer opening/Escape; admin access denial; discovery Join/Leave; feed-rail Join; and rendered social typography and identity visibility.
 
-Interaction coverage: sidebar collapse/expand, like/unlike, bookmark changes, preview expansion, URL sorting, composer opening and focus, Escape dismissal, theme changes, persistent font/motion preferences, avatar-editor access, community-wizard access and dismissal, mobile inbox navigation, mobile drawer opening/dismissal, and admin access denial for an ordinary user.
+Public routes were checked on the production preview. Authenticated layouts and membership interactions use isolated browser-only fixtures. These fixtures are not shipped and do not replace API data in the application. Live authentication/refresh, real image uploads and backend mutations still require an account and running backend for end-to-end validation. There is no configured TypeScript compiler or type-check script; the production build verifies transpilation, not static TypeScript correctness.
 
-There is no configured TypeScript compiler, `tsconfig`, or type-check script in this frontend. Vite transpilation/build was verified; a static TypeScript type check was not run. Live login, refresh cookies, Google sign-in, community mutations, real image uploads and other server-dependent workflows require a running backend and a real account for end-to-end verification. Their existing API handlers remain in place.
-
-Existing post, notification and message demo modes were retained, including their visible sample-data notices. No new mock content was added to the application. No stock photography, generated imagery or third-party image assets were introduced.
+The existing demo post/notification/message modes and their visible notices remain unchanged. No new fake content, metrics, online counts, photographs or generated media were added to the application. Existing user-selectable accent palettes remain available.
 
 ## Visual review
 
-ROUND 1
-Seen in one second: DISCUSS as a discussion journal, with visible community attribution.
-Idea (one sentence): Community conversations are the editorial entries, with compact controls beside them.
-Live thing: Feed filtering, previews and existing post interactions.
-Layout words by section: shell=compact frame / feed=open rows / context=reading rail / identity=contributor column / settings=preference rows.
-Scores: design 7.0 · usability 7.0 · creativity 7.0 · content 7.5 → overall 7.1.
-Caps applied: inspector failures before corrections.
-Top three problems:
-1. Small context metadata in `stage-shell/desktop-fold.jpg`; increase secondary type and primary control labels.
-2. Crowded tablet context rail in `stage-shell/tablet-fold.jpg`; use a full-width discussion column at tablet widths.
-3. Mobile edge spacing in `stage-shell/mobile-fold.jpg`; inset bottom navigation and rebalance header actions.
+The feed now answers “what are my communities sharing?” through people, community names and conversation controls. Post content, rather than a display headline, leads the hierarchy. Related metadata stays grouped above each post and actions stay below it. Tablet uses the full feed width; mobile preserves the readable column and bottom navigation.
 
-FINAL ROUND
-Seen in one second: An editorial community product with a distinct reading hierarchy and compact navigation.
-Idea (one sentence): Each discussion reads like a journal entry while its controls stay immediately available.
-Live thing: Working discussion filters, expandable previews, reactions and saved state.
-Layout words by section: shell=quiet navigation frame / feed=editorial entries / community=contextual masthead / profile=contributor and activity / authentication=typographic split / settings=compact rows / inbox=list or conversation.
-Scores: design 7.8 · usability 8.0 · creativity 7.0 · content 7.5 → overall 7.7 (self-review, not an independent score).
-Caps applied: Creativity is capped at 7 because editorial discussion composition is a known approach. Photography requirements for marketing pages do not apply to this working application.
-Remaining limitations:
-1. Existing sample content has no media, so the production feed's image treatment was not visually exercised with live post imagery.
-2. Real community covers and member photos depend on backend data; empty states are intentionally compact.
-3. Complete backend regression and static TypeScript validation remain outside the available verified coverage described above.
+Review corrections: replaced article bylines with two-line social headers; removed quotation-style side panels and heavy title rules; reduced list entrance movement; kept single-community results compact; and placed profile activity beside a concise social introduction panel. Empty banners do not invent imagery or activity.
 
-Local inspection output is in `.taste-skill/before`, `.taste-skill/after`, and `.taste-skill/routes`; it is ignored by Git. Every final production-inspector screenshot was opened and reviewed. The before inspection reported 1 failure / 3 warnings; the final production inspection reported 0 failures / 1 warning.
+The installed `design-taste-frontend` skill and its app-screen guidance were used. The user's approved social direction takes precedence over the prior `editorial-greeting` sheet and its font/composition choices. No new random direction or visual asset was introduced. Local browser artifacts are ignored by Git under `.taste-skill/social-before`, `.taste-skill/social-after`, and `.taste-skill/social-routes`.

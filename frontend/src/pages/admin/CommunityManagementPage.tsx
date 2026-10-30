@@ -54,7 +54,7 @@ export const CommunityManagementPage: React.FC = () => {
   return (
     <div className="space-y-6 text-left pb-16">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
+        <h1 className="text-2xl font-semibold text-[var(--text-primary)] flex items-center gap-2">
           <FolderKanban className="w-6 h-6 text-[var(--color-info)]" />
           <span>Quản lý cộng đồng toàn hệ thống</span>
         </h1>
@@ -93,7 +93,7 @@ export const CommunityManagementPage: React.FC = () => {
       <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-panel)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[var(--bg-surface)] border-b border-[var(--border-color)] text-xs text-[var(--text-muted)] font-bold">
+            <thead className="bg-[var(--bg-surface)] border-b border-[var(--border-color)] text-xs text-[var(--text-muted)] font-semibold">
               <tr>
                 <th className="p-4">Cộng đồng</th>
                 <th className="p-4">Chuyên mục</th>
@@ -112,7 +112,7 @@ export const CommunityManagementPage: React.FC = () => {
                       <div>
                         <Link
                           to={`/community/${c.name}`}
-                          className="font-bold text-[var(--text-primary)] hover:text-[var(--color-orange)] transition-colors"
+                          className="font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange)] transition-colors"
                         >
                           {c.displayName}
                         </Link>
@@ -126,12 +126,12 @@ export const CommunityManagementPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="p-4 text-[var(--text-secondary)]">@{c.ownerUsername}</td>
-                  <td className="p-4 font-bold text-[var(--text-primary)] tabular-nums">
+                  <td className="p-4 font-semibold text-[var(--text-primary)] tabular-nums">
                     {c.memberCount.toLocaleString('vi-VN')}
                   </td>
                   <td className="p-4">
                     <span
-                      className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
+                      className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
                         c.status === 'ACTIVE'
                           ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
                           : 'bg-[var(--color-danger)]/15 text-[var(--color-danger)]'
