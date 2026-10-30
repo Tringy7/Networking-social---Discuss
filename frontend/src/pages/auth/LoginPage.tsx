@@ -65,7 +65,7 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="space-y-6 text-left">
       <div className="space-y-1.5">
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--text-primary)]">
+        <h1 className="auth-title editorial-title text-[var(--text-primary)]">
           Đăng nhập DISCUSS
         </h1>
         <p className="text-sm text-[var(--text-secondary)]">

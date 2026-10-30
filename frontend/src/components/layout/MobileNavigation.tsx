@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Bell, Compass, Home, Menu, MessageSquare, Plus, Settings, ShieldCheck, UserRound, Users, X, Bookmark, LogIn } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { usePostStore } from '../../store/usePostStore';
 
 const itemClass = ({ isActive }: { isActive: boolean }) =>
-  `flex min-h-16 flex-col items-center justify-center gap-1 px-1 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)] ${
+  `flex min-h-14 flex-col items-center justify-center gap-1 px-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)] ${
     isActive ? 'text-[var(--color-orange-ink)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
   }`;
 
@@ -15,6 +17,9 @@ export const MobileNavigation: React.FC = () => {
   const { communities } = useCommunityStore();
   const openCreateModal = usePostStore((state) => state.openCreateModal);
   const navigate = useNavigate();
+  const reduced = useReducedMotion();
+  const intensity = useSettingsStore((state) => state.settings.animationIntensity);
+  const quiet = reduced || intensity !== 'full';
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -33,6 +38,14 @@ export const MobileNavigation: React.FC = () => {
     if (!isMoreOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') closeMoreMenu();
+      if (event.key === 'Tab') {
+        const menu = document.getElementById('mobile-navigation-menu');
+        const controls = menu?.querySelectorAll<HTMLElement>('a[href],button:not(:disabled)');
+        if (!controls?.length) return;
+        const first = controls[0], last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
     };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
@@ -49,8 +62,8 @@ export const MobileNavigation: React.FC = () => {
 
   return (
     <>
-      {isMoreOpen && (
-        <>
+      <AnimatePresence>{isMoreOpen && (
+        <motion.div initial={quiet ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: quiet ? 0 : 0.15 }}>
           <button
             type="button"
             aria-label="Đóng menu điều hướng"
@@ -58,10 +71,12 @@ export const MobileNavigation: React.FC = () => {
             onClick={closeMoreMenu}
             tabIndex={-1}
           />
-          <section
+          <motion.section
+            initial={quiet ? false : { y: 16 }} animate={{ y: 0 }} exit={{ y: 16 }} transition={{ type: 'spring', stiffness: 400, damping: 35, duration: quiet ? 0 : undefined }}
+            role="dialog" aria-modal="true"
             id="mobile-navigation-menu"
             aria-label="Điều hướng khác"
-            className="fixed inset-x-3 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-50 mx-auto max-h-[min(70vh,36rem)] max-w-xl overflow-y-auto rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 text-left shadow-[var(--surface-shadow)] transition-[opacity,transform] duration-[var(--duration-normal)] motion-reduce:transition-none lg:hidden"
+            className="fixed inset-x-3 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-50 mx-auto max-h-[min(70vh,36rem)] max-w-xl overflow-y-auto rounded-[var(--radius-card)] border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 text-left shadow-[var(--surface-shadow)] transition-[opacity,transform] duration-[var(--duration-normal)] motion-reduce:transition-none lg:hidden"
           >
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="text-base font-semibold text-[var(--text-primary)]">Điều hướng</h2>
@@ -96,15 +111,15 @@ export const MobileNavigation: React.FC = () => {
                 </>
               )}
             </nav>
-          </section>
-        </>
-      )}
+          </motion.section>
+        </motion.div>
+      )}</AnimatePresence>
 
-      <nav aria-label="Điều hướng chính trên thiết bị di động" className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-[var(--border-color)] bg-[var(--bg-nav)] pb-[env(safe-area-inset-bottom)] lg:hidden">
+      <nav aria-label="Điều hướng chính trên thiết bị di động" className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-[var(--border-color)] bg-[var(--bg-nav)] pb-[env(safe-area-inset-bottom)] lg:hidden">
         <NavLink to="/" end className={itemClass} aria-label="Trang chủ"><Home className="h-5 w-5" /><span>Trang chủ</span></NavLink>
         <NavLink to="/explore" className={itemClass} aria-label="Khám phá"><Compass className="h-5 w-5" /><span>Khám phá</span></NavLink>
-        <button type="button" onClick={createPost} className="flex min-h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold text-[var(--color-orange-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)]" aria-label={isAuthenticated ? 'Tạo bài viết' : 'Đăng nhập để tạo bài viết'}>
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-orange)] text-white"><Plus className="h-5 w-5" /></span>
+        <button type="button" onClick={createPost} className="flex min-h-14 flex-col items-center justify-center gap-1 text-xs font-semibold text-[var(--color-orange-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)]" aria-label={isAuthenticated ? 'Tạo bài viết' : 'Đăng nhập để tạo bài viết'}>
+          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--action-bg)] text-[var(--action-ink)]"><Plus className="h-5 w-5" /></span>
           <span>Đăng bài</span>
         </button>
         <NavLink to={isAuthenticated ? '/notifications' : '/login'} className={itemClass} aria-label={isAuthenticated ? 'Thông báo' : 'Đăng nhập'}><Bell className="h-5 w-5" /><span>Thông báo</span></NavLink>

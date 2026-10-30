@@ -62,11 +62,11 @@ export const UserManagementPage: React.FC = () => {
     <div className="space-y-6 text-left pb-16">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#F5F5F5] flex items-center gap-2">
-            <Users className="w-6 h-6 text-[#FF5700]" />
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <Users className="w-6 h-6 text-[var(--color-orange)]" />
             <span>Quản lý người dùng hệ thống</span>
           </h1>
-          <p className="text-xs text-[#9A9DA3] mt-0.5">
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
             Xem danh sách tài khoản, phân quyền quản trị và thực hiện khóa tài khoản vi phạm
           </p>
         </div>
@@ -80,7 +80,7 @@ export const UserManagementPage: React.FC = () => {
             onChange={(e) => setSearch(e.target.value)}
             leftIcon={<Search className="w-4 h-4" />}
             placeholder="Tìm theo username, tên hiển thị hoặc email..."
-            className="bg-[#191A1C]"
+            className="bg-[var(--bg-surface)]"
           />
         </div>
 
@@ -88,7 +88,7 @@ export const UserManagementPage: React.FC = () => {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-[#191A1C] border border-[#303235] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] outline-none cursor-pointer"
+            className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] outline-none cursor-pointer"
           >
             <option value="ALL">Mọi vai trò</option>
             <option value="USER">Thành viên (User)</option>
@@ -98,7 +98,7 @@ export const UserManagementPage: React.FC = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-[#191A1C] border border-[#303235] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] outline-none cursor-pointer"
+            className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] outline-none cursor-pointer"
           >
             <option value="ALL">Mọi trạng thái</option>
             <option value="ACTIVE">Đang hoạt động</option>
@@ -109,10 +109,10 @@ export const UserManagementPage: React.FC = () => {
       </div>
 
       {/* User Table */}
-      <div className="bg-[#191A1C] border border-[#303235] rounded-3xl overflow-hidden shadow-xl">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-panel)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#141517] border-b border-[#303235] text-[11px] text-[#70747C] uppercase font-bold">
+            <thead className="bg-[var(--bg-surface)] border-b border-[var(--border-color)] text-xs text-[var(--text-muted)] font-bold">
               <tr>
                 <th className="p-4">Người dùng</th>
                 <th className="p-4">Email</th>
@@ -124,23 +124,23 @@ export const UserManagementPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-[#303235]/60">
               {filteredUsers.map((u) => (
-                <tr key={u.id} className="hover:bg-[#1E2023] transition-colors">
+                <tr key={u.id} className="hover:bg-[var(--bg-hover)] transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <Avatar src={u.avatarUrl} alt={u.displayName} size="sm" />
                       <div>
-                        <div className="font-bold text-[#F5F5F5]">{u.displayName}</div>
-                        <div className="text-[11px] text-[#70747C]">@{u.username}</div>
+                        <div className="font-bold text-[var(--text-primary)]">{u.displayName}</div>
+                        <div className="text-xs text-[var(--text-muted)]">@{u.username}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="p-4 text-[#9A9DA3]">{u.email}</td>
+                  <td className="p-4 text-[var(--text-secondary)]">{u.email}</td>
                   <td className="p-4">
                     <Badge role={u.role} size="sm" />
                   </td>
                   <td className="p-4">
                     <span
-                      className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                      className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
                         u.status === 'ACTIVE'
                           ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
                           : 'bg-[var(--color-danger)]/15 text-[var(--color-danger)]'
@@ -153,7 +153,7 @@ export const UserManagementPage: React.FC = () => {
                           : 'ĐÃ KHÓA'}
                     </span>
                   </td>
-                  <td className="p-4 text-[#9A9DA3] tabular-nums">
+                  <td className="p-4 text-[var(--text-secondary)] tabular-nums">
                     {new Date(u.createdAt).toLocaleDateString('vi-VN')}
                   </td>
                   <td className="p-4 text-right">
@@ -191,29 +191,29 @@ export const UserManagementPage: React.FC = () => {
           maxWidth="md"
         >
           <div className="space-y-4 text-left text-xs">
-            <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-[#141517] border border-[#303235]">
+            <div className="flex items-center gap-3.5 p-3 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
               <Avatar src={selectedUser.avatarUrl} alt={selectedUser.displayName} size="lg" />
               <div>
-                <h4 className="text-sm font-bold text-[#F5F5F5]">{selectedUser.displayName}</h4>
-                <div className="text-[#70747C]">@{selectedUser.username}</div>
+                <h4 className="text-sm font-bold text-[var(--text-primary)]">{selectedUser.displayName}</h4>
+                <div className="text-[var(--text-muted)]">@{selectedUser.username}</div>
                 <div className="mt-1 flex gap-2">
                   <Badge role={selectedUser.role} size="sm" />
                 </div>
               </div>
             </div>
 
-            <div className="space-y-2 p-3 rounded-2xl bg-[#141517] border border-[#303235]">
-              <div className="flex justify-between py-1 border-b border-[#303235]/60">
-                <span className="text-[#70747C]">Email:</span>
-                <span className="text-[#F5F5F5] font-semibold">{selectedUser.email}</span>
+            <div className="space-y-2 p-3 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
+              <div className="flex justify-between py-1 border-b border-[var(--border-color)]/60">
+                <span className="text-[var(--text-muted)]">Email:</span>
+                <span className="text-[var(--text-primary)] font-semibold">{selectedUser.email}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-[#303235]/60">
-                <span className="text-[#70747C]">Trạng thái:</span>
-                <span className="text-[#F5F5F5] font-semibold">{selectedUser.status}</span>
+              <div className="flex justify-between py-1 border-b border-[var(--border-color)]/60">
+                <span className="text-[var(--text-muted)]">Trạng thái:</span>
+                <span className="text-[var(--text-primary)] font-semibold">{selectedUser.status}</span>
               </div>
               <div className="flex justify-between py-1">
-                <span className="text-[#70747C]">Ngày đăng ký:</span>
-                <span className="text-[#F5F5F5] font-semibold">{selectedUser.createdAt}</span>
+                <span className="text-[var(--text-muted)]">Ngày đăng ký:</span>
+                <span className="text-[var(--text-primary)] font-semibold">{selectedUser.createdAt}</span>
               </div>
             </div>
 

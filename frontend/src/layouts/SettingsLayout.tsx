@@ -1,8 +1,13 @@
 import React from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { useSettingsStore } from '../store/useSettingsStore';
 import { NavLink, Outlet } from 'react-router-dom';
+import PageTransition from '../components/layout/PageTransition';
 import { User, Lock, Palette, Bell, KeyRound, SlidersHorizontal } from 'lucide-react';
 
 export const SettingsLayout: React.FC = () => {
+  const reduced = useReducedMotion();
+  const intensity = useSettingsStore((state) => state.settings.animationIntensity);
   const tabs = [
     { to: '/settings', label: 'Tổng quan cài đặt', icon: <SlidersHorizontal className="w-4 h-4" /> },
     { to: '/settings/profile', label: 'Hồ sơ cá nhân', icon: <User className="w-4 h-4" /> },
@@ -13,39 +18,38 @@ export const SettingsLayout: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-7 text-left">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--text-primary)]">Cài đặt</h1>
+    <div className="settings-page text-left">
+      <header className="utility-heading">
+        <h1 className="editorial-title text-[var(--text-primary)]">Cài đặt</h1>
         <p className="text-sm text-[var(--text-secondary)] mt-1.5">
           Quản lý thông tin hồ sơ, tùy chỉnh giao diện, quyền riêng tư và thông báo của bạn.
         </p>
-      </div>
+      </header>
 
-      <div className="flex flex-col gap-4 md:flex-row md:gap-6">
+      <div className="settings-workspace">
         {/* Settings Sub-Sidebar */}
-        <nav aria-label="Các mục cài đặt" className="flex w-full shrink-0 gap-1 overflow-x-auto pb-1 md:block md:w-60 md:space-y-1 md:overflow-visible md:pb-0">
+        <nav aria-label="Các mục cài đặt" className="settings-navigation">
           {tabs.map((tab) => (
             <NavLink
               key={tab.to}
               to={tab.to}
               end={tab.to === '/settings'}
               className={({ isActive }) =>
-                `flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors md:w-full ${
+                `settings-tab flex shrink-0 items-center gap-2.5 text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] font-semibold'
+                    ? 'is-selected'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                 }`
               }
             >
-              <span className="shrink-0">{tab.icon}</span>
-              <span>{tab.label}</span>
+              {({ isActive }) => <><span className="shrink-0">{tab.icon}</span><span>{tab.label}</span>{isActive && <motion.span className="tab-indicator" layoutId="settings-tab" transition={reduced || intensity !== 'full' ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 35 }} />}</>}
             </NavLink>
           ))}
         </nav>
 
         {/* Settings Content Area */}
-        <div className="min-w-0 flex-1 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 sm:p-6 lg:p-8">
-          <Outlet />
+        <div className="settings-content">
+          <PageTransition><Outlet /></PageTransition>
         </div>
       </div>
     </div>

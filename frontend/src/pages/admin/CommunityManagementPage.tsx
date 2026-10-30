@@ -54,11 +54,11 @@ export const CommunityManagementPage: React.FC = () => {
   return (
     <div className="space-y-6 text-left pb-16">
       <div>
-        <h1 className="text-2xl font-bold text-[#F5F5F5] flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
           <FolderKanban className="w-6 h-6 text-[var(--color-info)]" />
           <span>Quản lý cộng đồng toàn hệ thống</span>
         </h1>
-        <p className="text-xs text-[#9A9DA3] mt-0.5">
+        <p className="text-xs text-[var(--text-secondary)] mt-0.5">
           Giám sát số lượng thành viên, tình trạng tuân thủ tiêu chuẩn và đình chỉ các nhóm vi phạm
         </p>
       </div>
@@ -71,14 +71,14 @@ export const CommunityManagementPage: React.FC = () => {
             onChange={(e) => setSearch(e.target.value)}
             leftIcon={<Search className="w-4 h-4" />}
             placeholder="Tìm theo tên cộng đồng hoặc chủ nhóm..."
-            className="bg-[#191A1C]"
+            className="bg-[var(--bg-surface)]"
           />
         </div>
 
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="bg-[#191A1C] border border-[#303235] rounded-xl px-3 py-2 text-xs text-[#F5F5F5] outline-none cursor-pointer"
+          className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] outline-none cursor-pointer"
         >
           <option value="ALL">Mọi danh mục</option>
           <option value="Lập trình">Lập trình</option>
@@ -90,10 +90,10 @@ export const CommunityManagementPage: React.FC = () => {
       </div>
 
       {/* Communities Table */}
-      <div className="bg-[#191A1C] border border-[#303235] rounded-3xl overflow-hidden shadow-xl">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-panel)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#141517] border-b border-[#303235] text-[11px] text-[#70747C] uppercase font-bold">
+            <thead className="bg-[var(--bg-surface)] border-b border-[var(--border-color)] text-xs text-[var(--text-muted)] font-bold">
               <tr>
                 <th className="p-4">Cộng đồng</th>
                 <th className="p-4">Chuyên mục</th>
@@ -105,33 +105,33 @@ export const CommunityManagementPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-[#303235]/60">
               {filteredCommunities.map((c) => (
-                <tr key={c.id} className="hover:bg-[#1E2023] transition-colors">
+                <tr key={c.id} className="hover:bg-[var(--bg-hover)] transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <Avatar src={c.avatarUrl} alt={c.displayName} size="sm" shape="rounded" />
                       <div>
                         <Link
                           to={`/community/${c.name}`}
-                          className="font-bold text-[#F5F5F5] hover:text-[#FF5700] transition-colors"
+                          className="font-bold text-[var(--text-primary)] hover:text-[var(--color-orange)] transition-colors"
                         >
                           {c.displayName}
                         </Link>
-                        <div className="text-[11px] text-[#70747C] font-mono">community/{c.name}</div>
+                        <div className="text-xs text-[var(--text-muted)] tabular-nums">community/{c.name}</div>
                       </div>
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className="text-[11px] font-semibold text-[#FF5700] bg-[#FF5700]/10 px-2 py-0.5 rounded">
+                    <span className="text-xs font-semibold text-[var(--color-orange)] bg-[var(--color-orange)]/10 px-2 py-0.5 rounded">
                       {c.category}
                     </span>
                   </td>
-                  <td className="p-4 text-[#9A9DA3]">@{c.ownerUsername}</td>
-                  <td className="p-4 font-bold text-[#F5F5F5] tabular-nums">
+                  <td className="p-4 text-[var(--text-secondary)]">@{c.ownerUsername}</td>
+                  <td className="p-4 font-bold text-[var(--text-primary)] tabular-nums">
                     {c.memberCount.toLocaleString('vi-VN')}
                   </td>
                   <td className="p-4">
                     <span
-                      className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                      className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
                         c.status === 'ACTIVE'
                           ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
                           : 'bg-[var(--color-danger)]/15 text-[var(--color-danger)]'

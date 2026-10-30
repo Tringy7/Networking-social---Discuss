@@ -71,7 +71,7 @@ export const CommunityModerationPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 text-left pb-16">
+    <div className="utility-page space-y-5 text-left pb-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -121,9 +121,9 @@ export const CommunityModerationPage: React.FC = () => {
       {/* Reports Queue */}
       <div className="space-y-4">
         {isLoading ? (
-          <div role="status" className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] py-16 text-center text-sm text-[var(--text-secondary)]">Đang tải báo cáo…</div>
+          <div role="status" className="rounded-[var(--radius-card)] border border-[var(--border-color)] bg-[var(--bg-surface)] py-16 text-center text-sm text-[var(--text-secondary)]">Đang tải báo cáo…</div>
         ) : loadFailed ? (
-          <div role="alert" className="space-y-3 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-8 text-center">
+          <div role="alert" className="space-y-3 rounded-[var(--radius-card)] border border-[var(--border-color)] bg-[var(--bg-surface)] p-8 text-center">
             <h2 className="text-base font-semibold text-[var(--text-primary)]">Không tải được hàng đợi</h2>
             <p className="text-sm text-[var(--text-secondary)]">Kiểm tra kết nối rồi thử tải lại.</p>
             <Button variant="secondary" size="sm" onClick={() => {
@@ -141,7 +141,7 @@ export const CommunityModerationPage: React.FC = () => {
         ) : communityReports.map((report) => (
           <div
             key={report.id}
-            className="space-y-4 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 sm:p-5"
+            className="space-y-4 rounded-[var(--radius-card)] border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 sm:p-5"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
@@ -203,7 +203,7 @@ export const CommunityModerationPage: React.FC = () => {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleReject(report.id)}
-                  leftIcon={<XCircle className="w-4 h-4 text-[#70747C]" />}
+                  leftIcon={<XCircle className="w-4 h-4 text-[var(--text-muted)]" />}
                 >
                   Bác bỏ báo cáo
                 </Button>
@@ -221,7 +221,7 @@ export const CommunityModerationPage: React.FC = () => {
         ))}
 
         {!isLoading && !loadFailed && communityReports.length === 0 && (
-          <div className="space-y-3 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-16 text-center">
+          <div className="space-y-3 rounded-[var(--radius-card)] border border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-16 text-center">
             <CheckCircle2 className="mx-auto h-8 w-8 text-[var(--color-success)]" />
             <h2 className="text-base font-semibold text-[var(--text-primary)]">Không có báo cáo trong mục này</h2>
             <p className="text-sm text-[var(--text-secondary)]">

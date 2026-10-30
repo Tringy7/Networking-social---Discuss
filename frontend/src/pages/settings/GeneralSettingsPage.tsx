@@ -8,31 +8,31 @@ export const GeneralSettingsPage: React.FC = () => {
       to: '/settings/profile',
       title: 'Hồ sơ cá nhân',
       desc: 'Thay đổi ảnh đại diện, ảnh bìa, tên hiển thị, tiểu sử và thông tin công khai.',
-      icon: <User className="w-5 h-5 text-[var(--color-orange-ink)]" />,
+      icon: <User className="w-5 h-5 text-[var(--text-secondary)]" />,
     },
     {
       to: '/settings/account',
       title: 'Tài khoản & Đăng nhập',
       desc: 'Quản lý địa chỉ email, đổi mật khẩu và xem các phiên đăng nhập đang hoạt động.',
-      icon: <KeyRound className="w-5 h-5 text-[var(--color-orange-ink)]" />,
+      icon: <KeyRound className="w-5 h-5 text-[var(--text-secondary)]" />,
     },
     {
       to: '/settings/privacy',
       title: 'Quyền riêng tư & Bảo mật',
       desc: 'Kiểm soát khả năng hiển thị vị trí, ngày sinh và lịch sử bài viết trên trang cá nhân.',
-      icon: <Lock className="w-5 h-5 text-[var(--color-orange-ink)]" />,
+      icon: <Lock className="w-5 h-5 text-[var(--text-secondary)]" />,
     },
     {
       to: '/settings/appearance',
       title: 'Giao diện & Hiệu ứng',
       desc: 'Tùy chỉnh Dark/Light mode, màu điểm nhấn DISCUSS Orange, kích cỡ chữ và mật độ.',
-      icon: <Palette className="w-5 h-5 text-[var(--color-orange-ink)]" />,
+      icon: <Palette className="w-5 h-5 text-[var(--text-secondary)]" />,
     },
     {
       to: '/settings/notifications',
       title: 'Tùy chọn thông báo',
       desc: 'Chọn loại thông báo bạn muốn nhận qua ứng dụng hoặc email.',
-      icon: <Bell className="w-5 h-5 text-[var(--color-orange-ink)]" />,
+      icon: <Bell className="w-5 h-5 text-[var(--text-secondary)]" />,
     },
   ];
 
@@ -48,10 +48,10 @@ export const GeneralSettingsPage: React.FC = () => {
           <Link
             key={sec.to}
             to={sec.to}
-            className="group flex items-center justify-between gap-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-4 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+            className="settings-overview-row group flex items-center justify-between gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
           >
             <div className="flex items-center gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-orange-soft)]">
+              <div className="flex shrink-0 items-center justify-center">
                 {sec.icon}
               </div>
               <div>
@@ -61,7 +61,7 @@ export const GeneralSettingsPage: React.FC = () => {
                 <p className="mt-1 text-sm leading-5 text-[var(--text-secondary)]">{sec.desc}</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#70747C] group-hover:text-[#FF5700] transition-colors shrink-0" />
+            <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--color-orange)] transition-colors shrink-0" />
           </Link>
         ))}
       </div>

@@ -9,50 +9,52 @@ import AdminLayout from '../layouts/AdminLayout';
 import ProtectedRoute from '../components/common/StoreProtectedRoute';
 
 // Public & Feed Pages
-import HomePage from '../pages/home/HomePage';
-import ExplorePage from '../pages/explore/ExplorePage';
-import SearchResultsPage from '../pages/search/SearchResultsPage';
-import CommunityDetailPage from '../pages/community/CommunityDetailPage';
-import PostDetailPage from '../pages/post/PostDetailPage';
-import UserProfilePage from '../pages/profile/UserProfilePage';
+const HomePage = React.lazy(() => import('../pages/home/HomePage'));
+const ExplorePage = React.lazy(() => import('../pages/explore/ExplorePage'));
+const SearchResultsPage = React.lazy(() => import('../pages/search/SearchResultsPage'));
+const CommunityDetailPage = React.lazy(() => import('../pages/community/CommunityDetailPage'));
+const PostDetailPage = React.lazy(() => import('../pages/post/PostDetailPage'));
+const UserProfilePage = React.lazy(() => import('../pages/profile/UserProfilePage'));
 
 // Auth Pages
-import LoginPage from '../pages/auth/LoginPage';
-import RegisterPage from '../pages/auth/RegisterPage';
-import VerifyEmailPage from '../pages/auth/VerifyEmailPage';
-import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
-import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
-import TermsOfUsePage from '../pages/auth/TermsOfUsePage';
+const LoginPage = React.lazy(() => import('../pages/auth/LoginPage'));
+const RegisterPage = React.lazy(() => import('../pages/auth/RegisterPage'));
+const VerifyEmailPage = React.lazy(() => import('../pages/auth/VerifyEmailPage'));
+const ForgotPasswordPage = React.lazy(() => import('../pages/auth/ForgotPasswordPage'));
+const ResetPasswordPage = React.lazy(() => import('../pages/auth/ResetPasswordPage'));
+const TermsOfUsePage = React.lazy(() => import('../pages/auth/TermsOfUsePage'));
 
 // Authenticated Pages
-import NotificationsPage from '../pages/notifications/NotificationsPage';
-import MessagesPage from '../pages/messages/MessagesPage';
-import SavedPostsPage from '../pages/saved/SavedPostsPage';
+const NotificationsPage = React.lazy(() => import('../pages/notifications/NotificationsPage'));
+const MessagesPage = React.lazy(() => import('../pages/messages/MessagesPage'));
+const SavedPostsPage = React.lazy(() => import('../pages/saved/SavedPostsPage'));
 
 // Settings Pages
-import GeneralSettingsPage from '../pages/settings/GeneralSettingsPage';
-import EditProfilePage from '../pages/settings/EditProfilePage';
-import AccountSettingsPage from '../pages/settings/AccountSettingsPage';
-import PrivacySettingsPage from '../pages/settings/PrivacySettingsPage';
-import AppearanceSettingsPage from '../pages/settings/AppearanceSettingsPage';
-import NotificationSettingsPage from '../pages/settings/NotificationSettingsPage';
+const GeneralSettingsPage = React.lazy(() => import('../pages/settings/GeneralSettingsPage'));
+const EditProfilePage = React.lazy(() => import('../pages/settings/EditProfilePage'));
+const AccountSettingsPage = React.lazy(() => import('../pages/settings/AccountSettingsPage'));
+const PrivacySettingsPage = React.lazy(() => import('../pages/settings/PrivacySettingsPage'));
+const AppearanceSettingsPage = React.lazy(() => import('../pages/settings/AppearanceSettingsPage'));
+const NotificationSettingsPage = React.lazy(() => import('../pages/settings/NotificationSettingsPage'));
 
 // Community Management Pages
-import CreateCommunityPage from '../pages/community/CreateCommunityPage';
-import MyCommunitiesPage from '../pages/community/MyCommunitiesPage';
-import EditCommunityPage from '../pages/community/EditCommunityPage';
-import CommunityMembersPage from '../pages/community/CommunityMembersPage';
-import CommunityModerationPage from '../pages/community/CommunityModerationPage';
+const CreateCommunityPage = React.lazy(() => import('../pages/community/CreateCommunityPage'));
+const MyCommunitiesPage = React.lazy(() => import('../pages/community/MyCommunitiesPage'));
+const EditCommunityPage = React.lazy(() => import('../pages/community/EditCommunityPage'));
+const CommunityMembersPage = React.lazy(() => import('../pages/community/CommunityMembersPage'));
+const CommunityModerationPage = React.lazy(() => import('../pages/community/CommunityModerationPage'));
 
 // Admin Pages
-import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
-import UserManagementPage from '../pages/admin/UserManagementPage';
-import CommunityManagementPage from '../pages/admin/CommunityManagementPage';
-import ReportManagementPage from '../pages/admin/ReportManagementPage';
+const AdminDashboardPage = React.lazy(() => import('../pages/admin/AdminDashboardPage'));
+const UserManagementPage = React.lazy(() => import('../pages/admin/UserManagementPage'));
+const CommunityManagementPage = React.lazy(() => import('../pages/admin/CommunityManagementPage'));
+const ReportManagementPage = React.lazy(() => import('../pages/admin/ReportManagementPage'));
 
 // Error Pages
-import AccessDeniedPage from '../pages/error/AccessDeniedPage';
-import NotFoundPage from '../pages/error/NotFoundPage';
+const AccessDeniedPage = React.lazy(() => import('../pages/error/AccessDeniedPage'));
+const NotFoundPage = React.lazy(() => import('../pages/error/NotFoundPage'));
+
+const routeLoading = <div role="status" aria-live="polite" className="route-loading"><span />Đang mở nội dung…</div>;
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -60,64 +62,64 @@ export const AppRoutes: React.FC = () => {
       {/* 1. MAIN APP SHELL (WITH NAVBAR & SIDEBAR) */}
       <Route element={<AppLayout />}>
         {/* Core Feeds */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/explore" element={<ExplorePage />} />
-        <Route path="/explore/:slug" element={<ExplorePage />} />
-        <Route path="/search" element={<SearchResultsPage />} />
-        <Route path="/community/:communityName" element={<CommunityDetailPage />} />
-        <Route path="/c/:communityName" element={<CommunityDetailPage />} />
-        <Route path="/post/:postId" element={<PostDetailPage />} />
-        <Route path="/user/:username" element={<UserProfilePage />} />
-        <Route path="/u/:username" element={<UserProfilePage />} />
+        <Route path="/" element={<React.Suspense fallback={routeLoading}><HomePage /></React.Suspense>} />
+        <Route path="/explore" element={<React.Suspense fallback={routeLoading}><ExplorePage /></React.Suspense>} />
+        <Route path="/explore/:slug" element={<React.Suspense fallback={routeLoading}><ExplorePage /></React.Suspense>} />
+        <Route path="/search" element={<React.Suspense fallback={routeLoading}><SearchResultsPage /></React.Suspense>} />
+        <Route path="/community/:communityName" element={<React.Suspense fallback={routeLoading}><CommunityDetailPage /></React.Suspense>} />
+        <Route path="/c/:communityName" element={<React.Suspense fallback={routeLoading}><CommunityDetailPage /></React.Suspense>} />
+        <Route path="/post/:postId" element={<React.Suspense fallback={routeLoading}><PostDetailPage /></React.Suspense>} />
+        <Route path="/user/:username" element={<React.Suspense fallback={routeLoading}><UserProfilePage /></React.Suspense>} />
+        <Route path="/u/:username" element={<React.Suspense fallback={routeLoading}><UserProfilePage /></React.Suspense>} />
 
         <Route element={<ProtectedRoute />}>
           {/* Authenticated User Pages */}
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/saved" element={<SavedPostsPage />} />
+          <Route path="/notifications" element={<React.Suspense fallback={routeLoading}><NotificationsPage /></React.Suspense>} />
+          <Route path="/messages" element={<React.Suspense fallback={routeLoading}><MessagesPage /></React.Suspense>} />
+          <Route path="/saved" element={<React.Suspense fallback={routeLoading}><SavedPostsPage /></React.Suspense>} />
 
           {/* Community Management */}
-          <Route path="/communities/create" element={<CreateCommunityPage />} />
-          <Route path="/communities/mine" element={<MyCommunitiesPage />} />
-          <Route path="/community/:communityName/settings" element={<EditCommunityPage />} />
-          <Route path="/community/:communityName/members" element={<CommunityMembersPage />} />
-          <Route path="/community/:communityName/moderation" element={<CommunityModerationPage />} />
-          <Route path="/c/:communityName/settings" element={<EditCommunityPage />} />
-          <Route path="/c/:communityName/members" element={<CommunityMembersPage />} />
-          <Route path="/c/:communityName/moderation" element={<CommunityModerationPage />} />
+          <Route path="/communities/create" element={<React.Suspense fallback={routeLoading}><CreateCommunityPage /></React.Suspense>} />
+          <Route path="/communities/mine" element={<React.Suspense fallback={routeLoading}><MyCommunitiesPage /></React.Suspense>} />
+          <Route path="/community/:communityName/settings" element={<React.Suspense fallback={routeLoading}><EditCommunityPage /></React.Suspense>} />
+          <Route path="/community/:communityName/members" element={<React.Suspense fallback={routeLoading}><CommunityMembersPage /></React.Suspense>} />
+          <Route path="/community/:communityName/moderation" element={<React.Suspense fallback={routeLoading}><CommunityModerationPage /></React.Suspense>} />
+          <Route path="/c/:communityName/settings" element={<React.Suspense fallback={routeLoading}><EditCommunityPage /></React.Suspense>} />
+          <Route path="/c/:communityName/members" element={<React.Suspense fallback={routeLoading}><CommunityMembersPage /></React.Suspense>} />
+          <Route path="/c/:communityName/moderation" element={<React.Suspense fallback={routeLoading}><CommunityModerationPage /></React.Suspense>} />
 
           {/* Settings Hub Nested Routes */}
           <Route path="/settings" element={<SettingsLayout />}>
-            <Route index element={<GeneralSettingsPage />} />
-            <Route path="profile" element={<EditProfilePage />} />
-            <Route path="account" element={<AccountSettingsPage />} />
-            <Route path="privacy" element={<PrivacySettingsPage />} />
-            <Route path="appearance" element={<AppearanceSettingsPage />} />
-            <Route path="notifications" element={<NotificationSettingsPage />} />
+            <Route index element={<React.Suspense fallback={routeLoading}><GeneralSettingsPage /></React.Suspense>} />
+            <Route path="profile" element={<React.Suspense fallback={routeLoading}><EditProfilePage /></React.Suspense>} />
+            <Route path="account" element={<React.Suspense fallback={routeLoading}><AccountSettingsPage /></React.Suspense>} />
+            <Route path="privacy" element={<React.Suspense fallback={routeLoading}><PrivacySettingsPage /></React.Suspense>} />
+            <Route path="appearance" element={<React.Suspense fallback={routeLoading}><AppearanceSettingsPage /></React.Suspense>} />
+            <Route path="notifications" element={<React.Suspense fallback={routeLoading}><NotificationSettingsPage /></React.Suspense>} />
           </Route>
         </Route>
 
         {/* Error pages within standard layout */}
-        <Route path="/403" element={<AccessDeniedPage />} />
-        <Route path="/404" element={<NotFoundPage />} />
+        <Route path="/403" element={<React.Suspense fallback={routeLoading}><AccessDeniedPage /></React.Suspense>} />
+        <Route path="/404" element={<React.Suspense fallback={routeLoading}><NotFoundPage /></React.Suspense>} />
       </Route>
 
       {/* 2. AUTHENTICATION PAGES (SPLIT-SCREEN, NO APP SIDEBAR) */}
       <Route element={<AuthLayout />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/terms" element={<TermsOfUsePage />} />
+        <Route path="/login" element={<React.Suspense fallback={routeLoading}><LoginPage /></React.Suspense>} />
+        <Route path="/register" element={<React.Suspense fallback={routeLoading}><RegisterPage /></React.Suspense>} />
+        <Route path="/verify-email" element={<React.Suspense fallback={routeLoading}><VerifyEmailPage /></React.Suspense>} />
+        <Route path="/forgot-password" element={<React.Suspense fallback={routeLoading}><ForgotPasswordPage /></React.Suspense>} />
+        <Route path="/reset-password" element={<React.Suspense fallback={routeLoading}><ResetPasswordPage /></React.Suspense>} />
+        <Route path="/terms" element={<React.Suspense fallback={routeLoading}><TermsOfUsePage /></React.Suspense>} />
       </Route>
 
       {/* 3. ADMIN PORTAL (ADMIN SIDEBAR & RESTRICTED ACCESS) */}
       <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<AdminDashboardPage />} />
-        <Route path="users" element={<UserManagementPage />} />
-        <Route path="communities" element={<CommunityManagementPage />} />
-        <Route path="reports" element={<ReportManagementPage />} />
+        <Route index element={<React.Suspense fallback={routeLoading}><AdminDashboardPage /></React.Suspense>} />
+        <Route path="users" element={<React.Suspense fallback={routeLoading}><UserManagementPage /></React.Suspense>} />
+        <Route path="communities" element={<React.Suspense fallback={routeLoading}><CommunityManagementPage /></React.Suspense>} />
+        <Route path="reports" element={<React.Suspense fallback={routeLoading}><ReportManagementPage /></React.Suspense>} />
       </Route>
 
       {/* 4. WILDCARD FALLBACK */}

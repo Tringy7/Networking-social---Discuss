@@ -64,10 +64,10 @@ export const PostDetailPage: React.FC = () => {
 
   if (!post) {
     if (isPostLoading) {
-      return <div role="status" className="py-24 text-center text-sm text-[var(--text-secondary)]">Đang tải bài viết...</div>;
+      return <div role="status" className="py-12 text-center text-sm text-[var(--text-secondary)]">Đang tải bài viết...</div>;
     }
     return (
-      <div className="py-24 text-center space-y-4">
+      <div className="py-12 text-center space-y-4">
         <h2 className="text-2xl font-semibold text-[var(--text-primary)]">
           Không tìm thấy bài viết
         </h2>
@@ -195,24 +195,26 @@ export const PostDetailPage: React.FC = () => {
             <Avatar src={cmt.author.avatarUrl} alt={cmt.author.displayName} size="xs" />
             <Link
               to={`/user/${cmt.author.username}`}
-              className="font-bold text-[#F5F5F5] hover:text-[var(--color-orange)] transition-colors"
+              className="font-bold text-[var(--text-primary)] hover:text-[var(--color-orange)] transition-colors"
             >
               {cmt.author.displayName}
             </Link>
-            <span className="text-[#70747C]">@{cmt.author.username}</span>
+            <span className="text-[var(--text-muted)]">@{cmt.author.username}</span>
             {cmt.author.isAuthor && (
-              <span className="text-[10px] font-bold text-[var(--color-orange)] bg-[var(--color-orange-soft)] px-1.5 py-0.5 rounded">
+              <span className="text-xs font-bold text-[var(--color-orange)] bg-[var(--color-orange-soft)] px-1.5 py-0.5 rounded">
                 Tác giả
               </span>
             )}
-            <span className="text-[#70747C]">·</span>
-            <span className="text-[#70747C]">vừa xong</span>
+            <span className="text-[var(--text-muted)]">·</span>
+            <span className="text-[var(--text-muted)]">vừa xong</span>
           </div>
 
           {cmt.replies && cmt.replies.length > 0 && (
             <button
+              aria-label={isCollapsed ? 'Mở chuỗi bình luận' : 'Thu gọn chuỗi bình luận'}
+              aria-expanded={!isCollapsed}
               onClick={() => toggleThread(cmt.id)}
-              className="text-[#70747C] hover:text-[#F5F5F5] p-1 flex items-center gap-1 text-[11px]"
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 flex items-center gap-1 text-xs"
             >
               {isCollapsed ? (
                 <>
@@ -228,12 +230,12 @@ export const PostDetailPage: React.FC = () => {
 
         {!isCollapsed && (
           <>
-            <p className="text-xs sm:text-sm text-[#D1D5DB] leading-relaxed pl-8">
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed pl-8">
               {cmt.content}
             </p>
 
             {/* Comment Reactions & Reply Button */}
-            <div className="flex items-center gap-4 text-xs text-[#70747C] pl-8">
+            <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] pl-8">
               <button
                 onClick={() => void handleCommentHeart(cmt.id)}
                 className={`flex items-center gap-1 hover:text-[var(--color-orange)] transition-colors ${
@@ -246,7 +248,7 @@ export const PostDetailPage: React.FC = () => {
 
               <button
                 onClick={() => setReplyingTo(replyingTo === cmt.id ? null : cmt.id)}
-                className="flex items-center gap-1 hover:text-[#F5F5F5] transition-colors font-medium"
+                className="flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors font-medium"
               >
                 <CornerDownRight className="w-3.5 h-3.5" />
                 <span>Trả lời</span>
@@ -260,8 +262,9 @@ export const PostDetailPage: React.FC = () => {
                   type="text"
                   value={replyInput}
                   onChange={(e) => setReplyInput(e.target.value)}
+                  aria-label={`Trả lời @${cmt.author.username}`}
                   placeholder={`Trả lời @${cmt.author.username}...`}
-                  className="flex-1 bg-[#101218] border border-[#262C3A] focus:border-[var(--color-orange)] rounded-xl px-3 py-1.5 text-xs text-[#F5F5F5] outline-none"
+                  className="flex-1 bg-[var(--bg-main)] border border-[var(--bg-elevated)] focus:border-[var(--color-orange)] rounded-xl px-3 py-1.5 text-xs text-[var(--text-primary)] outline-none"
                   autoFocus
                 />
                 <Button variant="primary" size="sm" onClick={() => handleAddReply(cmt.id)}>
@@ -288,9 +291,9 @@ export const PostDetailPage: React.FC = () => {
   const isPostOwner = user?.id === post.author.id;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 text-left pb-16">
+    <div className="post-reading-page space-y-5 text-left pb-8">
       {!POSTS_AVAILABLE && (
-        <div role="status" className="rounded-xl border border-[var(--color-orange-border)] bg-[var(--color-orange-soft)] px-4 py-3 text-xs text-[var(--text-primary)]">
+        <div role="status" className="feed-notice text-xs text-[var(--text-primary)]">
           Đang xem bài viết mẫu; thao tác chỉ được lưu trong phiên hiện tại.
         </div>
       )}
@@ -304,7 +307,7 @@ export const PostDetailPage: React.FC = () => {
       </button>
 
       {/* Main Post Content Card */}
-      <article className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-4 sm:p-7 space-y-5">
+      <article className="post-reading-body space-y-5">
         {/* Community & Author Header */}
         <div className="flex items-center justify-between gap-4 pb-1">
           <div className="flex items-center gap-3">
@@ -319,7 +322,7 @@ export const PostDetailPage: React.FC = () => {
                 {post.communityDisplayName}
               </Link>
               <div className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">
-                <Link to={`/user/${post.author.username}`} className="hover:text-[#9A9DA3]">
+                <Link to={`/user/${post.author.username}`} className="hover:text-[var(--text-secondary)]">
                   @{post.author.username}
                 </Link>
                 {post.author.role === 'OWNER' && <Badge role="OWNER" size="sm" />}
@@ -342,7 +345,7 @@ export const PostDetailPage: React.FC = () => {
             )}
             <button
               onClick={() => setIsReportOpen(true)}
-              className="p-2 rounded-xl text-[#70747C] hover:text-[var(--color-danger)] hover:bg-[#1E232F] transition-colors"
+              className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--bg-elevated)] transition-colors"
               title="Báo cáo vi phạm"
             >
               <Flag className="w-4 h-4" />
@@ -351,7 +354,7 @@ export const PostDetailPage: React.FC = () => {
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--text-primary)] leading-snug">
+        <h1 className="editorial-title text-2xl sm:text-[32px] text-[var(--text-primary)] leading-snug">
           {post.title}
         </h1>
 
@@ -376,8 +379,8 @@ export const PostDetailPage: React.FC = () => {
 
         {/* Code Snippet Box */}
         {post.codeSnippet && (
-          <div data-ui="code-sample" className="bg-[#101218] border border-[#262C3A] rounded-xl p-4 font-code text-xs overflow-x-auto">
-            <div className="flex items-center justify-between pb-2 mb-2 text-xs text-[#70747C]">
+          <div data-ui="code-sample" className="bg-[var(--bg-main)] border border-[var(--bg-elevated)] rounded-xl p-4 font-code text-xs overflow-x-auto">
+            <div className="flex items-center justify-between pb-2 mb-2 text-xs text-[var(--text-muted)]">
               <span className="flex items-center gap-1.5 text-[var(--color-orange)]">
                 <Code2 className="w-4 h-4" />
                 {post.codeSnippet.language} snippet
@@ -392,7 +395,7 @@ export const PostDetailPage: React.FC = () => {
 
         {/* Image Preview */}
         {post.mediaUrl && (
-          <div className="rounded-2xl overflow-hidden border border-[#262C3A] bg-[#101218]">
+          <div className="rounded-[var(--radius-card)] overflow-hidden border border-[var(--bg-elevated)] bg-[var(--bg-main)]">
             <img src={post.mediaUrl} alt={post.title} className="w-full object-cover max-h-[500px]" />
           </div>
         )}
@@ -402,17 +405,17 @@ export const PostDetailPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={handleHeartClick}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-[background-color,border-color,color,opacity,transform] ${
                 post.isHearted
                   ? 'bg-[var(--color-orange-soft)] border-[var(--color-orange-border)] text-[var(--color-orange)] font-bold'
-                  : 'bg-[#1E232F] border-[#262C3A] text-[#9A9DA3] hover:text-[var(--color-orange)]'
+                  : 'bg-[var(--bg-elevated)] border-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--color-orange)]'
               }`}
             >
               <Heart className={`w-4 h-4 ${post.isHearted ? 'fill-[var(--color-orange)]' : ''}`} />
               <span className="tabular-nums">{post.heartCount} Thích</span>
             </button>
 
-            <div className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#1E232F] border border-[#262C3A] text-[#9A9DA3]">
+            <div className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--bg-elevated)] text-[var(--text-secondary)]">
               <MessageSquare className="w-4 h-4" />
               <span className="tabular-nums">{post.commentCount} Bình luận</span>
             </div>
@@ -421,10 +424,10 @@ export const PostDetailPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleSaveClick}
-              className={`p-2.5 rounded-full border border-[#262C3A] transition-colors ${
+              className={`p-2.5 rounded-full border border-[var(--bg-elevated)] transition-colors ${
                 post.isSaved
                   ? 'text-[var(--color-orange)] bg-[var(--color-orange-soft)] border-[var(--color-orange-border)]'
-                  : 'text-[#9A9DA3] hover:text-[#F5F5F5] hover:bg-[#1E232F]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
               }`}
               title="Lưu bài viết"
             >
@@ -433,7 +436,7 @@ export const PostDetailPage: React.FC = () => {
 
             <button
               onClick={handleShare}
-              className="p-2.5 rounded-full border border-[#262C3A] text-[#9A9DA3] hover:text-[#F5F5F5] hover:bg-[#1E232F] transition-colors"
+              className="p-2.5 rounded-full border border-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
               title="Sao chép liên kết"
             >
               <Share2 className="w-4 h-4" />
@@ -443,7 +446,7 @@ export const PostDetailPage: React.FC = () => {
       </article>
 
       {/* COMMENTS SECTION */}
-      <section id="comments" className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-4 sm:p-7 space-y-6">
+      <section id="comments" className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-card)] p-4 sm:p-7 space-y-6">
         <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-[var(--color-orange)]" />
           <span>Bình luận thảo luận ({postComments.length})</span>
@@ -459,6 +462,7 @@ export const PostDetailPage: React.FC = () => {
             />
             <div className="flex-1 space-y-2">
               <textarea
+                aria-label="Nội dung bình luận"
                 rows={3}
                 value={commentInput}
                 onChange={(e) => setCommentInput(e.target.value)}
@@ -489,7 +493,7 @@ export const PostDetailPage: React.FC = () => {
           {postComments.map((cmt) => renderComment(cmt))}
 
           {postComments.length === 0 && (
-            <div className="py-12 text-center text-xs text-[#70747C]">
+            <div className="py-12 text-center text-xs text-[var(--text-muted)]">
               Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ suy nghĩ của bạn!
             </div>
           )}

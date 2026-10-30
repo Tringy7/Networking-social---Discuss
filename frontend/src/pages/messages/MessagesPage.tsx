@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { Conversation } from '../../types';
 import Avatar from '../../components/ui/Avatar';
 import Button from '../../components/ui/Button';
-import { MessageSquare, Send, Search } from 'lucide-react';
+import { MessageSquare, Send, Search, ArrowLeft } from 'lucide-react';
 import { MESSAGES_AVAILABLE, messageService } from '../../services';
 import { useToastStore } from '../../store/useToastStore';
 
 export const MessagesPage: React.FC = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState('');
+  const [showConversation, setShowConversation] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [searchConv, setSearchConv] = useState('');
   const addToast = useToastStore((state) => state.addToast);
@@ -56,6 +57,7 @@ export const MessagesPage: React.FC = () => {
 
   const selectConversation = async (conversationId: string) => {
     setActiveConvId(conversationId);
+    setShowConversation(true);
     try {
       const conversation = await messageService.get(conversationId);
       setConversations((prev) => prev.map((item) => item.id === conversationId ? conversation : item));
@@ -65,33 +67,34 @@ export const MessagesPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto h-[calc(100vh-140px)] flex flex-col bg-[#191A1C] border border-[#303235] rounded-3xl overflow-hidden shadow-2xl text-left">
+    <div className="inbox-page flex flex-col overflow-hidden text-left">
       {!MESSAGES_AVAILABLE && (
-        <div className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-200">
+        <div className="feed-notice">
           Đang dùng hội thoại mẫu; tin nhắn chỉ được lưu trong phiên hiện tại.
         </div>
       )}
       <div className="flex-1 flex overflow-hidden">
         {/* CONVERSATION LIST (LEFT) */}
-        <div className="w-full md:w-80 border-r border-[#303235] bg-[#141517] flex flex-col shrink-0">
+        <div className={`inbox-list w-full md:w-80 border-r border-[var(--border-color)] bg-[var(--bg-surface)] flex-col shrink-0 ${showConversation ? 'hidden md:flex' : 'flex'}`}>
           {/* Header & Search */}
-          <div className="p-4 border-b border-[#303235] space-y-3">
+          <div className="p-4 border-b border-[var(--border-color)] space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-[#F5F5F5] flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-[#FF5700]" />
+              <h1 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-[var(--color-orange)]" />
                 <span>Tin nhắn</span>
-              </h2>
-              <span className="text-[10px] text-[#70747C] font-mono">{conversations.length} cuộc trò chuyện</span>
+              </h1>
+              <span className="text-xs text-[var(--text-muted)] tabular-nums">{conversations.length} cuộc trò chuyện</span>
             </div>
 
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#70747C]" />
+              <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[var(--text-muted)]" />
               <input
                 type="text"
                 value={searchConv}
                 onChange={(e) => setSearchConv(e.target.value)}
+                aria-label="Tìm hội thoại"
                 placeholder="Tìm hội thoại..."
-                className="w-full bg-[#101112] border border-[#303235] focus:border-[#FF5700] rounded-xl pl-8 pr-3 py-1.5 text-xs text-[#F5F5F5] outline-none"
+                className="w-full bg-[var(--bg-main)] border border-[var(--border-color)] focus:border-[var(--color-orange)] rounded-xl pl-8 pr-3 py-1.5 text-xs text-[var(--text-primary)] outline-none"
               />
             </div>
           </div>
@@ -102,10 +105,10 @@ export const MessagesPage: React.FC = () => {
               <button
                 key={conv.id}
                 onClick={() => void selectConversation(conv.id)}
-                className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all cursor-pointer text-left ${
+                className={`w-full flex items-center gap-3 p-3 rounded-[var(--radius-card)] transition-[background-color,border-color,color,opacity,transform] cursor-pointer text-left ${
                   activeConvId === conv.id
-                    ? 'bg-[#FF5700]/15 border border-[#FF5700]/30'
-                    : 'hover:bg-[#1E2023]'
+                    ? 'bg-[var(--bg-elevated)]'
+                    : 'hover:bg-[var(--bg-hover)]'
                 }`}
               >
                 <Avatar
@@ -116,28 +119,29 @@ export const MessagesPage: React.FC = () => {
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-xs font-bold text-[#F5F5F5] truncate">
+                    <span className="text-xs font-bold text-[var(--text-primary)] truncate">
                       {conv.participant.displayName}
                     </span>
-                    <span className="text-[10px] text-[#70747C] shrink-0">
+                    <span className="text-xs text-[var(--text-muted)] shrink-0">
                       {conv.lastMessageTime}
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#9A9DA3] truncate">{conv.lastMessage}</p>
+                  <p className="text-xs text-[var(--text-secondary)] truncate">{conv.lastMessage}</p>
                 </div>
               </button>
             ))}
             {filteredConversations.length === 0 && (
-              <p className="p-4 text-xs text-[#70747C] text-center">Chưa có cuộc trò chuyện nào.</p>
+              <p className="p-4 text-xs text-[var(--text-muted)] text-center">Chưa có cuộc trò chuyện nào.</p>
             )}
           </div>
         </div>
 
         {/* ACTIVE CONVERSATION CHAT (RIGHT) */}
         {activeConv ? (
-          <div className="flex-1 flex flex-col bg-[#191A1C] min-w-0">
+          <div className={`flex-1 flex-col bg-[var(--bg-surface)] min-w-0 ${showConversation ? 'flex' : 'hidden md:flex'}`}>
             {/* Chat header */}
-            <div className="p-4 border-b border-[#303235] flex items-center justify-between">
+            <div className="p-4 border-b border-[var(--border-color)] flex items-center gap-2">
+              <button type="button" className="icon-button md:hidden" aria-label="Quay lại danh sách hội thoại" onClick={() => setShowConversation(false)}><ArrowLeft size={18} /></button>
               <div className="flex items-center gap-3">
                 <Avatar
                   src={activeConv.participant.avatarUrl}
@@ -146,10 +150,10 @@ export const MessagesPage: React.FC = () => {
                   isOnline={activeConv.participant.status === 'online'}
                 />
                 <div>
-                  <h3 className="text-xs sm:text-sm font-bold text-[#F5F5F5]">
+                  <h3 className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">
                     {activeConv.participant.displayName}
                   </h3>
-                  <div className="text-[10px] text-[#70747C]">
+                  <div className="text-xs text-[var(--text-muted)]">
                     @{activeConv.participant.username} ·{' '}
                     <span className={activeConv.participant.status === 'online' ? 'text-[var(--color-success)]' : ''}>
                       {activeConv.participant.status === 'online' ? 'Đang hoạt động' : 'Ngoại tuyến'}
@@ -167,15 +171,15 @@ export const MessagesPage: React.FC = () => {
                   className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}
                 >
                   <div
-                    className={`max-w-md p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
+                    className={`max-w-md p-3.5 rounded-[var(--radius-card)] text-xs sm:text-sm leading-relaxed ${
                       msg.isMe
-                        ? 'bg-[#FF5700] text-white rounded-tr-none'
-                        : 'bg-[#222426] border border-[#303235] text-[#F5F5F5] rounded-tl-none'
+                        ? 'bg-[var(--action-bg)] text-[var(--action-ink)] rounded-tr-none'
+                        : 'bg-[var(--bg-elevated)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-tl-none'
                     }`}
                   >
                     {msg.text}
                   </div>
-                  <span className="text-[10px] text-[#70747C] mt-1 px-1">
+                  <span className="text-xs text-[var(--text-muted)] mt-1 px-1">
                     {msg.timestamp}
                   </span>
                 </div>
@@ -183,13 +187,14 @@ export const MessagesPage: React.FC = () => {
             </div>
 
             {/* Composer */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-[#303235] flex items-center gap-2">
+            <form onSubmit={handleSendMessage} className="p-4 border-t border-[var(--border-color)] flex items-center gap-2">
               <input
                 type="text"
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
+                aria-label="Nội dung tin nhắn"
                 placeholder="Nhập tin nhắn..."
-                className="flex-1 bg-[#101112] border border-[#303235] focus:border-[#FF5700] rounded-xl px-4 py-2 text-xs text-[#F5F5F5] outline-none"
+                className="flex-1 bg-[var(--bg-main)] border border-[var(--border-color)] focus:border-[var(--color-orange)] rounded-xl px-4 py-2 text-xs text-[var(--text-primary)] outline-none"
               />
               <Button
                 type="submit"
@@ -203,7 +208,7 @@ export const MessagesPage: React.FC = () => {
             </form>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-xs text-[#70747C]">
+          <div className="hidden md:flex flex-1 items-center justify-center text-xs text-[var(--text-muted)]">
             Chọn một cuộc hội thoại từ danh sách bên trái.
           </div>
         )}

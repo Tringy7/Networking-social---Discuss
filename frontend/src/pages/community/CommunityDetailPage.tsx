@@ -5,10 +5,10 @@ import { usePostStore } from '../../store/usePostStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import { POSTS_AVAILABLE } from '../../services';
+import EditorialTabs from '../../components/ui/EditorialTabs';
 import PostCard from '../../components/post/PostCardView';
 import Avatar from '../../components/ui/Avatar';
 import Button from '../../components/ui/Button';
-import Badge from '../../components/ui/Badge';
 import {
   Users,
   Settings,
@@ -17,7 +17,6 @@ import {
   Flame,
   Clock,
   Check,
-  Shield,
   BookOpen,
   Share2,
   Calendar,
@@ -30,7 +29,7 @@ export const CommunityDetailPage: React.FC = () => {
 
   const { communities, joinCommunity, leaveCommunity, hydrateCommunity } = useCommunityStore();
   const { posts, openCreateModal } = usePostStore();
-  const { user, isAuthenticated, activeRole } = useAuthStore();
+  const { isAuthenticated, activeRole } = useAuthStore();
   const { addToast } = useToastStore();
 
   const [tab, setTab] = useState<'latest' | 'popular'>('latest');
@@ -144,245 +143,39 @@ export const CommunityDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 text-left pb-16">
-      {/* BANNER & HEADER */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl overflow-hidden">
-        {/* Banner Image */}
-        <div className="h-44 sm:h-56 w-full relative bg-[var(--bg-main)]">
-          <img
-            src={community.bannerUrl}
-            alt={community.displayName}
-            className="w-full h-full object-cover"
-          />
-          {/* Smooth fade into community card surface for both Light and Dark mode */}
-        </div>
-
-        {/* Profile Header Bar */}
-        <div className="p-4 sm:p-6 -mt-12 sm:-mt-16 relative z-10 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div className="flex items-end gap-4">
-              <Avatar
-                src={community.avatarUrl}
-                alt={community.displayName}
-                size="2xl"
-                shape="rounded"
-                className="border-4 border-[var(--bg-surface)] bg-[var(--bg-surface)]"
-              />
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-                    {community.displayName}
-                  </h1>
-                  <span className="text-xs font-semibold text-[var(--color-orange)] bg-[var(--color-orange-soft)] border border-[var(--color-orange-border)] px-2.5 py-0.5 rounded-full">
-                    {community.category}
-                  </span>
-                </div>
-                <div className="text-xs text-[var(--text-muted)]">community/{community.name}</div>
-              </div>
-            </div>
-
-            {/* Header Action Buttons */}
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant={isJoined ? 'secondary' : 'primary'}
-                size="md"
-                onClick={handleJoinToggle}
-                isLoading={isMembershipUpdating}
-                leftIcon={isJoined ? <Check className="w-4 h-4 text-[var(--color-success)]" /> : undefined}
-              >
-                {isJoined ? 'Đã tham gia' : 'Tham gia'}
-              </Button>
-
-              <Button
-                variant="primary"
-                size="md"
-                onClick={() => openCreateModal(community.name)}
-                leftIcon={<Plus className="w-4 h-4" />}
-              >
-                Đăng bài
-              </Button>
-
-              {isManager && (
-                <Link to={`/community/${community.name}/settings`}>
-                  <Button variant="secondary" size="md" leftIcon={<Settings className="w-4 h-4" />}>
-                    Cài đặt
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </div>
-
-          <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-3xl leading-relaxed">
-            {community.description}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-2 text-sm text-[var(--text-muted)]">
-            <span className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
-              <Users className="w-4 h-4 text-[var(--color-orange)]" />
-              <span className="tabular-nums">{community.memberCount.toLocaleString('vi-VN')}</span> thành viên
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4" />
-              Tạo từ 2022
-            </span>
-            <button
-              onClick={() => {
-                navigator.clipboard?.writeText(window.location.href);
-                addToast('Đã sao chép liên kết cộng đồng!', 'success');
-              }}
-              className="flex items-center gap-1.5 hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-            >
-              <Share2 className="w-4 h-4" />
-              Chia sẻ
-            </button>
+    <div className="community-page">
+      <header className="community-masthead">
+        {community.bannerUrl && <div className="community-cover"><img src={community.bannerUrl} alt={`Ảnh bìa ${community.displayName}`} /></div>}
+        <div className="community-identity">
+          <Avatar src={community.avatarUrl} alt={community.displayName} size="xl" shape="rounded" />
+          <div className="min-w-0 flex-1"><p className="community-category">{community.category} · c/{community.name}</p><h1 className="editorial-title">{community.displayName}</h1></div>
+          <div className="community-actions">
+            <Button variant={isJoined ? 'secondary' : 'primary'} size="sm" isLoading={isMembershipUpdating} onClick={handleJoinToggle} leftIcon={isJoined ? <Check size={15} /> : <Plus size={15} />}>{isJoined ? 'Đã tham gia' : 'Tham gia'}</Button>
+            <Button variant="outline" size="sm" onClick={() => openCreateModal(community.name)} leftIcon={<Plus size={15} />}>Đăng bài</Button>
+            {isManager && <Link className="icon-button" aria-label="Cài đặt cộng đồng" to={`/community/${community.name}/settings`}><Settings size={18} /></Link>}
           </div>
         </div>
-      </div>
-
-      {/* 2-COLUMN MAIN CONTENT (FEED + SIDEBAR INFO) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Posts Feed */}
-        <div className="lg:col-span-2 space-y-4">
-          {!POSTS_AVAILABLE && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
-              Bài viết và tương tác đang dùng dữ liệu mẫu trong phiên hiện tại.
-            </div>
-          )}
-          {/* Feed Filter Bar */}
-          <div className="flex items-center justify-between gap-2 p-1 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl text-sm font-medium">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setTab('latest')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all cursor-pointer ${
-                  tab === 'latest'
-                    ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] font-bold'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-                }`}
-              >
-                <Clock className="w-3.5 h-3.5" />
-                <span>Mới nhất</span>
-              </button>
-              <button
-                onClick={() => setTab('popular')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all cursor-pointer ${
-                  tab === 'popular'
-                    ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)] font-bold'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-                }`}
-              >
-                <Flame className="w-3.5 h-3.5" />
-                <span>Nổi bật</span>
-              </button>
-            </div>
-
-            <span className="text-[11px] text-[var(--text-muted)] pr-3">
-              {sortedPosts.length} bài viết
-            </span>
-          </div>
-
-          {/* Posts list */}
-          <div className="space-y-4">
-            {sortedPosts.map((post) => (
-              <PostCard key={post.id} post={post} showCommunity={false} />
-            ))}
-
-            {sortedPosts.length === 0 && (
-              <div className="py-16 text-center bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-8 space-y-3">
-                <BookOpen className="w-8 h-8 text-[var(--color-orange)] mx-auto opacity-70" />
-                <h4 className="text-base font-bold text-[var(--text-primary)]">
-                  Chưa có bài viết nào trong cộng đồng này
-                </h4>
-                <p className="text-xs text-[var(--text-secondary)]">
-                  Hãy viết bài chia sẻ đầu tiên để bắt đầu thảo luận!
-                </p>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => openCreateModal(community.name)}
-                >
-                  Tạo bài viết ngay
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right Col: About, Rules & Moderators */}
-        <div className="space-y-5">
-          {/* Rules Card */}
-          <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-5 text-left space-y-3">
-            <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-[var(--color-orange)]" />
-              <span>Nội quy cộng đồng</span>
-            </h3>
-
-            {community.rules && community.rules.length > 0 ? (
-              <ol className="space-y-3 text-sm">
-                {community.rules.map((rule, index) => (
-                  <li key={rule.id} className="pb-1">
-                    <div className="font-semibold text-[var(--text-primary)]">
-                      {index + 1}. {rule.title}
-                    </div>
-                    <div className="text-[11px] text-[var(--text-secondary)] mt-0.5">{rule.description}</div>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="text-xs text-[var(--text-muted)]">Tuân thủ tiêu chuẩn cộng đồng chung của DISCUSS.</p>
-            )}
-          </div>
-
-          {/* Moderators Card */}
-          <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-5 text-left space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                <Shield className="w-4 h-4 text-[var(--color-info)]" />
-                <span>Ban quản trị & Mod</span>
-              </h3>
-              {isManager && (
-                <Link
-                  to={`/community/${community.name}/members`}
-                  className="text-xs text-[var(--color-orange)] hover:underline"
-                >
-                  Quản lý
-                </Link>
-              )}
-            </div>
-
-            <div className="space-y-2.5">
-              <Link
-                to={`/user/${community.ownerUsername}`}
-                className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-[var(--bg-hover)] transition-colors"
-              >
-                <Avatar alt={community.ownerUsername} size="xs" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-[var(--text-primary)] truncate">
-                    @{community.ownerUsername}
-                  </div>
-                  <Badge role="OWNER" size="sm" />
-                </div>
-              </Link>
-            </div>
-
-            {isManager && (
-              <div className="pt-2">
-                <Link to={`/community/${community.name}/moderation`} className="block">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="w-full text-xs"
-                    leftIcon={<ShieldAlert className="w-3.5 h-3.5 text-[var(--color-info)]" />}
-                  >
-                    Xem hàng đợi kiểm duyệt
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
+        <p className="community-description">{community.description}</p>
+        <div className="community-facts"><span><Users size={15} /> {community.memberCount.toLocaleString('vi-VN')} thành viên</span><span><Calendar size={15} /> {new Date(community.createdAt).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span><button onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); addToast('Đã sao chép liên kết cộng đồng!', 'success'); } catch { addToast('Không thể sao chép liên kết.', 'error'); } }}><Share2 size={15} /> Chia sẻ</button></div>
+      </header>
+      <div className="community-columns">
+        <section className="min-w-0" aria-label="Bài viết cộng đồng">
+          <EditorialTabs label="Sắp xếp bài viết cộng đồng" options={[{ id: 'latest', label: 'Mới nhất', icon: <Clock /> }, { id: 'popular', label: 'Sôi nổi', icon: <Flame /> }]} value={tab} onChange={setTab} trailing={`${sortedPosts.length} bài viết`} />
+          {!POSTS_AVAILABLE && <p className="feed-notice">Bài viết mẫu · Tương tác được lưu trong phiên hiện tại.</p>}
+          <div className="discussion-list">{sortedPosts.map((post) => <PostCard key={post.id} post={post} showCommunity={false} />)}</div>
+          {!sortedPosts.length && <div className="editorial-empty"><h2>Mở đầu cuộc trò chuyện.</h2><p>Chia sẻ câu hỏi hoặc góc nhìn đầu tiên cùng cộng đồng.</p><Button size="sm" className="mt-4" onClick={() => openCreateModal(community.name)}>Viết bài đầu tiên</Button></div>}
+        </section>
+        <aside className="community-context">
+          <section className="context-section"><div className="context-title"><h2>Nội quy cộng đồng</h2><BookOpen size={16} /></div>
+            {community.rules?.length ? <ol className="community-rules">{community.rules.map((rule) => <li key={rule.id}><h3>{rule.title}</h3><p>{rule.description}</p></li>)}</ol> : <p className="text-sm text-[var(--text-secondary)]">Tôn trọng góc nhìn khác biệt và tuân thủ tiêu chuẩn cộng đồng DISCUSS.</p>}
+          </section>
+          <section className="context-section"><div className="context-title"><h2>Người giữ cuộc trò chuyện</h2>{isManager && <Link to={`/community/${community.name}/members`}>Quản lý</Link>}</div>
+            <Link to={`/user/${community.ownerUsername}`} className="context-community"><Avatar alt={community.ownerUsername} size="sm" /><div className="community-info"><span className="text-sm font-semibold">@{community.ownerUsername}</span><p>Chủ cộng đồng</p></div></Link>
+            {isManager && <Link to={`/community/${community.name}/moderation`} className="side-link"><ShieldAlert size={16} />Hàng đợi kiểm duyệt</Link>}
+          </section>
+        </aside>
       </div>
     </div>
   );
 };
-
 export default CommunityDetailPage;

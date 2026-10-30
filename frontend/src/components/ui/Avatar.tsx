@@ -17,10 +17,10 @@ export const Avatar: React.FC<AvatarProps> = ({
   className = '',
   isOnline,
 }) => {
-  const [hasError, setHasError] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | undefined>();
 
   const sizes = {
-    xs: 'w-6 h-6 text-[10px]',
+    xs: 'w-6 h-6 text-xs',
     sm: 'w-8 h-8 text-xs',
     md: 'w-10 h-10 text-sm',
     lg: 'w-14 h-14 text-base font-bold',
@@ -40,11 +40,11 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   return (
     <div className={`relative inline-block shrink-0 ${sizes[size]} ${rounded} ${className}`}>
-      {src && !hasError ? (
+      {src && src !== failedSrc ? (
         <img
           src={src}
           alt={alt}
-          onError={() => setHasError(true)}
+          onError={() => setFailedSrc(src)}
           className={`block w-full h-full object-cover border-0 ${rounded}`}
           loading="lazy"
         />

@@ -25,8 +25,8 @@ export const NotificationSettingsPage: React.FC = () => {
   ) => (
     <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-4">
       <div className="space-y-0.5 max-w-md">
-        <h4 className="text-xs sm:text-sm font-bold text-[#F5F5F5]">{label}</h4>
-        <p className="text-xs text-[#9A9DA3]">{desc}</p>
+        <h4 className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">{label}</h4>
+        <p className="text-xs text-[var(--text-secondary)]">{desc}</p>
       </div>
       <button
         type="button"
@@ -118,7 +118,7 @@ export const NotificationSettingsPage: React.FC = () => {
         <button
           type="button"
           onClick={handleReset}
-          className="flex items-center gap-1.5 text-xs text-[#70747C] hover:text-[#F5F5F5] transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Khôi phục mặc định</span>

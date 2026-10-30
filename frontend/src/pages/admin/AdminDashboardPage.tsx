@@ -61,7 +61,7 @@ export const AdminDashboardPage: React.FC = () => {
       label: 'Tổng người dùng',
       value: isStatsLoading || statsLoadFailed ? '—' : stats.totalUsers.toLocaleString('vi-VN'),
       change: 'Tổng số tài khoản',
-      icon: <Users className="w-5 h-5 text-[#FF5700]" />,
+      icon: <Users className="w-5 h-5 text-[var(--color-orange)]" />,
     },
     {
       label: 'Cộng đồng hoạt động',
@@ -88,9 +88,9 @@ export const AdminDashboardPage: React.FC = () => {
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)] flex items-center gap-2.5">
-            <ShieldCheck className="w-6 h-6 text-[var(--color-danger)]" />
-            <span>Bảng điều khiển Quản trị hệ thống (Admin)</span>
+          <h1 className="text-2xl font-normal tracking-tight text-[var(--text-primary)] flex items-center gap-2.5">
+
+            <span>Tổng quan hệ thống</span>
           </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
             Giám sát số liệu tăng trưởng, kiểm duyệt vi phạm và quản lý toàn bộ hệ thống DISCUSS
@@ -115,18 +115,18 @@ export const AdminDashboardPage: React.FC = () => {
       )}
 
       {/* 4 Stat Overview Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="admin-stat-strip">
         {statCards.map((card, idx) => (
           <div
             key={idx}
-            className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-5 space-y-3"
+            className="admin-stat"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#9A9DA3]">{card.label}</span>
-              <div className="rounded-lg bg-[var(--bg-elevated)] p-2">{card.icon}</div>
+              <span className="text-xs font-semibold text-[var(--text-secondary)]">{card.label}</span>
+
             </div>
             <div>
-              <div className="text-2xl font-semibold tracking-tight text-[var(--text-primary)] tabular-nums">
+              <div className="text-2xl font-normal tracking-tight text-[var(--text-primary)] tabular-nums">
                 {card.value}
               </div>
               <div className="text-xs text-[var(--text-secondary)] flex items-center gap-1 mt-1 font-medium">
@@ -138,9 +138,9 @@ export const AdminDashboardPage: React.FC = () => {
       </div>
 
       {/* Chart & Activity Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="admin-insights grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* User Growth Chart (2 Cols) */}
-        <div className="lg:col-span-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-5 sm:p-6 space-y-4">
+        <div className="lg:col-span-2 bg-[var(--bg-main)] p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
@@ -151,7 +151,7 @@ export const AdminDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="h-64 w-full pt-2">
+          <div className={`${stats.userGrowth.length ? 'h-56' : 'h-24'} w-full pt-2`}>
             {isStatsLoading ? (
               <div role="status" className="flex h-full items-center justify-center text-sm text-[var(--text-secondary)]">Đang tải dữ liệu tăng trưởng…</div>
             ) : statsLoadFailed ? null : stats.userGrowth.length === 0 ? (
@@ -172,7 +172,7 @@ export const AdminDashboardPage: React.FC = () => {
                   }}
                 />
                 <Area
-                  type="monotone"
+                  type="linear"
                   dataKey="users"
                   name="Người dùng"
                   stroke="var(--color-orange)"
@@ -187,7 +187,7 @@ export const AdminDashboardPage: React.FC = () => {
         </div>
 
         {/* Recent Activity Log (1 Col) */}
-        <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-5 sm:p-6 space-y-4 text-left">
+        <div className="bg-[var(--bg-main)] p-5 space-y-4 text-left">
           <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
             <Activity className="w-4 h-4 text-[var(--color-info)]" />
             <span>Nhật ký hoạt động hệ thống</span>

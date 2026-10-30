@@ -101,7 +101,7 @@ export const EditCommunityPage: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 pb-16 text-left">
+    <div className="utility-page space-y-5 pb-8 text-left">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex min-w-0 items-start gap-3">
           <button
@@ -122,7 +122,7 @@ export const EditCommunityPage: React.FC = () => {
         <Link to={`/community/${community.name}/members`}><Button variant="secondary" size="sm">Quản lý thành viên</Button></Link>
       </header>
 
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 sm:p-6 lg:p-8">
+      <form onSubmit={handleSubmit} className="community-settings-form space-y-5">
         <div className="space-y-2">
           <label htmlFor="community-description" className="text-sm font-semibold text-[var(--text-secondary)]">Mô tả cộng đồng</label>
           <textarea id="community-description" rows={4} value={description} onChange={(event) => setDescription(event.target.value)} required className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]" />

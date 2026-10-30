@@ -22,6 +22,7 @@ import {
   TrendingUp,
   Clock,
   ChevronDown,
+  ArrowUpRight,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -33,6 +34,17 @@ export const Navbar: React.FC = () => {
   const addToast = useToastStore((state) => state.addToast);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    try {
+      const saved: unknown = JSON.parse(localStorage.getItem('discuss_searches') || '[]');
+      return Array.isArray(saved) ? saved.filter((item): item is string => typeof item === 'string').slice(0, 5) : [];
+    } catch { return []; }
+  });
+  const rememberSearch = (query: string) => {
+    const next = [query, ...recentSearches.filter((item) => item !== query)].slice(0, 5);
+    setRecentSearches(next);
+    try { localStorage.setItem('discuss_searches', JSON.stringify(next)); } catch { /* Search still works without storage. */ }
+  };
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -69,22 +81,25 @@ export const Navbar: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!isMobileSearchOpen) return;
+    if (!isMobileSearchOpen && !isSearchOpen && !isUserMenuOpen && !isNotifOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsMobileSearchOpen(false);
         setIsSearchOpen(false);
+        setIsUserMenuOpen(false);
+        setIsNotifOpen(false);
       }
     };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [isMobileSearchOpen]);
+  }, [isMobileSearchOpen, isSearchOpen, isUserMenuOpen, isNotifOpen]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     setIsSearchOpen(false);
     setIsMobileSearchOpen(false);
+    rememberSearch(searchQuery.trim());
     navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}&type=all`);
   };
 
@@ -111,17 +126,18 @@ export const Navbar: React.FC = () => {
     .slice(0, 3);
 
   return (
-    <header className="sticky top-0 z-40 w-full h-[72px] bg-[var(--bg-nav)] border-b border-[var(--border-color)] px-3 sm:px-6">
-      <div className="h-full max-w-screen-2xl mx-auto flex items-center justify-between gap-4 md:gap-8">
+    <header className="editorial-navbar">
+      <div className="navbar-inner">
         {/* ZONE 1: BRAND LOGO */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-          <Logo showTagline={false} size="md" compactOnMobile />
+          <Logo showTagline={false} size="md" />
+          <Link to="/explore" className="masthead-link">Cộng đồng & góc nhìn <ArrowUpRight size={13} /></Link>
         </div>
 
         {/* ZONE 2: SEARCH INPUT & AUTOCOMPLETE */}
         <div ref={searchRef} className={`${isMobileSearchOpen ? 'absolute inset-x-0 top-full z-50 border-b border-[var(--border-color)] bg-[var(--bg-nav)] px-3 py-3 shadow-[var(--surface-shadow)] sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none' : 'hidden sm:relative'} sm:flex sm:flex-1 sm:max-w-xl`}>
-          <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-            <Search className="absolute left-3.5 w-4 h-4 text-[#6C7482] pointer-events-none" />
+          <form onSubmit={handleSearchSubmit} className="nav-search relative flex w-full items-center">
+            <Search className="absolute left-3.5 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
@@ -136,7 +152,7 @@ export const Navbar: React.FC = () => {
                 type="button"
                 onClick={() => setSearchQuery('')}
                 aria-label="Xóa nội dung tìm kiếm"
-                className={`${isMobileSearchOpen ? 'right-11' : 'right-3'} absolute p-1 rounded-full text-[#6C7482] hover:text-[#F1F3F7] transition-colors`}
+                className={`${isMobileSearchOpen ? 'right-11' : 'right-3'} absolute p-1 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors`}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -155,7 +171,7 @@ export const Navbar: React.FC = () => {
                 <>
                   {filteredCommunities.length > 0 && (
                     <div>
-                      <div className="text-[11px] font-bold text-[#70747C] uppercase px-2 mb-1.5">
+                      <div className="text-xs font-bold text-[var(--text-muted)] px-2 mb-1.5">
                         Cộng đồng gợi ý
                       </div>
                       <div className="space-y-1">
@@ -164,14 +180,14 @@ export const Navbar: React.FC = () => {
                             key={c.id}
                             to={`/community/${c.name}`}
                             onClick={() => { setIsSearchOpen(false); setIsMobileSearchOpen(false); }}
-                            className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-[#222426] transition-colors"
+                            className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-[var(--bg-elevated)] transition-colors"
                           >
                             <Avatar src={c.avatarUrl} alt={c.displayName} size="xs" shape="rounded" />
                             <div className="truncate">
-                              <span className="text-xs font-semibold text-[#F5F5F5] block truncate">
+                              <span className="text-xs font-semibold text-[var(--text-primary)] block truncate">
                                 {c.displayName}
                               </span>
-                              <span className="text-[11px] text-[#70747C]">
+                              <span className="text-xs text-[var(--text-muted)]">
                                 {c.memberCount.toLocaleString('vi-VN')} thành viên
                               </span>
                             </div>
@@ -183,7 +199,7 @@ export const Navbar: React.FC = () => {
 
                   {filteredPosts.length > 0 && (
                     <div>
-                      <div className="text-[11px] font-bold text-[#70747C] uppercase px-2 mb-1.5">
+                      <div className="text-xs font-bold text-[var(--text-muted)] px-2 mb-1.5">
                         Bài viết
                       </div>
                       <div className="space-y-1">
@@ -192,12 +208,12 @@ export const Navbar: React.FC = () => {
                             key={p.id}
                             to={`/post/${p.id}`}
                             onClick={() => { setIsSearchOpen(false); setIsMobileSearchOpen(false); }}
-                            className="block p-2 rounded-xl hover:bg-[#222426] transition-colors"
+                            className="block p-2 rounded-xl hover:bg-[var(--bg-elevated)] transition-colors"
                           >
-                            <div className="text-xs font-medium text-[#F5F5F5] truncate">
+                            <div className="text-xs font-medium text-[var(--text-primary)] truncate">
                               {p.title}
                             </div>
-                            <div className="text-[10px] text-[#70747C] mt-0.5">
+                            <div className="text-xs text-[var(--text-muted)] mt-0.5">
                               {p.communityDisplayName} · {p.heartCount} lượt thích
                             </div>
                           </Link>
@@ -207,7 +223,7 @@ export const Navbar: React.FC = () => {
                   )}
 
                   {filteredCommunities.length === 0 && filteredPosts.length === 0 && (
-                    <div className="py-6 text-center text-xs text-[#9A9DA3]">
+                    <div className="py-6 text-center text-xs text-[var(--text-secondary)]">
                       Không tìm thấy kết quả phù hợp cho "{searchQuery}"
                     </div>
                   )}
@@ -215,23 +231,24 @@ export const Navbar: React.FC = () => {
               ) : (
                 <>
                   <div>
-                    <div className="text-[11px] font-bold text-[#70747C] uppercase px-2 mb-1.5 flex items-center gap-1.5">
-                      <TrendingUp className="w-3.5 h-3.5 text-[#FF5700]" />
-                      <span>Xu hướng tìm kiếm</span>
+                    <div className="text-xs font-bold text-[var(--text-muted)] px-2 mb-1.5 flex items-center gap-1.5">
+                      <TrendingUp className="w-3.5 h-3.5 text-[var(--color-orange)]" />
+                      <span>Chủ đề thảo luận</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5 px-2">
-                      {['Spring Boot 3', 'React 19', 'Đồ án tốt nghiệp', 'Tailwind v4', 'Gemini AI'].map(
+                      {[...new Set(posts.flatMap((post) => post.tags || []))].slice(0, 8).map(
                         (tag) => (
                           <button
                             key={tag}
                             type="button"
                             onClick={() => {
                               setSearchQuery(tag);
+                              rememberSearch(tag);
                               navigate(`/search?q=${encodeURIComponent(tag)}&type=all`);
                               setIsSearchOpen(false);
                               setIsMobileSearchOpen(false);
                             }}
-                            className="text-xs px-2.5 py-1 rounded-full bg-[#222426] hover:bg-[#292B2E] text-[#9A9DA3] hover:text-[#F5F5F5] transition-colors"
+                            className="text-xs px-2.5 py-1 rounded-full bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                           >
                             {tag}
                           </button>
@@ -239,23 +256,25 @@ export const Navbar: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  <div className="border-t border-[#303235] pt-2">
-                    <div className="text-[11px] font-bold text-[#70747C] uppercase px-2 mb-1 flex items-center gap-1.5">
+                  <div className="border-t border-[var(--border-color)] pt-2">
+                    <div className="text-xs font-bold text-[var(--text-muted)] px-2 mb-1 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" />
                       <span>Tìm kiếm gần đây</span>
                     </div>
                     <div className="space-y-0.5">
-                      {['Kiến trúc Clean Architecture', 'Học bổng CNTT'].map((recent) => (
+                      {!recentSearches.length && <p className="px-2 py-2 text-xs text-[var(--text-muted)]">Chưa có tìm kiếm gần đây.</p>}
+                      {recentSearches.map((recent) => (
                         <button
                           key={recent}
                           type="button"
                           onClick={() => {
                             setSearchQuery(recent);
+                            rememberSearch(recent);
                             navigate(`/search?q=${encodeURIComponent(recent)}&type=all`);
                             setIsSearchOpen(false);
                             setIsMobileSearchOpen(false);
                           }}
-                          className="w-full text-left px-2 py-1.5 text-xs text-[#9A9DA3] hover:text-[#F5F5F5] hover:bg-[#222426] rounded-lg transition-colors truncate"
+                          className="w-full text-left px-2 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-lg transition-colors truncate"
                         >
                           {recent}
                         </button>
@@ -290,7 +309,7 @@ export const Navbar: React.FC = () => {
                 size="sm"
                 leftIcon={<Plus className="w-4 h-4" />}
                 onClick={() => openCreateModal()}
-                className="hidden md:inline-flex cursor-pointer"
+                className="navbar-create-post cursor-pointer"
               >
                 Tạo bài viết
               </Button>
@@ -298,12 +317,12 @@ export const Navbar: React.FC = () => {
               {/* Messages Shortcut */}
               <Link
                 to="/messages"
-                className="hidden sm:flex p-2 rounded-full text-[#9A9DA3] hover:text-[#F5F5F5] hover:bg-[#222426] transition-colors relative cursor-pointer"
+                className="hidden sm:flex p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors relative cursor-pointer"
                 title="Tin nhắn riêng"
                 aria-label="Tin nhắn riêng"
               >
                 <MessageSquare className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#FF5700]" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--color-orange)]" />
               </Link>
 
               {/* Notifications Dropdown */}
@@ -317,14 +336,14 @@ export const Navbar: React.FC = () => {
                       });
                     }
                   }}
-                  className="p-2 rounded-full text-[#9A9DA3] hover:text-[#F5F5F5] hover:bg-[#222426] transition-colors relative cursor-pointer"
+                  className="p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors relative cursor-pointer"
                   title="Thông báo"
                   aria-label={`Thông báo${unreadNotifs > 0 ? `, ${unreadNotifs} chưa đọc` : ''}`}
                   aria-expanded={isNotifOpen}
                 >
                   <Bell className="w-5 h-5" />
                   {unreadNotifs > 0 && (
-                    <span className="absolute top-1 right-1 px-1.5 min-w-[16px] h-4 rounded-full bg-[#FF5700] text-white text-[10px] font-bold flex items-center justify-center">
+                    <span className="absolute top-1 right-1 px-1.5 min-w-[16px] h-4 rounded-full bg-[var(--color-orange)] text-white text-xs font-bold flex items-center justify-center">
                       {unreadNotifs}
                     </span>
                   )}
@@ -335,14 +354,14 @@ export const Navbar: React.FC = () => {
                     <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
                       <h4 className="text-sm font-bold text-[var(--text-primary)]">Thông báo</h4>
                       {unreadNotifs > 0 && (
-                        <span className="rounded-full bg-[var(--color-orange-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-orange)]">
+                        <span className="rounded-full bg-[var(--color-orange-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--color-orange)]">
                           {unreadNotifs} mới
                         </span>
                       )}
                       <Link
                         to="/notifications"
                         onClick={() => setIsNotifOpen(false)}
-                        className="text-xs text-[#FF5700] hover:underline"
+                        className="text-xs text-[var(--color-orange)] hover:underline"
                       >
                         Xem tất cả
                       </Link>
@@ -387,42 +406,42 @@ export const Navbar: React.FC = () => {
               <div ref={userMenuRef} className="relative">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full hover:bg-[#222426] border border-transparent hover:border-[#303235] transition-[background-color,border-color] duration-[var(--duration-fast)] cursor-pointer"
+                  className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full hover:bg-[var(--bg-elevated)] border border-transparent hover:border-[var(--border-color)] transition-[background-color,border-color] duration-[var(--duration-fast)] cursor-pointer"
                   aria-label="Mở menu tài khoản"
                   aria-expanded={isUserMenuOpen}
                 >
                   <Avatar src={user.avatarUrl} alt={user.displayName} size="sm" isOnline />
                   <div className="hidden xl:flex flex-col text-left">
-                    <span className="text-xs font-bold text-[#F5F5F5] truncate max-w-[110px]">
+                    <span className="text-xs font-bold text-[var(--text-primary)] truncate max-w-[110px]">
                       {user.displayName}
                     </span>
-                    <span className="text-[10px] text-[#FF5700] font-medium leading-none">
+                    <span className="text-xs text-[var(--color-orange)] font-medium leading-none">
                       {user.karma} karma
                     </span>
                   </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-[#70747C]" />
+                  <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                 </button>
 
                 {isUserMenuOpen && (
                   <div data-ui="popover" className="absolute right-0 top-12 w-64 border p-2 z-50 text-left space-y-1">
-                    <div className="px-3 py-2 border-b border-[#303235] mb-1">
-                      <div className="text-xs font-bold text-[#F5F5F5]">{user.displayName}</div>
-                      <div className="text-[11px] text-[#70747C]">@{user.username}</div>
+                    <div className="px-3 py-2 border-b border-[var(--border-color)] mb-1">
+                      <div className="text-xs font-bold text-[var(--text-primary)]">{user.displayName}</div>
+                      <div className="text-xs text-[var(--text-muted)]">@{user.username}</div>
                     </div>
 
                     <Link
                       to={`/user/${user.username}`}
                       onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#9A9DA3] hover:text-[#F5F5F5] hover:bg-[#222426] rounded-xl transition-colors"
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-xl transition-colors"
                     >
-                      <UserIcon className="w-4 h-4 text-[#FF5700]" />
+                      <UserIcon className="w-4 h-4 text-[var(--color-orange)]" />
                       <span>Hồ sơ cá nhân</span>
                     </Link>
 
                     <Link
                       to="/saved"
                       onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#9A9DA3] hover:text-[#F5F5F5] hover:bg-[#222426] rounded-xl transition-colors"
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-xl transition-colors"
                     >
                       <Bookmark className="w-4 h-4" />
                       <span>Bài viết đã lưu</span>
@@ -431,7 +450,7 @@ export const Navbar: React.FC = () => {
                     <Link
                       to="/settings"
                       onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#9A9DA3] hover:text-[#F5F5F5] hover:bg-[#222426] rounded-xl transition-colors"
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-xl transition-colors"
                     >
                       <Settings className="w-4 h-4" />
                       <span>Cài đặt hệ thống</span>
@@ -441,14 +460,14 @@ export const Navbar: React.FC = () => {
                       <Link
                         to="/admin"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl transition-colors border-t border-[#303235]"
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl transition-colors border-t border-[var(--border-color)]"
                       >
                         <Shield className="w-4 h-4" />
                         <span>Admin Dashboard</span>
                       </Link>
                     )}
 
-                    <div className="pt-1 border-t border-[#303235]">
+                    <div className="pt-1 border-t border-[var(--border-color)]">
                       <button
                         onClick={() => void handleLogout()}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 rounded-xl transition-colors cursor-pointer"

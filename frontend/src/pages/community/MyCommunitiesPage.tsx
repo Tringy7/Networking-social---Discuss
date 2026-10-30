@@ -43,14 +43,14 @@ export const MyCommunitiesPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 text-left pb-16">
+    <div className="utility-page space-y-5 text-left pb-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#F5F5F5] flex items-center gap-2.5">
-            <Users className="w-6 h-6 text-[#FF5700]" />
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2.5">
+            <Users className="w-6 h-6 text-[var(--color-orange)]" />
             <span>Cộng đồng của tôi</span>
           </h1>
-          <p className="text-xs text-[#9A9DA3] mt-0.5">
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
             Quản lý các cộng đồng bạn đang sở hữu và các nhóm bạn đã tham gia
           </p>
         </div>
@@ -63,13 +63,13 @@ export const MyCommunitiesPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-[#303235] pb-2 text-xs font-semibold">
+      <div className="flex items-center gap-2 border-b border-[var(--border-color)] pb-2 text-xs font-semibold">
         <button
           onClick={() => setTab('all')}
           className={`px-4 py-2 rounded-xl transition-colors cursor-pointer ${
             tab === 'all'
-              ? 'bg-[#FF5700]/15 text-[#FF5700] border border-[#FF5700]/30 font-bold'
-              : 'text-[#9A9DA3] hover:text-[#F5F5F5]'
+              ? 'bg-[var(--color-orange)]/15 text-[var(--color-orange)] border border-[var(--color-orange)]/30 font-bold'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
           Tất cả ({ownedList.length + joinedList.length})
@@ -78,8 +78,8 @@ export const MyCommunitiesPage: React.FC = () => {
           onClick={() => setTab('owned')}
           className={`px-4 py-2 rounded-xl transition-colors cursor-pointer ${
             tab === 'owned'
-              ? 'bg-[#FF5700]/15 text-[#FF5700] border border-[#FF5700]/30 font-bold'
-              : 'text-[#9A9DA3] hover:text-[#F5F5F5]'
+              ? 'bg-[var(--color-orange)]/15 text-[var(--color-orange)] border border-[var(--color-orange)]/30 font-bold'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
           Đang làm chủ ({ownedList.length})
@@ -88,8 +88,8 @@ export const MyCommunitiesPage: React.FC = () => {
           onClick={() => setTab('joined')}
           className={`px-4 py-2 rounded-xl transition-colors cursor-pointer ${
             tab === 'joined'
-              ? 'bg-[#FF5700]/15 text-[#FF5700] border border-[#FF5700]/30 font-bold'
-              : 'text-[#9A9DA3] hover:text-[#F5F5F5]'
+              ? 'bg-[var(--color-orange)]/15 text-[var(--color-orange)] border border-[var(--color-orange)]/30 font-bold'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
           Đã tham gia ({joinedList.length})
@@ -97,14 +97,14 @@ export const MyCommunitiesPage: React.FC = () => {
       </div>
 
       {/* Community List */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="owned-communities">
         {displayedList.map((comm) => {
           const isOwner = comm.currentUserRole === 'OWNER' || comm.ownerUsername === user?.username;
 
           return (
             <div
               key={comm.id}
-              className="flex min-w-0 flex-col rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-4 transition-all hover:border-[var(--color-orange-border)]"
+              className="owned-community-row"
             >
               <div className="flex min-w-0 items-center gap-3">
                 <Avatar src={comm.avatarUrl} alt={comm.displayName} size="md" shape="rounded" />
@@ -124,12 +124,12 @@ export const MyCommunitiesPage: React.FC = () => {
                       <Badge role="MEMBER" size="sm" />
                     )}
                   </div>
-                  <div className="mt-0.5 truncate font-mono text-[11px] text-[var(--text-muted)]">community/{comm.name}</div>
+                  <div className="mt-0.5 truncate tabular-nums text-xs text-[var(--text-muted)]">community/{comm.name}</div>
                 </div>
               </div>
 
               <p className="mt-3 min-h-10 line-clamp-2 text-xs leading-relaxed text-[var(--text-secondary)]">{comm.description || 'Chưa có mô tả cộng đồng.'}</p>
-              <div className="mt-3 flex items-center justify-between border-t border-[var(--border-color)] pt-3 text-[11px] text-[var(--text-muted)]">
+              <div className="mt-3 flex items-center justify-between border-t border-[var(--border-color)] pt-3 text-xs text-[var(--text-muted)]">
                 <span className="truncate">{comm.category}</span>
                 <span className="shrink-0">{comm.memberCount} thành viên</span>
               </div>
@@ -165,10 +165,10 @@ export const MyCommunitiesPage: React.FC = () => {
         })}
 
         {displayedList.length === 0 && (
-          <div className="py-20 text-center bg-[#191A1C] border border-[#303235] rounded-3xl p-8 space-y-4">
-            <Users className="w-10 h-10 text-[#FF5700] mx-auto opacity-60" />
-            <h3 className="text-base font-bold text-[#F5F5F5]">Chưa có cộng đồng nào trong mục này</h3>
-            <p className="text-xs text-[#9A9DA3]">
+          <div className="py-10 text-center bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-panel)] p-8 space-y-4">
+            <Users className="w-10 h-10 text-[var(--color-orange)] mx-auto opacity-60" />
+            <h3 className="text-base font-bold text-[var(--text-primary)]">Chưa có cộng đồng nào trong mục này</h3>
+            <p className="text-xs text-[var(--text-secondary)]">
               Hãy khám phá các cộng đồng đang hoạt động sôi nổi hoặc tạo nhóm của riêng bạn.
             </p>
             <div className="flex justify-center gap-3">

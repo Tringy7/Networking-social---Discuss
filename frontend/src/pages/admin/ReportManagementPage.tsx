@@ -240,7 +240,7 @@ export const ReportManagementPage: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleReject(selectedReport.id)}
-                    leftIcon={<XCircle className="w-4 h-4 text-[#70747C]" />}
+                    leftIcon={<XCircle className="w-4 h-4 text-[var(--text-muted)]" />}
                   >
                     Bác bỏ báo cáo
                   </Button>

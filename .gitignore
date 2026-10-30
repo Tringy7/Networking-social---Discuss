@@ -65,3 +65,6 @@ coverage/
 # ==========================================
 storage/
 tools/
+
+# Local design inspections and browser fixtures
+.taste-skill/

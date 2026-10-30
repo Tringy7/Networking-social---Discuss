@@ -95,7 +95,7 @@ export const SearchResultsPage: React.FC = () => {
   const shouldShowPeopleError = peopleSearchFailed && (activeTab === 'all' || activeTab === 'people');
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 text-left pb-16">
+    <div className="utility-page space-y-5 text-left pb-8">
       {/* Header */}
       <div className="flex items-center gap-4">
         <button
@@ -187,7 +187,7 @@ export const SearchResultsPage: React.FC = () => {
         {(activeTab === 'all' || activeTab === 'communities') && matchingCommunities.length > 0 && (
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-[var(--text-secondary)]">Cộng đồng</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="community-directory">
               {matchingCommunities.slice(0, activeTab === 'all' ? 2 : undefined).map((comm) => (
                 <CommunityCard key={comm.id} community={comm} />
               ))}
@@ -238,8 +238,8 @@ export const SearchResultsPage: React.FC = () => {
 
         {/* Empty state */}
         {visibleResultsCount === 0 && !shouldWaitForPeople && !shouldShowPeopleError && (
-          <div className="py-16 text-center bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-8 space-y-4">
-            <Search className="w-10 h-10 text-[#FF5700] mx-auto opacity-60" />
+          <div className="py-16 text-center bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-card)] p-8 space-y-4">
+            <Search className="w-10 h-10 text-[var(--color-orange)] mx-auto opacity-60" />
             <h2 className="text-base font-semibold text-[var(--text-primary)]">
               Không tìm thấy kết quả nào cho "{query}"
             </h2>

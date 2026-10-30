@@ -123,7 +123,7 @@ export const CommunityMembersPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 text-left pb-16">
+    <div className="utility-page space-y-5 text-left pb-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -177,7 +177,7 @@ export const CommunityMembersPage: React.FC = () => {
       </div>
 
       {/* Members Table / List */}
-      <div className="overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
+      <div className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--border-color)] bg-[var(--bg-surface)]">
         <div className="divide-y divide-[var(--border-color)]">
           {isLoading ? (
             <div role="status" className="px-5 py-12 text-center text-sm text-[var(--text-secondary)]">Đang tải danh sách thành viên…</div>

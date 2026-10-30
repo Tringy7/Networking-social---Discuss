@@ -71,15 +71,15 @@ export const ReportModal: React.FC<ReportModalProps> = ({
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-left">
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-[#9A9DA3]">Lý do vi phạm:</label>
+          <label className="text-xs font-semibold text-[var(--text-secondary)]">Lý do vi phạm:</label>
           <div className="space-y-1.5">
             {reasons.map((r) => (
               <label
                 key={r}
                 className={`flex items-center gap-3 p-2.5 rounded-xl border text-xs cursor-pointer transition-colors ${
                   selectedReason === r
-                    ? 'border-[#FF5700] bg-[#FF5700]/10 text-[#F5F5F5]'
-                    : 'border-[#303235] bg-[#222426] text-[#9A9DA3] hover:text-[#F5F5F5]'
+                    ? 'border-[var(--color-orange)] bg-[var(--color-orange)]/10 text-[var(--text-primary)]'
+                    : 'border-[var(--border-color)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 <input
@@ -87,7 +87,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                   name="reportReason"
                   checked={selectedReason === r}
                   onChange={() => setSelectedReason(r)}
-                  className="accent-[#FF5700]"
+                  className="accent-[var(--color-orange)]"
                 />
                 <span>{r}</span>
               </label>
@@ -97,14 +97,14 @@ export const ReportModal: React.FC<ReportModalProps> = ({
 
         {selectedReason === 'Lý do khác' && (
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#9A9DA3]">Mô tả chi tiết:</label>
+            <label className="text-xs font-semibold text-[var(--text-secondary)]">Mô tả chi tiết:</label>
             <textarea
               value={customNote}
               onChange={(e) => setCustomNote(e.target.value)}
               placeholder="Vui lòng cung cấp thêm thông tin giúp chúng tôi xử lý..."
               rows={3}
               required
-              className="w-full bg-[#101112] border border-[#303235] focus:border-[#FF5700] rounded-xl p-3 text-xs text-[#F5F5F5] placeholder-[#70747C] outline-none"
+              className="w-full bg-[var(--bg-main)] border border-[var(--border-color)] focus:border-[var(--color-orange)] rounded-xl p-3 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none"
             />
           </div>
         )}

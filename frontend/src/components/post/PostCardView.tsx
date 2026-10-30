@@ -1,39 +1,39 @@
 import { Link, useNavigate } from 'react-router-dom';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Post } from '../../types';
 import { usePostStore } from '../../store/usePostStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import Avatar from '../ui/Avatar';
-import Badge from '../ui/Badge';
-import Card from '../ui/Card';
 import ReportModal from './ReportModal';
-import {
-  Heart,
-  MessageSquare,
-  Bookmark,
-  Share2,
-  Flag,
-  MoreHorizontal,
-  Pin,
-  ExternalLink,
-  Code2,
-} from 'lucide-react';
+import { Heart, MessageSquare, Bookmark, Share2, Flag, MoreHorizontal, Pin } from 'lucide-react';
 
-interface PostCardProps {
-  post: Post;
-  showCommunity?: boolean;
-}
-
-export const PostCard: React.FC<PostCardProps> = ({ post, showCommunity = true }) => {
+interface PostCardProps { post: Post; showCommunity?: boolean; }
+export default function PostCard({ post, showCommunity = true }: PostCardProps) {
   const navigate = useNavigate();
   const { toggleHeart, toggleSave } = usePostStore();
-  const { addToast } = useToastStore();
-  const { isAuthenticated } = useAuthStore();
-
+  const addToast = useToastStore((state) => state.addToast);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const intensity = useSettingsStore((state) => state.settings.animationIntensity);
+  const reduced = useReducedMotion();
+  const quiet = reduced || intensity !== 'full';
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-
+  const [expanded, setExpanded] = useState(false);
+  const [heartPending, setHeartPending] = useState(false);
+  const [savePending, setSavePending] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!showMenu) return;
+    const close = (event: MouseEvent) => { if (!menuRef.current?.contains(event.target as Node)) setShowMenu(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setShowMenu(false); menuButtonRef.current?.focus(); } };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', escape);
+    return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', escape); };
+  }, [showMenu]);
   const handleHeartClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isAuthenticated) {
@@ -41,11 +41,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, showCommunity = true }
       navigate('/login');
       return;
     }
+    if (heartPending) return;
+    setHeartPending(true);
     try {
       await toggleHeart(post.id);
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Không thể cập nhật lượt thích.', 'error');
-    }
+    } finally { setHeartPending(false); }
   };
 
   const handleSaveClick = async (e: React.MouseEvent) => {
@@ -55,252 +57,64 @@ export const PostCard: React.FC<PostCardProps> = ({ post, showCommunity = true }
       navigate('/login');
       return;
     }
+    if (savePending) return;
+    setSavePending(true);
     try {
       await toggleSave(post.id);
       addToast(post.isSaved ? 'Đã bỏ lưu bài viết' : 'Đã lưu bài viết vào mục Yêu thích', 'info');
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Không thể lưu bài viết.', 'error');
-    }
+    } finally { setSavePending(false); }
   };
 
-  const handleShareClick = (e: React.MouseEvent) => {
+  const handleShareClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard?.writeText(`${window.location.origin}/post/${post.id}`);
-    addToast('Đã sao chép liên kết bài viết vào bộ nhớ tạm!', 'success');
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`);
+      addToast('Đã sao chép liên kết bài viết!', 'success');
+    } catch { addToast('Không thể sao chép liên kết. Vui lòng thử lại.', 'error'); }
   };
 
-  // Format date readable in Vietnamese
-  const timeAgo = (dateStr: string) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    if (hours < 1) return 'vừa xong';
-    if (hours < 24) return `${hours} giờ trước`;
-    const days = Math.floor(hours / 24);
-    return `${days} ngày trước`;
-  };
-
-  return (
-    <>
-      <Card as="article" interactive
-        onClick={() => navigate(`/post/${post.id}`)}
-        onKeyDown={(event) => {
-          if (event.target !== event.currentTarget) return;
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            navigate(`/post/${post.id}`);
-          }
-        }}
-        tabIndex={0}
-        aria-label={`Bài viết: ${post.title}`}
-        className="group relative p-4 sm:p-5 cursor-pointer text-left space-y-3"
-      >
-        {/* Header: Community info + Author info */}
-        <div className="flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 flex-wrap">
-            {post.pinned && (
-              <span className="flex items-center gap-1 font-bold text-[var(--color-orange-ink)] text-xs bg-[var(--color-orange-soft)] px-2 py-0.5 rounded-full">
-                <Pin className="w-3 h-3" />
-                <span>Ghim</span>
-              </span>
-            )}
-
-            {showCommunity && (
-              <Link
-                to={`/community/${post.communityName}`}
-                onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1.5 font-bold text-[#F1F3F7] hover:text-[var(--color-orange)] transition-colors"
-              >
-                <Avatar src={post.communityAvatar} alt={post.communityDisplayName} size="xs" shape="rounded" />
-                <span>{post.communityDisplayName}</span>
-              </Link>
-            )}
-
-            <span className="text-[#6C7482]">·</span>
-
-            {/* Author */}
-            <Link
-              to={`/user/${post.author.username}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-[#959DAA] hover:text-[#F1F3F7] transition-colors flex items-center gap-1"
-            >
-              <span>bởi @{post.author.username}</span>
-              {post.author.role === 'OWNER' && <Badge role="OWNER" size="sm" />}
-              {post.author.role === 'MODERATOR' && <Badge role="MODERATOR" size="sm" />}
-            </Link>
-
-            <span className="text-[#70747C]">·</span>
-            <span className="text-[#70747C]">{timeAgo(post.createdAt)}</span>
-          </div>
-
-          {/* More options menu */}
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMenu(!showMenu);
-              }}
-              className="p-1 rounded-lg text-[#70747C] hover:text-[#F5F5F5] hover:bg-[#222426] transition-colors"
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
-
-            {showMenu && (
-              <div
-                onClick={(e) => e.stopPropagation()}
-                data-ui="popover"
-                className="absolute right-0 top-7 w-40 border p-1.5 z-20 space-y-0.5 text-xs"
-              >
-                <button
-                  onClick={(e) => {
-                    handleShareClick(e);
-                    setShowMenu(false);
-                  }}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[#9A9DA3] hover:text-[#F5F5F5] hover:bg-[#292B2E] transition-colors"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>Chia sẻ link</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    setIsReportOpen(true);
-                  }}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 transition-colors"
-                >
-                  <Flag className="w-3.5 h-3.5" />
-                  <span>Báo cáo bài viết</span>
-                </button>
-              </div>
-            )}
-          </div>
+  const date = new Date(post.createdAt);
+  const time = Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short' });
+  return <>
+    <article className="discussion-row" aria-labelledby={`post-title-${post.id}`}>
+      <div className="discussion-byline">
+        {showCommunity ? <Link className="byline-community" to={`/community/${post.communityName}`}>
+          <Avatar src={post.communityAvatar} alt={post.communityDisplayName} size="xs" shape="rounded" /><span className="truncate">{post.communityDisplayName}</span>
+        </Link> : <Link to={`/user/${post.author.username}`}><Avatar src={post.author.avatarUrl} alt={post.author.displayName} size="xs" /><span>{post.author.displayName || post.author.username}</span></Link>}
+        {showCommunity && <Link className="byline-author" to={`/user/${post.author.username}`}>@{post.author.username}</Link>}
+        {(post.author.role === 'OWNER' || post.author.role === 'MODERATOR') && <span className="byline-role">{post.author.role === 'OWNER' ? 'Chủ cộng đồng' : 'Kiểm duyệt'}</span>}
+        {post.pinned && <span className="inline-flex items-center gap-1 text-[var(--color-orange-ink)]"><Pin size={12} /> Ghim</span>}
+        <time dateTime={post.createdAt}>{time}</time>
+        <div ref={menuRef} className="relative">
+          <button ref={menuButtonRef} className="icon-button" onClick={() => setShowMenu(!showMenu)} aria-expanded={showMenu} aria-label={`Tùy chọn bài viết ${post.title}`}><MoreHorizontal size={17} /></button>
+          {showMenu && <div data-ui="popover" className="absolute right-0 top-full z-20 w-48 border p-2">
+            <button className="side-link" onClick={(e) => { void handleShareClick(e); setShowMenu(false); }}><Share2 size={15} /> Sao chép liên kết</button>
+            <button className="side-link" onClick={() => { setShowMenu(false); setIsReportOpen(true); }}><Flag size={15} /> Báo cáo bài viết</button>
+          </div>}
         </div>
-
-        {/* Post Title */}
-        <h2 className="text-base sm:text-lg font-bold text-[#F5F5F5] group-hover:text-white leading-snug">
-          {post.title}
-        </h2>
-
-        {/* Content Snippet */}
-        <p className="text-xs sm:text-sm text-[#9A9DA3] line-clamp-3 leading-relaxed whitespace-pre-line">
-          {post.content}
-        </p>
-
-        {/* Code Snippet Box */}
-        {post.codeSnippet && (
-          <div className="bg-[var(--bg-elevated)] border border-[var(--border-color)] rounded-xl p-3 text-xs text-[var(--color-code)] overflow-x-auto">
-            <div className="flex items-center justify-between pb-2 mb-2 text-xs text-[#70747C]">
-              <span className="flex items-center gap-1.5">
-                <Code2 className="w-3.5 h-3.5 text-[#FF5700]" />
-                {post.codeSnippet.language}
-              </span>
-            </div>
-            <pre className="font-code text-[var(--text-secondary)]">
-              <code>{post.codeSnippet.code}</code>
-            </pre>
-          </div>
-        )}
-
-        {/* Media Image Preview */}
-        {post.mediaUrl && (
-          <div className="rounded-xl overflow-hidden border border-[#303235] max-h-96 bg-[var(--bg-elevated)]">
-            <img
-              src={post.mediaUrl}
-              alt={post.title}
-              className="w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-300"
-              loading="lazy"
-            />
-          </div>
-        )}
-
-        {/* Tags */}
-        {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {post.tags.map((tag) => (
-              <span
-                key={tag}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/search?q=${encodeURIComponent(tag)}&type=posts`);
-                }}
-                className="text-xs font-medium text-[var(--color-orange-ink)] bg-[var(--color-orange-soft)] hover:bg-[var(--color-orange-border)] px-2 py-0.5 rounded-md transition-colors"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Footer Actions: Heart, Comments, Save, Share */}
-        <div className="flex items-center justify-between pt-3 text-xs">
-          <div className="flex items-center gap-2">
-            {/* Heart Reaction */}
-            <button
-              onClick={handleHeartClick}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-[background-color,border-color,color] duration-[var(--duration-fast)] ${
-                post.isHearted
-                  ? 'bg-[var(--color-orange-soft)] border-[var(--color-orange-border)] text-[var(--color-orange)] font-bold'
-                  : 'bg-[#1E232F] border-[#262C3A] text-[#959DAA] hover:text-[var(--color-orange)] hover:border-[var(--color-orange-border)]'
-              }`}
-            >
-              <Heart
-                className={`w-3.5 h-3.5 transition-transform active:scale-125 ${
-                  post.isHearted ? 'fill-[var(--color-orange)] text-[var(--color-orange)]' : ''
-                }`}
-              />
-              <span className="tabular-nums">{post.heartCount}</span>
-            </button>
-
-            {/* Comment Count */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/post/${post.id}#comments`);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1E232F] border border-[#262C3A] text-[#959DAA] hover:text-[#F1F3F7] hover:border-[#353D50] transition-colors"
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span className="tabular-nums">{post.commentCount}</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1">
-            {/* Save */}
-            <button
-              onClick={handleSaveClick}
-              className={`p-2 rounded-full transition-colors ${
-                post.isSaved
-                  ? 'text-[var(--color-orange)] bg-[var(--color-orange-soft)]'
-                  : 'text-[#6C7482] hover:text-[#F1F3F7] hover:bg-[#1E232F]'
-              }`}
-              title={post.isSaved ? 'Bỏ lưu' : 'Lưu bài viết'}
-            >
-              <Bookmark className={`w-4 h-4 ${post.isSaved ? 'fill-[var(--color-orange)]' : ''}`} />
-            </button>
-
-            {/* Share */}
-            <button
-              onClick={handleShareClick}
-              className="p-2 rounded-full text-[#6C7482] hover:text-[#F1F3F7] hover:bg-[#1E232F] transition-colors"
-              title="Sao chép link"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
-          </div>
+      </div>
+      <div className={`discussion-body ${post.mediaUrl ? 'has-media' : ''}`}>
+        <div className="min-w-0">
+          <h2 id={`post-title-${post.id}`} className="discussion-title"><Link to={`/post/${post.id}`}>{post.title}</Link></h2>
+          <motion.p id={`post-excerpt-${post.id}`} key={expanded ? 'full' : 'preview'} initial={quiet ? false : { opacity: 0.5 }} animate={{ opacity: 1 }} transition={{ duration: quiet ? 0 : 0.15 }} className={`discussion-excerpt ${expanded ? '' : 'line-clamp-2'}`}>{post.content}</motion.p>
+          {post.content.length > 180 && <button type="button" className="discussion-expand" aria-expanded={expanded} aria-controls={`post-excerpt-${post.id}`} onClick={() => setExpanded(!expanded)}>{expanded ? 'Thu gọn' : 'Đọc tiếp'}</button>}
+          {post.tags && post.tags.length > 0 && <div className="discussion-tags">{post.tags.map((tag) => <Link key={tag} to={`/search?q=${encodeURIComponent(tag)}&type=posts`}>#{tag}</Link>)}</div>}
         </div>
-      </Card>
-
-      {/* Report Modal */}
-      <ReportModal
-        isOpen={isReportOpen}
-        onClose={() => setIsReportOpen(false)}
-        contentType="POST"
-        contentId={post.id}
-        contentTitle={post.title}
-        communityName={post.communityName}
-        targetUsername={post.author.username}
-      />
-    </>
-  );
-};
-
-export default PostCard;
+        {post.mediaUrl && <Link to={`/post/${post.id}`} className="discussion-media" aria-label={`Xem ảnh: ${post.title}`}><img src={post.mediaUrl} alt={post.title} loading="lazy" /></Link>}
+      </div>
+      {post.codeSnippet && <details className="discussion-code"><summary>{post.codeSnippet.language} · Xem đoạn mã</summary><pre className="font-code"><code>{post.codeSnippet.code}</code></pre></details>}
+      <div className="discussion-actions">
+        <motion.button type="button" className="discussion-action" onClick={handleHeartClick} aria-pressed={post.isHearted} disabled={heartPending}
+          aria-label={`${post.isHearted ? 'Bỏ thích' : 'Thích'} bài viết, ${post.heartCount} lượt thích`} whileTap={quiet ? undefined : { scale: 0.9 }}>
+          <motion.span animate={quiet ? undefined : { scale: post.isHearted ? [1, 1.3, 1] : 1 }} transition={{ duration: 0.25 }}><Heart className="heart-icon" /></motion.span><span className="tabular-nums">{post.heartCount}</span>
+        </motion.button>
+        <Link to={`/post/${post.id}#comments`} className="discussion-action" aria-label={`${post.commentCount} bình luận`}><MessageSquare /><span>{post.commentCount}</span><span className="hidden sm:inline">bình luận</span></Link>
+        <button type="button" className="discussion-action ml-auto" onClick={handleSaveClick} aria-pressed={post.isSaved} disabled={savePending} aria-label={post.isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}><Bookmark fill={post.isSaved ? 'currentColor' : 'none'} /><span className="hidden sm:inline">{post.isSaved ? 'Đã lưu' : 'Lưu'}</span></button>
+        <button type="button" className="discussion-action" onClick={handleShareClick} aria-label="Sao chép liên kết bài viết"><Share2 /></button>
+      </div>
+    </article>
+    <ReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} contentType="POST" contentId={post.id} contentTitle={post.title} communityName={post.communityName} targetUsername={post.author.username} />
+  </>;
+}

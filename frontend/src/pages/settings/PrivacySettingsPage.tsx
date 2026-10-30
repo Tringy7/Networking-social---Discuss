@@ -63,10 +63,10 @@ export const PrivacySettingsPage: React.FC = () => {
 
       <div className="space-y-4">
         {/* Toggle 1: DOB */}
-        <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)]">
+        <div className="flex items-center justify-between gap-4 setting-group">
           <div className="space-y-0.5 max-w-md">
-            <h4 className="text-xs sm:text-sm font-bold text-[#F5F5F5]">Hiển thị ngày sinh trên hồ sơ</h4>
-            <p className="text-xs text-[#9A9DA3]">
+            <h4 className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">Hiển thị ngày sinh trên hồ sơ</h4>
+            <p className="text-xs text-[var(--text-secondary)]">
               Cho phép các thành viên khác nhìn thấy ngày sinh của bạn trên trang cá nhân công khai.
             </p>
           </div>
@@ -89,10 +89,10 @@ export const PrivacySettingsPage: React.FC = () => {
         </div>
 
         {/* Toggle 2: Location */}
-        <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)]">
+        <div className="flex items-center justify-between gap-4 setting-group">
           <div className="space-y-0.5 max-w-md">
-            <h4 className="text-xs sm:text-sm font-bold text-[#F5F5F5]">Hiển thị vị trí / tỉnh thành</h4>
-            <p className="text-xs text-[#9A9DA3]">
+            <h4 className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">Hiển thị vị trí / tỉnh thành</h4>
+            <p className="text-xs text-[var(--text-secondary)]">
               Hiển thị thông tin thành phố của bạn để kết nối với các lập trình viên cùng khu vực.
             </p>
           </div>
@@ -115,10 +115,10 @@ export const PrivacySettingsPage: React.FC = () => {
         </div>
 
         {/* Toggle 3: Posts on profile */}
-        <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)]">
+        <div className="flex items-center justify-between gap-4 setting-group">
           <div className="space-y-0.5 max-w-md">
-            <h4 className="text-xs sm:text-sm font-bold text-[#F5F5F5]">Hiển thị danh sách bài viết trên hồ sơ</h4>
-            <p className="text-xs text-[#9A9DA3]">
+            <h4 className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">Hiển thị danh sách bài viết trên hồ sơ</h4>
+            <p className="text-xs text-[var(--text-secondary)]">
               Khi tắt tính năng này, người khác truy cập trang cá nhân của bạn sẽ không thấy danh sách bài viết đã đăng.
             </p>
           </div>
@@ -145,7 +145,7 @@ export const PrivacySettingsPage: React.FC = () => {
         <button
           type="button"
           onClick={handleReset}
-          className="flex items-center gap-1.5 text-xs text-[#70747C] hover:text-[#F5F5F5] transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Khôi phục mặc định</span>

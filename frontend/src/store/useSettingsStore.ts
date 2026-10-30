@@ -56,9 +56,9 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
   {
     id: 'purple',
     name: 'Amethyst Violet',
-    primary: '#7C3AED',
-    ink: '#6D28D9',
-    hover: '#6D28D9',
+    primary: '#7C3AED', // taste-skill-ignore: preserve the existing user-selectable accent preset; DISCUSS defaults to orange.
+    ink: '#6D28D9', // taste-skill-ignore: preserve the existing user-selectable accent preset; DISCUSS defaults to orange.
+    hover: '#6D28D9', // taste-skill-ignore: preserve the existing user-selectable accent preset; DISCUSS defaults to orange.
     soft: 'rgba(124, 58, 237, 0.12)',
     border: 'rgba(124, 58, 237, 0.28)',
     description: 'Tím thạch anh sáng tạo, phong cách thiết kế sản phẩm cao cấp',
@@ -124,6 +124,7 @@ const getInitialSettings = (): AppearanceSettings => {
 
 const applyDOMClasses = (settings: AppearanceSettings) => {
   const root = document.documentElement;
+  root.dataset.motion = settings.animationIntensity;
   
   // Theme
   const isDark =

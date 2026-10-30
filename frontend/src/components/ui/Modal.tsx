@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useSettingsStore } from '../../store/useSettingsStore';
 
 interface ModalProps {
   isOpen: boolean;
@@ -22,7 +23,9 @@ export const Modal: React.FC<ModalProps> = ({
   const modalId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
-  const shouldReduceMotion = useReducedMotion();
+  const systemReducedMotion = useReducedMotion();
+  const intensity = useSettingsStore((state) => state.settings.animationIntensity);
+  const shouldReduceMotion = systemReducedMotion || intensity !== 'full';
   onCloseRef.current = onClose;
 
   useEffect(() => {
@@ -101,8 +104,8 @@ export const Modal: React.FC<ModalProps> = ({
             aria-describedby={description ? `${modalId}-description` : undefined}
             initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: 'easeOut' }}
+            exit={{ opacity: 0, scale: 0.98, y: 6, transition: { duration: shouldReduceMotion ? 0 : 0.12 } }}
+            transition={shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 380, damping: 32 }}
             className={`relative w-full ${maxWidths[maxWidth]} max-h-[min(90vh,48rem)] overflow-y-auto bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-[var(--radius-panel)] shadow-[var(--surface-shadow)] p-5 sm:p-6 text-left z-10`}
           >
             <div className="flex items-start justify-between gap-4 mb-4">

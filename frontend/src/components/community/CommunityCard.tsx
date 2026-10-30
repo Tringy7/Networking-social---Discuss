@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Community } from '../../types';
 import { useCommunityStore } from '../../store/useCommunityStore';
@@ -6,7 +6,6 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import Avatar from '../ui/Avatar';
 import Button from '../ui/Button';
-import Card from '../ui/Card';
 import { Users, Check } from 'lucide-react';
 
 interface CommunityCardProps {
@@ -19,12 +18,13 @@ export const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
   const { isAuthenticated } = useAuthStore();
   const { addToast } = useToastStore();
 
+  const [isUpdating, setIsUpdating] = useState(false);
   const isJoined =
     community.currentUserRole === 'MEMBER' ||
     community.currentUserRole === 'MODERATOR' ||
     community.currentUserRole === 'OWNER';
 
-  const handleJoinClick = (e: React.MouseEvent) => {
+  const handleJoinClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isAuthenticated) {
       addToast('Vui lòng đăng nhập để tham gia cộng đồng', 'warning');
@@ -32,73 +32,23 @@ export const CommunityCard: React.FC<CommunityCardProps> = ({ community }) => {
       return;
     }
 
-    if (isJoined) {
-      leaveCommunity(community.name);
-      addToast(`Đã rời khỏi cộng đồng ${community.displayName}`, 'info');
-    } else {
-      joinCommunity(community.name);
-      addToast(`Đã tham gia cộng đồng ${community.displayName}!`, 'success');
-    }
+    if (isUpdating) return;
+    setIsUpdating(true);
+    try {
+      if (isJoined) { await leaveCommunity(community.name); addToast(`Đã rời ${community.displayName}`, 'info'); }
+      else { await joinCommunity(community.name); addToast(`Đã tham gia ${community.displayName}!`, 'success'); }
+    } catch (error) { addToast(error instanceof Error ? error.message : 'Không thể cập nhật thành viên.', 'error'); }
+    finally { setIsUpdating(false); }
+
   };
 
   return (
-    <Card as="article" interactive
-      onClick={() => navigate(`/community/${community.name}`)}
-      className="group relative p-5 cursor-pointer flex flex-col justify-between text-left space-y-4"
-    >
-      <div className="space-y-3">
-        {/* Header: Avatar, Name & Category */}
-        <div className="flex items-start gap-3">
-          <Avatar
-            src={community.avatarUrl}
-            alt={community.displayName}
-            size="lg"
-            shape="rounded"
-            className="group-hover:scale-105 transition-transform"
-          />
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm sm:text-base font-bold text-[#F1F3F7] group-hover:text-white truncate">
-              {community.displayName}
-            </h3>
-            <span className="text-xs text-[var(--text-muted)] block">
-              community/{community.name}
-            </span>
-            <div className="mt-1">
-              <span className="text-[11px] font-semibold text-[var(--color-orange)] bg-[var(--color-orange-soft)] px-2 py-0.5 rounded-full inline-block">
-                {community.category}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Description */}
-        <p className="text-xs text-[#959DAA] line-clamp-3 leading-relaxed">
-          {community.description}
-        </p>
-      </div>
-
-      {/* Footer: Member count & Join button */}
-      <div className="pt-3 flex items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-1.5 text-[#70747C]">
-          <Users className="w-3.5 h-3.5 text-[#9A9DA3]" />
-          <span className="font-semibold text-[#9A9DA3] tabular-nums">
-            {community.memberCount.toLocaleString('vi-VN')}
-          </span>
-          <span>thành viên</span>
-        </div>
-
-        <Button
-          variant={isJoined ? 'secondary' : 'primary'}
-          size="sm"
-          onClick={handleJoinClick}
-          leftIcon={isJoined ? <Check className="w-3.5 h-3.5 text-[var(--color-success)]" /> : undefined}
-          className="py-1 px-4 text-xs font-bold"
-        >
-          {isJoined ? 'Đã tham gia' : 'Tham gia'}
-        </Button>
-      </div>
-    </Card>
+    <article className="community-directory-row">
+      <Link to={`/community/${community.name}`} className="directory-avatar"><Avatar src={community.avatarUrl} alt={community.displayName} size="lg" shape="rounded" /></Link>
+      <div className="directory-description"><p className="directory-category">{community.category}</p><h2><Link to={`/community/${community.name}`}>{community.displayName}</Link></h2><p className="line-clamp-2">{community.description}</p><span className="directory-handle">c/{community.name}</span></div>
+      <div className="directory-members"><Users size={15} /><span>{community.memberCount.toLocaleString('vi-VN')}</span><span>thành viên</span></div>
+      <Button variant={isJoined ? 'secondary' : 'outline'} size="sm" isLoading={isUpdating} onClick={handleJoinClick} leftIcon={isJoined ? <Check size={14} /> : undefined}>{isJoined ? 'Đã tham gia' : 'Tham gia'}</Button>
+    </article>
   );
 };
-
 export default CommunityCard;

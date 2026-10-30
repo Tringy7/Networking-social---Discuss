@@ -5,6 +5,7 @@ import { usePostStore } from '../../store/usePostStore';
 import { useToastStore } from '../../store/useToastStore';
 import { userService } from '../../services';
 import { User } from '../../types';
+import EditorialTabs from '../../components/ui/EditorialTabs';
 import PostCard from '../../components/post/PostCardView';
 import Avatar from '../../components/ui/Avatar';
 import Button from '../../components/ui/Button';
@@ -102,10 +103,10 @@ export const UserProfilePage: React.FC = () => {
   const closeAvatarEditor = () => setIsAvatarEditorOpen(false);
   const closeBannerEditor = () => setIsBannerEditorOpen(false);
   if (profileLoading) {
-    return <div role="status" className="py-24 text-center text-sm text-[var(--text-secondary)]">Đang tải hồ sơ...</div>;
+    return <div role="status" className="py-12 text-center text-sm text-[var(--text-secondary)]">Đang tải hồ sơ...</div>;
   }
   if (!profileUser) {
-    return <div role="status" className="py-24 text-center text-sm text-[var(--text-secondary)]">Không tìm thấy người dùng.</div>;
+    return <div role="status" className="py-12 text-center text-sm text-[var(--text-secondary)]">Không tìm thấy người dùng.</div>;
   }
 
   const userPosts = posts.filter((p) => p.author.username === profileUser.username);
@@ -120,9 +121,9 @@ export const UserProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-5 pb-16 text-left">
-      <section className="overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--bg-surface)]">
-        <div className="relative h-32 w-full bg-[var(--bg-elevated)] sm:h-44">
+    <div className="profile-page w-full pb-8 text-left">
+      <section className="profile-editorial">
+        <div className={`profile-cover relative w-full bg-[var(--bg-elevated)] ${profileUser.bannerUrl ? '' : 'has-no-cover'}`}>
           {isMe && (
             <button
               type="button"
@@ -173,7 +174,7 @@ export const UserProfilePage: React.FC = () => {
               )}
             </div>
           )}
-          <div className="absolute bottom-0 left-5 z-30 h-24 w-24 translate-y-1/2 sm:left-7 sm:h-28 sm:w-28">
+          <div className="profile-avatar-position absolute z-30">
             <button
               type="button"
               onClick={() => setImageActionsTarget((target) => target === 'avatar' ? null : 'avatar')}
@@ -205,18 +206,18 @@ export const UserProfilePage: React.FC = () => {
           </div>
         </div>
 
-        <div className="-mt-12 px-4 pb-5 pt-12 sm:-mt-14 sm:px-7 sm:pb-6 sm:pt-14">
-          <div className="flex min-h-12 items-center gap-2 sm:min-h-14 sm:gap-3">
-            <span className="w-20 shrink-0 sm:w-28" aria-hidden="true" />
-            <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
-              <h1 className="max-w-full truncate text-lg font-semibold tracking-tight text-[var(--text-primary)] sm:text-2xl">
+        <div className="profile-identity">
+          <div className="profile-name-row">
+            <span className="profile-avatar-spacer" aria-hidden="true" />
+            <div className="profile-name-wrap flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
+              <h1 className="editorial-title profile-name text-[var(--text-primary)]">
                 {profileUser.displayName}
               </h1>
               {profileUser.role === 'OWNER' && <Badge role="OWNER" />}
               {profileUser.role === 'MODERATOR' && <Badge role="MODERATOR" />}
               {profileUser.role === 'ADMIN' && <Badge role="ADMIN" />}
             </div>
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <div className="profile-actions flex shrink-0 items-center gap-1.5 sm:gap-2">
               {isMe ? (
                 <Link to="/settings/profile">
                   <Button variant="secondary" size="sm" className="px-2.5 sm:px-3" leftIcon={<Edit3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}>
@@ -236,6 +237,7 @@ export const UserProfilePage: React.FC = () => {
                     onClick={() => setIsReportOpen(true)}
                     className="text-[var(--color-danger)]"
                     title="Báo cáo tài khoản"
+                    aria-label="Báo cáo tài khoản"
                   >
                     <Flag className="w-4 h-4" />
                   </Button>
@@ -255,37 +257,13 @@ export const UserProfilePage: React.FC = () => {
 
         </div>
 
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <section className="min-w-0 space-y-4 py-4 sm:py-5 lg:pr-5">
-        <div className="flex items-center gap-1 rounded-xl bg-[var(--bg-main)] p-1 text-sm font-semibold">
-          <button
-            onClick={() => setActiveTab('posts')}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2.5 transition-colors cursor-pointer ${
-              activeTab === 'posts'
-                ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)]'
-                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            <FileText className="h-4 w-4" />
-            <span>Bài viết</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('comments')}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2.5 transition-colors cursor-pointer ${
-              activeTab === 'comments'
-                ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)]'
-                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            <MessageSquare className="h-4 w-4" />
-            <span>Bình luận</span>
-          </button>
-        </div>
+      <div className="profile-columns">
+        <section className="profile-activity min-w-0">
+        <EditorialTabs label="Hoạt động của người dùng" options={[{ id: 'posts', label: 'Bài viết', icon: <FileText /> }, { id: 'comments', label: 'Bình luận', icon: <MessageSquare /> }]} value={activeTab} onChange={setActiveTab} />
 
         {/* Tab content */}
         {activeTab === 'posts' && (
-          <div className="space-y-3">
+          <div className="discussion-list">
             {profileUser.privacy.showPostsOnProfile ? (
               userPosts.length > 0 ? (
                 userPosts.map((p) => <PostCard key={p.id} post={p} />)
@@ -310,7 +288,7 @@ export const UserProfilePage: React.FC = () => {
         )}
         </section>
 
-        <aside className="rounded-xl bg-[var(--bg-main)] px-4 py-4 sm:px-5 sm:py-5">
+        <aside className="profile-about">
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-sm font-bold text-[var(--text-primary)]">Giới thiệu</h2>
@@ -348,7 +326,7 @@ export const UserProfilePage: React.FC = () => {
             </div>
             <div className="mt-4 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
               <Award className="h-4 w-4 text-[var(--color-orange)]" />
-              <span>{profileUser.karma} bài viết</span>
+              <span>{userPosts.length} bài viết</span>
             </div>
           </section>
         </aside>

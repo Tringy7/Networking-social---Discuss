@@ -16,7 +16,7 @@ export const Card: React.FC<CardProps> = ({
   {
     ...props,
     className: [
-      'rounded-[var(--radius-card)] border border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]',
+      'rounded-[var(--radius-card)] bg-[var(--bg-surface)] text-[var(--text-primary)]',
       interactive && 'transition-[background-color,border-color] duration-[var(--duration-fast)] hover:bg-[var(--bg-elevated)] hover:border-[var(--border-hover)]',
       className,
     ].filter(Boolean).join(' '),

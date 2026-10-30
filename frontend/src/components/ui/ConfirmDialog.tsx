@@ -39,8 +39,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           <AlertTriangle className="w-6 h-6" />
         </div>
         <div className="space-y-1">
-          <h4 className="text-base font-bold text-[#F5F5F5]">{title}</h4>
-          <p className="text-xs text-[#9A9DA3]">{message}</p>
+          <h4 className="text-base font-bold text-[var(--text-primary)]">{title}</h4>
+          <p className="text-xs text-[var(--text-secondary)]">{message}</p>
         </div>
         <div className="flex items-center justify-center gap-3 w-full pt-2">
           <Button variant="secondary" size="md" onClick={onClose} className="flex-1">

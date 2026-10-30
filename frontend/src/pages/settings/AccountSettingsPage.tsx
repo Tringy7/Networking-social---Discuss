@@ -66,26 +66,26 @@ export const AccountSettingsPage: React.FC = () => {
       {/* Account credentials */}
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)] space-y-1">
-            <span className="text-[11px] text-[#70747C] font-semibold uppercase">Tên đăng nhập</span>
-            <div className="text-sm font-bold text-[#F5F5F5]">@{user?.username}</div>
-            <p className="text-[11px] text-[#70747C]">Tên định danh cố định trong hệ thống.</p>
+          <div className="setting-group space-y-1">
+            <span className="text-xs text-[var(--text-muted)] font-semibold">Tên đăng nhập</span>
+            <div className="text-sm font-bold text-[var(--text-primary)]">@{user?.username}</div>
+            <p className="text-xs text-[var(--text-muted)]">Tên định danh cố định trong hệ thống.</p>
           </div>
 
-          <div className="p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)] space-y-1">
-            <span className="text-[11px] text-[#70747C] font-semibold uppercase">Email liên kết</span>
-            <div className="text-sm font-bold text-[#F5F5F5]">{user?.email}</div>
-            <p className="text-[11px] text-[var(--color-success)] flex items-center gap-1 font-medium">
+          <div className="setting-group space-y-1">
+            <span className="text-xs text-[var(--text-muted)] font-semibold">Email liên kết</span>
+            <div className="text-sm font-bold text-[var(--text-primary)]">{user?.email}</div>
+            <p className="text-xs text-[var(--color-success)] flex items-center gap-1 font-medium">
               <CheckCircle2 className="w-3 h-3" /> Đã xác thực
             </p>
           </div>
         </div>
 
         {/* Change password button */}
-        <div className="p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)] flex items-center justify-between gap-4">
+        <div className="setting-group flex items-center justify-between gap-4">
           <div>
-            <h4 className="text-xs sm:text-sm font-bold text-[#F5F5F5]">Mật khẩu tài khoản</h4>
-            <p className="text-xs text-[#9A9DA3]">Đổi mật khẩu định kỳ để nâng cao tính an toàn.</p>
+            <h4 className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">Mật khẩu tài khoản</h4>
+            <p className="text-xs text-[var(--text-secondary)]">Đổi mật khẩu định kỳ để nâng cao tính an toàn.</p>
           </div>
           <Button variant="secondary" size="sm" onClick={() => setIsPasswordModalOpen(true)}>
             Đổi mật khẩu
@@ -93,8 +93,8 @@ export const AccountSettingsPage: React.FC = () => {
         </div>
 
         {/* Linked providers */}
-        <div className="p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)] space-y-3">
-          <h4 className="text-xs sm:text-sm font-bold text-[#F5F5F5]">Nhà cung cấp đăng nhập liên kết</h4>
+        <div className="setting-group space-y-3">
+          <h4 className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">Nhà cung cấp đăng nhập liên kết</h4>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -116,44 +116,44 @@ export const AccountSettingsPage: React.FC = () => {
                 />
               </svg>
               <div>
-                <div className="text-xs font-semibold text-[#F5F5F5]">Google Account</div>
-                <div className="text-[11px] text-[#70747C]">Đã liên kết cho đăng nhập 1 chạm</div>
+                <div className="text-xs font-semibold text-[var(--text-primary)]">Google Account</div>
+                <div className="text-xs text-[var(--text-muted)]">Đã liên kết cho đăng nhập 1 chạm</div>
               </div>
             </div>
-            <span className="text-[11px] font-semibold text-[var(--color-success)] bg-[var(--color-success)]/15 px-2.5 py-0.5 rounded-full">
+            <span className="text-xs font-semibold text-[var(--color-success)] bg-[var(--color-success)]/15 px-2.5 py-0.5 rounded-full">
               Đã kích hoạt
             </span>
           </div>
         </div>
 
         {/* Active sessions */}
-        <div className="p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-color)] space-y-3">
-          <h4 className="text-xs sm:text-sm font-bold text-[#F5F5F5]">Phiên đăng nhập đang hoạt động</h4>
+        <div className="setting-group space-y-3">
+          <h4 className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">Phiên đăng nhập đang hoạt động</h4>
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-[var(--bg-surface)]">
               <div className="flex items-center gap-3">
                 <Laptop className="w-4 h-4 text-[var(--color-orange)]" />
                 <div>
-                  <div className="text-xs font-semibold text-[#F5F5F5]">
+                  <div className="text-xs font-semibold text-[var(--text-primary)]">
                     Chrome trên macOS (Thiết bị hiện tại)
                   </div>
-                  <div className="text-[10px] text-[#70747C]">IP: 14.161.x.x · TP. Hồ Chí Minh</div>
+                  <div className="text-xs text-[var(--text-muted)]">IP: 14.161.x.x · TP. Hồ Chí Minh</div>
                 </div>
               </div>
-              <span className="text-[10px] font-bold text-[var(--color-success)]">Trực tuyến</span>
+              <span className="text-xs font-bold text-[var(--color-success)]">Trực tuyến</span>
             </div>
 
             <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-[var(--bg-surface)]">
               <div className="flex items-center gap-3">
-                <Smartphone className="w-4 h-4 text-[#9A9DA3]" />
+                <Smartphone className="w-4 h-4 text-[var(--text-secondary)]" />
                 <div>
-                  <div className="text-xs font-semibold text-[#F5F5F5]">Safari trên iPhone 15 Pro</div>
-                  <div className="text-[10px] text-[#70747C]">Hoạt động 3 giờ trước</div>
+                  <div className="text-xs font-semibold text-[var(--text-primary)]">Safari trên iPhone 15 Pro</div>
+                  <div className="text-xs text-[var(--text-muted)]">Hoạt động 3 giờ trước</div>
                 </div>
               </div>
               <button
                 onClick={() => addToast('Đã thu hồi phiên đăng nhập di động!', 'info')}
-                className="text-[11px] text-[var(--color-danger)] hover:underline"
+                className="text-xs text-[var(--color-danger)] hover:underline"
               >
                 Đăng xuất
               </button>
