@@ -38,52 +38,75 @@ interface CommunityState {
   transferOwnership: (communityName: string, username: string) => Promise<void>;
 }
 
+// List/membership DTOs omit bannerUrl. A preview refresh must not erase the
+// banner obtained from the detail endpoint (or after a successful upload).
+function mergeCommunityPreview(preview: Community, existing?: Community): Community {
+  return { ...preview, bannerUrl: preview.bannerUrl || existing?.bannerUrl || '' };
+}
+
+// A fetch started before an upload must not replace the newly saved image.
+function preserveNewerMedia(incoming: Community, current?: Community, atRequestStart?: Community): Community {
+  return {
+    ...incoming,
+    avatarUrl: current && current.avatarUrl !== atRequestStart?.avatarUrl ? current.avatarUrl : incoming.avatarUrl,
+    bannerUrl: current && current.bannerUrl !== atRequestStart?.bannerUrl ? current.bannerUrl : incoming.bannerUrl,
+  };
+}
+
 export const useCommunityStore = create<CommunityState>((set, get) => ({
   communities: [],
   myCommunities: [],
   members: {},
 
   hydrate: async () => {
+    const previous = get().communities;
     const communities = await communityService.list();
     set((state) => ({
       communities: communities.map((community) => {
         const existing = state.communities.find((item) => item.id === community.id);
+        const preview = preserveNewerMedia(mergeCommunityPreview(community, existing), existing, previous.find((item) => item.id === community.id));
         return existing && existing.currentUserRole !== 'NONE'
-          ? { ...community, currentUserRole: existing.currentUserRole }
-          : community;
+          ? { ...preview, currentUserRole: existing.currentUserRole }
+          : preview;
       }),
     }));
   },
 
   hydrateByCategory: async (slug) => {
+    const previous = get().communities;
     const communities = await communityService.listByCategory(slug);
     set((state) => ({
       communities: communities.map((community) => {
         const existing = state.communities.find((item) => item.id === community.id);
+        const preview = preserveNewerMedia(mergeCommunityPreview(community, existing), existing, previous.find((item) => item.id === community.id));
         return existing && existing.currentUserRole !== 'NONE'
-          ? { ...community, currentUserRole: existing.currentUserRole }
-          : community;
+          ? { ...preview, currentUserRole: existing.currentUserRole }
+          : preview;
       }),
     }));
   },
 
   hydrateSearch: async (query) => {
+    const previous = get().communities;
     const communities = await communityService.search(query);
     set((state) => ({
       communities: communities.map((community) => {
         const existing = state.communities.find((item) => item.id === community.id);
+        const preview = preserveNewerMedia(mergeCommunityPreview(community, existing), existing, previous.find((item) => item.id === community.id));
         return existing && existing.currentUserRole !== 'NONE'
-          ? { ...community, currentUserRole: existing.currentUserRole }
-          : community;
+          ? { ...preview, currentUserRole: existing.currentUserRole }
+          : preview;
       }),
     }));
   },
 
   hydrateCommunity: async (communityName) => {
-    const community = await communityService.getByName(communityName);
-    if (!community) return;
+    const previous = get().communities.find((item) => item.name === communityName);
+    const response = await communityService.getByName(communityName);
+    if (!response) return;
     set((state) => {
       const existing = state.communities.find((item) => item.name === communityName);
+      const community = preserveNewerMedia(response, existing, previous);
       const hydrated = existing && existing.currentUserRole !== 'NONE'
         ? { ...community, currentUserRole: existing.currentUserRole }
         : community;
@@ -94,12 +117,16 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   },
 
   hydrateMine: async () => {
+    const previous = [...get().communities, ...get().myCommunities];
     const mine = await communityService.mine();
     set((state) => {
       // The personal directory stays independent of Explore search/category results.
       const mineById = new Map<string, Community>();
       for (const community of mine) {
-        if (mineById.get(community.id)?.currentUserRole !== 'OWNER') mineById.set(community.id, community);
+        const existing = state.communities.find((item) => item.id === community.id)
+          ?? state.myCommunities.find((item) => item.id === community.id);
+        if (mineById.get(community.id)?.currentUserRole !== 'OWNER') mineById.set(community.id,
+          preserveNewerMedia(mergeCommunityPreview(community, existing), existing, previous.find((item) => item.id === community.id)));
       }
       const others = state.communities
         .filter((community) => !mineById.has(community.id))
@@ -144,21 +171,19 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
 
   uploadAvatar: async (communityName, file) => {
     const updated = await communityService.uploadAvatar(communityName, file);
+    const applyAvatar = (item: Community) => item.name === communityName ? { ...item, avatarUrl: updated.avatarUrl } : item;
     set((state) => ({
-      communities: state.communities.map((item) => item.name === communityName ? {
-        ...item,
-        avatarUrl: updated.avatarUrl,
-      } : item),
+      communities: state.communities.map(applyAvatar),
+      myCommunities: state.myCommunities.map(applyAvatar),
     }));
   },
 
   uploadBanner: async (communityName, file) => {
     const updated = await communityService.uploadBanner(communityName, file);
+    const applyBanner = (item: Community) => item.name === communityName ? { ...item, bannerUrl: updated.bannerUrl } : item;
     set((state) => ({
-      communities: state.communities.map((item) => item.name === communityName ? {
-        ...item,
-        bannerUrl: updated.bannerUrl,
-      } : item),
+      communities: state.communities.map(applyBanner),
+      myCommunities: state.myCommunities.map(applyBanner),
     }));
   },
 

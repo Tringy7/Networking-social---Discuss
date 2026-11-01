@@ -46,13 +46,13 @@ export default function MyCommunitiesPage() {
   };
 
   return <div className="my-communities-page pb-8">
-    <PageHeader title="Cộng đồng của tôi" description="Quản lý và kết nối với các cộng đồng của bạn." actions={<Link to="/communities/create"><Button size="sm" leftIcon={<Plus size={16} />}>Tạo cộng đồng</Button></Link>} />
+    <PageHeader title="Cộng đồng của tôi" description="Quản lý và kết nối với các cộng đồng của bạn." actions={<Link to="/communities/create" className="directory-create-link"><Plus size={16} aria-hidden="true" />Tạo cộng đồng</Link>} />
     <EditorialTabs label="Lọc cộng đồng của tôi" value={tab} onChange={setTab} options={[{id:'all',label:`Tất cả (${all.length})`},{id:'owned',label:`Đang làm chủ (${owned.length})`},{id:'joined',label:`Đã tham gia (${joined.length})`}]} />
-    <div className="my-community-content" aria-busy={loading}>
+    <section className="my-community-content" aria-label="Danh sách cộng đồng của tôi" aria-busy={loading}>
       {loading ? <div role="status" className="community-empty"><Loader2 size={24} className="animate-spin motion-reduce:animate-none" /><p>Đang tải cộng đồng của bạn…</p></div> : failed ? <div role="alert" className="community-empty"><h2>Không tải được cộng đồng của bạn</h2><p>Kiểm tra kết nối rồi thử lại.</p><Button variant="secondary" size="sm" onClick={() => setRetry((count) => count + 1)}>Thử lại</Button></div> : displayed.length ? <div className="community-directory" key={tab}>{displayed.map((community) => {
         const ownedByUser = owned.some((item) => item.id === community.id);
         return <CommunityCard key={community.id} community={ownedByUser ? {...community, currentUserRole:'OWNER'} : community} variant="mine" leaving={leaving.includes(community.name)} onLeave={() => handleLeave(community.name, community.displayName || community.name)} />;
       })}</div> : <div className="community-empty"><Users size={28} aria-hidden="true" /><h2>{tab === 'owned' ? 'Bạn chưa làm chủ cộng đồng nào.' : 'Bạn chưa tham gia cộng đồng nào.'}</h2><p>Hãy khám phá và tìm những cộng đồng phù hợp với sở thích của bạn.</p><Link to={tab === 'owned' ? '/communities/create' : '/explore'}><Button size="sm" leftIcon={tab === 'owned' ? <Plus size={16} /> : <Compass size={16} />}>{tab === 'owned' ? 'Tạo cộng đồng' : 'Khám phá cộng đồng'}</Button></Link></div>}
-    </div>
+    </section>
   </div>;
 }

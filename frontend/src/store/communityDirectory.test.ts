@@ -36,6 +36,33 @@ describe('personal community directory', () => {
     expect(useCommunityStore.getState().myCommunities).toHaveLength(1);
   });
 
+  it.each(['list', 'listByCategory', 'search', 'mine'] as const)('retains a loaded detail banner when %s previews arrive later', async (serviceMethod) => {
+    const detail = { ...community('with-cover', 'MEMBER'), bannerUrl: '/media/saved-banner.jpg' };
+    vi.spyOn(communityService, 'getByName').mockResolvedValue(detail);
+    let finishPreview!: (value: Community[]) => void;
+    vi.spyOn(communityService, serviceMethod).mockImplementation(() => new Promise((resolve) => { finishPreview = resolve; }));
+    const store = useCommunityStore.getState();
+    const refresh = serviceMethod === 'list' ? store.hydrate()
+      : serviceMethod === 'listByCategory' ? store.hydrateByCategory('lap-trinh')
+      : serviceMethod === 'search' ? store.hydrateSearch('with-cover') : store.hydrateMine();
+    await store.hydrateCommunity('with-cover');
+    finishPreview([{ ...community('with-cover', 'MEMBER'), memberCount: 42 }]);
+    await refresh;
+    expect(useCommunityStore.getState().communities[0]).toMatchObject({ bannerUrl: detail.bannerUrl, memberCount: 42, currentUserRole: 'MEMBER' });
+    if (serviceMethod === 'mine') expect(useCommunityStore.getState().myCommunities[0].bannerUrl).toBe(detail.bannerUrl);
+  });
+
+  it('allows the detail endpoint to clear a previously loaded banner', async () => {
+    const detail = { ...community('cleared', 'OWNER'), bannerUrl: '/media/old-banner.jpg' };
+    useCommunityStore.setState({ communities: [detail], myCommunities: [detail] });
+    vi.spyOn(communityService, 'getByName').mockResolvedValue({ ...detail, bannerUrl: '' });
+    vi.spyOn(communityService, 'mine').mockResolvedValue([community('cleared', 'OWNER')]);
+    await useCommunityStore.getState().hydrateCommunity('cleared');
+    await useCommunityStore.getState().hydrateMine();
+    expect(useCommunityStore.getState().communities[0].bannerUrl).toBe('');
+    expect(useCommunityStore.getState().myCommunities[0].bannerUrl).toBe('');
+  });
+
   it('preserves the API moderator role, pagination and identifier fallback', async () => {
     const fetchMock = vi.fn(async (input: unknown) => {
       const path = String(input);

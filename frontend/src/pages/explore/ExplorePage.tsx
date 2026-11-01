@@ -5,8 +5,7 @@ import { useToastStore } from '../../store/useToastStore';
 import CommunityCard from '../../components/community/CommunityCard.tsx';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
-import { Search, Sparkles, SlidersHorizontal, RotateCcw, Loader2 } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { Search, SlidersHorizontal, RotateCcw, Loader2 } from 'lucide-react';
 import { categoryService } from '../../services';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -15,7 +14,6 @@ export const ExplorePage: React.FC = () => {
   const navigate = useNavigate();
   const { communities, hydrate, hydrateByCategory, hydrateSearch } = useCommunityStore();
   const { addToast } = useToastStore();
-  const shouldReduceMotion = useReducedMotion();
   const [isLoadingCommunities, setIsLoadingCommunities] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -85,12 +83,12 @@ export const ExplorePage: React.FC = () => {
   };
 
   return (
-    <div className="explore-page space-y-5 text-left pb-8">
+    <div className="explore-page text-left pb-8">
       <PageHeader title="Khám phá cộng đồng" description="Tìm những người cùng sở thích, bắt đầu một cuộc trò chuyện mới." />
 
       {/* FILTER BAR & SEARCH */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row items-center gap-3">
+      <div className="directory-filters">
+        <div className="directory-search-row">
           {/* Search Box */}
           <div className="flex-1 w-full">
             <Input
@@ -101,7 +99,7 @@ export const ExplorePage: React.FC = () => {
               aria-label="Tìm cộng đồng"
               leftIcon={<Search className="w-4 h-4" />}
               placeholder="Tìm kiếm theo tên cộng đồng, từ khóa mô tả..."
-              className="bg-[var(--bg-surface)]"
+              className="directory-search-input"
             />
           </div>
 
@@ -112,7 +110,7 @@ export const ExplorePage: React.FC = () => {
               aria-label="Sắp xếp cộng đồng"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="w-full sm:w-auto bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--border-hover)] focus:border-[var(--color-orange)] rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] cursor-pointer"
+              className="directory-sort"
             >
               <option value="members">Nhiều thành viên nhất</option>
               <option value="newest">Mới tạo gần đây</option>
@@ -122,18 +120,16 @@ export const ExplorePage: React.FC = () => {
         </div>
 
         {/* Category Filter Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="directory-categories" role="group" aria-label="Danh mục cộng đồng">
           {[{ id: 0, name: 'Tất cả', slug: '' }, ...categories].map((cat) => (
             <button
               key={cat.id}
+              type="button"
+              aria-pressed={selectedCategory === cat.slug}
               onClick={() => {
                 navigate(cat.slug ? `/explore/${encodeURIComponent(cat.slug)}` : '/explore');
               }}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors duration-150 whitespace-nowrap cursor-pointer ${
-                selectedCategory === cat.slug
-                  ? 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)]'
-                  : 'bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)]'
-              }`}
+              className={`directory-category-filter ${selectedCategory === cat.slug ? 'is-selected' : ''}`}
             >
               {cat.name}
             </button>
@@ -142,9 +138,9 @@ export const ExplorePage: React.FC = () => {
       </div>
 
       {/* COMMUNITY GRID */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-sm font-medium text-[var(--text-secondary)]">
+      <section className="directory-results" aria-label="Danh sách cộng đồng" aria-busy={isLoadingCommunities}>
+        <div className="directory-results-heading">
+          <div aria-live="polite" className="text-sm font-medium text-[var(--text-secondary)]">
             <span className="text-[var(--text-primary)]">{filteredCommunities.length}</span> cộng đồng
           </div>
           {(selectedCategory !== '' || searchQuery) && (
@@ -159,12 +155,12 @@ export const ExplorePage: React.FC = () => {
         </div>
 
         {isLoadingCommunities ? (
-          <div role="status" className="flex flex-col items-center justify-center gap-3 rounded-[var(--radius-card)] border border-[var(--border-color)] bg-[var(--bg-surface)] py-16 text-sm text-[var(--text-secondary)]">
+          <div role="status" className="community-empty">
             <Loader2 aria-hidden="true" className="h-6 w-6 animate-spin text-[var(--color-orange)] motion-reduce:animate-none" />
             <span>Đang tải danh sách cộng đồng...</span>
           </div>
         ) : loadFailed ? (
-          <div role="alert" className="mx-auto flex max-w-lg flex-col items-center gap-4 rounded-[var(--radius-card)] border border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-12 text-center">
+          <div role="alert" className="community-empty">
             <h2 className="text-base font-semibold text-[var(--text-primary)]">Không tải được danh sách cộng đồng</h2>
             <p className="text-sm text-[var(--text-secondary)]">Kiểm tra kết nối rồi thử lại.</p>
             <Button variant="secondary" size="sm" onClick={() => setRetryCount((count) => count + 1)}>Thử lại</Button>
@@ -172,19 +168,12 @@ export const ExplorePage: React.FC = () => {
         ) : filteredCommunities.length > 0 ? (
           <div className="community-directory">
             {filteredCommunities.map((community) => (
-              <motion.div
-                key={community.id}
-                initial={shouldReduceMotion ? false : { opacity: 0.85 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: shouldReduceMotion ? 0 : 0.1 }}
-              >
-                <CommunityCard community={community} />
-              </motion.div>
+              <CommunityCard key={community.id} community={community} />
             ))}
           </div>
         ) : (
-          <div className="py-16 text-center bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-card)] p-8 space-y-4 max-w-md mx-auto">
-            <Sparkles className="w-10 h-10 text-[var(--color-orange)] mx-auto opacity-70" />
+          <div className="community-empty">
+            <Search size={24} aria-hidden="true" />
             <h2 className="text-base font-semibold text-[var(--text-primary)]">Không tìm thấy cộng đồng nào</h2>
             <p className="text-sm text-[var(--text-secondary)]">
               Không có kết quả nào trùng khớp với bộ lọc hoặc từ khóa "{searchQuery}".
@@ -194,7 +183,7 @@ export const ExplorePage: React.FC = () => {
             </Button>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };

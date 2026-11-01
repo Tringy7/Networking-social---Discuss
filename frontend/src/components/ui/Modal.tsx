@@ -10,6 +10,7 @@ interface ModalProps {
   description?: string;
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl';
+  closeDisabled?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -19,6 +20,7 @@ export const Modal: React.FC<ModalProps> = ({
   description,
   children,
   maxWidth = 'md',
+  closeDisabled = false,
 }) => {
   const modalId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -114,8 +116,9 @@ export const Modal: React.FC<ModalProps> = ({
                 {description && <p id={`${modalId}-description`} className="text-sm text-[var(--text-secondary)] mt-1">{description}</p>}
               </div>
               <button
+                disabled={closeDisabled}
                 onClick={onClose}
-                className="p-2 rounded-[var(--radius-control)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-orange-ink)]"
+                className="modal-close p-2 rounded-[var(--radius-control)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-orange-ink)]"
                 aria-label="Đóng"
               >
                 <X className="w-4 h-4" />

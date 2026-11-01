@@ -8,6 +8,7 @@ import { User } from '../../types';
 import EditorialTabs from '../../components/ui/EditorialTabs';
 import PostCard from '../../components/post/PostCardView';
 import Avatar from '../../components/ui/Avatar';
+import EntityBanner from '../../components/ui/EntityBanner';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import ReportModal from '../../components/post/ReportModal';
@@ -122,40 +123,20 @@ export const UserProfilePage: React.FC = () => {
 
   return (
     <div className="profile-page w-full pb-8 text-left">
-      <section className="profile-editorial">
-        <div className={`profile-cover relative w-full bg-[var(--bg-elevated)] ${profileUser.bannerUrl ? '' : 'has-no-cover'}`}>
-          {isMe && (
+      <section className="profile-editorial" aria-label="Hồ sơ người dùng">
+        <header className="profile-masthead">
+        <EntityBanner src={profileUser.bannerUrl} alt={`${profileUser.displayName} - ảnh bìa`} variant="user" className="profile-cover">
+          {(isMe || profileUser.bannerUrl) && (
             <button
               type="button"
               onClick={() => setImageActionsTarget((target) => target === 'banner' ? null : 'banner')}
-              className="group absolute inset-0 z-10 overflow-hidden bg-[var(--bg-surface)] text-left"
-              aria-label="Chỉnh sửa ảnh bìa"
-              title="Chỉnh sửa ảnh bìa"
+              className="profile-cover-button"
+              aria-label={isMe ? 'Chỉnh sửa ảnh bìa' : 'Tùy chọn ảnh bìa'}
+              aria-expanded={imageActionsTarget === 'banner'}
+              title={isMe ? 'Chỉnh sửa ảnh bìa' : 'Tùy chọn ảnh bìa'}
             >
-              {profileUser.bannerUrl ? (
-                <img
-                  src={profileUser.bannerUrl}
-                  alt={`${profileUser.displayName} - ảnh bìa`}
-                  className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.01]"
-                />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center bg-[var(--bg-elevated)] text-sm text-[var(--text-muted)]">
-                  Thêm ảnh bìa
-                </span>
-              )}
-              <span className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10 group-focus-visible:bg-black/10" />
-            </button>
-          )}
-          {!isMe && (
-            <button type="button" onClick={() => setImageActionsTarget((target) => target === 'banner' ? null : 'banner')} aria-label="Tùy chọn ảnh bìa"
-              className="absolute inset-0 overflow-hidden bg-[var(--bg-surface)] text-left">
-              {profileUser.bannerUrl && (
-                <img
-                  src={profileUser.bannerUrl}
-                  alt={`${profileUser.displayName} - ảnh bìa`}
-                  className="h-full w-full object-cover"
-                />
-              )}
+              <span className="profile-cover-feedback" aria-hidden="true" />
+              {isMe && <span className="entity-cover-edit-label"><Camera size={16} aria-hidden="true" />Chỉnh ảnh bìa</span>}
             </button>
           )}
           {imageActionsTarget === 'banner' && (
@@ -174,7 +155,11 @@ export const UserProfilePage: React.FC = () => {
               )}
             </div>
           )}
-          <div className="profile-avatar-position absolute z-30">
+
+        </EntityBanner>
+
+        <div className="profile-identity">
+          <div className="profile-avatar-position">
             <button
               type="button"
               onClick={() => setImageActionsTarget((target) => target === 'avatar' ? null : 'avatar')}
@@ -204,18 +189,17 @@ export const UserProfilePage: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
-
-        <div className="profile-identity">
           <div className="profile-name-row">
-            <span className="profile-avatar-spacer" aria-hidden="true" />
-            <div className="profile-name-wrap flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
-              <h1 className="editorial-title profile-name text-[var(--text-primary)]">
-                {profileUser.displayName}
-              </h1>
-              {profileUser.role === 'OWNER' && <Badge role="OWNER" />}
-              {profileUser.role === 'MODERATOR' && <Badge role="MODERATOR" />}
-              {profileUser.role === 'ADMIN' && <Badge role="ADMIN" />}
+            <div className="profile-name-wrap">
+              <div className="profile-display-name">
+                <h1 className="editorial-title profile-name text-[var(--text-primary)]">
+                  {profileUser.displayName}
+                </h1>
+                {profileUser.role === 'OWNER' && <Badge role="OWNER" />}
+                {profileUser.role === 'MODERATOR' && <Badge role="MODERATOR" />}
+                {profileUser.role === 'ADMIN' && <Badge role="ADMIN" />}
+              </div>
+              <p className="profile-handle">@{profileUser.username}</p>
             </div>
             <div className="profile-actions flex shrink-0 items-center gap-1.5 sm:gap-2">
               {isMe ? (
@@ -254,12 +238,13 @@ export const UserProfilePage: React.FC = () => {
               </button>
             </div>
           </div>
-          <p className="profile-handle">@{profileUser.username}</p>
 
         </div>
+        {profileUser.bio && <p className="profile-description">{profileUser.bio}</p>}
+        </header>
 
       <div className="profile-columns">
-        <section className="profile-activity min-w-0">
+        <section className="profile-activity min-w-0" aria-label="Hoạt động">
         <EditorialTabs label="Hoạt động của người dùng" options={[{ id: 'posts', label: 'Bài viết', icon: <FileText /> }, { id: 'comments', label: 'Bình luận', icon: <MessageSquare /> }]} value={activeTab} onChange={setActiveTab} />
 
         {/* Tab content */}
@@ -269,28 +254,34 @@ export const UserProfilePage: React.FC = () => {
               userPosts.length > 0 ? (
                 userPosts.map((p) => <PostCard key={p.id} post={p} />)
               ) : (
-                <div className="py-12 text-center text-sm text-[var(--text-secondary)]">
-                  {profileUser.displayName} chưa đăng bài viết nào.
+                <div className="profile-empty" role="status">
+                  <FileText size={24} aria-hidden="true" />
+                  <h2>Chưa có bài viết</h2>
+                  <p>Bài viết chia sẻ trong cộng đồng sẽ xuất hiện ở đây.</p>
+                  {isMe && <Link to="/explore" className="profile-empty-action">Khám phá cộng đồng</Link>}
                 </div>
               )
             ) : (
-              <div className="py-12 text-center text-sm text-[var(--text-secondary)]">
-                Bài viết của người dùng này không được công khai.
+              <div className="profile-empty" role="status">
+                <Eye size={24} aria-hidden="true" />
+                <h2>Bài viết được giữ riêng tư</h2>
+                <p>Bài viết của người dùng này không được công khai.</p>
               </div>
             )}
           </div>
         )}
 
         {activeTab === 'comments' && (
-          <div className="space-y-2 py-12 text-center text-sm text-[var(--text-secondary)]">
-            <MessageSquare className="mx-auto h-8 w-8 text-[var(--color-orange)] opacity-70" />
-            <p>Chưa có dữ liệu bình luận để hiển thị.</p>
+          <div className="profile-empty" role="status">
+            <MessageSquare size={24} aria-hidden="true" />
+            <h2>Chưa có bình luận để hiển thị</h2>
+            <p>Hiện chưa có dữ liệu hoạt động bình luận.</p>
           </div>
         )}
         </section>
 
-        <aside className="profile-about">
-          <section className="space-y-4">
+        <aside className="profile-about" aria-label="Giới thiệu người dùng">
+          <section className="profile-about-content">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-sm font-semibold text-[var(--text-primary)]">Giới thiệu</h2>
               {isMe && (
@@ -304,10 +295,7 @@ export const UserProfilePage: React.FC = () => {
                 </Link>
               )}
             </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[var(--text-secondary)]">
-              {profileUser.bio || 'Chưa có phần giới thiệu.'}
-            </p>
-            <div className="mt-4 space-y-3 text-sm text-[var(--text-secondary)]">
+            <div className="profile-facts">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
                 <span>Tham gia {joinedLabel}</span>
@@ -325,7 +313,7 @@ export const UserProfilePage: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="mt-4 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+            <div className="profile-post-count">
               <Award className="h-4 w-4 text-[var(--color-orange)]" />
               <span>{userPosts.length} bài viết</span>
             </div>
@@ -336,7 +324,7 @@ export const UserProfilePage: React.FC = () => {
 
       <footer className="site-footer flex flex-col gap-2 pt-5 text-xs text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
         <span>© 2026 DISCUSS Community Network</span>
-        <nav className="flex flex-wrap gap-x-4 gap-y-1">
+        <nav aria-label="Liên kết chân trang" className="flex flex-wrap gap-x-4 gap-y-1">
           <Link to="/explore" className="transition-colors hover:text-[var(--text-primary)]">Cộng đồng</Link>
           <Link to="/settings/privacy" className="transition-colors hover:text-[var(--text-primary)]">Quyền riêng tư</Link>
           <Link to="/settings" className="transition-colors hover:text-[var(--text-primary)]">Cài đặt</Link>

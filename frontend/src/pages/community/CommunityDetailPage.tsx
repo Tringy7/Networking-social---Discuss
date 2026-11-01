@@ -8,6 +8,10 @@ import { POSTS_AVAILABLE } from '../../services';
 import EditorialTabs from '../../components/ui/EditorialTabs';
 import PostCard from '../../components/post/PostCardView';
 import Avatar from '../../components/ui/Avatar';
+import EntityBanner from '../../components/ui/EntityBanner';
+import CommunityMediaEditor from '../../components/community/CommunityMediaEditor';
+import type { ProfileImageKind } from '../../components/profile/ImageCropEditor';
+import { canEditCommunityMedia } from '../../utils/communityMedia';
 import Button from '../../components/ui/Button';
 import {
   Users,
@@ -20,6 +24,7 @@ import {
   BookOpen,
   Share2,
   Calendar,
+  Camera,
 } from 'lucide-react';
 
 export const CommunityDetailPage: React.FC = () => {
@@ -29,13 +34,14 @@ export const CommunityDetailPage: React.FC = () => {
 
   const { communities, joinCommunity, leaveCommunity, hydrateCommunity } = useCommunityStore();
   const { posts, openCreateModal } = usePostStore();
-  const { isAuthenticated, activeRole } = useAuthStore();
+  const { isAuthenticated, activeRole, user } = useAuthStore();
   const { addToast } = useToastStore();
 
   const [tab, setTab] = useState<'latest' | 'popular'>('latest');
   const [isMembershipUpdating, setIsMembershipUpdating] = useState(false);
   const [isCommunityLoading, setIsCommunityLoading] = useState(true);
   const [communityLoadFailed, setCommunityLoadFailed] = useState(false);
+  const [mediaKind, setMediaKind] = useState<ProfileImageKind | null>(null);
 
   React.useEffect(() => {
     if (!communityName) return;
@@ -112,6 +118,7 @@ export const CommunityDetailPage: React.FC = () => {
     community.currentUserRole === 'OWNER' ||
     community.currentUserRole === 'MODERATOR' ||
     activeRole === 'ADMIN';
+  const canEditMedia = !isCommunityLoading && canEditCommunityMedia(community, user, isAuthenticated);
 
   const communityPosts = posts.filter((p) => p.communityName === community.name);
   const sortedPosts = [...communityPosts].sort((a, b) => {
@@ -145,18 +152,27 @@ export const CommunityDetailPage: React.FC = () => {
   return (
     <div className="community-page">
       <header className="community-masthead">
-        {community.bannerUrl && <div className="community-cover"><img src={community.bannerUrl} alt={`Ảnh bìa ${community.displayName}`} /></div>}
+        <EntityBanner src={community.bannerUrl} alt={`Ảnh bìa ${community.displayName}`} variant="community">
+          {canEditMedia && <button type="button" className="entity-banner-edit" onClick={() => setMediaKind('banner')} aria-label="Chỉnh sửa ảnh bìa cộng đồng">
+            <Camera size={16} aria-hidden="true" /><span>Chỉnh ảnh bìa</span>
+          </button>}
+        </EntityBanner>
         <div className="community-identity">
-          <Avatar src={community.avatarUrl} alt={community.displayName} size="xl" shape="rounded" />
-          <div className="min-w-0 flex-1"><p className="community-category">{community.category} · c/{community.name}</p><h1 className="editorial-title">{community.displayName}</h1></div>
+          <div className="community-avatar-slot">
+            {canEditMedia ? <button type="button" className="community-avatar-edit" onClick={() => setMediaKind('avatar')} aria-label="Chỉnh sửa ảnh đại diện cộng đồng">
+              <Avatar src={community.avatarUrl} alt={community.displayName} size="xl" className="community-avatar" />
+              <span className="entity-avatar-edit-badge"><Camera size={15} aria-hidden="true" /></span>
+            </button> : <Avatar src={community.avatarUrl} alt={community.displayName} size="xl" className="community-avatar" />}
+          </div>
+          <div className="community-heading"><h1 className="editorial-title">{community.displayName || community.name}</h1><p className="community-handle">c/{community.name}</p></div>
           <div className="community-actions">
             <Button variant={isJoined ? 'secondary' : 'primary'} size="sm" isLoading={isMembershipUpdating} onClick={handleJoinToggle} aria-pressed={isJoined} leftIcon={isJoined ? <Check size={15} /> : <Plus size={15} />}>{isJoined ? 'Đã tham gia' : 'Tham gia cộng đồng'}</Button>
             <Button variant="outline" size="sm" onClick={() => openCreateModal(community.name)} leftIcon={<Plus size={15} />}>Đăng bài</Button>
             {isManager && <Link className="icon-button" aria-label="Cài đặt cộng đồng" to={`/community/${community.name}/settings`}><Settings size={18} /></Link>}
           </div>
         </div>
-        <p className="community-description">{community.description}</p>
-        <div className="community-facts"><span><Users size={15} /> {community.memberCount.toLocaleString('vi-VN')} thành viên</span><span><Calendar size={15} /> {new Date(community.createdAt).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span><button onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); addToast('Đã sao chép liên kết cộng đồng!', 'success'); } catch { addToast('Không thể sao chép liên kết.', 'error'); } }}><Share2 size={15} /> Chia sẻ</button></div>
+        {community.description && <p className="community-description">{community.description}</p>}
+        <div className="community-facts"><span><Users size={15} /> {community.memberCount.toLocaleString('vi-VN')} thành viên</span>{community.category && <span>{community.category}</span>}<span><Calendar size={15} /> {new Date(community.createdAt).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span><button onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); addToast('Đã sao chép liên kết cộng đồng!', 'success'); } catch { addToast('Không thể sao chép liên kết.', 'error'); } }}><Share2 size={15} /> Chia sẻ</button></div>
       </header>
       <div className="community-columns">
         <section className="min-w-0" aria-label="Bài viết cộng đồng">
@@ -175,6 +191,7 @@ export const CommunityDetailPage: React.FC = () => {
           </section>
         </aside>
       </div>
+      {mediaKind && canEditMedia && <CommunityMediaEditor key={`${community.name}-${mediaKind}`} communityName={community.name} kind={mediaKind} onClose={() => setMediaKind(null)} />}
     </div>
   );
 };

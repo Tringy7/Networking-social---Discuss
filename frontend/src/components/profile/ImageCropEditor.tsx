@@ -7,6 +7,7 @@ export type ProfileImageKind = 'avatar' | 'banner';
 
 interface ImageCropEditorProps {
   kind: ProfileImageKind;
+  entity?: 'user' | 'community';
   isOpen: boolean;
   isSaving?: boolean;
   onClose: () => void;
@@ -18,11 +19,16 @@ const OUTPUT = {
   banner: { width: 1920, height: 640, ratio: 3, label: '1920 × 640 px (3:1)' },
 } as const;
 
-export default function ImageCropEditor({ kind, isOpen, isSaving = false, onClose, onSave }: ImageCropEditorProps) {
-  const config = OUTPUT[kind];
+export default function ImageCropEditor({ kind, entity = 'user', isOpen, isSaving = false, onClose, onSave }: ImageCropEditorProps) {
+  const config = entity === 'community' && kind === 'avatar'
+    ? { ...OUTPUT.avatar, width: 512, height: 512, label: '512 × 512 px (1:1)' }
+    : OUTPUT[kind];
   const inputRef = useRef<HTMLInputElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ x: number; y: number } | null>(null);
+  const savingRef = useRef(false);
+  const [processing, setProcessing] = useState(false);
+  const busy = isSaving || processing;
   const [source, setSource] = useState('');
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
@@ -56,10 +62,11 @@ export default function ImageCropEditor({ kind, isOpen, isSaving = false, onClos
 
   const reset = () => { setOffset({ x: 0, y: 0 }); setZoom(1); setRotation(0); };
   const close = () => { setSource(''); setImageSize({ width: 0, height: 0 }); setSaveError(''); setFileError(''); reset(); onClose(); };
+  const requestClose = () => { if (!busy && !savingRef.current) close(); };
   const selectImage = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
-    if (!file) return;
+    if (!file || busy) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       setFileError('Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.');
       return;
@@ -69,13 +76,17 @@ export default function ImageCropEditor({ kind, isOpen, isSaving = false, onClos
       return;
     }
     setFileError('');
+    setImageSize({ width: 0, height: 0 });
     setSource(URL.createObjectURL(file));
     setOffset({ x: 0, y: 0 }); setZoom(1); setRotation(0);
     setSaveError('');
   };
 
   const save = async () => {
-    if (!source || !imageSize.width || !baseScale || !cropRect.width) return;
+    if (savingRef.current || busy || !source || !imageSize.width || !baseScale || !cropRect.width) return;
+    savingRef.current = true;
+    setProcessing(true);
+    setSaveError('');
     try {
       const image = new Image();
       await new Promise<void>((resolve, reject) => {
@@ -105,49 +116,65 @@ export default function ImageCropEditor({ kind, isOpen, isSaving = false, onClos
       close();
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Không thể lưu ảnh.');
-    }
+    } finally { savingRef.current = false; setProcessing(false); }
   };
 
   const moveImage = (event: React.PointerEvent<HTMLDivElement>) => {
     const prior = dragRef.current;
-    if (!prior) return;
+    if (!prior || busy) return;
     setOffset((value) => ({ x: value.x + event.clientX - prior.x, y: value.y + event.clientY - prior.y }));
     dragRef.current = { x: event.clientX, y: event.clientY };
   };
 
-  return <Modal isOpen={isOpen} onClose={() => { if (!isSaving) close(); }}
-    title={kind === 'avatar' ? 'Chỉnh sửa ảnh đại diện' : 'Chỉnh sửa ảnh bìa'}
+  return <Modal isOpen={isOpen} onClose={requestClose} closeDisabled={busy}
+    title={`${kind === 'avatar' ? 'Chỉnh sửa ảnh đại diện' : 'Chỉnh sửa ảnh bìa'}${entity === 'community' ? ' cộng đồng' : ''}`}
     description={`Khung đầu ra ${config.label}. Kéo ảnh để chọn vùng cần lưu.`} maxWidth={kind === 'avatar' ? 'md' : '2xl'}>
-    <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={selectImage} />
-    <div className="space-y-5">
-      <div ref={stageRef} className={`relative mx-auto w-full max-w-2xl overflow-hidden rounded-xl bg-white touch-none ${kind === 'avatar' ? 'aspect-[4/3]' : 'aspect-[3/2]'}`}
-        onPointerDown={(event) => { if (!source) return; event.currentTarget.setPointerCapture(event.pointerId); dragRef.current = { x: event.clientX, y: event.clientY }; }}
+    <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={busy} onChange={selectImage} />
+    <div data-ui="crop-editor" className="image-crop-editor space-y-4" aria-busy={busy}>
+      <fieldset disabled={busy} className="min-w-0 space-y-4">
+      {/* The white canvas matches the JPEG background when a crop includes space outside the image. */}
+      <div ref={stageRef} className={`relative mx-auto w-full max-w-2xl overflow-hidden rounded-xl bg-white touch-none ${kind === 'avatar' ? 'aspect-[4/3]' : 'aspect-[2/1]'}`}
+        role="group" aria-label="Căn vị trí ảnh bằng phím mũi tên" tabIndex={source && !busy ? 0 : -1}
+        onKeyDown={(event) => {
+          if (!source || busy || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+          event.preventDefault();
+          const step = event.shiftKey ? 1 : 10;
+          setOffset((value) => ({ x: value.x + (event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0), y: value.y + (event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0) }));
+        }}
+        onPointerDown={(event) => { if (!source || busy) return; event.currentTarget.setPointerCapture(event.pointerId); dragRef.current = { x: event.clientX, y: event.clientY }; }}
         onPointerMove={moveImage} onPointerUp={() => { dragRef.current = null; }} onPointerCancel={() => { dragRef.current = null; }}>
-        {source && <img src={source} alt="Ảnh gốc" draggable={false} onLoad={(event) => setImageSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
+        {source && <img src={source} alt="Ảnh gốc" draggable={false}
+          onError={() => { setFileError('Không thể đọc ảnh. Hãy chọn một ảnh JPG, PNG hoặc WebP hợp lệ.'); setSource(''); }}
+          onLoad={(event) => {
+            const { naturalWidth: width, naturalHeight: height } = event.currentTarget;
+            if (width * height > 40000000) { setFileError('Ảnh vượt giới hạn 40 triệu điểm ảnh.'); setSource(''); return; }
+            setImageSize({ width, height });
+          }}
           className="pointer-events-none absolute left-1/2 top-1/2 max-w-none select-none"
           style={{ width: imageSize.width * baseScale, height: imageSize.height * baseScale, transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) rotate(${rotation}deg) scale(${zoom})` }} />}
-        {source && cropRect.width > 0 && <div className={`pointer-events-none absolute border-2 border-[var(--color-orange)] shadow-[0_0_0_9999px_rgba(255,255,255,0.72)] ${kind === 'avatar' ? 'rounded-full' : 'rounded-md'}`}
-          style={{ left: cropRect.x, top: cropRect.y, width: cropRect.width, height: cropRect.height }} />}
+        {source && cropRect.width > 0 && <div className={`pointer-events-none absolute border-2 border-[var(--color-orange)] ${kind === 'avatar' ? 'rounded-full' : 'rounded-md'}`}
+          style={{ left: cropRect.x, top: cropRect.y, width: cropRect.width, height: cropRect.height, boxShadow: '0 0 0 9999px color-mix(in srgb, var(--bg-main) 72%, transparent)' }} />}
         {!source && <button type="button" onClick={() => inputRef.current?.click()} className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-[var(--text-secondary)]">
           <ImagePlus className="h-9 w-9 text-[var(--color-orange)]"/><span className="text-sm font-semibold">Chọn ảnh từ thiết bị</span><span className="text-xs">JPG, PNG hoặc WebP · Tối đa 10 MB</span></button>}
       </div>
-      {fileError && <p role="alert" className="text-center text-xs text-red-500">{fileError}</p>}
+      {fileError && <p role="alert" className="text-center text-sm text-[var(--color-danger)]">{fileError}</p>}
       {source && <>
-        <p className="text-center text-xs text-[var(--text-secondary)]">Ảnh gốc hiển thị đầy đủ. Kéo ảnh phía sau khung để căn vị trí.</p>
-        {saveError && <p role="alert" className="text-center text-xs text-red-500">{saveError}</p>}
+        <p className="text-center text-xs text-[var(--text-secondary)]">Kéo ảnh hoặc dùng phím mũi tên để căn vị trí trước khi lưu.</p>
+        {saveError && <p role="alert" className="text-center text-sm text-[var(--color-danger)]">{saveError}</p>}
         <div className="flex flex-wrap items-center justify-center gap-2">
           <button type="button" onClick={() => setZoom((v) => Math.max(0.1, Number((v - 0.1).toFixed(2))))} className="rounded-lg border border-[var(--border-color)] p-2" aria-label="Thu nhỏ ảnh"><ZoomOut className="h-4 w-4"/></button>
           <input type="range" min="0.1" max="4" step="0.01" value={zoom} onChange={(e) => setZoom(Number(e.target.value))} className="w-36 accent-[var(--color-orange)]" aria-label="Mức thu phóng"/>
           <button type="button" onClick={() => setZoom((v) => Math.min(4, Number((v + 0.1).toFixed(2))))} className="rounded-lg border border-[var(--border-color)] p-2" aria-label="Phóng to ảnh"><ZoomIn className="h-4 w-4"/></button>
           <button type="button" onClick={() => setRotation((v) => (v - 90 + 360) % 360)} className="rounded-lg border border-[var(--border-color)] p-2" aria-label="Xoay trái"><RotateCcw className="h-4 w-4"/></button>
           <button type="button" onClick={() => setRotation((v) => (v + 90) % 360)} className="rounded-lg border border-[var(--border-color)] p-2" aria-label="Xoay phải"><RotateCw className="h-4 w-4"/></button>
-          <button type="button" onClick={reset} className="rounded-lg border border-[var(--border-color)] px-3 py-2 text-xs font-semibold">Reset</button>
+          <button type="button" onClick={reset} className="rounded-lg border border-[var(--border-color)] px-3 py-2 text-xs font-semibold">Đặt lại</button>
           <button type="button" onClick={() => inputRef.current?.click()} className="rounded-lg border border-[var(--border-color)] px-3 py-2 text-xs font-semibold">Chọn ảnh khác</button>
         </div>
       </>}
+      </fieldset>
       <div className="flex justify-end gap-2 border-t border-[var(--border-color)] pt-4">
-        <Button type="button" variant="secondary" onClick={close} disabled={isSaving}>Hủy</Button>
-        <Button type="button" variant="primary" onClick={() => void save()} disabled={!source || isSaving} leftIcon={kind === 'avatar' ? <Camera className="h-4 w-4"/> : <ImageIcon className="h-4 w-4"/>}>{isSaving ? 'Đang lưu...' : kind === 'avatar' ? 'Lưu ảnh' : 'Lưu ảnh bìa'}</Button>
+        <Button type="button" variant="secondary" onClick={requestClose} disabled={busy}>Hủy</Button>
+        <Button type="button" variant="primary" onClick={() => void save()} disabled={!source || !imageSize.width || !baseScale} isLoading={busy} leftIcon={kind === 'avatar' ? <Camera className="h-4 w-4"/> : <ImageIcon className="h-4 w-4"/>}>{busy ? 'Đang lưu...' : kind === 'avatar' ? 'Lưu ảnh' : 'Lưu ảnh bìa'}</Button>
       </div>
     </div>
   </Modal>;
