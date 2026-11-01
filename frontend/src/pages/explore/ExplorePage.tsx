@@ -1,3 +1,4 @@
+import PageHeader from '../../components/ui/PageHeader';
 import React, { useEffect, useState, useMemo } from 'react';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { useToastStore } from '../../store/useToastStore';
@@ -61,9 +62,9 @@ export const ExplorePage: React.FC = () => {
     return communities
       .filter((c) => {
         const matchesQuery =
-          c.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (c.displayName || c.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
           c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.description.toLowerCase().includes(searchQuery.toLowerCase());
+          (c.description || '').toLowerCase().includes(searchQuery.toLowerCase());
 
         const selectedCategoryName = categories.find((item) => item.slug === selectedCategory)?.name;
         const matchesCategory = !selectedCategory || c.category === selectedCategoryName;
@@ -73,7 +74,7 @@ export const ExplorePage: React.FC = () => {
       .sort((a, b) => {
         if (sortBy === 'members') return b.memberCount - a.memberCount;
         if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        return a.displayName.localeCompare(b.displayName);
+        return (a.displayName || a.name).localeCompare(b.displayName || b.name);
       });
   }, [communities, categories, searchQuery, selectedCategory, sortBy]);
 
@@ -85,12 +86,7 @@ export const ExplorePage: React.FC = () => {
 
   return (
     <div className="explore-page space-y-5 text-left pb-8">
-      <header className="explore-heading">
-        <div>
-          <h1 className="editorial-title">Khám phá cộng đồng</h1>
-          <p className="mt-1.5 text-sm text-[var(--text-secondary)]">Gặp những người cùng sở thích. Tìm một cộng đồng và tham gia nhé.</p>
-        </div>
-      </header>
+      <PageHeader title="Khám phá cộng đồng" description="Tìm những người cùng sở thích, bắt đầu một cuộc trò chuyện mới." />
 
       {/* FILTER BAR & SEARCH */}
       <div className="space-y-4">

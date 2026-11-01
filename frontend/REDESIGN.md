@@ -1,3 +1,31 @@
+# Community grid and compact headers — latest pass
+
+The latest brief keeps DISCUSS's current social direction. My Communities and Explore now share the active TypeScript CommunityCard (explicit `.tsx` import avoids the unused legacy JSX component).
+
+- Responsive directory: container queries use 1 column below 560px of available content, 2 from 560px, 3 from 900px and 4 from 1240px. A single result retains one column's width. Cards have matching heights, 56px avatars, two-line 19px/600 display names, one-line `c/name`, a dedicated role row, category, two-line description and aligned footer controls. Hover is restrained and reduced-motion preferences disable movement. Touch actions have 44px minimum targets.
+- Contextual actions: Explore offers join to nonmembers and visit to members. My Communities offers visit, owner settings, moderator queue access and the existing leave handler for nonowners. Membership errors retain the card. No permission grants or backend behavior were added.
+- Data: My Communities uses a dedicated `myCommunities` Zustand collection populated by the existing `communityService.mine()` (`/user/me/owned` and `/user/me/joined`, including pagination). It does not use Explore results. Duplicate entries are counted once, retaining ownership. Joining/leaving retains existing endpoints; leaving updates the personal collection after API success. API-provided moderator roles are preserved instead of overwritten with the joined endpoint's MEMBER fallback. Missing/blank display names fall back to the identifier.
+- Reusable PageHeader supplies compact Home and matching default Explore/My headers. Removed the large feed icon and description; real feed tabs remain. Profile retains its existing banner/avatar structure with no extra header. Settings remains the last item in the same left navigation list.
+- Personal tabs use the existing Framer Motion EditorialTabs with real all/owned/joined counts. Loading, retry and empty states have useful text and actions. Mobile tabs scroll within the page.
+
+Changed files:
+1. `src/components/community/CommunityCard.tsx`
+2. `src/components/ui/PageHeader.tsx` (new)
+3. `src/pages/community/MyCommunitiesPage.tsx`
+4. `src/pages/explore/ExplorePage.tsx`
+5. `src/pages/home/HomePage.tsx`
+6. `src/social.css` (removed obsolete row/card/header rules)
+7. `src/store/useCommunityStore.ts`
+8. `src/services/index.ts` (mapping only; endpoints unchanged)
+9. `src/store/communityDirectory.test.ts` (new)
+10. This report.
+
+Verification: production build passed with the existing initial-chunk size warning; 11/11 tests passed. Four new tests cover independent personal results, ownership deduplication, failed leave and paginated API role/name mapping. 42 browser checks passed for responsive 1920/1440/1366/768/390/320 layouts, equal card heights, long names, real tab counts/filtering, single-result size, role-specific action destinations, join, failed/successful leave, load failure/retry, empty state, profile and touch bounds. Light/dark screenshots were reviewed. Production Home inspector reports 0 failures and 0 warnings at 1440/768/390. Browser artifacts: `.taste-skill/community-grid/`.
+
+Lint was run and still reports the 129 pre-existing legacy JSX errors. Its configuration does not include TS/TSX; no standalone TypeScript check is configured. Authenticated browser checks use isolated QA fixtures and do not validate a live account/backend round trip. No production mock data was added; existing demo data, authentication, route definitions and backend files were not changed. The installed design-taste-frontend skill's app-screen/browser workflow guided the verification.
+
+---
+
 # Targeted DISCUSS refinement — latest pass
 
 This pass follows the latest targeted brief and supersedes the previous profile layout below. The attachment supplied text only; no reference screenshot was present, so the described earlier DISCUSS anatomy was restored and reviewed in browser screenshots.

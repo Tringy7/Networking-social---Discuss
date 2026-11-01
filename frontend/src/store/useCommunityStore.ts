@@ -13,6 +13,7 @@ interface CommunityInput {
 
 interface CommunityState {
   communities: Community[];
+  myCommunities: Community[];
   members: Record<string, CommunityMember[]>;
   hydrate: () => Promise<void>;
   hydrateByCategory: (slug: string) => Promise<void>;
@@ -39,6 +40,7 @@ interface CommunityState {
 
 export const useCommunityStore = create<CommunityState>((set, get) => ({
   communities: [],
+  myCommunities: [],
   members: {},
 
   hydrate: async () => {
@@ -94,11 +96,15 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   hydrateMine: async () => {
     const mine = await communityService.mine();
     set((state) => {
-      const mineById = new Map(mine.map((community) => [community.id, community]));
+      // The personal directory stays independent of Explore search/category results.
+      const mineById = new Map<string, Community>();
+      for (const community of mine) {
+        if (mineById.get(community.id)?.currentUserRole !== 'OWNER') mineById.set(community.id, community);
+      }
       const others = state.communities
         .filter((community) => !mineById.has(community.id))
         .map((community) => ({ ...community, currentUserRole: 'NONE' as const }));
-      return { communities: [...mineById.values(), ...others] };
+      return { myCommunities: [...mineById.values()], communities: [...mineById.values(), ...others] };
     });
   },
 
@@ -124,6 +130,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   leaveCommunity: async (communityName) => {
     await communityService.leave(communityName);
     set((state) => ({
+      myCommunities: state.myCommunities.filter((community) => community.name !== communityName),
       communities: state.communities.map((community) => community.name === communityName
         ? {
             ...community,

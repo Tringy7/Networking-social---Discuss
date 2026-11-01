@@ -235,10 +235,7 @@ function mapCommunity(value: CommunityApiResponse): Community {
   const categoryName = typeof value.category === 'string'
     ? value.category
     : value.category?.name;
-  const displayName = value.displayName || value.name
-    .split('-')
-    .map((part) => part ? `${part[0].toLocaleUpperCase('vi-VN')}${part.slice(1)}` : part)
-    .join(' ');
+  const displayName = value.displayName?.trim() || value.name;
 
   return {
     id: String(value.id),
@@ -317,10 +314,12 @@ async function getCommunitiesWithRole(
   role: Community['currentUserRole']
 ): Promise<Community[]> {
   const communities = await getAllCommunityPages(path);
-  return communities.map((community) => ({
-    ...mapCommunity(community),
-    currentUserRole: role,
-  }));
+  return communities.map((community) => {
+    const mapped = mapCommunity(community);
+    // Joined results can include moderators. Keep the API role when provided;
+    // the endpoint's role is only a fallback for responses without membership.
+    return { ...mapped, currentUserRole: role === 'OWNER' || mapped.currentUserRole === 'NONE' ? role : mapped.currentUserRole };
+  });
 }
 
 export const categoryService = {

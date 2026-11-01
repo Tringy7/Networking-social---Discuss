@@ -3,191 +3,56 @@ import { Link } from 'react-router-dom';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
-import Avatar from '../../components/ui/Avatar';
-import Badge from '../../components/ui/Badge';
+import CommunityCard from '../../components/community/CommunityCard.tsx';
+import PageHeader from '../../components/ui/PageHeader';
+import EditorialTabs from '../../components/ui/EditorialTabs';
 import Button from '../../components/ui/Button';
-import { Users, Plus, Settings, LogOut, Compass } from 'lucide-react';
+import { Users, Plus, Compass, Loader2 } from 'lucide-react';
 
-export const MyCommunitiesPage: React.FC = () => {
-  const { communities, leaveCommunity, hydrateMine } = useCommunityStore();
-  const { user } = useAuthStore();
-  const { addToast } = useToastStore();
-
+export default function MyCommunitiesPage() {
+  const { myCommunities, leaveCommunity, hydrateMine } = useCommunityStore();
+  const user = useAuthStore((state) => state.user);
+  const userId = user?.id;
+  const addToast = useToastStore((state) => state.addToast);
   const [tab, setTab] = useState<'all' | 'owned' | 'joined'>('all');
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const [leaving, setLeaving] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
+    let active = true;
+    setLoading(true);
+    setFailed(false);
     hydrateMine().catch((error: unknown) => {
+      if (!active) return;
+      setFailed(true);
       addToast(error instanceof Error ? error.message : 'Không thể tải cộng đồng của bạn.', 'error');
-    });
-  }, [addToast, hydrateMine, user]);
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [addToast, hydrateMine, userId, retry]);
 
-  const ownedList = communities.filter(
-    (c) => c.ownerUsername === user?.username || c.currentUserRole === 'OWNER'
-  );
-
-  const joinedList = communities.filter(
-    (c) => c.currentUserRole === 'MEMBER' || c.currentUserRole === 'MODERATOR'
-  );
-
-  const displayedList =
-    tab === 'owned' ? ownedList : tab === 'joined' ? joinedList : [...ownedList, ...joinedList];
-
-  const handleLeave = async (cName: string, dName: string) => {
-    try {
-      await leaveCommunity(cName);
-      addToast(`Đã rời khỏi cộng đồng ${dName}`, 'info');
-    } catch (error) {
-      addToast(error instanceof Error ? error.message : 'Không thể rời cộng đồng.', 'error');
-    }
+  const owned = myCommunities.filter((c) => c.currentUserRole === 'OWNER' || c.ownerUsername === user?.username);
+  const joined = myCommunities.filter((c) => !owned.some((item) => item.id === c.id) && ['MEMBER', 'MODERATOR'].includes(c.currentUserRole));
+  const all = [...owned, ...joined];
+  const displayed = tab === 'owned' ? owned : tab === 'joined' ? joined : all;
+  const handleLeave = async (name: string, title: string) => {
+    if (leaving.includes(name)) return;
+    setLeaving((names) => [...names, name]);
+    try { await leaveCommunity(name); addToast(`Đã rời khỏi cộng đồng ${title}`, 'info'); }
+    catch (error) { addToast(error instanceof Error ? error.message : 'Không thể rời cộng đồng.', 'error'); }
+    finally { setLeaving((names) => names.filter((item) => item !== name)); }
   };
 
-  return (
-    <div className="utility-page space-y-5 text-left pb-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-[var(--text-primary)] flex items-center gap-2.5">
-            <Users className="w-6 h-6 text-[var(--color-orange)]" />
-            <span>Cộng đồng của tôi</span>
-          </h1>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Quản lý các cộng đồng bạn đang sở hữu và các nhóm bạn đã tham gia
-          </p>
-        </div>
-
-        <Link to="/communities/create">
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Tạo cộng đồng mới
-          </Button>
-        </Link>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-[var(--border-color)] pb-2 text-xs font-semibold">
-        <button
-          onClick={() => setTab('all')}
-          className={`px-4 py-2 rounded-xl transition-colors cursor-pointer ${
-            tab === 'all'
-              ? 'bg-[var(--color-orange)]/15 text-[var(--color-orange)] border border-[var(--color-orange)]/30 font-semibold'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-          }`}
-        >
-          Tất cả ({ownedList.length + joinedList.length})
-        </button>
-        <button
-          onClick={() => setTab('owned')}
-          className={`px-4 py-2 rounded-xl transition-colors cursor-pointer ${
-            tab === 'owned'
-              ? 'bg-[var(--color-orange)]/15 text-[var(--color-orange)] border border-[var(--color-orange)]/30 font-semibold'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-          }`}
-        >
-          Đang làm chủ ({ownedList.length})
-        </button>
-        <button
-          onClick={() => setTab('joined')}
-          className={`px-4 py-2 rounded-xl transition-colors cursor-pointer ${
-            tab === 'joined'
-              ? 'bg-[var(--color-orange)]/15 text-[var(--color-orange)] border border-[var(--color-orange)]/30 font-semibold'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-          }`}
-        >
-          Đã tham gia ({joinedList.length})
-        </button>
-      </div>
-
-      {/* Community List */}
-      <div className="owned-communities">
-        {displayedList.map((comm) => {
-          const isOwner = comm.currentUserRole === 'OWNER' || comm.ownerUsername === user?.username;
-
-          return (
-            <div
-              key={comm.id}
-              className="owned-community-row"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <Avatar src={comm.avatarUrl} alt={comm.displayName} size="md" shape="rounded" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Link
-                      to={`/community/${comm.name}`}
-                      className="truncate text-sm font-semibold text-[var(--text-primary)] transition-colors hover:text-[var(--color-orange)]"
-                    >
-                      {comm.displayName}
-                    </Link>
-                    {isOwner ? (
-                      <Badge role="OWNER" size="sm" />
-                    ) : comm.currentUserRole === 'MODERATOR' ? (
-                      <Badge role="MODERATOR" size="sm" />
-                    ) : (
-                      <Badge role="MEMBER" size="sm" />
-                    )}
-                  </div>
-                  <div className="mt-0.5 truncate tabular-nums text-xs text-[var(--text-muted)]">community/{comm.name}</div>
-                </div>
-              </div>
-
-              <p className="mt-3 min-h-10 line-clamp-2 text-xs leading-relaxed text-[var(--text-secondary)]">{comm.description || 'Chưa có mô tả cộng đồng.'}</p>
-              <div className="mt-3 flex items-center justify-between border-t border-[var(--border-color)] pt-3 text-xs text-[var(--text-muted)]">
-                <span className="truncate">{comm.category}</span>
-                <span className="shrink-0">{comm.memberCount} thành viên</span>
-              </div>
-
-              {/* Actions */}
-              <div className="mt-3 flex items-center justify-end gap-2 border-t border-[var(--border-color)] pt-3">
-                {isOwner ? (
-                  <Link to={`/community/${comm.name}/settings`}>
-                    <Button variant="secondary" size="sm" leftIcon={<Settings className="w-3.5 h-3.5" />}>
-                      Cài đặt nhóm
-                    </Button>
-                  </Link>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleLeave(comm.name, comm.displayName)}
-                    className="text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10"
-                    leftIcon={<LogOut className="w-3.5 h-3.5" />}
-                  >
-                    Rời nhóm
-                  </Button>
-                )}
-
-                <Link to={`/community/${comm.name}`}>
-                  <Button variant="primary" size="sm">
-                    Truy cập
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          );
-        })}
-
-        {displayedList.length === 0 && (
-          <div className="py-10 text-center bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-panel)] p-8 space-y-4">
-            <Users className="w-10 h-10 text-[var(--color-orange)] mx-auto opacity-60" />
-            <h3 className="text-base font-semibold text-[var(--text-primary)]">Chưa có cộng đồng nào trong mục này</h3>
-            <p className="text-xs text-[var(--text-secondary)]">
-              Hãy khám phá các cộng đồng đang hoạt động sôi nổi hoặc tạo nhóm của riêng bạn.
-            </p>
-            <div className="flex justify-center gap-3">
-              <Link to="/explore">
-                <Button variant="secondary" size="sm" leftIcon={<Compass className="w-4 h-4" />}>
-                  Khám phá ngay
-                </Button>
-              </Link>
-              <Link to="/communities/create">
-                <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-                  Tạo cộng đồng
-                </Button>
-              </Link>
-            </div>
-          </div>
-        )}
-      </div>
+  return <div className="my-communities-page pb-8">
+    <PageHeader title="Cộng đồng của tôi" description="Quản lý và kết nối với các cộng đồng của bạn." actions={<Link to="/communities/create"><Button size="sm" leftIcon={<Plus size={16} />}>Tạo cộng đồng</Button></Link>} />
+    <EditorialTabs label="Lọc cộng đồng của tôi" value={tab} onChange={setTab} options={[{id:'all',label:`Tất cả (${all.length})`},{id:'owned',label:`Đang làm chủ (${owned.length})`},{id:'joined',label:`Đã tham gia (${joined.length})`}]} />
+    <div className="my-community-content" aria-busy={loading}>
+      {loading ? <div role="status" className="community-empty"><Loader2 size={24} className="animate-spin motion-reduce:animate-none" /><p>Đang tải cộng đồng của bạn…</p></div> : failed ? <div role="alert" className="community-empty"><h2>Không tải được cộng đồng của bạn</h2><p>Kiểm tra kết nối rồi thử lại.</p><Button variant="secondary" size="sm" onClick={() => setRetry((count) => count + 1)}>Thử lại</Button></div> : displayed.length ? <div className="community-directory" key={tab}>{displayed.map((community) => {
+        const ownedByUser = owned.some((item) => item.id === community.id);
+        return <CommunityCard key={community.id} community={ownedByUser ? {...community, currentUserRole:'OWNER'} : community} variant="mine" leaving={leaving.includes(community.name)} onLeave={() => handleLeave(community.name, community.displayName || community.name)} />;
+      })}</div> : <div className="community-empty"><Users size={28} aria-hidden="true" /><h2>{tab === 'owned' ? 'Bạn chưa làm chủ cộng đồng nào.' : 'Bạn chưa tham gia cộng đồng nào.'}</h2><p>Hãy khám phá và tìm những cộng đồng phù hợp với sở thích của bạn.</p><Link to={tab === 'owned' ? '/communities/create' : '/explore'}><Button size="sm" leftIcon={tab === 'owned' ? <Plus size={16} /> : <Compass size={16} />}>{tab === 'owned' ? 'Tạo cộng đồng' : 'Khám phá cộng đồng'}</Button></Link></div>}
     </div>
-  );
-};
-
-export default MyCommunitiesPage;
+  </div>;
+}
