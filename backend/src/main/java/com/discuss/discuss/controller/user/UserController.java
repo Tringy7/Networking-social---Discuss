@@ -5,6 +5,7 @@ import com.discuss.discuss.dto.community.CommunityPreviewResponseDTO;
 import com.discuss.discuss.dto.user.PublicUserProfileResponseDTO;
 import com.discuss.discuss.dto.user.UpdateProfileRequestDTO;
 import com.discuss.discuss.dto.user.UserInfoResponseDTO;
+import com.discuss.discuss.dto.user.UserSearchResultDTO;
 import com.discuss.discuss.service.community.CommunityService;
 import com.discuss.discuss.service.media.ImageService;
 import com.discuss.discuss.service.user.UserProfileService;
@@ -26,6 +27,15 @@ public class UserController {
 
     private final ImageService imageService;
     private final CommunityService communityService;
+
+    @GetMapping("/search")
+    public ResponseEntity<PageResponseDTO<UserSearchResultDTO>> searchUsers(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(userProfileService.searchUsers(q, page, size));
+    }
 
     @GetMapping("/me")
     public ResponseEntity<UserInfoResponseDTO> getUserInfo() {

@@ -2,6 +2,7 @@ package com.discuss.discuss.mapper.user;
 
 import com.discuss.discuss.dto.user.PublicUserProfileResponseDTO;
 import com.discuss.discuss.dto.user.UserInfoResponseDTO;
+import com.discuss.discuss.dto.user.UserSearchResultDTO;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserPrivacySettings;
 import com.discuss.discuss.entity.UserProfile;
@@ -16,6 +17,19 @@ import java.time.LocalDate;
 public class UserMapper {
 
     private final MinioService minioService;
+
+    public UserSearchResultDTO toSearchResult(User user) {
+        UserProfile profile = user.getProfile();
+        String displayName = profile == null ? null : profile.getDisplayName();
+
+        return new UserSearchResultDTO(
+                user.getId().toString(),
+                user.getUsername(),
+                displayName == null || displayName.isBlank() ? user.getUsername() : displayName,
+                profile == null ? null : profile.getBio(),
+                profile == null ? null : minioService.buildFileUrl(profile.getAvatar())
+        );
+    }
 
     /**
      * Convert information of user to dto

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -156,6 +157,16 @@ public class GlobalExceptionHandler {
                         "status", HttpStatus.BAD_REQUEST.value(),
                         "message", "Missing required request data"
                 ));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidParameterType(
+            MethodArgumentTypeMismatchException ex
+    ) {
+        return ResponseEntity.badRequest().body(Map.of(
+                "status", HttpStatus.BAD_REQUEST.value(),
+                "message", "Invalid value for parameter: " + ex.getName()
+        ));
     }
 
     @ExceptionHandler(Exception.class)

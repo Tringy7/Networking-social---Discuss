@@ -18,6 +18,21 @@ public enum UserErrorCode {
             "Invalid user role"
     ),
 
+    INVALID_SEARCH_QUERY(
+            HttpStatus.BAD_REQUEST,
+            "Từ khóa tìm kiếm phải có từ 2 đến 50 ký tự"
+    ),
+
+    INVALID_SEARCH_PAGE(
+            HttpStatus.BAD_REQUEST,
+            "Page must be greater than or equal to 0"
+    ),
+
+    INVALID_SEARCH_SIZE(
+            HttpStatus.BAD_REQUEST,
+            "Size must be between 1 and 50"
+    ),
+
     // =========================
     // 404 - Not Found
     // =========================
