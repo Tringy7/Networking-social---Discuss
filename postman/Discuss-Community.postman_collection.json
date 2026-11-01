@@ -1,0 +1,431 @@
+{
+  "info": {
+    "_postman_id": "bfb584fa-7a06-49d0-a24d-730eaf2b345e",
+    "name": "Discuss - Community APIs",
+    "description": "Postman requests for the implemented community, category, explore, and current-user community APIs. Set backend URL and test-account credentials in collection variables before running.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{ownerToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "ownerUsername",
+      "value": ""
+    },
+    {
+      "key": "ownerPassword",
+      "value": ""
+    },
+    {
+      "key": "memberUsername",
+      "value": ""
+    },
+    {
+      "key": "memberPassword",
+      "value": ""
+    },
+    {
+      "key": "ownerToken",
+      "value": ""
+    },
+    {
+      "key": "memberToken",
+      "value": ""
+    },
+    {
+      "key": "categoryId",
+      "value": ""
+    },
+    {
+      "key": "categorySlug",
+      "value": "programming"
+    },
+    {
+      "key": "communityName",
+      "value": ""
+    },
+    {
+      "key": "communityId",
+      "value": ""
+    },
+    {
+      "key": "memberUserId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0 - Login helpers",
+      "item": [
+        {
+          "name": "Login as owner (saves ownerToken)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{ownerUsername}}\",\n  \"password\": \"{{ownerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Use an existing, verified account. Reads access_token from Set-Cookie and stores it in ownerToken."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "const headers = pm.response.headers.all().filter(h => h.key.toLowerCase() === 'set-cookie');",
+                  "const cookie = headers.map(h => h.value).find(value => value.startsWith('access_token='));",
+                  "if (cookie) {",
+                  "  pm.collectionVariables.set('ownerToken', cookie.split(';')[0].substring('access_token='.length));",
+                  "} else {",
+                  "  console.warn('access_token cookie was not found; copy the token from the login response cookies into ownerToken.');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as member (saves memberToken)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{memberUsername}}\",\n  \"password\": \"{{memberPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Optional second account used to test joining and leaving a community. Reads access_token from Set-Cookie and stores it in memberToken."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "const headers = pm.response.headers.all().filter(h => h.key.toLowerCase() === 'set-cookie');",
+                  "const cookie = headers.map(h => h.value).find(value => value.startsWith('access_token='));",
+                  "if (cookie) {",
+                  "  pm.collectionVariables.set('memberToken', cookie.split(';')[0].substring('access_token='.length));",
+                  "} else {",
+                  "  console.warn('access_token cookie was not found; copy the token from the login response cookies into memberToken.');",
+                  "}",
+                  "const user = pm.response.json().data;",
+                  "if (user && user.id) pm.collectionVariables.set('memberUserId', user.id);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1 - Categories and explore",
+      "item": [
+        {
+          "name": "List categories (sets categoryId for Programming)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categories",
+            "description": "Returns category objects with id, name, and slug. Captures the ID for the seeded Programming category."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "const categories = pm.response.json();",
+                  "const category = categories.find(item => item.slug === pm.collectionVariables.get('categorySlug'));",
+                  "if (category) pm.collectionVariables.set('categoryId', category.id);",
+                  "else console.warn('Category slug not found; choose an existing category and set categoryId manually.');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Explore all communities",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/explore?page=0&size=10&sort=createdAt%2Cdesc",
+            "description": "Paginated community list. Pageable parameters are optional; defaults are page=0, size=10, sorted by createdAt descending."
+          }
+        },
+        {
+          "name": "Explore by category slug",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/explore/{{categorySlug}}?page=0&size=10&sort=createdAt%2Cdesc",
+            "description": "Use a seeded slug such as programming, technology, or gaming."
+          }
+        },
+        {
+          "name": "Search/filter communities",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/explore/search?page=0&size=10&sort=createdAt%2Cdesc",
+            "description": "Community search endpoint with pagination. It accepts an optional Spring Filter expression as the filter query parameter; add the expression in Postman Params when testing specific filters."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 - Community CRUD and media",
+      "item": [
+        {
+          "name": "Create community (sets communityName and communityId)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"qa_comm_{{$timestamp}}\",\n  \"description\": \"Community created from the Postman test collection.\",\n  \"categoryId\": {{categoryId}},\n  \"visibility\": \"PUBLIC\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/communities",
+            "description": "Requires ownerToken and categoryId. Community names must be 3-21 characters and contain only letters, numbers, and underscores. Creator becomes OWNER."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const community = pm.response.json();",
+                  "  pm.collectionVariables.set('communityName', community.name);",
+                  "  pm.collectionVariables.set('communityId', community.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get community detail",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/communities/{{communityName}}"
+          }
+        },
+        {
+          "name": "Update community (renames it)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"qa_edited_{{$timestamp}}\",\n  \"description\": \"Updated description from Postman.\",\n  \"categoryId\": {{categoryId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/communities/{{communityName}}",
+            "description": "Owner only. The current API requires name even for PATCH; the response name is saved for later requests. Visibility is present in the DTO but is not currently applied by the service."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const community = pm.response.json();",
+                  "  pm.collectionVariables.set('communityName', community.name);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload community avatar",
+          "request": {
+            "method": "PUT",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/communities/{{communityName}}/avatar",
+            "description": "Choose an image file for form-data key file in Postman."
+          }
+        },
+        {
+          "name": "Upload community banner",
+          "request": {
+            "method": "PUT",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/communities/{{communityName}}/banner",
+            "description": "Choose an image file for form-data key file in Postman."
+          }
+        },
+        {
+          "name": "Delete community (soft delete)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/communities/{{communityName}}",
+            "description": "Owner only. This marks the community as DELETED; run this last because it prevents further active-community operations."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 - Membership",
+      "item": [
+        {
+          "name": "Join community (member account)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{memberToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/communities/{{communityName}}/members",
+            "description": "Use the second, non-owner account and a PUBLIC community. The membership starts with role MEMBER."
+          }
+        },
+        {
+          "name": "Leave community (member account)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{memberToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "url": "{{baseUrl}}/communities/{{communityName}}/members/me",
+            "description": "Member account leaves. Owners cannot leave directly."
+          }
+        },
+        {
+          "name": "Join community again (for kick test)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{memberToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/communities/{{communityName}}/members",
+            "description": "Run after Leave community so the owner can test the kick endpoint against an active member."
+          }
+        },
+        {
+          "name": "Kick member (owner account)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/communities/{{communityName}}/members/{{memberUserId}}",
+            "description": "Pass the target member's numeric user ID in memberUserId. Intended test: member joins, then owner kicks them."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 - My communities",
+      "item": [
+        {
+          "name": "List communities I own",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/me/owned?page=0&size=10"
+          }
+        },
+        {
+          "name": "List communities I joined",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/me/joined?page=0&size=10"
+          }
+        }
+      ]
+    }
+  ]
+}
