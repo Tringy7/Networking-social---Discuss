@@ -282,7 +282,7 @@ export const PostComposerModal: React.FC = () => {
         <div className="space-y-4">
         {/* 1. Community Selection */}
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block">
+          <label className="text-sm font-semibold text-[var(--text-secondary)] block">
             Chọn không gian cộng đồng
           </label>
           <div className="relative">
@@ -306,9 +306,9 @@ export const PostComposerModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('text')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-[background-color,border-color,color,opacity,transform] cursor-pointer ${
               activeTab === 'text'
-                ? 'bg-[var(--color-orange)] text-white shadow-xs font-bold'
+                ? 'bg-[var(--action-bg)] text-[var(--action-ink)] font-semibold'
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
@@ -319,9 +319,9 @@ export const PostComposerModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('media')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-[background-color,border-color,color,opacity,transform] cursor-pointer ${
               activeTab === 'media'
-                ? 'bg-[var(--color-orange)] text-white shadow-xs font-bold'
+                ? 'bg-[var(--action-bg)] text-[var(--action-ink)] font-semibold'
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
@@ -332,9 +332,9 @@ export const PostComposerModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('code')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-[background-color,border-color,color,opacity,transform] cursor-pointer ${
               activeTab === 'code'
-                ? 'bg-[var(--color-orange)] text-white shadow-xs font-bold'
+                ? 'bg-[var(--action-bg)] text-[var(--action-ink)] font-semibold'
                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
@@ -355,7 +355,7 @@ export const PostComposerModal: React.FC = () => {
         {/* 4. Tab Content */}
         {/* Main Content Area */}
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block">
+          <label className="text-sm font-semibold text-[var(--text-secondary)] block">
             Nội dung chi tiết
           </label>
           <textarea
@@ -428,7 +428,7 @@ export const PostComposerModal: React.FC = () => {
         {activeTab === 'code' && (
           <div className="space-y-3 p-3.5 bg-[var(--bg-main)] border border-[var(--border-color)] rounded-xl">
             <div className="flex items-center justify-between gap-3">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Ngôn ngữ lập trình:</label>
+              <label className="text-xs font-semibold text-[var(--text-secondary)]">Ngôn ngữ lập trình:</label>
               <select
                 value={codeLanguage}
                 onChange={(e) => setCodeLanguage(e.target.value)}
@@ -443,12 +443,12 @@ export const PostComposerModal: React.FC = () => {
                 )}
               </select>
             </div>
-            <textarea
+            <textarea data-ui="code-editor"
               rows={4}
               value={codeSnippet}
               onChange={(e) => setCodeSnippet(e.target.value)}
               placeholder="// Dán đoạn mã hoặc câu lệnh của bạn tại đây..."
-              className="w-full font-mono text-xs bg-[var(--bg-surface)] border border-[var(--border-color)] focus:border-[var(--color-orange)] rounded-lg p-2.5 text-[var(--text-primary)] outline-none"
+              className="w-full font-code text-xs bg-[var(--bg-surface)] border border-[var(--border-color)] focus:border-[var(--color-orange)] rounded-lg p-2.5 text-[var(--text-primary)] outline-none"
             />
           </div>
         )}
@@ -464,7 +464,7 @@ export const PostComposerModal: React.FC = () => {
           />
 
           <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-            <span className="text-[11px] text-[var(--text-muted)] flex items-center gap-1">
+            <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-[var(--color-orange)]" />
               Gợi ý nhanh:
             </span>
@@ -474,7 +474,7 @@ export const PostComposerModal: React.FC = () => {
                   key={suggested}
                   type="button"
                   onClick={() => handleQuickAddTag(suggested)}
-                  className="text-[11px] px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-main)] hover:border-[var(--color-orange)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                  className="text-xs px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-main)] hover:border-[var(--color-orange)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
                 >
                   +{suggested}
                 </button>
@@ -485,8 +485,8 @@ export const PostComposerModal: React.FC = () => {
         </div>
 
         <aside className="min-w-0">
-          <div className="sticky top-0 space-y-3 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-main)] p-4">
-            <div className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+          <div className="sticky top-0 space-y-3 rounded-[var(--radius-card)] border border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
               <ImageIcon className="h-4 w-4 text-[var(--color-orange)]" />
               Xem trước bài viết
             </div>
@@ -494,16 +494,16 @@ export const PostComposerModal: React.FC = () => {
               <div className="flex items-center gap-2.5 p-3">
                 <Avatar src={user?.avatarUrl} alt={user?.displayName || 'Bạn'} size="sm" />
                 <div className="min-w-0">
-                  <div className="truncate text-xs font-bold text-[var(--text-primary)]">
+                  <div className="truncate text-xs font-semibold text-[var(--text-primary)]">
                     {user?.displayName || 'Tên của bạn'}
                   </div>
-                  <div className="truncate text-[11px] text-[var(--text-muted)]">
+                  <div className="truncate text-xs text-[var(--text-muted)]">
                     {currentCommunity ? `community/${currentCommunity.name}` : 'Chọn cộng đồng'}
                   </div>
                 </div>
               </div>
               <div className="space-y-2 px-3 pb-3">
-                <h3 className="break-words text-base font-bold text-[var(--text-primary)]">
+                <h3 className="break-words text-base font-semibold text-[var(--text-primary)]">
                   {title.trim() || 'Tiêu đề bài viết'}
                 </h3>
                 <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-[var(--text-secondary)]">
@@ -524,7 +524,7 @@ export const PostComposerModal: React.FC = () => {
                 {tagsInput.split(',').map((tag) => tag.trim()).filter(Boolean).length > 0 && (
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {tagsInput.split(',').map((tag) => tag.trim()).filter(Boolean).map((tag) => (
-                      <span key={tag} className="rounded-full bg-[var(--color-orange-soft)] px-2 py-1 text-[10px] font-semibold text-[var(--color-orange)]">
+                      <span key={tag} className="rounded-full bg-[var(--color-orange-soft)] px-2 py-1 text-xs font-semibold text-[var(--color-orange)]">
                         #{tag}
                       </span>
                     ))}
@@ -532,7 +532,7 @@ export const PostComposerModal: React.FC = () => {
                 )}
               </div>
             </article>
-            <p className="text-[11px] leading-relaxed text-[var(--text-muted)]">
+            <p className="text-xs leading-relaxed text-[var(--text-muted)]">
               Đây là bản xem trước gần đúng với bài viết sau khi đăng.
             </p>
           </div>
@@ -641,7 +641,7 @@ export const PostComposerModal: React.FC = () => {
           />
         </label>
 
-        <div className="flex justify-end gap-2 border-t border-[var(--border-color)] pt-4">
+        <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="ghost" size="sm" onClick={() => setIsImageEditorOpen(false)}>
             Hủy
           </Button>

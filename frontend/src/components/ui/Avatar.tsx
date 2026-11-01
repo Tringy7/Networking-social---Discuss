@@ -17,18 +17,19 @@ export const Avatar: React.FC<AvatarProps> = ({
   className = '',
   isOnline,
 }) => {
-  const [hasError, setHasError] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | undefined>();
 
   const sizes = {
-    xs: 'w-6 h-6 text-[10px]',
+    xs: 'w-6 h-6 text-xs',
     sm: 'w-8 h-8 text-xs',
     md: 'w-10 h-10 text-sm',
-    lg: 'w-14 h-14 text-base font-bold',
-    xl: 'w-20 h-20 text-xl font-bold',
-    '2xl': 'w-28 h-28 text-3xl font-bold',
+    lg: 'w-14 h-14 text-base font-semibold',
+    xl: 'w-20 h-20 text-xl font-semibold',
+    '2xl': 'w-28 h-28 text-3xl font-semibold',
   };
 
-  const rounded = shape === 'circle' ? 'rounded-full' : 'rounded-2xl';
+  const tone = [...alt].reduce((total, character) => total + character.charCodeAt(0), 0) % 5;
+  const rounded = shape === 'circle' ? 'rounded-full' : 'rounded-[var(--radius-card)]';
   const initials = alt
     ? alt
         .split(' ')
@@ -39,26 +40,26 @@ export const Avatar: React.FC<AvatarProps> = ({
     : 'D';
 
   return (
-    <div className={`relative inline-block shrink-0 ${sizes[size]} ${rounded} ${className}`}>
-      {src && !hasError ? (
+    <div className={`avatar relative inline-block shrink-0 ${sizes[size]} ${rounded} ${className}`}>
+      {src && src !== failedSrc ? (
         <img
           src={src}
           alt={alt}
-          onError={() => setHasError(true)}
+          onError={() => setFailedSrc(src)}
           className={`block w-full h-full object-cover border-0 ${rounded}`}
           loading="lazy"
         />
       ) : (
         <div
-          className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-[#FF5700]/30 to-[#FF5700]/10 border border-[#FF5700]/30 text-[#FF5700] font-bold ${rounded}`}
+          className={`w-full h-full flex items-center justify-center avatar-fallback avatar-tone-${tone} font-semibold ${rounded}`}
         >
           {initials}
         </div>
       )}
       {isOnline !== undefined && (
         <span
-          className={`absolute bottom-0 right-0 block w-2.5 h-2.5 rounded-full ring-2 ring-[#0D0F10] ${
-            isOnline ? 'bg-[#22C55E]' : 'bg-[#70747C]'
+          className={`absolute bottom-0 right-0 block w-2.5 h-2.5 rounded-full ring-2 ring-[var(--bg-main)] ${
+            isOnline ? 'bg-[var(--color-success)]' : 'bg-[var(--text-muted)]'
           }`}
         />
       )}

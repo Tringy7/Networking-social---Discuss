@@ -1,4 +1,6 @@
 import React from 'react';
+import { MotionConfig } from 'framer-motion';
+import { useSettingsStore } from './store/useSettingsStore';
 import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './routes';
 import ToastContainer from './components/ui/ToastContainer';
@@ -8,6 +10,7 @@ import { useCommunityStore } from './store/useCommunityStore';
 import { usePostStore } from './store/usePostStore';
 
 export default function App() {
+  const animationIntensity = useSettingsStore((state) => state.settings.animationIntensity);
   const clearSession = useAuthStore((state) => state.clearSession);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const authStatus = useAuthStore((state) => state.authStatus);
@@ -66,6 +69,7 @@ export default function App() {
   }, [addToast, hydrateCommunities, hydrateMyCommunities, hydratePosts, isAuthenticated]);
 
   return (
+    <MotionConfig reducedMotion={animationIntensity === 'full' ? 'user' : 'always'}>
     <BrowserRouter>
       <>
         {authStatus === 'INITIALIZING' ? (
@@ -82,5 +86,6 @@ export default function App() {
         <ToastContainer />
       </>
     </BrowserRouter>
+    </MotionConfig>
   );
 }

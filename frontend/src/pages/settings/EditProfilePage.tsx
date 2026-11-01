@@ -80,24 +80,28 @@ export const EditProfilePage: React.FC = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 text-left">
-      <div className="pb-3 border-b border-[#303235]">
-        <h2 className="text-lg font-bold text-[#F5F5F5]">Chỉnh sửa hồ sơ cá nhân</h2>
-        <p className="text-xs text-[#9A9DA3]">Thông tin này sẽ hiển thị công khai trên trang cá nhân của bạn.</p>
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)]">Chỉnh sửa hồ sơ cá nhân</h2>
+        <p className="text-sm text-[var(--text-secondary)]">Thông tin này sẽ hiển thị công khai trên trang cá nhân của bạn.</p>
       </div>
 
       {/* Media previews */}
       <div className="space-y-3">
-        <label className="text-xs font-semibold text-[#9A9DA3] block">Ảnh bìa & Ảnh đại diện</label>
+        <label className="text-sm font-semibold text-[var(--text-secondary)] block">Ảnh bìa & Ảnh đại diện</label>
         
         <button
           type="button"
           onClick={handleBannerChange}
           disabled={isLoading}
           aria-label="Chọn ảnh bìa mới"
-          className="group relative block h-32 w-full cursor-pointer overflow-hidden rounded-2xl border border-[#303235] bg-[#101112] text-left disabled:cursor-wait sm:h-40"
+          className="group relative block h-32 w-full cursor-pointer overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] text-left transition-colors hover:border-[var(--border-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] disabled:cursor-wait sm:h-40"
         >
-          {bannerUrl && <img src={bannerUrl} alt="Banner Preview" className="h-full w-full object-cover" />}
-          <span className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10 group-focus-visible:bg-black/10" />
+          {bannerUrl ? (
+            <img src={bannerUrl} alt="Ảnh bìa xem trước" className="h-full w-full object-cover" />
+          ) : (
+            <span className="flex h-full items-center justify-center gap-2 text-sm text-[var(--text-muted)]"><Camera className="h-4 w-4" /> Thêm ảnh bìa</span>
+          )}
+          <span className="absolute inset-0 flex items-center justify-center gap-2 bg-black/0 text-sm font-medium text-white opacity-0 transition-opacity group-hover:bg-black/35 group-hover:opacity-100 group-focus-visible:bg-black/35 group-focus-visible:opacity-100"><Camera className="h-4 w-4" /> Thay ảnh bìa</span>
         </button>
 
         {/* Click the avatar itself to choose a replacement. */}
@@ -109,7 +113,7 @@ export const EditProfilePage: React.FC = () => {
             aria-label="Chọn ảnh đại diện mới"
             className="group relative cursor-pointer rounded-full disabled:cursor-wait"
           >
-            <Avatar src={avatarUrl} alt={displayName} size="xl" className="border-4 border-[#191A1C] shadow-xl" />
+            <Avatar src={avatarUrl} alt={displayName} size="xl" className="border-4 border-[var(--bg-surface)]" />
             <span className="absolute inset-1 flex items-center justify-center rounded-full bg-black/0 text-white transition-colors group-hover:bg-black/45 group-focus-visible:bg-black/45">
               <Camera className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
             </span>
@@ -130,8 +134,8 @@ export const EditProfilePage: React.FC = () => {
         {/* Bio with counter */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-[#9A9DA3]">Tiểu sử (Bio)</label>
-            <span className="text-[11px] text-[#70747C]">{bio.length}/200</span>
+            <label className="text-sm font-semibold text-[var(--text-secondary)]">Tiểu sử</label>
+            <span className="text-xs text-[var(--text-muted)]">{bio.length}/200</span>
           </div>
           <textarea
             rows={3}
@@ -139,7 +143,7 @@ export const EditProfilePage: React.FC = () => {
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Giới thiệu bản thân, chuyên môn và sở thích của bạn..."
-            className="w-full bg-[#101112] border border-[#303235] focus:border-[#FF5700] rounded-xl p-3 text-xs text-[#F5F5F5] placeholder-[#70747C] outline-none"
+            className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition-colors focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
           />
         </div>
 
@@ -160,11 +164,11 @@ export const EditProfilePage: React.FC = () => {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-[#9A9DA3]">Giới tính</label>
+          <label className="text-sm font-semibold text-[var(--text-secondary)]">Giới tính</label>
           <select
             value={gender}
             onChange={(e) => setGender(e.target.value)}
-            className="w-full bg-[#101112] border border-[#303235] focus:border-[#FF5700] rounded-xl p-2.5 text-xs text-[#F5F5F5] outline-none cursor-pointer"
+            className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-2.5 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] cursor-pointer"
           >
             <option value="Nam">Nam</option>
             <option value="Nữ">Nữ</option>
@@ -175,7 +179,7 @@ export const EditProfilePage: React.FC = () => {
       </div>
 
       {/* Submit / Cancel Buttons */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#303235]">
+      <div className="flex flex-wrap items-center justify-end gap-3 pt-4">
         <Button
           type="button"
           variant="ghost"

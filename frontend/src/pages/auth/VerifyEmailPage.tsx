@@ -82,27 +82,27 @@ export const VerifyEmailPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left">
-      <div className="w-12 h-12 rounded-2xl bg-[#FF5700]/15 border border-[#FF5700]/30 flex items-center justify-center text-[#FF5700]">
+      <div className="w-11 h-11 rounded-full bg-[var(--color-orange-soft)] flex items-center justify-center text-[var(--color-orange-ink)]">
         <MailCheck className="w-6 h-6" />
       </div>
 
       <div className="space-y-1.5">
-        <h2 className="text-2xl font-black text-[#F5F5F5] tracking-tight">Xác thực địa chỉ Email</h2>
-        <p className="text-xs sm:text-sm text-[#9A9DA3]">
+        <h1 className="text-2xl font-semibold text-[var(--text-primary)] tracking-tight">Xác thực email</h1>
+        <p className="text-sm leading-6 text-[var(--text-secondary)]">
           Mã xác thực gồm 6 chữ số đã được gửi tới{' '}
-          <span className="text-[#F5F5F5] font-semibold">{pendingEmail || 'email của bạn'}</span>.
+          <span className="font-semibold text-[var(--text-primary)]">{pendingEmail || 'email của bạn'}</span>.
         </p>
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/30 text-xs text-[#EF4444] font-medium">
+        <div role="alert" className="p-3 rounded-xl bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 text-sm text-[var(--color-danger)] font-medium">
           {error}
         </div>
       )}
 
       <form onSubmit={handleVerify} className="space-y-6">
         {/* OTP Input 6 boxes */}
-        <div className="flex justify-between gap-2">
+        <div className="flex justify-between gap-2" aria-label="Mã xác thực gồm 6 chữ số">
           {otp.map((digit, idx) => (
             <input
               key={idx}
@@ -113,7 +113,9 @@ export const VerifyEmailPage: React.FC = () => {
               value={digit}
               onChange={(e) => handleDigitChange(idx, e.target.value)}
               onKeyDown={(e) => handleKeyDown(idx, e)}
-              className="w-11 sm:w-13 h-13 text-center text-lg font-mono font-bold bg-[#191A1C] border border-[#303235] focus:border-[#FF5700] rounded-xl text-[#F5F5F5] outline-none transition-all"
+              aria-label={`Chữ số OTP thứ ${idx + 1}`}
+              autoComplete={idx === 0 ? 'one-time-code' : 'off'}
+              className="h-12 w-11 rounded-lg border border-[var(--border-color)] bg-[var(--bg-main)] text-center text-lg font-code font-semibold text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] sm:w-12"
             />
           ))}
         </div>
@@ -123,21 +125,21 @@ export const VerifyEmailPage: React.FC = () => {
           variant="primary"
           size="lg"
           isLoading={isLoading}
-          className="w-full text-sm font-bold shadow-lg shadow-[#FF5700]/25"
+          className="w-full text-sm font-semibold"
         >
           Xác thực tài khoản
         </Button>
       </form>
 
       {/* Resend Cooldown */}
-      <div className="flex items-center justify-between text-xs text-[#9A9DA3] pt-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-[var(--text-secondary)] pt-2">
         <span>Không nhận được mã?</span>
         {cooldown > 0 ? (
-          <span className="text-[#70747C]">Gửi lại sau {cooldown}s</span>
+          <span className="text-[var(--text-muted)]">Gửi lại sau {cooldown}s</span>
         ) : (
           <button
             onClick={handleResend}
-            className="flex items-center gap-1.5 text-[#FF5700] hover:underline font-bold cursor-pointer"
+            className="flex items-center gap-1.5 text-[var(--color-orange-ink)] hover:underline font-semibold cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Gửi lại mã OTP</span>
@@ -145,10 +147,10 @@ export const VerifyEmailPage: React.FC = () => {
         )}
       </div>
 
-      <div className="pt-4 border-t border-[#303235]">
+      <div className="pt-2">
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-[#9A9DA3] hover:text-[#F5F5F5] transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Quay lại trang Đăng nhập</span>

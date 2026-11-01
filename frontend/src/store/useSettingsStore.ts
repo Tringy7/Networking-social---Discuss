@@ -5,6 +5,7 @@ export interface AccentColorPreset {
   id: string;
   name: string;
   primary: string;
+  ink: string;
   hover: string;
   soft: string;
   border: string;
@@ -16,6 +17,7 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
     id: 'sunset',
     name: 'DISCUSS Orange (Mặc định)',
     primary: '#F97316',
+    ink: '#C2410C',
     hover: '#EA580C',
     soft: 'rgba(249, 115, 22, 0.10)',
     border: 'rgba(249, 115, 22, 0.24)',
@@ -25,6 +27,7 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
     id: 'tangerine',
     name: 'Vivid Tangerine',
     primary: '#FF5700',
+    ink: '#C2410C',
     hover: '#E94B00',
     soft: 'rgba(255, 87, 0, 0.12)',
     border: 'rgba(255, 87, 0, 0.28)',
@@ -34,6 +37,7 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
     id: 'blue',
     name: 'Sapphire Ocean',
     primary: '#2563EB',
+    ink: '#1D4ED8',
     hover: '#1D4ED8',
     soft: 'rgba(37, 99, 235, 0.12)',
     border: 'rgba(37, 99, 235, 0.28)',
@@ -43,6 +47,7 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
     id: 'emerald',
     name: 'Emerald Pine',
     primary: '#059669',
+    ink: '#047857',
     hover: '#047857',
     soft: 'rgba(5, 150, 105, 0.12)',
     border: 'rgba(5, 150, 105, 0.28)',
@@ -51,8 +56,9 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
   {
     id: 'purple',
     name: 'Amethyst Violet',
-    primary: '#7C3AED',
-    hover: '#6D28D9',
+    primary: '#7C3AED', // taste-skill-ignore: preserve the existing user-selectable accent preset; DISCUSS defaults to orange.
+    ink: '#6D28D9', // taste-skill-ignore: preserve the existing user-selectable accent preset; DISCUSS defaults to orange.
+    hover: '#6D28D9', // taste-skill-ignore: preserve the existing user-selectable accent preset; DISCUSS defaults to orange.
     soft: 'rgba(124, 58, 237, 0.12)',
     border: 'rgba(124, 58, 237, 0.28)',
     description: 'Tím thạch anh sáng tạo, phong cách thiết kế sản phẩm cao cấp',
@@ -61,6 +67,7 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
     id: 'rose',
     name: 'Coral Rose',
     primary: '#E11D48',
+    ink: '#BE123C',
     hover: '#BE123C',
     soft: 'rgba(225, 29, 72, 0.12)',
     border: 'rgba(225, 29, 72, 0.28)',
@@ -117,6 +124,7 @@ const getInitialSettings = (): AppearanceSettings => {
 
 const applyDOMClasses = (settings: AppearanceSettings) => {
   const root = document.documentElement;
+  root.dataset.motion = settings.animationIntensity;
   
   // Theme
   const isDark =
@@ -135,9 +143,24 @@ const applyDOMClasses = (settings: AppearanceSettings) => {
   // Accent Color injection into CSS variables
   const matchedPreset = ACCENT_PRESETS.find((p) => p.primary === settings.accentColor) || ACCENT_PRESETS[0];
   root.style.setProperty('--color-orange', matchedPreset.primary);
+  root.style.setProperty('--color-orange-ink', isDark ? matchedPreset.primary : matchedPreset.ink);
   root.style.setProperty('--color-orange-hover', matchedPreset.hover);
   root.style.setProperty('--color-orange-soft', matchedPreset.soft);
   root.style.setProperty('--color-orange-border', matchedPreset.border);
+  // Keep filled actions readable for every existing user-selectable accent.
+  const rgb = matchedPreset.primary.match(/[a-f0-9]{2}/gi)!.map((channel) => {
+    const value = parseInt(channel, 16) / 255;
+    return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+  });
+  const luminance = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+  const darkInk = (luminance + 0.05) / 0.061 >= 1.05 / (luminance + 0.05);
+  root.style.setProperty('--action-ink', darkInk ? '#251A12' : '#FFFFFF');
+  const hover = matchedPreset.primary.match(/[a-f0-9]{2}/gi)!.map((channel) => {
+    const value = parseInt(channel, 16);
+    return Math.round(darkInk ? value + (255 - value) * 0.08 : value * 0.92).toString(16).padStart(2, '0');
+  }).join('');
+  root.style.setProperty('--action-hover', `#${hover}`);
+
 
   // Density
   root.classList.remove('density-comfortable', 'density-compact');

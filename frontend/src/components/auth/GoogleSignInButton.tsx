@@ -88,7 +88,7 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
 
   if (configurationError) {
     return (
-      <p className="text-center text-xs text-[#9A9DA3]">
+      <p className="text-center text-xs text-[var(--text-secondary)]">
         Đăng nhập Google cần cấu hình <code>VITE_GOOGLE_CLIENT_ID</code>.
       </p>
     );

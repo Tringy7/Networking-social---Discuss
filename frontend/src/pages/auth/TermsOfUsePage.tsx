@@ -59,7 +59,7 @@ export const TermsOfUsePage: React.FC = () => (
       <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-orange-soft)] text-[var(--color-orange)]">
         <FileText className="h-5 w-5" />
       </span>
-      <h1 className="text-2xl font-black tracking-tight text-[var(--text-primary)]">
+      <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
         Điều khoản sử dụng DISCUSS
       </h1>
       <p className="text-xs text-[var(--text-secondary)]">Cập nhật lần cuối: 27/10/2026</p>
@@ -71,7 +71,7 @@ export const TermsOfUsePage: React.FC = () => (
     <div className="max-h-[55vh] space-y-5 overflow-y-auto pr-2">
       {termsSections.map((section) => (
         <section key={section.title} className="space-y-1.5">
-          <h2 className="text-sm font-bold text-[var(--text-primary)]">{section.title}</h2>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">{section.title}</h2>
           <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{section.content}</p>
           {section.title.startsWith('6.') && (
             <Link
@@ -88,7 +88,7 @@ export const TermsOfUsePage: React.FC = () => (
     <div className="border-t border-[var(--border-color)] pt-4">
       <Link
         to="/register"
-        className="inline-flex items-center justify-center rounded-full bg-[var(--color-orange)] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[var(--color-orange-hover)]"
+        className="inline-flex items-center justify-center rounded-full bg-[var(--color-orange)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-orange-hover)]"
       >
         Tiếp tục đăng ký
       </Link>

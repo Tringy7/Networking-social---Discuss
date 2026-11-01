@@ -93,6 +93,24 @@ export const demoPosts: Post[] = [
     isSaved: false,
     createdAt: new Date(now - 1000 * 60 * 60 * 14).toISOString(),
   },
+  // Development preview only; never inserted into API-backed results.
+  ...(import.meta.env.DEV ? [{
+    id: 'demo-post-state-map',
+    communityName: 'lap-trinh-viet-nam',
+    communityDisplayName: 'Lập trình Việt Nam',
+    communityAvatar: '',
+    author: { id: 'demo-user-linh', username: 'linhnguyen', displayName: 'Linh Nguyễn', avatarUrl: '' },
+    title: 'Một sơ đồ nhỏ để chọn nơi lưu state trong React',
+    content: 'Mình vẽ lại cách chia local state, shared state và server state. Mọi người thường bắt đầu từ đâu khi một component ngày càng phức tạp?',
+    mediaUrl: '/images/discuss-state-map.svg',
+    mediaType: 'image' as const,
+    tags: ['React', 'Frontend'],
+    heartCount: 16,
+    commentCount: 0,
+    isHearted: false,
+    isSaved: false,
+    createdAt: new Date(now - 1000 * 60 * 45).toISOString(),
+  }] : []),
 ];
 
 export const demoComments: Comment[] = [
