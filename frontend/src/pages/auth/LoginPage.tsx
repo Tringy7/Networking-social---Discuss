@@ -1,12 +1,13 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
-import GoogleSignInButton from '../../components/auth/GoogleSignInButton';
+import GoogleSignInButton from '../../components/auth/GoogleSignInButton.tsx';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { getApiFieldErrors } from '../../utils/apiFieldErrors';
+import { AuthDivider, AuthError, AuthHeading, AuthSwitch } from '../../components/auth/AuthFormParts';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -19,20 +20,22 @@ export const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const requestInFlight = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailOrUsername.trim()) {
-      setError('Vui lòng nhập email hoặc tên đăng nhập');
-      return;
-    }
-    if (!password) {
-      setError('Vui lòng nhập mật khẩu');
+    if (requestInFlight.current) return;
+    const errors: Record<string, string> = {};
+    if (!emailOrUsername.trim()) errors.username = 'Vui lòng nhập tên đăng nhập.';
+    if (!password) errors.password = 'Vui lòng nhập mật khẩu.';
+    setFieldErrors(errors);
+    setError('');
+    if (Object.keys(errors).length) {
+      (e.currentTarget.elements.namedItem(Object.keys(errors)[0]) as HTMLInputElement)?.focus();
       return;
     }
 
-    setError('');
-    setFieldErrors({});
+    requestInFlight.current = true;
     setIsLoading(true);
     try {
       await login(emailOrUsername, password);
@@ -42,11 +45,14 @@ export const LoginPage: React.FC = () => {
       setFieldErrors(getApiFieldErrors(err));
       setError(err instanceof Error ? err.message : 'Đăng nhập không thành công.');
     } finally {
+      requestInFlight.current = false;
       setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = useCallback(async (credential: string) => {
+    if (requestInFlight.current) return;
+    requestInFlight.current = true;
     setError('');
     setFieldErrors({});
     setIsLoading(true);
@@ -58,31 +64,24 @@ export const LoginPage: React.FC = () => {
       setFieldErrors(getApiFieldErrors(error));
       setError(error instanceof Error ? error.message : 'Đăng nhập Google không thành công.');
     } finally {
+      requestInFlight.current = false;
       setIsLoading(false);
     }
   }, [addToast, loginSocial, navigate]);
 
   return (
-    <div className="space-y-6 text-left">
-      <div className="space-y-1.5">
-        <h1 className="auth-title editorial-title text-[var(--text-primary)]">
-          Đăng nhập DISCUSS
-        </h1>
-        <p className="text-sm text-[var(--text-secondary)]">
-          Đăng nhập để tiếp tục tham gia cộng đồng thảo luận.
-        </p>
-      </div>
+    <div className="auth-page">
+      <AuthHeading title="Chào mừng trở lại">Đăng nhập để tiếp tục câu chuyện của bạn.</AuthHeading>
+      <AuthError message={error} />
 
-      {error && (
-        <div role="alert" className="p-3 rounded-xl bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 text-sm text-[var(--color-danger)] font-medium">
-          {error}
-        </div>
-      )}
-
-      {/* Login Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="auth-fields" noValidate aria-busy={isLoading}>
         <Input
           label="Tên đăng nhập"
+          name="username"
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
+          disabled={isLoading}
           type="text"
           value={emailOrUsername}
           onChange={(e) => {
@@ -95,15 +94,17 @@ export const LoginPage: React.FC = () => {
               return next;
             });
           }}
-          leftIcon={<Mail className="w-4 h-4" />}
+          leftIcon={<User className="w-4 h-4" aria-hidden="true" />}
           placeholder="Nhập tên đăng nhập"
           error={fieldErrors.username || fieldErrors.emailOrUsername}
           required
         />
 
-        <div className="space-y-1.5">
           <Input
             label="Mật khẩu"
+            name="password"
+            autoComplete="current-password"
+            disabled={isLoading}
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => {
@@ -121,47 +122,36 @@ export const LoginPage: React.FC = () => {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                aria-pressed={showPassword}
+                className="auth-password-toggle"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             }
-            placeholder="••••••••••••"
+            placeholder="Nhập mật khẩu"
             error={fieldErrors.password}
             required
           />
-        </div>
-
-        <div className="flex justify-end text-xs pt-1">
-          <Link to="/forgot-password" className="text-[var(--color-orange-ink)] hover:underline font-medium">
+        <div className="auth-forgot">
+          <Link to="/forgot-password">
             Quên mật khẩu?
           </Link>
         </div>
 
-        {/* Submit Button */}
         <Button
           type="submit"
           variant="primary"
           size="lg"
           isLoading={isLoading}
-          className="w-full text-sm font-semibold"
+          className="auth-submit"
         >
-          Đăng nhập vào DISCUSS
+          Đăng nhập
         </Button>
       </form>
 
-      {/* Divider */}
-      <p className="py-1 text-center text-xs font-medium text-[var(--text-muted)]">Hoặc tiếp tục với</p>
-
+      <AuthDivider />
       <GoogleSignInButton disabled={isLoading} onCredential={handleGoogleSignIn} />
-
-      {/* Link to Register */}
-      <div className="text-center text-sm text-[var(--text-secondary)] pt-2">
-        Chưa có tài khoản?{' '}
-        <Link to="/register" className="text-[var(--color-orange-ink)] hover:underline font-semibold">
-          Đăng ký miễn phí ngay
-        </Link>
-      </div>
+      <AuthSwitch prompt="Chưa có tài khoản?" to="/register">Đăng ký</AuthSwitch>
     </div>
   );
 };

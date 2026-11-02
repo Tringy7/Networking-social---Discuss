@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
-import { Mail, Lock, User, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { getApiFieldErrors } from '../../utils/apiFieldErrors';
+import { AuthError, AuthHeading, AuthSwitch } from '../../components/auth/AuthFormParts';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ export const RegisterPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const requestInFlight = useRef(false);
 
   const clearFieldError = (field: string) => {
     setFieldErrors((current) => {
@@ -39,30 +41,26 @@ export const RegisterPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim() || !email.trim() || !password) {
-      setError('Vui lòng điền đầy đủ các thông tin bắt buộc.');
-      return;
-    }
-    if (username.length < 3) {
-      setError('Tên đăng nhập phải có ít nhất 3 ký tự.');
-      return;
-    }
-    if (password.length < 8) {
-      setError('Mật khẩu phải có tối thiểu 8 ký tự.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('');
-      setFieldErrors({ confirmPassword: 'Mật khẩu xác nhận không trùng khớp.' });
-      return;
-    }
-    if (!agreeTerms) {
-      setError('Bạn cần đồng ý với Điều khoản dịch vụ để tiếp tục.');
+    if (requestInFlight.current) return;
+    const errors: Record<string, string> = {};
+    if (!username.trim()) errors.username = 'Vui lòng nhập tên đăng nhập.';
+    else if (username.length < 3) errors.username = 'Tên đăng nhập phải có ít nhất 3 ký tự.';
+    const emailInput = e.currentTarget.elements.namedItem('email') as HTMLInputElement;
+    if (!email.trim()) errors.email = 'Vui lòng nhập địa chỉ email.';
+    else if (emailInput.validity.typeMismatch) errors.email = 'Vui lòng nhập địa chỉ email hợp lệ.';
+    if (!password) errors.password = 'Vui lòng nhập mật khẩu.';
+    else if (password.length < 8) errors.password = 'Mật khẩu phải có tối thiểu 8 ký tự.';
+    if (!confirmPassword) errors.confirmPassword = 'Vui lòng xác nhận mật khẩu.';
+    else if (password !== confirmPassword) errors.confirmPassword = 'Mật khẩu xác nhận không trùng khớp.';
+    if (!agreeTerms) errors.agreeTerms = 'Bạn cần đồng ý với Điều khoản sử dụng để tiếp tục.';
+    setError('');
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) {
+      (e.currentTarget.elements.namedItem(Object.keys(errors)[0]) as HTMLInputElement)?.focus();
       return;
     }
 
-    setError('');
-    setFieldErrors({});
+    requestInFlight.current = true;
     setIsLoading(true);
     try {
       await register({
@@ -79,30 +77,24 @@ export const RegisterPage: React.FC = () => {
       setFieldErrors(getApiFieldErrors(err));
       setError(err instanceof Error ? err.message : 'Đăng ký không thành công.');
     } finally {
+      requestInFlight.current = false;
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="space-y-5 text-left">
-      <div className="space-y-1.5">
-        <h1 className="auth-title editorial-title text-[var(--text-primary)]">
-          Tạo tài khoản
-        </h1>
-        <p className="text-sm text-[var(--text-secondary)]">
-          Tham gia cộng đồng theo chủ đề và chia sẻ điều bạn quan tâm.
-        </p>
-      </div>
+    <div className="auth-page auth-register">
+      <AuthHeading title={<>Bắt đầu câu chuyện<br />của bạn</>}>Tạo tài khoản để khám phá và tham gia cộng đồng.</AuthHeading>
+      <AuthError message={error} />
 
-      {error && (
-        <div role="alert" className="p-3 rounded-xl bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 text-sm text-[var(--color-danger)] font-medium">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-3.5">
+      <form onSubmit={handleSubmit} className="auth-fields" noValidate aria-busy={isLoading}>
         <Input
-          label="Tên đăng nhập (username)"
+          label="Tên đăng nhập"
+          name="username"
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
+          disabled={isLoading}
           type="text"
           value={username}
           onChange={(e) => {
@@ -112,13 +104,16 @@ export const RegisterPage: React.FC = () => {
             clearFieldError('username');
           }}
           leftIcon={<User className="w-4 h-4" />}
-          placeholder="dev_user123"
+          placeholder="Chọn tên đăng nhập của bạn"
           error={fieldErrors.username}
           required
         />
 
         <Input
-          label="Tên hiển thị (Display Name)"
+          label="Tên hiển thị (không bắt buộc)"
+          name="displayName"
+          autoComplete="nickname"
+          disabled={isLoading}
           type="text"
           value={displayName}
           onChange={(e) => {
@@ -126,12 +121,18 @@ export const RegisterPage: React.FC = () => {
             updateRegistrationDraft({ displayName: e.target.value });
             clearFieldError('displayName');
           }}
-          placeholder="Người dùng mẫu"
+          leftIcon={<User className="w-4 h-4" />}
+          placeholder="Mọi người sẽ gọi bạn là…"
           error={fieldErrors.displayName}
         />
 
         <Input
-          label="Địa chỉ Email"
+          label="Địa chỉ email"
+          name="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          disabled={isLoading}
           type="email"
           value={email}
           onChange={(e) => {
@@ -141,13 +142,16 @@ export const RegisterPage: React.FC = () => {
             clearFieldError('email');
           }}
           leftIcon={<Mail className="w-4 h-4" />}
-          placeholder="minh.nguyen@gmail.com"
+          placeholder="Nhập email của bạn"
           error={fieldErrors.email}
           required
         />
 
         <Input
           label="Mật khẩu"
+          name="password"
+          autoComplete="new-password"
+          disabled={isLoading}
           type={showPassword ? 'text' : 'password'}
           value={password}
           onChange={(e) => {
@@ -162,18 +166,23 @@ export const RegisterPage: React.FC = () => {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+              aria-pressed={showPassword}
+              className="auth-password-toggle"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           }
-          placeholder="Tối thiểu 8 ký tự"
+          placeholder="Tạo mật khẩu"
+          helperText="Sử dụng ít nhất 8 ký tự cho mật khẩu."
           error={fieldErrors.password}
           required
         />
 
         <Input
           label="Xác nhận mật khẩu"
+          name="confirmPassword"
+          autoComplete="new-password"
+          disabled={isLoading}
           type={showPassword ? 'text' : 'password'}
           value={confirmPassword}
           onChange={(e) => {
@@ -188,48 +197,45 @@ export const RegisterPage: React.FC = () => {
           required
         />
 
-        {/* Terms agreement checkbox */}
-        <div className="pt-1">
-          <label className="flex items-start gap-2.5 text-xs text-[var(--text-secondary)] cursor-pointer">
+        <div>
+          <label className="auth-terms">
             <input
               type="checkbox"
+              name="agreeTerms"
+              disabled={isLoading}
+              aria-invalid={fieldErrors.agreeTerms ? true : undefined}
+              aria-describedby={fieldErrors.agreeTerms ? 'auth-terms-error' : undefined}
               checked={agreeTerms}
               onChange={(e) => {
                 setAgreeTerms(e.target.checked);
                 updateRegistrationDraft({ agreeTerms: e.target.checked });
                 setError('');
+                clearFieldError('agreeTerms');
               }}
-              className="mt-0.5 rounded accent-[var(--color-orange)]"
             />
-            <span className="leading-snug">
+            <span>
               Tôi đồng ý với{' '}
-              <Link to="/terms" className="font-semibold text-[var(--color-orange-ink)] hover:underline">
+              <Link to="/terms">
                 Điều khoản sử dụng
               </Link>{' '}
               và Quy chuẩn ứng xử cộng đồng.
             </span>
           </label>
+          {fieldErrors.agreeTerms && <p id="auth-terms-error" className="auth-terms-error">{fieldErrors.agreeTerms}</p>}
         </div>
 
-        {/* Submit Button */}
         <Button
           type="submit"
           variant="primary"
           size="lg"
           isLoading={isLoading}
-          className="w-full text-sm font-semibold mt-2"
+          className="auth-submit"
         >
-          Hoàn tất đăng ký
+          Tạo tài khoản
         </Button>
       </form>
 
-      {/* Link to Login */}
-      <div className="text-center text-sm text-[var(--text-secondary)] pt-3">
-        Đã có tài khoản?{' '}
-        <Link to="/login" className="text-[var(--color-orange-ink)] hover:underline font-semibold">
-          Đăng nhập ngay
-        </Link>
-      </div>
+      <AuthSwitch prompt="Đã có tài khoản?" to="/login">Đăng nhập</AuthSwitch>
     </div>
   );
 };

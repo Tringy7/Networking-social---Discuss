@@ -1,0 +1,762 @@
+{
+  "audit_date": "2026-11-02",
+  "timezone": "Asia/Saigon",
+  "method": "static source and import trace on current Windows workspace; not runtime traffic; caller names manually cross-checked through stores and routed pages",
+  "summary": {
+    "backend_endpoints": 34,
+    "backend_endpoints_without_frontend_reference": 0,
+    "frontend_declared_endpoints_without_backend_handler": 34,
+    "missing_endpoint_categories": {
+      "http_call_enabled_backend_handler_missing": 10,
+      "http_disabled_local_demo": 17,
+      "no_ui_or_store_caller": 7
+    },
+    "frontend_source_files_not_reachable_from_entry": 60
+  },
+  "backend_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/auth/AuthController.java",
+        "line": 37
+      },
+      "frontend_caller": "authService.register",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/verify-email",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/auth/AuthController.java",
+        "line": 43
+      },
+      "frontend_caller": "authService.verifyEmail",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/resend-otp",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/auth/AuthController.java",
+        "line": 49
+      },
+      "frontend_caller": "authService.resendOtp",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/refresh",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/auth/AuthController.java",
+        "line": 55
+      },
+      "frontend_caller": "apiClient.refreshSession",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/social/{provider}",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/auth/AuthController.java",
+        "line": 67
+      },
+      "frontend_caller": "authService.loginSocial",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/auth/AuthController.java",
+        "line": 77
+      },
+      "frontend_caller": "authService.login",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/forgot-password",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/auth/AuthController.java",
+        "line": 85
+      },
+      "frontend_caller": "authService.forgotPassword",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/forgot-password/verify",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/auth/AuthController.java",
+        "line": 91
+      },
+      "frontend_caller": "authService.verifyForgotPasswordOtp",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/forgot-password/reset",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/auth/AuthController.java",
+        "line": 107
+      },
+      "frontend_caller": "authService.resetPassword",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "PATCH",
+      "path": "/auth/change-password",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/auth/AuthController.java",
+        "line": 135
+      },
+      "frontend_caller": "authService.changePassword",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/logout",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/auth/AuthController.java",
+        "line": 146
+      },
+      "frontend_caller": "authService.logout",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "GET",
+      "path": "/categories",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/CategoryController.java",
+        "line": 23
+      },
+      "frontend_caller": "categoryService.list",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "POST",
+      "path": "/communities",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/CommunityController.java",
+        "line": 32
+      },
+      "frontend_caller": "communityService.create",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "PATCH",
+      "path": "/communities/{name}",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/CommunityController.java",
+        "line": 41
+      },
+      "frontend_caller": "communityService.update",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "GET",
+      "path": "/communities/{name}",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/CommunityController.java",
+        "line": 64
+      },
+      "frontend_caller": "communityService.getByName",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "PUT",
+      "path": "/communities/{name}/avatar",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/CommunityController.java",
+        "line": 74
+      },
+      "frontend_caller": "communityService.uploadAvatar",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "PUT",
+      "path": "/communities/{name}/banner",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/CommunityController.java",
+        "line": 90
+      },
+      "frontend_caller": "communityService.uploadBanner",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "GET",
+      "path": "/communities/{name}/members",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/CommunityController.java",
+        "line": 106
+      },
+      "frontend_caller": "communityService.members",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "POST",
+      "path": "/communities/{name}/members",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/CommunityMemberController.java",
+        "line": 25
+      },
+      "frontend_caller": "communityService.join",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "PUT",
+      "path": "/communities/{communitiesName}/moderators/{username}",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/CommunityMemberController.java",
+        "line": 36
+      },
+      "frontend_caller": "communityService.appointModerator",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "DELETE",
+      "path": "/communities/{name}/moderators/{username}",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/CommunityMemberController.java",
+        "line": 48
+      },
+      "frontend_caller": "communityService.removeModerator",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "DELETE",
+      "path": "/communities/{name}/members/me",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/CommunityMemberController.java",
+        "line": 60
+      },
+      "frontend_caller": "communityService.leave",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "DELETE",
+      "path": "/communities/{communitiesName}/members/{username}",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/CommunityMemberController.java",
+        "line": 70
+      },
+      "frontend_caller": "communityService.kickMember",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "PUT",
+      "path": "/communities/{name}/owner",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/CommunityMemberController.java",
+        "line": 82
+      },
+      "frontend_caller": "communityService.transferOwnership",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "GET",
+      "path": "/explore",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/ExploreCommunityController.java",
+        "line": 25
+      },
+      "frontend_caller": "communityService.list",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "GET",
+      "path": "/explore/{slug}",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/ExploreCommunityController.java",
+        "line": 40
+      },
+      "frontend_caller": "communityService.listByCategory",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "GET",
+      "path": "/explore/search",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/community/ExploreCommunityController.java",
+        "line": 58
+      },
+      "frontend_caller": "communityService.search",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "GET",
+      "path": "/user/me",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/user/UserController.java",
+        "line": 30
+      },
+      "frontend_caller": "userService.getMe",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "PUT",
+      "path": "/user/me/avatar",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/user/UserController.java",
+        "line": 35
+      },
+      "frontend_caller": "userService.uploadAvatar",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "PUT",
+      "path": "/user/me/banner",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/user/UserController.java",
+        "line": 43
+      },
+      "frontend_caller": "userService.uploadBanner",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "GET",
+      "path": "/user/{name}",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/user/UserController.java",
+        "line": 50
+      },
+      "frontend_caller": "userService.getPublicProfile",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "GET",
+      "path": "/user/me/owned",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/user/UserController.java",
+        "line": 58
+      },
+      "frontend_caller": "communityService.mine",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "GET",
+      "path": "/user/me/joined",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/user/UserController.java",
+        "line": 70
+      },
+      "frontend_caller": "communityService.mine",
+      "status": "referenced_from_active_frontend"
+    },
+    {
+      "method": "PATCH",
+      "path": "/user/me/profile",
+      "backend": {
+        "file": "backend/src/main/java/com/discuss/discuss/controller/user/UserController.java",
+        "line": 80
+      },
+      "frontend_caller": "userService.updateProfile",
+      "status": "referenced_from_active_frontend"
+    }
+  ],
+  "frontend_endpoints_without_backend": [
+    {
+      "method": "GET",
+      "path": "/users/search",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 138
+      },
+      "status": "http_call_enabled_backend_handler_missing",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "GET",
+      "path": "/posts",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 421
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "GET",
+      "path": "/posts/{postId}",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 424
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "POST",
+      "path": "/posts",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 435
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "PUT",
+      "path": "/posts/{postId}/vote",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 439
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "PUT",
+      "path": "/posts/{postId}/save",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 445
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/posts/{postId}",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 449
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "GET",
+      "path": "/posts/saved",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 452
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "GET",
+      "path": "/posts/{postId}/comments",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 457
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "POST",
+      "path": "/posts/{postId}/comments",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 464
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "PUT",
+      "path": "/posts/{postId}/comments/{commentId}/vote",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 468
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "POST",
+      "path": "/reports",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 474
+      },
+      "status": "http_call_enabled_backend_handler_missing",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "GET",
+      "path": "/reports",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 476
+      },
+      "status": "http_call_enabled_backend_handler_missing",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "GET",
+      "path": "/reports/community/{communityName}",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 478
+      },
+      "status": "http_call_enabled_backend_handler_missing",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/reports/{reportId}",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 480
+      },
+      "status": "http_call_enabled_backend_handler_missing",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "GET",
+      "path": "/admin/stats",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 503
+      },
+      "status": "http_call_enabled_backend_handler_missing",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "GET",
+      "path": "/admin/users",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 505
+      },
+      "status": "http_call_enabled_backend_handler_missing",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/users/{id}/status",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 522
+      },
+      "status": "http_call_enabled_backend_handler_missing",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "GET",
+      "path": "/admin/communities",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 539
+      },
+      "status": "http_call_enabled_backend_handler_missing",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/communities/{name}/status",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 543
+      },
+      "status": "http_call_enabled_backend_handler_missing",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "GET",
+      "path": "/notifications",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 549
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "PUT",
+      "path": "/notifications/{id}/read",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 553
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "PUT",
+      "path": "/notifications/read-all",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 557
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "GET",
+      "path": "/notifications/preferences",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 561
+      },
+      "status": "no_ui_or_store_caller",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "PUT",
+      "path": "/notifications/preferences",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 565
+      },
+      "status": "no_ui_or_store_caller",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "GET",
+      "path": "/messages",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 579
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "GET",
+      "path": "/messages/{conversationId}",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 586
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "POST",
+      "path": "/messages/conversations",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 597
+      },
+      "status": "no_ui_or_store_caller",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "POST",
+      "path": "/messages/{conversationId}",
+      "frontend": {
+        "file": "frontend/src/services/index.ts",
+        "line": 624
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "POST",
+      "path": "/media/post-image",
+      "frontend": {
+        "file": "frontend/src/services/mediaService.ts",
+        "line": 55
+      },
+      "status": "http_disabled_local_demo",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "POST",
+      "path": "/media/avatar",
+      "frontend": {
+        "file": "frontend/src/services/mediaService.ts",
+        "line": 65
+      },
+      "status": "no_ui_or_store_caller",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "POST",
+      "path": "/media/cover",
+      "frontend": {
+        "file": "frontend/src/services/mediaService.ts",
+        "line": 75
+      },
+      "status": "no_ui_or_store_caller",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "POST",
+      "path": "/media/upload",
+      "frontend": {
+        "file": "frontend/src/services/mediaService.ts",
+        "line": 86
+      },
+      "status": "no_ui_or_store_caller",
+      "backend_handler_exists": false
+    },
+    {
+      "method": "POST",
+      "path": "/media/upload/multiple",
+      "frontend": {
+        "file": "frontend/src/services/mediaService.ts",
+        "line": 97
+      },
+      "status": "no_ui_or_store_caller",
+      "backend_handler_exists": false
+    }
+  ],
+  "frontend_source_files_not_reachable_from_entry": [
+    "frontend/src/api/adminService.js",
+    "frontend/src/api/authService.js",
+    "frontend/src/api/client.js",
+    "frontend/src/api/commentService.js",
+    "frontend/src/api/communityService.js",
+    "frontend/src/api/postService.js",
+    "frontend/src/api/userService.js",
+    "frontend/src/components/admin/CommunityManagementTab.jsx",
+    "frontend/src/components/admin/StatsOverviewTab.jsx",
+    "frontend/src/components/admin/SystemReportsTab.jsx",
+    "frontend/src/components/admin/UserManagementTab.jsx",
+    "frontend/src/components/auth/ChangePasswordModal.jsx",
+    "frontend/src/components/auth/ForgotPasswordModal.jsx",
+    "frontend/src/components/auth/GoogleSignInButton.tsx",
+    "frontend/src/components/auth/VerifyEmailModal.jsx",
+    "frontend/src/components/comment/CommentItem.jsx",
+    "frontend/src/components/comment/CommentSection.jsx",
+    "frontend/src/components/common/ImageCropperModal.jsx",
+    "frontend/src/components/common/Modal.jsx",
+    "frontend/src/components/common/Navbar.jsx",
+    "frontend/src/components/common/ProtectedRoute.jsx",
+    "frontend/src/components/common/RightSidebar.jsx",
+    "frontend/src/components/common/RoleBadge.jsx",
+    "frontend/src/components/common/Sidebar.jsx",
+    "frontend/src/components/common/ToastContainer.jsx",
+    "frontend/src/components/common/UserProfileRightSidebar.jsx",
+    "frontend/src/components/community/CommunityCard.jsx",
+    "frontend/src/components/community/CommunityHeader.jsx",
+    "frontend/src/components/community/CommunityMembersModal.jsx",
+    "frontend/src/components/community/CommunityModerationModal.jsx",
+    "frontend/src/components/community/CreateCommunityModal.jsx",
+    "frontend/src/components/community/EditCommunityModal.jsx",
+    "frontend/src/components/community/TransferOwnerModal.jsx",
+    "frontend/src/components/post/CreatePostModal.jsx",
+    "frontend/src/components/post/EditPostModal.jsx",
+    "frontend/src/components/post/PostCard.jsx",
+    "frontend/src/components/post/PostDetailModal.jsx",
+    "frontend/src/components/post/ReportPostModal.jsx",
+    "frontend/src/components/post/VoteButtons.jsx",
+    "frontend/src/components/ui/Card.tsx",
+    "frontend/src/components/ui/Skeleton.tsx",
+    "frontend/src/components/ui/Tooltip.tsx",
+    "frontend/src/constants/roles.js",
+    "frontend/src/context/AuthContext.jsx",
+    "frontend/src/context/CommunityContext.jsx",
+    "frontend/src/context/PostContext.jsx",
+    "frontend/src/context/ToastContext.jsx",
+    "frontend/src/pages/AdminDashboardPage.jsx",
+    "frontend/src/pages/CommunityDetailPage.jsx",
+    "frontend/src/pages/EditProfilePage.jsx",
+    "frontend/src/pages/ExploreCommunitiesPage.jsx",
+    "frontend/src/pages/FeedPage.jsx",
+    "frontend/src/pages/LoginPage.jsx",
+    "frontend/src/pages/RegisterPage.jsx",
+    "frontend/src/pages/UserProfilePage.jsx",
+    "frontend/src/pages/settings/ResetPasswordPage.tsx",
+    "frontend/src/utils/errorhandler.js",
+    "frontend/src/utils/formatters.js",
+    "frontend/src/utils/permissions.js",
+    "frontend/src/utils/storage.js"
+  ]
+}
