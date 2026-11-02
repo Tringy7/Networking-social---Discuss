@@ -4,6 +4,7 @@ import { useToastStore } from '../../store/useToastStore';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import Avatar from '../../components/ui/Avatar';
+import EntityBanner from '../../components/ui/EntityBanner';
 import ImageCropEditor from '../../components/profile/ImageCropEditor';
 import { Camera, Check } from 'lucide-react';
 
@@ -89,20 +90,18 @@ export const EditProfilePage: React.FC = () => {
       <div className="space-y-3">
         <label className="text-sm font-semibold text-[var(--text-secondary)] block">Ảnh bìa & Ảnh đại diện</label>
         
-        <button
-          type="button"
-          onClick={handleBannerChange}
-          disabled={isLoading}
-          aria-label="Chọn ảnh bìa mới"
-          className="group relative block h-32 w-full cursor-pointer overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] text-left transition-colors hover:border-[var(--border-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] disabled:cursor-wait sm:h-40"
-        >
-          {bannerUrl ? (
-            <img src={bannerUrl} alt="Ảnh bìa xem trước" className="h-full w-full object-cover" />
-          ) : (
-            <span className="flex h-full items-center justify-center gap-2 text-sm text-[var(--text-muted)]"><Camera className="h-4 w-4" /> Thêm ảnh bìa</span>
-          )}
-          <span className="absolute inset-0 flex items-center justify-center gap-2 bg-black/0 text-sm font-medium text-white opacity-0 transition-opacity group-hover:bg-black/35 group-hover:opacity-100 group-focus-visible:bg-black/35 group-focus-visible:opacity-100"><Camera className="h-4 w-4" /> Thay ảnh bìa</span>
-        </button>
+        <EntityBanner src={bannerUrl} alt="Ảnh bìa xem trước" variant="user" className="entity-banner--preview">
+          <button
+            type="button"
+            onClick={handleBannerChange}
+            disabled={isLoading}
+            aria-label="Chọn ảnh bìa mới"
+            className="profile-cover-button group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] disabled:cursor-wait"
+          >
+            <span className="profile-cover-feedback" aria-hidden="true" />
+            <span className="entity-cover-edit-label"><Camera className="h-4 w-4" />{bannerUrl ? 'Thay ảnh bìa' : 'Thêm ảnh bìa'}</span>
+          </button>
+        </EntityBanner>
 
         {/* Click the avatar itself to choose a replacement. */}
         <div className="flex items-center gap-4 -mt-10 sm:-mt-12 pl-4 relative z-10">
@@ -119,6 +118,7 @@ export const EditProfilePage: React.FC = () => {
             </span>
           </button>
         </div>
+        <p className="text-xs leading-relaxed text-[var(--text-muted)]">Ảnh ngang 4:1. Giữ nội dung chính ở giữa để hiển thị tốt trên điện thoại.</p>
       </div>
 
       {/* Form fields */}

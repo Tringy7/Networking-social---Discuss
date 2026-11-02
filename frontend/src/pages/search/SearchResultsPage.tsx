@@ -203,7 +203,7 @@ export const SearchResultsPage: React.FC = () => {
               {matchingPeople.map((person) => (
                 <Link
                   key={person.username}
-                  to={`/user/${person.username}`}
+                  to={`/u/${person.username}`}
                   className="p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--border-hover)] rounded-xl flex items-center justify-between gap-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
                 >
                   <div className="flex items-center gap-3">

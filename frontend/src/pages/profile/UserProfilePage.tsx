@@ -12,7 +12,7 @@ import EntityBanner from '../../components/ui/EntityBanner';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import ReportModal from '../../components/post/ReportModal';
-import Modal from '../../components/ui/Modal';
+import EntityImageActions from '../../components/ui/EntityImageActions';
 import ImageCropEditor from '../../components/profile/ImageCropEditor';
 import {
   Calendar,
@@ -25,7 +25,6 @@ import {
   FileText,
   MessageSquare,
   Award,
-  Camera,
   Eye,
 } from 'lucide-react';
 
@@ -38,9 +37,6 @@ export const UserProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isAvatarEditorOpen, setIsAvatarEditorOpen] = useState(false);
-  const [imageActionsTarget, setImageActionsTarget] = useState<'avatar' | 'banner' | null>(null);
-  const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false);
-  const [previewKind, setPreviewKind] = useState<'avatar' | 'banner'>('avatar');
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [isBannerEditorOpen, setIsBannerEditorOpen] = useState(false);
   const [isSavingBanner, setIsSavingBanner] = useState(false);
@@ -126,68 +122,18 @@ export const UserProfilePage: React.FC = () => {
       <section className="profile-editorial" aria-label="Hồ sơ người dùng">
         <header className="profile-masthead">
         <EntityBanner src={profileUser.bannerUrl} alt={`${profileUser.displayName} - ảnh bìa`} variant="user" className="profile-cover">
-          {(isMe || profileUser.bannerUrl) && (
-            <button
-              type="button"
-              onClick={() => setImageActionsTarget((target) => target === 'banner' ? null : 'banner')}
-              className="profile-cover-button"
-              aria-label={isMe ? 'Chỉnh sửa ảnh bìa' : 'Tùy chọn ảnh bìa'}
-              aria-expanded={imageActionsTarget === 'banner'}
-              title={isMe ? 'Chỉnh sửa ảnh bìa' : 'Tùy chọn ảnh bìa'}
-            >
-              <span className="profile-cover-feedback" aria-hidden="true" />
-              {isMe && <span className="entity-cover-edit-label"><Camera size={16} aria-hidden="true" />Chỉnh ảnh bìa</span>}
-            </button>
-          )}
-          {imageActionsTarget === 'banner' && (
-            <div data-ui="popover" className="absolute right-2 top-2 z-50 min-w-44 overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-1.5 shadow-xl">
-              {profileUser.bannerUrl && (
-                <button type="button" onClick={() => { setPreviewKind('banner'); setImageActionsTarget(null); setIsAvatarPreviewOpen(true); }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
-                  <Eye className="h-4 w-4" /> Xem ảnh bìa
-                </button>
-              )}
-              {isMe && (
-                <button type="button" onClick={() => { setImageActionsTarget(null); setIsBannerEditorOpen(true); }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
-                  <Camera className="h-4 w-4" /> Chỉnh ảnh bìa
-                </button>
-              )}
-            </div>
-          )}
-
+          <EntityImageActions key={`${profileUser.username}-banner`} src={profileUser.bannerUrl} kind="banner"
+            name={profileUser.displayName} href={`/u/${profileUser.username}`} handle={`u/${profileUser.username}`} avatarUrl={profileUser.avatarUrl}
+            onEdit={isMe ? () => setIsBannerEditorOpen(true) : undefined} />
         </EntityBanner>
 
         <div className="profile-identity">
           <div className="profile-avatar-position">
-            <button
-              type="button"
-              onClick={() => setImageActionsTarget((target) => target === 'avatar' ? null : 'avatar')}
-              className="group relative h-full w-full rounded-full border-4 border-[var(--bg-surface)] bg-[var(--bg-surface)]"
-              aria-label="Tùy chọn ảnh đại diện"
-              aria-expanded={imageActionsTarget === 'avatar'}
-            >
-              <Avatar src={profileUser.avatarUrl} alt={profileUser.displayName} size="2xl" className="h-full w-full" />
-              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-                {isMe ? <Camera className="h-6 w-6" /> : <Eye className="h-6 w-6" />}
-              </span>
-            </button>
-            {imageActionsTarget === 'avatar' && (
-              <div data-ui="popover" className="absolute left-0 top-full z-50 mt-1 min-w-44 overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-1.5 shadow-xl sm:mt-1">
-                {profileUser.avatarUrl && (
-                  <button type="button" onClick={() => { setPreviewKind('avatar'); setImageActionsTarget(null); setIsAvatarPreviewOpen(true); }}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
-                    <Eye className="h-4 w-4" /> Xem ảnh đại diện
-                  </button>
-                )}
-                {isMe && imageActionsTarget === 'avatar' && (
-                  <button type="button" onClick={() => { setImageActionsTarget(null); setIsAvatarEditorOpen(true); }}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
-                    <Camera className="h-4 w-4" /> Chỉnh ảnh đại diện
-                  </button>
-                )}
-              </div>
-            )}
+            <EntityImageActions key={`${profileUser.username}-avatar`} src={profileUser.avatarUrl} kind="avatar"
+              name={profileUser.displayName} href={`/u/${profileUser.username}`} handle={`u/${profileUser.username}`} avatarUrl={profileUser.avatarUrl}
+              onEdit={isMe ? () => setIsAvatarEditorOpen(true) : undefined}>
+              <Avatar src={profileUser.avatarUrl} alt={profileUser.displayName} size="2xl" className="h-full w-full border-4 border-[var(--bg-surface)]" />
+            </EntityImageActions>
           </div>
           <div className="profile-name-row">
             <div className="profile-name-wrap">
@@ -240,7 +186,6 @@ export const UserProfilePage: React.FC = () => {
           </div>
 
         </div>
-        {profileUser.bio && <p className="profile-description">{profileUser.bio}</p>}
         </header>
 
       <div className="profile-columns">
@@ -295,6 +240,7 @@ export const UserProfilePage: React.FC = () => {
                 </Link>
               )}
             </div>
+            {profileUser.bio && <p className="entity-about-description">{profileUser.bio}</p>}
             <div className="profile-facts">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
@@ -330,28 +276,6 @@ export const UserProfilePage: React.FC = () => {
           <Link to="/settings" className="transition-colors hover:text-[var(--text-primary)]">Cài đặt</Link>
         </nav>
       </footer>
-
-      <Modal
-        isOpen={isAvatarPreviewOpen}
-        onClose={() => setIsAvatarPreviewOpen(false)}
-        title={`${previewKind === 'avatar' ? 'Ảnh đại diện' : 'Ảnh bìa'} của ${profileUser.displayName}`}
-        maxWidth="4xl"
-      >
-        <div className="mx-auto max-w-4xl overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)]">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <Avatar src={profileUser.avatarUrl} alt={profileUser.displayName} size="sm" />
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-[var(--text-primary)]">{profileUser.displayName}</div>
-              <div className="text-xs text-[var(--text-muted)]">{previewKind === 'avatar' ? 'Ảnh đại diện' : 'Ảnh bìa'}</div>
-            </div>
-          </div>
-          <div className="flex min-h-48 items-center justify-center p-2 sm:p-4">
-            <img src={previewKind === 'avatar' ? profileUser.avatarUrl : profileUser.bannerUrl}
-              alt={`${previewKind === 'avatar' ? 'Ảnh đại diện' : 'Ảnh bìa'} của ${profileUser.displayName}`}
-              className="max-h-[70vh] max-w-full rounded-lg object-contain" />
-          </div>
-        </div>
-      </Modal>
 
       <ImageCropEditor
         kind="avatar"

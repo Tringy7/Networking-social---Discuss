@@ -195,7 +195,7 @@ export const PostDetailPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <Avatar src={cmt.author.avatarUrl} alt={cmt.author.displayName} size="xs" />
             <Link
-              to={`/user/${cmt.author.username}`}
+              to={`/u/${cmt.author.username}`}
               className="font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange)] transition-colors"
             >
               {cmt.author.displayName}
@@ -312,11 +312,11 @@ export const PostDetailPage: React.FC = () => {
         {/* Community & Author Header */}
         <div className="flex items-center justify-between gap-4 pb-1">
           <div className="thread-author flex min-w-0 items-center gap-3">
-            <Link to={`/user/${post.author.username}`}><Avatar src={post.author.avatarUrl} alt={post.author.displayName || post.author.username} size="md" /></Link>
+            <Link to={`/u/${post.author.username}`}><Avatar src={post.author.avatarUrl} alt={post.author.displayName || post.author.username} size="md" /></Link>
             <div className="min-w-0">
-              <Link to={`/community/${post.communityName}`} className="text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange-ink)] block truncate">{post.communityDisplayName}</Link>
+              <Link to={`/c/${post.communityName}`} className="text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange-ink)] block truncate">{post.communityDisplayName}</Link>
               <div className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                <Link to={`/user/${post.author.username}`}>{post.author.displayName || post.author.username}</Link><span aria-hidden="true">·</span>
+                <Link to={`/u/${post.author.username}`}>{post.author.displayName || post.author.username}</Link><span aria-hidden="true">·</span>
                 <time dateTime={post.createdAt}>{new Date(post.createdAt).toLocaleDateString('vi-VN', {day:'numeric',month:'short'})}</time>
                 {post.author.role === 'OWNER' && <Badge role="OWNER" size="sm" />}
                 {post.author.role === 'MODERATOR' && <Badge role="MODERATOR" size="sm" />}

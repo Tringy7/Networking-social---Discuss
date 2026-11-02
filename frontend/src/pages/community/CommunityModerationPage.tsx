@@ -76,14 +76,14 @@ export const CommunityModerationPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate(`/community/${communityName}`)}
+            onClick={() => navigate(`/c/${communityName}`)}
             aria-label="Quay lại cộng đồng"
             className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--bg-surface)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <p className="text-sm font-medium text-[var(--text-muted)]">community/{communityName}</p>
+            <p className="text-sm font-medium text-[var(--text-muted)]">c/{communityName}</p>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
               <ShieldAlert className="w-5 h-5 text-[var(--color-orange-ink)]" />
               <span>Hàng đợi kiểm duyệt</span>

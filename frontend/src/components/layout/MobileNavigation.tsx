@@ -91,19 +91,19 @@ export const MobileNavigation: React.FC = () => {
             <nav aria-label="Các trang khác" className="grid grid-cols-2 gap-1 sm:grid-cols-3">
               {isAuthenticated && user ? (
                 <>
-                  <Link onClick={closeMoreMenu} to={`/user/${user.username}`} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><UserRound className="h-4 w-4" />Hồ sơ</Link>
+                  <Link onClick={closeMoreMenu} to={`/u/${user.username}`} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><UserRound className="h-4 w-4" />Hồ sơ</Link>
                   <Link onClick={closeMoreMenu} to="/saved" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Bookmark className="h-4 w-4" />Đã lưu</Link>
                   <Link onClick={closeMoreMenu} to="/messages" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><MessageSquare className="h-4 w-4" />Tin nhắn</Link>
                   <Link onClick={closeMoreMenu} to="/communities/mine" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Users className="h-4 w-4" />Cộng đồng của tôi</Link>
                   <Link onClick={closeMoreMenu} to="/communities/create" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Plus className="h-4 w-4" />Tạo cộng đồng</Link>
                   <Link onClick={closeMoreMenu} to="/settings" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Settings className="h-4 w-4" />Cài đặt</Link>
                   {joinedCommunities.map((community) => (
-                    <Link key={community.id} onClick={closeMoreMenu} to={`/community/${community.name}`} className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]">
+                    <Link key={community.id} onClick={closeMoreMenu} to={`/c/${community.name}`} className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]">
                       <span className="truncate">c/{community.name}</span>
                     </Link>
                   ))}
                   {(activeRole === 'OWNER' || activeRole === 'MODERATOR' || activeRole === 'ADMIN') && (
-                    <Link onClick={closeMoreMenu} to="/community/lap-trinh-viet-nam/moderation" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><ShieldCheck className="h-4 w-4" />Kiểm duyệt</Link>
+                    <Link onClick={closeMoreMenu} to="/c/lap-trinh-viet-nam/moderation" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><ShieldCheck className="h-4 w-4" />Kiểm duyệt</Link>
                   )}
                   {activeRole === 'ADMIN' && <Link onClick={closeMoreMenu} to="/admin" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><ShieldCheck className="h-4 w-4" />Quản trị</Link>}
                 </>

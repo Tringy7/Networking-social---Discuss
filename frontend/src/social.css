@@ -152,7 +152,7 @@ h1,h2,h3,h4,h5,h6 { overflow-wrap:anywhere; }
 .community-identity h1 { font-size:26px; line-height:1.3; letter-spacing:normal; }
 .community-handle { margin-top:4px; font-size:13px; line-height:20px; color:var(--text-secondary); overflow-wrap:anywhere; }
 .community-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; align-items:center; align-self:center; }
-.community-description { font-size:14px; line-height:1.6; color:var(--text-secondary); max-width:80ch; margin-top:12px; overflow-wrap:anywhere; }
+.entity-about-description { font-size:14px; line-height:1.6; color:var(--text-secondary); white-space:pre-wrap; overflow-wrap:anywhere; }
 .community-facts { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; margin-top:8px; color:var(--text-secondary); font-size:13px; font-variant-numeric:tabular-nums; }
 .community-facts > * { display:flex; gap:6px; align-items:center; min-width:0; }
 .community-facts svg { flex:none; }
@@ -390,36 +390,58 @@ code:not(pre code) { background:var(--bg-code); padding:2px 5px; border-radius:4
 @container(min-width:1000px) { .community-directory { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @container(min-width:1360px) { .community-directory { grid-template-columns:repeat(4,minmax(0,1fr)); } }
 
-/* Full-width covers clip only their image presentation; menus stay outside the
-   clip. Uploaded files and the editors' independent crop dimensions are untouched. */
-.entity-banner { position:relative; width:100%; height:160px; background:var(--bg-elevated); border-radius:12px 12px 0 0; }
-.entity-banner--community { height:160px; }
-.entity-banner-image { display:block; width:100%; height:100%; object-fit:cover; clip-path:inset(0 round 12px 12px 0 0); opacity:0; transition:opacity 180ms ease-out; }
+/* All covers share one responsive frame, including empty/error states and form
+   previews. Only the image is clipped so action menus can extend past the cover. */
+.entity-banner { position:relative; width:100%; aspect-ratio:8 / 1; min-height:60px; max-height:140px; background:var(--bg-elevated); border-radius:12px 12px 0 0; }
+.entity-banner--preview { border-radius:12px; }
+.entity-banner-image { position:absolute; inset:0; display:block; width:100%; height:100%; border-radius:inherit; object-fit:cover; opacity:0; transition:opacity 180ms ease-out; }
 .entity-banner-image.is-loaded { opacity:1; }
-.entity-banner--user.entity-banner--empty { height:64px; }
-.entity-banner--community.entity-banner--empty { height:64px; }
-.entity-banner-edit,.entity-cover-edit-label { position:absolute; top:12px; right:12px; display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:34px; padding:6px 10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-surface); color:var(--text-primary); font-size:13px; font-weight:600; opacity:0; transition:opacity 180ms,background-color 180ms; }
+.entity-banner-edit,.entity-cover-edit-label { position:absolute; top:12px; right:12px; display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:34px; padding:6px 10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-surface); color:var(--text-primary); font-size:13px; font-weight:600; transition:background-color 180ms; }
 .entity-banner:hover .entity-banner-edit,.entity-banner-edit:focus-visible,.profile-cover-button:hover .entity-cover-edit-label,.profile-cover-button:focus-visible .entity-cover-edit-label { opacity:1; }
 .entity-banner-edit:hover { background:var(--bg-hover); }
 .entity-banner-edit:active { transform:scale(.98); }
-.entity-banner--empty .entity-banner-edit,.entity-banner--empty .entity-cover-edit-label { top:50%; translate:0 -50%; opacity:1; }
 .profile-cover-button { position:absolute; inset:0; width:100%; height:100%; border-radius:inherit; background:transparent; }
 .profile-cover-feedback { display:block; width:100%; height:100%; border-radius:inherit; background:transparent; transition:background-color 180ms; }
 .profile-cover-button:hover .profile-cover-feedback,.profile-cover-button:focus-visible .profile-cover-feedback { background:rgb(0 0 0 / .06); }
 .profile-cover-button:active .profile-cover-feedback { background:rgb(0 0 0 / .1); }
-@media(min-width:768px) and (max-width:1199px) {
-  .entity-banner--user { height:136px; }
-  .entity-banner--community { height:136px; }
-  .entity-banner--user.entity-banner--empty { height:56px; }
-  .entity-banner--community.entity-banner--empty { height:56px; }
-}
 @media(max-width:767px) {
-  .entity-banner--user { height:120px; }
-  .entity-banner--community { height:120px; }
-  .entity-banner--user.entity-banner--empty { height:48px; }
-  .entity-banner--community.entity-banner--empty { height:48px; }
+  .entity-banner { aspect-ratio:6 / 1; min-height:56px; max-height:90px; }
+  .entity-banner-edit,.entity-cover-edit-label { top:8px; right:8px; }
 }
 @media(prefers-reduced-motion:reduce) { .entity-banner-image { opacity:1; transition:none; } }
+
+.entity-image-control { position:relative; width:100%; height:100%; }
+.entity-image-control--banner { position:absolute; inset:0; }
+.entity-image-control.is-open { z-index:30; }
+.entity-image-trigger { position:relative; display:block; width:100%; height:100%; border-radius:inherit; }
+.entity-image-control--avatar,.entity-image-control--avatar .entity-image-trigger { border-radius:50%; }
+.entity-image-control--banner .entity-image-trigger { border-radius:12px 12px 0 0; }
+.entity-image-trigger:disabled { cursor:default; }
+.entity-image-feedback { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; border-radius:inherit; color:#fff; background:rgb(0 0 0 / .24); opacity:0; transition:opacity 160ms; pointer-events:none; }
+.entity-image-trigger:hover:not(:disabled) .entity-image-feedback,.entity-image-trigger:focus-visible .entity-image-feedback { opacity:1; }
+.entity-image-options { position:absolute; top:12px; right:12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:34px; padding:6px 10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-surface); color:var(--text-primary); font-size:13px; }
+.entity-image-options:hover,.entity-image-options[aria-expanded="true"] { background:var(--bg-hover); }
+.entity-image-control--avatar .entity-image-options { top:auto; bottom:0; right:0; width:28px; min-height:28px; padding:3px; border-radius:50%; }
+.entity-image-control--avatar .entity-image-options span { display:none; }
+.entity-image-menu { position:absolute; top:54px; right:12px; z-index:40; width:max-content; min-width:192px; max-width:calc(100vw - 32px); padding:6px; border:1px solid var(--border-color); border-radius:12px; background:var(--bg-surface); box-shadow:var(--surface-shadow); transform-origin:top right; }
+.entity-image-control--avatar .entity-image-menu { top:calc(100% + 8px); right:auto; left:0; transform-origin:top left; }
+.entity-image-menu button { display:flex; align-items:center; gap:10px; width:100%; min-height:44px; padding:10px 12px; border-radius:8px; color:var(--text-primary); font-size:14px; text-align:left; }
+.entity-image-menu button:hover,.entity-image-menu button:focus-visible { background:var(--bg-hover); }
+.image-post { overflow:hidden; border:1px solid var(--border-color); border-radius:12px; }
+.image-post-author { display:flex; align-items:center; gap:12px; padding:16px; }
+.image-post-author > div { min-width:0; overflow-wrap:anywhere; }
+.image-post-author p { margin-top:3px; color:var(--text-secondary); font-size:13px; }
+.image-post-media { display:flex; justify-content:center; align-items:center; min-height:200px; background:var(--bg-elevated); }
+.image-post-media > img { display:block; max-width:100%; max-height:55svh; object-fit:contain; }
+.image-post-unavailable { display:grid; justify-items:center; gap:12px; padding:40px 16px; color:var(--text-secondary); }
+.image-post-actions { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:12px 16px; border-top:1px solid var(--border-color); }
+@media(max-width:767px) {
+  .entity-image-options { top:8px; right:8px; min-height:44px; }
+  .entity-image-menu { top:60px; right:8px; }
+  .image-post-author,.image-post-actions { padding:12px; }
+  .image-post-actions button { min-height:44px; }
+}
+@media(prefers-reduced-motion:reduce) { .entity-image-feedback { transition:none; } }
 
 /* Profile identity stays in normal flow. The avatar's negative margin creates a
    stable overlap; its reserved width and height prevent image-loading shifts. */
@@ -427,7 +449,6 @@ code:not(pre code) { background:var(--bg-code); padding:2px 5px; border-radius:4
 .profile-editorial { display:block; min-width:0; }
 .profile-masthead { padding-bottom:16px; margin-bottom:16px; border-bottom:1px solid var(--border-color); }
 .profile-identity { display:flex; align-items:center; gap:16px; padding:12px 16px 0; }
-.profile-description { margin-top:12px; font-size:14px; line-height:1.6; max-width:80ch; color:var(--text-secondary); white-space:pre-wrap; overflow-wrap:anywhere; }
 .profile-avatar-position { position:relative; z-index:20; width:96px; height:96px; flex:none; align-self:flex-start; margin-top:-40px; }
 .profile-avatar-position .avatar { width:100%; height:100%; }
 .profile-name-row { display:flex; align-items:center; justify-content:space-between; gap:16px; min-width:0; flex:1; }
@@ -459,6 +480,12 @@ code:not(pre code) { background:var(--bg-code); padding:2px 5px; border-radius:4
 .profile-page > .site-footer { margin-top:auto; padding-top:24px; gap:8px 16px; }
 .image-crop-editor button:not(:disabled) { transition:background-color 180ms,border-color 180ms; }
 .image-crop-editor button:hover:not(:disabled) { border-color:var(--border-hover); }
+.image-crop-editor .crop-resize-handle { position:absolute; width:32px; height:32px; max-width:35%; max-height:35%; min-width:0; min-height:0; padding:0; border:0; background:transparent; touch-action:none; }
+.crop-resize-handle--nw { top:0; left:0; cursor:nwse-resize; }
+.crop-resize-handle--ne { top:0; right:0; cursor:nesw-resize; }
+.crop-resize-handle--sw { bottom:0; left:0; cursor:nesw-resize; }
+.crop-resize-handle--se { bottom:0; right:0; cursor:nwse-resize; }
+@media(pointer:coarse) { .image-crop-editor .crop-resize-handle { width:44px; height:44px; } }
 @media(max-width:1100px) {
   .profile-columns { display:flex; flex-direction:column; gap:16px; }
   .profile-activity,.profile-about { width:100%; }

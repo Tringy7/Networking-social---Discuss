@@ -68,3 +68,6 @@ tools/
 
 # Local design inspections and browser fixtures
 .taste-skill/
+
+# Local Taste Skill installation
+/.agents/skills/design-taste-frontend/

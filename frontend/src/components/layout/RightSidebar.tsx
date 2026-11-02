@@ -21,8 +21,8 @@ export default function RightSidebar() {
     <section className="context-section">
       <div className="context-title"><h2>Tìm cộng đồng của bạn</h2><Link to="/explore">Khám phá <span aria-hidden="true">↗</span></Link></div>
       {suggested.map((c) => <div key={c.id} className="context-community">
-        <Link to={`/community/${c.name}`}><Avatar src={c.avatarUrl} alt={c.displayName} size="sm" shape="rounded" /></Link>
-        <div className="community-info"><Link to={`/community/${c.name}`}>{c.displayName}</Link><p>{c.memberCount.toLocaleString('vi-VN')} thành viên</p></div>
+        <Link to={`/c/${c.name}`}><Avatar src={c.avatarUrl} alt={c.displayName} size="sm" shape="rounded" /></Link>
+        <div className="community-info"><Link to={`/c/${c.name}`}>{c.displayName}</Link><p>{c.memberCount.toLocaleString('vi-VN')} thành viên</p></div>
         <CommunityMembershipButton community={c} />
       </div>)}
       {!suggested.length && <Link to="/explore" className="text-sm text-[var(--text-secondary)]">Khám phá những mối quan tâm mới →</Link>}

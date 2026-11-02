@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 // Layouts
 import AppLayout from '../layouts/AppLayout';
@@ -56,6 +56,15 @@ const NotFoundPage = React.lazy(() => import('../pages/error/NotFoundPage'));
 
 const routeLoading = <div role="status" aria-live="polite" className="route-loading"><span />Đang mở nội dung…</div>;
 
+function LegacyEntityRedirect() {
+  const { pathname, search, hash, state } = useLocation();
+  const canonicalPath = pathname
+    .replace(/^\/community\//i, '/c/')
+    .replace(/^\/user\//i, '/u/');
+
+  return <Navigate to={{ pathname: canonicalPath, search, hash }} state={state} replace />;
+}
+
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
@@ -66,10 +75,10 @@ export const AppRoutes: React.FC = () => {
         <Route path="/explore" element={<React.Suspense fallback={routeLoading}><ExplorePage /></React.Suspense>} />
         <Route path="/explore/:slug" element={<React.Suspense fallback={routeLoading}><ExplorePage /></React.Suspense>} />
         <Route path="/search" element={<React.Suspense fallback={routeLoading}><SearchResultsPage /></React.Suspense>} />
-        <Route path="/community/:communityName" element={<React.Suspense fallback={routeLoading}><CommunityDetailPage /></React.Suspense>} />
+        <Route path="/community/:communityName" element={<LegacyEntityRedirect />} />
         <Route path="/c/:communityName" element={<React.Suspense fallback={routeLoading}><CommunityDetailPage /></React.Suspense>} />
         <Route path="/post/:postId" element={<React.Suspense fallback={routeLoading}><PostDetailPage /></React.Suspense>} />
-        <Route path="/user/:username" element={<React.Suspense fallback={routeLoading}><UserProfilePage /></React.Suspense>} />
+        <Route path="/user/:username" element={<LegacyEntityRedirect />} />
         <Route path="/u/:username" element={<React.Suspense fallback={routeLoading}><UserProfilePage /></React.Suspense>} />
 
         <Route element={<ProtectedRoute />}>
@@ -81,9 +90,9 @@ export const AppRoutes: React.FC = () => {
           {/* Community Management */}
           <Route path="/communities/create" element={<React.Suspense fallback={routeLoading}><CreateCommunityPage /></React.Suspense>} />
           <Route path="/communities/mine" element={<React.Suspense fallback={routeLoading}><MyCommunitiesPage /></React.Suspense>} />
-          <Route path="/community/:communityName/settings" element={<React.Suspense fallback={routeLoading}><EditCommunityPage /></React.Suspense>} />
-          <Route path="/community/:communityName/members" element={<React.Suspense fallback={routeLoading}><CommunityMembersPage /></React.Suspense>} />
-          <Route path="/community/:communityName/moderation" element={<React.Suspense fallback={routeLoading}><CommunityModerationPage /></React.Suspense>} />
+          <Route path="/community/:communityName/settings" element={<LegacyEntityRedirect />} />
+          <Route path="/community/:communityName/members" element={<LegacyEntityRedirect />} />
+          <Route path="/community/:communityName/moderation" element={<LegacyEntityRedirect />} />
           <Route path="/c/:communityName/settings" element={<React.Suspense fallback={routeLoading}><EditCommunityPage /></React.Suspense>} />
           <Route path="/c/:communityName/members" element={<React.Suspense fallback={routeLoading}><CommunityMembersPage /></React.Suspense>} />
           <Route path="/c/:communityName/moderation" element={<React.Suspense fallback={routeLoading}><CommunityModerationPage /></React.Suspense>} />

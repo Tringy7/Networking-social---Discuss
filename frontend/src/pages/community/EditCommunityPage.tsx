@@ -4,6 +4,7 @@ import { useCommunityStore } from '../../store/useCommunityStore';
 import { useToastStore } from '../../store/useToastStore';
 import { categoryService } from '../../services';
 import Button from '../../components/ui/Button';
+import EntityBanner from '../../components/ui/EntityBanner';
 import { ArrowLeft, Check, Globe, Lock, Settings } from 'lucide-react';
 
 export const EditCommunityPage: React.FC = () => {
@@ -18,9 +19,20 @@ export const EditCommunityPage: React.FC = () => {
   const [visibility, setVisibility] = useState<'PUBLIC' | 'PRIVATE'>(community?.visibility || 'PUBLIC');
   const [avatarFile, setAvatarFile] = useState<File>();
   const [bannerFile, setBannerFile] = useState<File>();
+  const [bannerPreviewUrl, setBannerPreviewUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCommunityLoading, setIsCommunityLoading] = useState(true);
   const [communityLoadFailed, setCommunityLoadFailed] = useState(false);
+
+  useEffect(() => {
+    if (!bannerFile) {
+      setBannerPreviewUrl('');
+      return;
+    }
+    const url = URL.createObjectURL(bannerFile);
+    setBannerPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [bannerFile]);
 
   useEffect(() => {
     let active = true;
@@ -60,8 +72,8 @@ export const EditCommunityPage: React.FC = () => {
           {communityLoadFailed
             ? 'Hãy thử tải lại hoặc trở về trang cộng đồng.'
             : isCommunityLoading
-              ? `Đang tải community/${communityName}.`
-              : `Không tìm thấy community/${communityName}.`}
+              ? `Đang tải c/${communityName}.`
+              : `Không tìm thấy c/${communityName}.`}
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {communityLoadFailed && communityName && (
@@ -76,7 +88,7 @@ export const EditCommunityPage: React.FC = () => {
                 .finally(() => setIsCommunityLoading(false));
             }}>Thử lại</Button>
           )}
-          <Link to={communityName ? `/community/${communityName}` : '/explore'}>
+          <Link to={communityName ? `/c/${communityName}` : '/explore'}>
             <Button variant="primary" size="sm">Quay lại cộng đồng</Button>
           </Link>
         </div>
@@ -92,7 +104,7 @@ export const EditCommunityPage: React.FC = () => {
       if (avatarFile) await uploadAvatar(community.name, avatarFile);
       if (bannerFile) await uploadBanner(community.name, bannerFile);
       addToast('Cài đặt cộng đồng đã được cập nhật.', 'success');
-      navigate(`/community/${community.name}`);
+      navigate(`/c/${community.name}`);
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Không thể cập nhật cộng đồng.', 'error');
     } finally {
@@ -106,12 +118,12 @@ export const EditCommunityPage: React.FC = () => {
         <div className="flex min-w-0 items-start gap-3">
           <button
             type="button"
-            onClick={() => navigate(`/community/${community.name}`)}
+            onClick={() => navigate(`/c/${community.name}`)}
             aria-label="Quay lại cộng đồng"
             className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--bg-surface)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
           ><ArrowLeft className="h-4 w-4" /></button>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-[var(--text-muted)]">community/{community.name}</p>
+            <p className="text-sm font-medium text-[var(--text-muted)]">c/{community.name}</p>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
               <Settings className="h-5 w-5 shrink-0 text-[var(--color-orange-ink)]" />
               Cài đặt cộng đồng
@@ -119,7 +131,7 @@ export const EditCommunityPage: React.FC = () => {
             <p className="mt-1 text-sm text-[var(--text-secondary)]">Tên định danh không thể thay đổi.</p>
           </div>
         </div>
-        <Link to={`/community/${community.name}/members`}><Button variant="secondary" size="sm">Quản lý thành viên</Button></Link>
+        <Link to={`/c/${community.name}/members`}><Button variant="secondary" size="sm">Quản lý thành viên</Button></Link>
       </header>
 
       <form onSubmit={handleSubmit} className="community-settings-form space-y-5">
@@ -128,7 +140,7 @@ export const EditCommunityPage: React.FC = () => {
           <textarea id="community-description" rows={4} value={description} onChange={(event) => setDescription(event.target.value)} required className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]" />
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
           <label className="space-y-2 text-sm font-semibold text-[var(--text-secondary)]">Danh mục
             <select value={category} onChange={(event) => setCategory(event.target.value)} className="block w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]">
               {categories.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
@@ -137,9 +149,12 @@ export const EditCommunityPage: React.FC = () => {
           <label className="space-y-2 text-sm font-semibold text-[var(--text-secondary)]">Ảnh đại diện
             <input type="file" accept="image/*" onChange={(event) => setAvatarFile(event.target.files?.[0])} className="block w-full rounded-lg border border-[var(--border-color)] bg-[var(--bg-main)] p-2 text-sm text-[var(--text-secondary)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--color-orange-soft)] file:px-3 file:py-1.5 file:font-semibold file:text-[var(--color-orange-ink)]" />
           </label>
-          <label className="space-y-2 text-sm font-semibold text-[var(--text-secondary)]">Ảnh bìa
-            <input type="file" accept="image/*" onChange={(event) => setBannerFile(event.target.files?.[0])} className="block w-full rounded-lg border border-[var(--border-color)] bg-[var(--bg-main)] p-2 text-sm text-[var(--text-secondary)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--color-orange-soft)] file:px-3 file:py-1.5 file:font-semibold file:text-[var(--color-orange-ink)]" />
-          </label>
+          <div className="min-w-0 space-y-2 sm:col-span-2">
+            <label htmlFor="community-banner" className="text-sm font-semibold text-[var(--text-secondary)]">Ảnh bìa</label>
+            <EntityBanner src={bannerPreviewUrl || community.bannerUrl} alt={`Ảnh bìa xem trước của ${community.displayName}`} variant="community" className="entity-banner--preview" />
+            <input id="community-banner" type="file" accept="image/*" onChange={(event) => setBannerFile(event.target.files?.[0])} className="block w-full rounded-lg border border-[var(--border-color)] bg-[var(--bg-main)] p-2 text-sm text-[var(--text-secondary)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--color-orange-soft)] file:px-3 file:py-1.5 file:font-semibold file:text-[var(--color-orange-ink)]" />
+            <p className="text-xs leading-relaxed text-[var(--text-muted)]">Ảnh ngang 4:1. Giữ nội dung chính ở giữa để hiển thị tốt trên điện thoại.</p>
+          </div>
         </div>
 
         <fieldset className="space-y-2">

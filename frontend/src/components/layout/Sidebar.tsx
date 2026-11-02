@@ -17,10 +17,9 @@ export default function Sidebar() {
   const quiet = reduced || settings.animationIntensity !== 'full';
   const joined = communities.filter((c) => ['OWNER', 'MODERATOR', 'MEMBER'].includes(c.currentUserRole));
   const managed = joined.find((c) => ['OWNER', 'MODERATOR'].includes(c.currentUserRole));
-  const moderationActive = managed ? ['/community/:name/moderation', '/c/:name/moderation'].some((path) => {
-    const match = matchPath({ path, end: true }, location.pathname);
-    return match?.params.name === managed.name;
-  }) : false;
+  const moderationActive = managed
+    ? matchPath({ path: '/c/:name/moderation', end: true }, location.pathname)?.params.name === managed.name
+    : false;
   const popular = location.pathname === '/' && new URLSearchParams(location.search).get('tab') === 'popular';
   const link = (to: string, label: string, Icon: React.ElementType, active?: boolean, end = false) => (
     <NavLink key={to} to={to} end={end} title={collapsed ? label : undefined} aria-label={label}
@@ -50,13 +49,13 @@ export default function Sidebar() {
           <nav className="side-group">
             {!collapsed && <p className="sidebar-caption">Thư viện cá nhân</p>}
             {link('/saved', 'Bài viết đã lưu', Bookmark)}
-            {link(`/user/${user.username}`, 'Hồ sơ của bạn', UserRound)}
+            {link(`/u/${user.username}`, 'Hồ sơ của bạn', UserRound)}
             {link('/notifications', 'Thông báo', Bell)}
             {link('/messages', 'Tin nhắn', MessageSquare)}
           </nav>
           <nav className="side-group">
             {!collapsed && <div className="side-group-title"><span className="sidebar-caption">Cộng đồng của bạn</span><Link to="/communities/create" className="icon-button" aria-label="Tạo cộng đồng"><Plus size={16} /></Link></div>}
-            {joined.slice(0, 5).map((c) => <NavLink key={c.id} to={`/community/${c.name}`} end title={c.displayName} aria-label={c.displayName} className={({ isActive }) => `side-link community-link ${isActive ? 'is-active' : ''}`}>
+            {joined.slice(0, 5).map((c) => <NavLink key={c.id} to={`/c/${c.name}`} end title={c.displayName} aria-label={c.displayName} className={({ isActive }) => `side-link community-link ${isActive ? 'is-active' : ''}`}>
               <Avatar src={c.avatarUrl} alt={c.displayName} size="xs" shape="rounded" />{!collapsed && <span className="truncate">{c.displayName}</span>}
             </NavLink>)}
             {link('/communities/mine', 'Tất cả cộng đồng', Users)}
@@ -64,7 +63,7 @@ export default function Sidebar() {
           </nav>
           {(managed || activeRole === 'ADMIN') && <nav className="side-group">
             {!collapsed && <p className="sidebar-caption">Quản lý</p>}
-            {managed && link(`/community/${managed.name}/moderation`, 'Kiểm duyệt', ShieldAlert, moderationActive, true)}
+            {managed && link(`/c/${managed.name}/moderation`, 'Kiểm duyệt', ShieldAlert, moderationActive, true)}
             {activeRole === 'ADMIN' && link('/admin', 'Trung tâm quản trị', ShieldCheck)}
           </nav>}
         </> : !collapsed ? <div className="sidebar-invitation">

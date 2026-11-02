@@ -9,6 +9,7 @@ import EditorialTabs from '../../components/ui/EditorialTabs';
 import PostCard from '../../components/post/PostCardView';
 import Avatar from '../../components/ui/Avatar';
 import EntityBanner from '../../components/ui/EntityBanner';
+import EntityImageActions from '../../components/ui/EntityImageActions';
 import CommunityMediaEditor from '../../components/community/CommunityMediaEditor';
 import type { ProfileImageKind } from '../../components/profile/ImageCropEditor';
 import { canEditCommunityMedia } from '../../utils/communityMedia';
@@ -24,7 +25,6 @@ import {
   BookOpen,
   Share2,
   Calendar,
-  Camera,
 } from 'lucide-react';
 
 export const CommunityDetailPage: React.FC = () => {
@@ -80,8 +80,8 @@ export const CommunityDetailPage: React.FC = () => {
           {communityLoadFailed
             ? 'Đã xảy ra sự cố khi kết nối. Hãy thử tải lại hoặc quay lại khám phá cộng đồng.'
             : isCommunityLoading
-              ? `Đang tải community/${communityName}.`
-              : `Không tìm thấy community/${communityName}.`}
+              ? `Đang tải c/${communityName}.`
+              : `Không tìm thấy c/${communityName}.`}
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {communityLoadFailed && (
@@ -153,25 +153,25 @@ export const CommunityDetailPage: React.FC = () => {
     <div className="community-page">
       <header className="community-masthead">
         <EntityBanner src={community.bannerUrl} alt={`Ảnh bìa ${community.displayName}`} variant="community">
-          {canEditMedia && <button type="button" className="entity-banner-edit" onClick={() => setMediaKind('banner')} aria-label="Chỉnh sửa ảnh bìa cộng đồng">
-            <Camera size={16} aria-hidden="true" /><span>Chỉnh ảnh bìa</span>
-          </button>}
+          <EntityImageActions key={`${community.name}-banner`} src={community.bannerUrl} kind="banner"
+            name={community.displayName} href={`/c/${community.name}`} handle={`c/${community.name}`} avatarUrl={community.avatarUrl}
+            onEdit={canEditMedia ? () => setMediaKind('banner') : undefined} />
         </EntityBanner>
         <div className="community-identity">
           <div className="community-avatar-slot">
-            {canEditMedia ? <button type="button" className="community-avatar-edit" onClick={() => setMediaKind('avatar')} aria-label="Chỉnh sửa ảnh đại diện cộng đồng">
+            <EntityImageActions key={`${community.name}-avatar`} src={community.avatarUrl} kind="avatar"
+              name={community.displayName} href={`/c/${community.name}`} handle={`c/${community.name}`} avatarUrl={community.avatarUrl}
+              onEdit={canEditMedia ? () => setMediaKind('avatar') : undefined}>
               <Avatar src={community.avatarUrl} alt={community.displayName} size="xl" className="community-avatar" />
-              <span className="entity-avatar-edit-badge"><Camera size={15} aria-hidden="true" /></span>
-            </button> : <Avatar src={community.avatarUrl} alt={community.displayName} size="xl" className="community-avatar" />}
+            </EntityImageActions>
           </div>
           <div className="community-heading"><h1 className="editorial-title">{community.displayName || community.name}</h1><p className="community-handle">c/{community.name}</p></div>
           <div className="community-actions">
             <Button variant={isJoined ? 'secondary' : 'primary'} size="sm" isLoading={isMembershipUpdating} onClick={handleJoinToggle} aria-pressed={isJoined} leftIcon={isJoined ? <Check size={15} /> : <Plus size={15} />}>{isJoined ? 'Đã tham gia' : 'Tham gia cộng đồng'}</Button>
             <Button variant="outline" size="sm" onClick={() => openCreateModal(community.name)} leftIcon={<Plus size={15} />}>Đăng bài</Button>
-            {isManager && <Link className="icon-button" aria-label="Cài đặt cộng đồng" to={`/community/${community.name}/settings`}><Settings size={18} /></Link>}
+            {isManager && <Link className="icon-button" aria-label="Cài đặt cộng đồng" to={`/c/${community.name}/settings`}><Settings size={18} /></Link>}
           </div>
         </div>
-        {community.description && <p className="community-description">{community.description}</p>}
         <div className="community-facts"><span><Users size={15} /> {community.memberCount.toLocaleString('vi-VN')} thành viên</span>{community.category && <span>{community.category}</span>}<span><Calendar size={15} /> {new Date(community.createdAt).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span><button onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); addToast('Đã sao chép liên kết cộng đồng!', 'success'); } catch { addToast('Không thể sao chép liên kết.', 'error'); } }}><Share2 size={15} /> Chia sẻ</button></div>
       </header>
       <div className="community-columns">
@@ -182,12 +182,16 @@ export const CommunityDetailPage: React.FC = () => {
           {!sortedPosts.length && <div className="editorial-empty"><h2>Chia sẻ bài viết đầu tiên</h2><p>Chia sẻ câu hỏi hoặc góc nhìn đầu tiên cùng cộng đồng.</p><Button size="sm" className="mt-4" onClick={() => openCreateModal(community.name)}>Viết bài đầu tiên</Button></div>}
         </section>
         <aside className="community-context">
+          <section className="context-section" aria-label="Giới thiệu cộng đồng">
+            <div className="context-title"><h2>Giới thiệu</h2></div>
+            <p className="entity-about-description">{community.description || 'Cộng đồng chưa có mô tả.'}</p>
+          </section>
           <section className="context-section"><div className="context-title"><h2>Nội quy cộng đồng</h2><BookOpen size={16} /></div>
             {community.rules?.length ? <ol className="community-rules">{community.rules.map((rule) => <li key={rule.id}><h3>{rule.title}</h3><p>{rule.description}</p></li>)}</ol> : <p className="text-sm text-[var(--text-secondary)]">Tôn trọng góc nhìn khác biệt và tuân thủ tiêu chuẩn cộng đồng DISCUSS.</p>}
           </section>
-          <section className="context-section"><div className="context-title"><h2>Ban quản trị</h2>{isManager && <Link to={`/community/${community.name}/members`}>Quản lý</Link>}</div>
-            <Link to={`/user/${community.ownerUsername}`} className="context-community"><Avatar alt={community.ownerUsername} size="sm" /><div className="community-info"><span className="text-sm font-semibold">@{community.ownerUsername}</span><p>Chủ cộng đồng</p></div></Link>
-            {isManager && <Link to={`/community/${community.name}/moderation`} className="side-link"><ShieldAlert size={16} />Hàng đợi kiểm duyệt</Link>}
+          <section className="context-section"><div className="context-title"><h2>Ban quản trị</h2>{isManager && <Link to={`/c/${community.name}/members`}>Quản lý</Link>}</div>
+            <Link to={`/u/${community.ownerUsername}`} className="context-community"><Avatar alt={community.ownerUsername} size="sm" /><div className="community-info"><span className="text-sm font-semibold">@{community.ownerUsername}</span><p>Chủ cộng đồng</p></div></Link>
+            {isManager && <Link to={`/c/${community.name}/moderation`} className="side-link"><ShieldAlert size={16} />Hàng đợi kiểm duyệt</Link>}
           </section>
         </aside>
       </div>

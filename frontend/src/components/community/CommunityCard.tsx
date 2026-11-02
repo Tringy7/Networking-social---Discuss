@@ -24,7 +24,7 @@ export default function CommunityCard({ community, variant = 'explore', onLeave,
   const role = community.currentUserRole;
   const joined = ['OWNER', 'MODERATOR', 'MEMBER'].includes(role);
   const manager = role === 'OWNER' || role === 'MODERATOR';
-  const href = `/community/${community.name}`;
+  const href = `/c/${community.name}`;
   return <motion.article className="community-directory-row"
     initial={quiet ? false : { opacity: 0.85, y: 3 }} animate={{ opacity: 1, y: 0 }}
     transition={{ duration: quiet ? 0 : 0.18, ease: 'easeOut' }}>

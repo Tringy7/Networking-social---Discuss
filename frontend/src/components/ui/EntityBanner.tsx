@@ -11,7 +11,7 @@ interface EntityBannerProps {
   className?: string;
 }
 
-/** Crop visually to fill the cover. The saved file and editor crop remain unchanged. */
+/** Shared cover frame for profiles, communities and settings previews. */
 export default function EntityBanner({ src, alt, variant, position = 'center', fallback, children, className = '' }: EntityBannerProps) {
   const [failedSrc, setFailedSrc] = useState<string>();
   const [loadedSrc, setLoadedSrc] = useState<string>();

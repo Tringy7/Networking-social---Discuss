@@ -82,16 +82,16 @@ export default function PostCard({ post, showCommunity = true }: PostCardProps) 
   return <>
     <article className="discussion-row" aria-labelledby={`post-title-${post.id}`}>
       <div className="discussion-byline">
-        <Link to={`/user/${post.author.username}`} className="post-author-avatar" aria-label={`Hồ sơ ${post.author.displayName || post.author.username}`}>
+        <Link to={`/u/${post.author.username}`} className="post-author-avatar" aria-label={`Hồ sơ ${post.author.displayName || post.author.username}`}>
           <Avatar src={post.author.avatarUrl} alt={post.author.displayName || post.author.username} size="md" />
         </Link>
         <div className="post-identity">
           <div className="post-community-line">
-            {showCommunity ? <Link className="byline-community" to={`/community/${post.communityName}`}><Avatar src={post.communityAvatar} alt={post.communityDisplayName} size="xs" shape="rounded" /><span>{post.communityDisplayName}</span></Link> : <Link className="post-author-name" to={`/user/${post.author.username}`}>{post.author.displayName || post.author.username}</Link>}
+            {showCommunity ? <Link className="byline-community" to={`/c/${post.communityName}`}><Avatar src={post.communityAvatar} alt={post.communityDisplayName} size="xs" shape="rounded" /><span>{post.communityDisplayName}</span></Link> : <Link className="post-author-name" to={`/u/${post.author.username}`}>{post.author.displayName || post.author.username}</Link>}
             {post.pinned && <span className="post-pinned"><Pin size={12} />Ghim</span>}
           </div>
           <div className="post-author-line">
-            <Link to={`/user/${post.author.username}`}>{showCommunity ? (post.author.displayName || post.author.username) : `@${post.author.username}`}</Link><span aria-hidden="true">·</span><time dateTime={post.createdAt} title={date.toLocaleString('vi-VN')}>{time}</time>
+            <Link to={`/u/${post.author.username}`}>{showCommunity ? (post.author.displayName || post.author.username) : `@${post.author.username}`}</Link><span aria-hidden="true">·</span><time dateTime={post.createdAt} title={date.toLocaleString('vi-VN')}>{time}</time>
             {(post.author.role === 'OWNER' || post.author.role === 'MODERATOR') && <span className="byline-role">{post.author.role === 'OWNER' ? 'Chủ cộng đồng' : 'Kiểm duyệt'}</span>}
           </div>
         </div>

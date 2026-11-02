@@ -54,7 +54,7 @@ export const CommunityMembersPage: React.FC = () => {
           {loadFailed ? 'Không tải được danh sách thành viên' : isLoading ? 'Đang tải cộng đồng' : 'Không tìm thấy cộng đồng'}
         </h1>
         <p className="text-sm leading-6 text-[var(--text-secondary)]">
-          {loadFailed ? 'Hãy thử tải lại hoặc quay về trang cộng đồng.' : `community/${communityName || ''}`}
+          {loadFailed ? 'Hãy thử tải lại hoặc quay về trang cộng đồng.' : `c/${communityName || ''}`}
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {loadFailed && communityName && <Button variant="secondary" size="sm" onClick={() => {
@@ -67,7 +67,7 @@ export const CommunityMembersPage: React.FC = () => {
               })
               .finally(() => setIsLoading(false));
           }}>Thử lại</Button>}
-          <Link to={communityName ? `/community/${communityName}` : '/explore'}>
+          <Link to={communityName ? `/c/${communityName}` : '/explore'}>
             <Button variant="primary" size="sm">Quay lại cộng đồng</Button>
           </Link>
         </div>
@@ -127,14 +127,14 @@ export const CommunityMembersPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate(`/community/${community.name}`)}
+            onClick={() => navigate(`/c/${community.name}`)}
             aria-label="Quay lại cộng đồng"
             className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--bg-surface)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <p className="text-sm font-medium text-[var(--text-muted)]">community/{community.name}</p>
+            <p className="text-sm font-medium text-[var(--text-muted)]">c/{community.name}</p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
               <Users className="w-5 h-5 text-[var(--color-orange-ink)]" />
               <span>Thành viên</span>
@@ -205,7 +205,7 @@ export const CommunityMembersPage: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <Link
-                      to={`/user/${member.username}`}
+                      to={`/u/${member.username}`}
                       className="text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange-ink)] transition-colors"
                     >
                       {member.displayName}

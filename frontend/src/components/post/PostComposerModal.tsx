@@ -261,7 +261,7 @@ export const PostComposerModal: React.FC = () => {
       setImageFile(null);
       setImagePreviewUrl('');
       setCodeSnippet('');
-      addToast(`Đã đăng bài viết thành công vào community/${currentCommunity.name}!`, 'success');
+      addToast(`Đã đăng bài viết thành công vào c/${currentCommunity.name}!`, 'success');
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Không thể đăng bài viết.', 'error');
     } finally {
@@ -293,7 +293,7 @@ export const PostComposerModal: React.FC = () => {
             >
               {communities.map((c) => (
                 <option key={c.id} value={c.name}>
-                  community/{c.name} — {c.displayName} ({c.memberCount.toLocaleString('vi-VN')} thành viên)
+                  c/{c.name} — {c.displayName} ({c.memberCount.toLocaleString('vi-VN')} thành viên)
                 </option>
               ))}
             </select>
@@ -498,7 +498,7 @@ export const PostComposerModal: React.FC = () => {
                     {user?.displayName || 'Tên của bạn'}
                   </div>
                   <div className="truncate text-xs text-[var(--text-muted)]">
-                    {currentCommunity ? `community/${currentCommunity.name}` : 'Chọn cộng đồng'}
+                    {currentCommunity ? `c/${currentCommunity.name}` : 'Chọn cộng đồng'}
                   </div>
                 </div>
               </div>
