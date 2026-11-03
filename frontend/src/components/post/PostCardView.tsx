@@ -7,6 +7,8 @@ import { useToastStore } from '../../store/useToastStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import Avatar from '../ui/Avatar';
+import PostBody from './PostBody';
+import { POST_INTERACTIONS_AVAILABLE } from '../../services';
 import ReportModal from './ReportModal';
 import { Heart, MessageSquare, Bookmark, Share2, Flag, MoreHorizontal, Pin } from 'lucide-react';
 
@@ -78,7 +80,7 @@ export default function PostCard({ post, showCommunity = true }: PostCardProps) 
   const date = new Date(post.createdAt);
   const elapsedHours = Math.max(0, Math.floor((Date.now() - date.getTime()) / 3_600_000));
   const time = Number.isNaN(date.getTime()) ? '' : elapsedHours < 1 ? 'Vừa xong' : elapsedHours < 24 ? `${elapsedHours} giờ trước` : date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short' });
-  const preview = expanded || post.content.length <= 180 ? post.content : `${post.content.slice(0, 180).trimEnd()}…`;
+
   return <>
     <article className="discussion-row" aria-labelledby={`post-title-${post.id}`}>
       <div className="discussion-byline">
@@ -103,23 +105,19 @@ export default function PostCard({ post, showCommunity = true }: PostCardProps) 
           </div>}
         </div>
       </div>
-      <div className={`discussion-body ${post.mediaUrl ? 'has-media' : ''}`}>
-        <div className="min-w-0">
-          <h2 id={`post-title-${post.id}`} className="discussion-title"><Link to={`/post/${post.id}`}>{post.title}</Link></h2>
-          <motion.p id={`post-excerpt-${post.id}`} key={expanded ? 'full' : 'preview'} initial={quiet ? false : { opacity: 0.5 }} animate={{ opacity: 1 }} transition={{ duration: quiet ? 0 : 0.15 }} className={`discussion-excerpt ${expanded ? '' : 'line-clamp-3'}`}>{preview}</motion.p>
-          {post.content.length > 180 && <button type="button" className="discussion-expand" aria-expanded={expanded} aria-controls={`post-excerpt-${post.id}`} onClick={() => setExpanded(!expanded)}>{expanded ? 'Thu gọn' : 'Xem thêm'}</button>}
-          {post.tags && post.tags.length > 0 && <div className="discussion-tags">{post.tags.map((tag) => <Link key={tag} to={`/search?q=${encodeURIComponent(tag)}&type=posts`}>#{tag}</Link>)}</div>}
-        </div>
-        {post.mediaUrl && <Link to={`/post/${post.id}`} className="discussion-media" aria-label={`Xem ảnh: ${post.title}`}><img src={post.mediaUrl} alt={post.title} loading="lazy" /></Link>}
+      <div className="min-w-0">
+        <h2 id={`post-title-${post.id}`} className="discussion-title"><Link to={`/post/${post.id}`}>{post.title}</Link></h2>
+        <div className={expanded ? '' : 'max-h-[420px] overflow-hidden'}><PostBody post={post} /></div>
+        {(post.content.length > 180 || (post.media?.length || 0) > 0) && <button type="button" className="discussion-expand" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? 'Thu gọn' : 'Xem thêm'}</button>}
+        {!!post.tags?.length && <div className="discussion-tags">{post.tags.map((tag) => <Link key={tag} to={`/search?q=${encodeURIComponent(tag)}&type=posts`}>#{tag}</Link>)}</div>}
       </div>
-      {post.codeSnippet && <details className="discussion-code"><summary>{post.codeSnippet.language} · Xem đoạn mã</summary><pre className="font-code"><code>{post.codeSnippet.code}</code></pre></details>}
       <div className="discussion-actions">
-        <motion.button type="button" className="discussion-action" onClick={handleHeartClick} aria-pressed={post.isHearted} disabled={heartPending}
+        <motion.button type="button" className="discussion-action" onClick={handleHeartClick} aria-pressed={post.isHearted} disabled={heartPending || !POST_INTERACTIONS_AVAILABLE} title={!POST_INTERACTIONS_AVAILABLE ? "Chưa hỗ trợ lượt thích" : undefined}
           aria-label={`${post.isHearted ? 'Bỏ thích' : 'Thích'} bài viết, ${post.heartCount} lượt thích`} whileTap={quiet ? undefined : { scale: 0.9 }}>
           <motion.span animate={quiet ? undefined : { scale: post.isHearted ? [1, 1.3, 1] : 1 }} transition={{ duration: 0.25 }}><Heart className="heart-icon" /></motion.span><span className="hidden sm:inline">Thích</span><span className="tabular-nums">{post.heartCount}</span>
         </motion.button>
         <Link to={`/post/${post.id}#comments`} className="discussion-action" aria-label={`${post.commentCount} bình luận`}><MessageSquare /><span>{post.commentCount}</span><span className="hidden sm:inline">bình luận</span></Link>
-        <button type="button" className="discussion-action ml-auto" onClick={handleSaveClick} aria-pressed={post.isSaved} disabled={savePending} aria-label={post.isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}><Bookmark fill={post.isSaved ? 'currentColor' : 'none'} /><span className="hidden sm:inline">{post.isSaved ? 'Đã lưu' : 'Lưu'}</span></button>
+        <button type="button" className="discussion-action ml-auto" onClick={handleSaveClick} aria-pressed={post.isSaved} disabled={savePending || !POST_INTERACTIONS_AVAILABLE} title={!POST_INTERACTIONS_AVAILABLE ? "Chưa hỗ trợ lưu bài" : undefined} aria-label={post.isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}><Bookmark fill={post.isSaved ? 'currentColor' : 'none'} /><span className="hidden sm:inline">{post.isSaved ? 'Đã lưu' : 'Lưu'}</span></button>
         <button type="button" className="discussion-action" onClick={handleShareClick} aria-label="Sao chép liên kết bài viết"><Share2 /><span className="hidden sm:inline">Chia sẻ</span></button>
       </div>
     </article>

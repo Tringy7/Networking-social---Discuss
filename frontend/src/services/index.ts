@@ -61,7 +61,9 @@ const API_GENDERS: Record<string, string> = {
   'Không muốn tiết lộ': 'PREFER_NOT_TO_SAY',
 };
 
-export const POSTS_AVAILABLE = false;
+export const POSTS_AVAILABLE = true;
+export const POST_INTERACTIONS_AVAILABLE = false;
+export const COMMENTS_AVAILABLE = false;
 export const NOTIFICATIONS_AVAILABLE = false;
 export const MESSAGES_AVAILABLE = false;
 
@@ -423,56 +425,33 @@ export const communityService = {
   },
 };
 
+export interface PostPage {
+  content: Post[]; page: number; size: number; totalElements: number;
+  totalPages: number; first: boolean; last: boolean; empty: boolean;
+}
 export const postService = {
-  list: async (tab: string = 'for-you'): Promise<Post[]> =>
-    POSTS_AVAILABLE
-      ? apiClient.get<Post[]>(`/posts?tab=${encodeURIComponent(tab)}`)
-      : [],
-  getById: async (postId: string): Promise<Post | undefined> =>
-    POSTS_AVAILABLE ? apiClient.get<Post>(`/posts/${postId}`) : undefined,
-  create: async (data: {
-    communityName: string;
-    title: string;
-    content: string;
-    tags?: string[];
-    mediaUrl?: string;
-    mediaType?: Post['mediaType'];
-    codeSnippet?: Post['codeSnippet'];
-  }): Promise<Post> => {
-    if (!POSTS_AVAILABLE) throw postsUnavailableError();
-    return apiClient.post<Post>('/posts', data);
-  },
-  toggleHeart: async (postId: string, isHearted: boolean): Promise<{ isHearted: boolean }> => {
-    if (!POSTS_AVAILABLE) throw postsUnavailableError();
-    return apiClient.put<{ isHearted: boolean }>(`/posts/${postId}/vote`, {
-      voteType: isHearted ? 0 : 1,
-    });
-  },
-  toggleSave: async (postId: string): Promise<{ isSaved: boolean }> => {
-    if (!POSTS_AVAILABLE) throw postsUnavailableError();
-    return apiClient.put<{ isSaved: boolean }>(`/posts/${postId}/save`);
-  },
-  delete: async (postId: string): Promise<void> => {
-    if (!POSTS_AVAILABLE) throw postsUnavailableError();
-    return apiClient.delete<void>(`/posts/${postId}`);
-  },
-  listSaved: async (): Promise<Post[]> =>
-    POSTS_AVAILABLE ? apiClient.get<Post[]>('/posts/saved') : [],
+  list: (tab = 'for-you', page = 0) => apiClient.get<PostPage>(`/posts?tab=${encodeURIComponent(tab)}&page=${page}&size=20`),
+  getById: (id: string) => apiClient.get<Post>(`/posts/${id}`),
+  create: (input: import('../types').PostInput) => apiClient.post<Post>('/posts', input),
+  update: (id: string, input: import('../types').PostInput) => apiClient.patch<Post>(`/posts/${id}`, input),
+  delete: (id: string) => apiClient.delete<void>(`/posts/${id}`),
+  listCommunity: (name: string, page = 0) => apiClient.get<PostPage>(`/communities/${encodeURIComponent(name)}/posts?page=${page}&size=20`),
+  listUser: (name: string, page = 0) => apiClient.get<PostPage>(`/users/${encodeURIComponent(name)}/posts?page=${page}&size=20`),
 };
 
 export const commentService = {
   list: async (postId: string): Promise<Comment[]> =>
-    POSTS_AVAILABLE ? apiClient.get<Comment[]>(`/posts/${postId}/comments`) : [],
+    COMMENTS_AVAILABLE ? apiClient.get<Comment[]>(`/posts/${postId}/comments`) : [],
   create: async (
     postId: string,
     content: string,
     parentCommentId?: string
   ): Promise<Comment> => {
-    if (!POSTS_AVAILABLE) throw postsUnavailableError();
+    if (!COMMENTS_AVAILABLE) throw postsUnavailableError();
     return apiClient.post<Comment>(`/posts/${postId}/comments`, { content, parentCommentId });
   },
   toggleHeart: async (postId: string, commentId: string): Promise<{ isHearted: boolean }> => {
-    if (!POSTS_AVAILABLE) throw postsUnavailableError();
+    if (!COMMENTS_AVAILABLE) throw postsUnavailableError();
     return apiClient.put<{ isHearted: boolean }>(`/posts/${postId}/comments/${commentId}/vote`);
   },
 };

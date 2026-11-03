@@ -34,10 +34,13 @@ export const CommunityDetailPage: React.FC = () => {
   const navigate = useNavigate();
 
   const { communities, joinCommunity, leaveCommunity, hydrateCommunity } = useCommunityStore();
-  const { posts, openCreateModal } = usePostStore();
+  const { posts, loadCommunityPosts, openCreateModal } = usePostStore();
   const { isAuthenticated, activeRole, user } = useAuthStore();
   const { addToast } = useToastStore();
 
+  const [postPage, setPostPage] = useState(0);
+  const [hasMorePosts, setHasMorePosts] = useState(false);
+  const [postsLoading, setPostsLoading] = useState(false);
   const [tab, setTab] = useState<'latest' | 'popular'>('latest');
   const [isMembershipUpdating, setIsMembershipUpdating] = useState(false);
   const [isCommunityLoading, setIsCommunityLoading] = useState(true);
@@ -60,6 +63,16 @@ export const CommunityDetailPage: React.FC = () => {
       });
     return () => { active = false; };
   }, [addToast, communityName, hydrateCommunity]);
+
+  React.useEffect(() => {
+    if (!communityName || !isAuthenticated) return;
+    let active = true;
+    setPostPage(0); setPostsLoading(true);
+    loadCommunityPosts(communityName).then((more) => { if (active) setHasMorePosts(more); })
+      .catch((error: unknown) => { if (active) addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); })
+      .finally(() => { if (active) setPostsLoading(false); });
+    return () => { active = false; };
+  }, [communityName, isAuthenticated, loadCommunityPosts, addToast]);
 
   const community = communities.find((c) => c.name === communityName);
 
@@ -179,8 +192,15 @@ export const CommunityDetailPage: React.FC = () => {
         <section className="min-w-0" aria-label="Bài viết cộng đồng">
           <EditorialTabs label="Sắp xếp bài viết cộng đồng" options={[{ id: 'latest', label: 'Mới nhất', icon: <Clock /> }, { id: 'popular', label: 'Sôi nổi', icon: <Flame /> }]} value={tab} onChange={setTab} trailing={`${sortedPosts.length} bài viết`} />
           {!POSTS_AVAILABLE && <p className="feed-notice">Bài viết mẫu · Tương tác được lưu trong phiên hiện tại.</p>}
+          {postsLoading && <p role="status" className="feed-notice">Đang tải bài viết…</p>}
           <div className="discussion-list">{sortedPosts.map((post) => <PostCard key={post.id} post={post} showCommunity={false} />)}</div>
-          {!sortedPosts.length && <div className="editorial-empty"><h2>Chia sẻ bài viết đầu tiên</h2><p>Chia sẻ câu hỏi hoặc góc nhìn đầu tiên cùng cộng đồng.</p><Button size="sm" className="mt-4" onClick={() => openCreateModal(community.name)}>Viết bài đầu tiên</Button></div>}
+          {hasMorePosts && <Button disabled={postsLoading} variant="secondary" onClick={async () => {
+            setPostsLoading(true);
+            try { setHasMorePosts(await loadCommunityPosts(community.name, postPage + 1)); setPostPage(postPage + 1); }
+            catch (error) { addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); }
+            finally { setPostsLoading(false); }
+          }}>Xem thêm bài viết</Button>}
+          {!postsLoading && !sortedPosts.length && <div className="editorial-empty"><h2>Chia sẻ bài viết đầu tiên</h2><p>Chia sẻ câu hỏi hoặc góc nhìn đầu tiên cùng cộng đồng.</p><Button size="sm" className="mt-4" onClick={() => openCreateModal(community.name)}>Viết bài đầu tiên</Button></div>}
         </section>
         <aside className="community-context">
           <section className="context-section" aria-label="Giới thiệu cộng đồng">

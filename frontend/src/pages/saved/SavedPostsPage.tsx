@@ -5,7 +5,7 @@ import PostCard from '../../components/post/PostCardView';
 import Button from '../../components/ui/Button';
 import { Bookmark, Compass } from 'lucide-react';
 import { useToastStore } from '../../store/useToastStore';
-import { POSTS_AVAILABLE } from '../../services';
+import { POST_INTERACTIONS_AVAILABLE } from '../../services';
 
 export const SavedPostsPage: React.FC = () => {
   const { savedPosts, hydrateSaved } = usePostStore();
@@ -29,9 +29,9 @@ export const SavedPostsPage: React.FC = () => {
         </p>
       </div>
 
-      {!POSTS_AVAILABLE && (
+      {!POST_INTERACTIONS_AVAILABLE && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
-          Danh sách bài viết mẫu; trạng thái lưu chỉ tồn tại trong phiên hiện tại.
+          Chức năng lưu bài viết hiện chưa khả dụng.
         </div>
       )}
 

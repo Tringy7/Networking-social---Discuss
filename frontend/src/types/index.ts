@@ -74,6 +74,31 @@ export interface Community {
   rules: string;
 }
 
+export type PostType = 'TEXT' | 'LINK';
+export type PostMediaType = 'IMAGE' | 'VIDEO';
+export interface PostMediaInput {
+  type: PostMediaType;
+  objectKey: string;
+  caption?: string;
+}
+export interface PostImage {
+  objectKey: string | null;
+  url: string;
+  position: number;
+  inlineImage: boolean;
+}
+export interface PostMedia extends PostImage {
+  type: PostMediaType;
+  caption?: string | null;
+}
+export interface PostInput {
+  communityName: string;
+  title: string;
+  type: 'TEXT';
+  content: string;
+  tags: string[];
+  media: PostMediaInput[];
+}
 export interface Post {
   id: string;
   communityName: string;
@@ -88,6 +113,10 @@ export interface Post {
   };
   title: string;
   content: string;
+  type?: PostType;
+  media?: PostMedia[];
+  linkUrl?: string | null;
+  updatedAt?: string;
   tags?: string[];
   mediaUrl?: string;
   mediaType?: 'image' | 'code' | 'link';

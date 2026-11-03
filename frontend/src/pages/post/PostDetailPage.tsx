@@ -3,8 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { usePostStore } from '../../store/usePostStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
-import { POSTS_AVAILABLE } from '../../services';
+import { POSTS_AVAILABLE, POST_INTERACTIONS_AVAILABLE, COMMENTS_AVAILABLE } from '../../services';
 import { Comment } from '../../types';
+import PostBody from '../../components/post/PostBody';
 import RightSidebar from '../../components/layout/RightSidebar';
 import Avatar from '../../components/ui/Avatar';
 import Badge from '../../components/ui/Badge';
@@ -23,14 +24,13 @@ import {
   ChevronDown,
   ChevronUp,
   Trash2,
-  Code2,
 } from 'lucide-react';
 
 export const PostDetailPage: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
 
-  const { posts, comments, loadPost, loadComments, toggleHeart, toggleSave, deletePost, addComment, toggleCommentHeart } =
+  const { posts, comments, loadPost, loadComments, toggleHeart, toggleSave, deletePost, addComment, toggleCommentHeart, openEditModal } =
     usePostStore();
   const { user, isAuthenticated } = useAuthStore();
   const { addToast } = useToastStore();
@@ -289,7 +289,7 @@ export const PostDetailPage: React.FC = () => {
     );
   };
 
-  const isPostOwner = user?.id === post.author.id;
+  const isPostOwner = user?.username === post.author.username;
 
   return (
     <div className="feed-layout"><div className="post-reading-page space-y-5 text-left pb-8">
@@ -325,6 +325,7 @@ export const PostDetailPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {isPostOwner && <Button variant="ghost" size="sm" onClick={() => openEditModal(post)}>Chỉnh sửa</Button>}
             {isPostOwner && (
               <button
                 onClick={() => setIsDeleteDialogOpen(true)}
@@ -363,39 +364,13 @@ export const PostDetailPage: React.FC = () => {
           </div>
         )}
 
-        {/* Full Text Content */}
-        <div className="thread-content text-[var(--text-primary)] whitespace-pre-line space-y-4">
-          {post.content}
-        </div>
-
-        {/* Code Snippet Box */}
-        {post.codeSnippet && (
-          <div data-ui="code-sample" className="bg-[var(--bg-main)] border border-[var(--bg-elevated)] rounded-xl p-4 font-code text-xs overflow-x-auto">
-            <div className="flex items-center justify-between pb-2 mb-2 text-xs text-[var(--text-muted)]">
-              <span className="flex items-center gap-1.5 text-[var(--color-orange)]">
-                <Code2 className="w-4 h-4" />
-                {post.codeSnippet.language} snippet
-              </span>
-              <span>UTF-8</span>
-            </div>
-            <pre className="text-[var(--text-primary)]">
-              <code>{post.codeSnippet.code}</code>
-            </pre>
-          </div>
-        )}
-
-        {/* Image Preview */}
-        {post.mediaUrl && (
-          <div className="rounded-[var(--radius-card)] overflow-hidden border border-[var(--bg-elevated)] bg-[var(--bg-main)]">
-            <img src={post.mediaUrl} alt={post.title} className="w-full object-cover max-h-[500px]" />
-          </div>
-        )}
+        <PostBody post={post} />
 
         {/* Actions Bar */}
         <div className="flex items-center justify-between pt-3 text-sm">
           <div className="flex items-center gap-3">
             <button
-              onClick={handleHeartClick}
+              onClick={handleHeartClick} disabled={!POST_INTERACTIONS_AVAILABLE}
               className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-[background-color,border-color,color,opacity,transform] ${
                 post.isHearted
                   ? 'bg-[var(--color-orange-soft)] border-[var(--color-orange-border)] text-[var(--color-orange)] font-semibold'
@@ -414,7 +389,7 @@ export const PostDetailPage: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handleSaveClick}
+              onClick={handleSaveClick} disabled={!POST_INTERACTIONS_AVAILABLE}
               className={`p-2.5 rounded-full border border-[var(--bg-elevated)] transition-colors ${
                 post.isSaved
                   ? 'text-[var(--color-orange)] bg-[var(--color-orange-soft)] border-[var(--color-orange-border)]'
@@ -436,6 +411,7 @@ export const PostDetailPage: React.FC = () => {
         </div>
       </article>
 
+      {!COMMENTS_AVAILABLE && <p role="status" className="text-sm text-[var(--text-muted)]">Bình luận hiện chưa khả dụng.</p>}
       {/* COMMENTS SECTION */}
       <section id="comments" className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-card)] p-4 sm:p-7 space-y-6">
         <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
@@ -453,7 +429,7 @@ export const PostDetailPage: React.FC = () => {
             />
             <div className="flex-1 space-y-2">
               <textarea
-                aria-label="Nội dung bình luận"
+                aria-label="Nội dung bình luận" disabled={!COMMENTS_AVAILABLE}
                 rows={3}
                 value={commentInput}
                 onChange={(e) => setCommentInput(e.target.value)}
@@ -470,7 +446,7 @@ export const PostDetailPage: React.FC = () => {
                   variant="primary"
                   size="sm"
                   rightIcon={<Send className="w-3.5 h-3.5" />}
-                  disabled={!commentInput.trim()}
+                  disabled={!commentInput.trim() || !COMMENTS_AVAILABLE}
                 >
                   Gửi bình luận
                 </Button>
@@ -509,7 +485,7 @@ export const PostDetailPage: React.FC = () => {
         onConfirm={handleDeletePost}
         title="Xóa bài viết"
         message="Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác."
-        confirmLabel="Xóa vĩnh viễn"
+        confirmLabel="Xóa bài viết"
         variant="danger"
       />
     </div><RightSidebar /></div>

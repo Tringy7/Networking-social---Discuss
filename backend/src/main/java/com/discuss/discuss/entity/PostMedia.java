@@ -23,8 +23,18 @@ public class PostMedia {
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
-    @Column(nullable = false)
+    @Column(length = 2048)
     private String mediaUrl;
+
+    @Column(length = 500)
+    private String objectKey;
+
+    @Column(length = 500)
+    private String caption;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean inlineImage = false;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

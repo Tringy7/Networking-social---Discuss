@@ -1,6 +1,7 @@
 package com.discuss.discuss.entity;
 
 import com.discuss.discuss.enums.PostStatus;
+import com.discuss.discuss.enums.PostType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -27,6 +28,11 @@ public class Post {
     @ManyToOne
     @JoinColumn(name = "community_id", nullable = false)
     private Community community;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "post_type", length = 16)
+    private PostType type;
+
 
     @Column(nullable = false)
     private Boolean isPinned;

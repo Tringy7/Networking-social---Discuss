@@ -13,6 +13,7 @@ export default function App() {
   const animationIntensity = useSettingsStore((state) => state.settings.animationIntensity);
   const clearSession = useAuthStore((state) => state.clearSession);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const account = useAuthStore((state) => state.user?.username);
   const authStatus = useAuthStore((state) => state.authStatus);
   const initializeSession = useAuthStore((state) => state.initializeSession);
   const addToast = useToastStore((state) => state.addToast);
@@ -41,6 +42,7 @@ export default function App() {
   }, [initializeSession]);
 
   React.useEffect(() => {
+    usePostStore.getState().reset();
     if (!isAuthenticated) return;
 
     let active = true;
@@ -66,7 +68,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [addToast, hydrateCommunities, hydrateMyCommunities, hydratePosts, isAuthenticated]);
+  }, [addToast, hydrateCommunities, hydrateMyCommunities, hydratePosts, isAuthenticated, account]);
 
   return (
     <MotionConfig reducedMotion={animationIntensity === 'full' ? 'user' : 'always'}>

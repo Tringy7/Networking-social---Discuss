@@ -31,7 +31,7 @@ import {
 export const UserProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const { user: currentUser, authStatus, uploadAvatar, uploadBanner } = useAuthStore();
-  const { posts } = usePostStore();
+  const { posts, loadUserPosts } = usePostStore();
   const { addToast } = useToastStore();
 
   const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
@@ -42,6 +42,19 @@ export const UserProfilePage: React.FC = () => {
   const [isSavingBanner, setIsSavingBanner] = useState(false);
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+
+  const [postPage, setPostPage] = useState(0);
+  const [hasMorePosts, setHasMorePosts] = useState(false);
+  const [postsLoading, setPostsLoading] = useState(false);
+  useEffect(() => {
+    if (!username || !currentUser) return;
+    let active = true;
+    setPostPage(0); setPostsLoading(true);
+    loadUserPosts(username).then((more) => { if (active) setHasMorePosts(more); })
+      .catch((error: unknown) => { if (active) addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); })
+      .finally(() => { if (active) setPostsLoading(false); });
+    return () => { active = false; };
+  }, [username, currentUser?.username, loadUserPosts, addToast]);
 
   const isMe = currentUser?.username === username;
 
@@ -193,6 +206,7 @@ export const UserProfilePage: React.FC = () => {
         <EditorialTabs label="Hoạt động của người dùng" options={[{ id: 'posts', label: 'Bài viết', icon: <FileText /> }, { id: 'comments', label: 'Bình luận', icon: <MessageSquare /> }]} value={activeTab} onChange={setActiveTab} />
 
         {/* Tab content */}
+        {postsLoading && <p role="status">Đang tải bài viết…</p>}
         {activeTab === 'posts' && (
           <div className="discussion-list">
             {profileUser.privacy.showPostsOnProfile ? (
@@ -216,6 +230,12 @@ export const UserProfilePage: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'posts' && hasMorePosts && <Button disabled={postsLoading} variant="secondary" onClick={async () => {
+          setPostsLoading(true);
+          try { setHasMorePosts(await loadUserPosts(profileUser.username, postPage + 1)); setPostPage(postPage + 1); }
+          catch (error) { addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); }
+          finally { setPostsLoading(false); }
+        }}>Xem thêm bài viết</Button>}
         {activeTab === 'comments' && (
           <div className="profile-empty" role="status">
             <MessageSquare size={24} aria-hidden="true" />
