@@ -33,6 +33,7 @@ public class CommunityMapper {
                 .id(community.getId())
                 .name(community.getName())
                 .description(info.getDescription())
+                .rules(communityInfoService.resolveRules(info.getRules()))
                 .avatarUrl(
                         communityInfoService.buildImageUrl(info.getAvatar())
                 )

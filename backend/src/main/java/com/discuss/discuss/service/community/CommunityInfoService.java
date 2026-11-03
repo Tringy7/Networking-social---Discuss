@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 @Service
 @RequiredArgsConstructor
 public class CommunityInfoService {
@@ -23,6 +24,7 @@ public class CommunityInfoService {
     private final CommunityInfoRepository infoRepository;
     private final CategoryService categoryService;
     private final MinioService minioService;
+    private final CommunityRulesService rulesService;
 
     @Transactional
     public CommunityInfo createCommunityInfo(
@@ -39,6 +41,8 @@ public class CommunityInfoService {
                 .category(category)
                 .description(description != null ? description.trim() : null)
                 .build();
+
+        info.setRules(rulesService.resolve(req.getRules()));
 
         return infoRepository.save(info);
     }
@@ -61,6 +65,14 @@ public class CommunityInfoService {
             );
         }
 
+        if (req.getRules() != null) {
+            info.setRules(rulesService.resolve(req.getRules()));
+        }
+
+        if (req.getVisibility() != null) {
+            community.setVisibility(req.getVisibility());
+        }
+
         return infoRepository.save(info);
     }
 
@@ -75,5 +87,9 @@ public class CommunityInfoService {
         return objectKey == null
                 ? null
                 : minioService.buildFileUrl(objectKey);
+    }
+
+    public String resolveRules(String markdown) {
+        return rulesService.resolve(markdown);
     }
 }

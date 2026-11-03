@@ -71,7 +71,7 @@ export interface Community {
   ownerId: string;
   ownerUsername: string;
   createdAt: string;
-  rules: CommunityRule[];
+  rules: string;
 }
 
 export interface Post {

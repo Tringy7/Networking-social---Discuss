@@ -1,3 +1,4 @@
+import CommunityRulesEditor from '../../components/community/CommunityRulesEditor';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCommunityStore } from '../../store/useCommunityStore';
@@ -23,6 +24,7 @@ export const CreateCommunityPage: React.FC = () => {
   const [visibility, setVisibility] = useState<'PUBLIC' | 'PRIVATE'>('PUBLIC');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [rules, setRules] = useState('');
   const [createdName, setCreatedName] = useState('');
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +70,7 @@ export const CreateCommunityPage: React.FC = () => {
       const created = await createCommunity({
         name: cleanName,
         description: description.trim(),
+        rules,
         categoryId: selectedCategory.id,
         visibility,
       });
@@ -108,7 +111,7 @@ export const CreateCommunityPage: React.FC = () => {
       {step === 3 && <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-5"><div className="flex flex-wrap gap-2"><span className="rounded-full bg-[var(--color-orange-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-orange)]">{selectedCategory?.name}</span><span className="rounded-full bg-[var(--bg-elevated)] px-3 py-1 text-xs font-semibold text-[var(--text-secondary)]">{visibility === 'PUBLIC' ? 'Công khai' : 'Riêng tư'}</span></div>
         <label className="block space-y-1.5"><span className="text-xs font-semibold text-[var(--text-secondary)]">Tên cộng đồng</span><input value={name} onChange={(event) => { setName(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setError(''); }} placeholder="lap_trinh_rust" maxLength={21} className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--color-orange)]" /><span className="text-xs text-[var(--text-muted)]">Từ 3 đến 21 ký tự, chỉ gồm chữ thường, số và dấu gạch dưới · discuss.vn/c/{cleanName || 'ten_cong_dong'}</span>{cleanName && !nameAvailable && <span className="block text-xs text-red-500">Tên này đã được sử dụng.</span>}</label>
-        <label className="block space-y-1.5"><span className="text-xs font-semibold text-[var(--text-secondary)]">Mô tả</span><textarea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} placeholder="Cộng đồng này dành cho chủ đề gì?" className="w-full resize-y rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--color-orange)]" /><span className="text-xs text-[var(--text-muted)]">{description.length}/500 ký tự</span></label></div>
+        <label className="block space-y-1.5"><span className="text-xs font-semibold text-[var(--text-secondary)]">Mô tả</span><textarea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} placeholder="Cộng đồng này dành cho chủ đề gì?" className="w-full resize-y rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--color-orange)]" /><span className="text-xs text-[var(--text-muted)]">{description.length}/500 ký tự</span></label><CommunityRulesEditor value={rules} onChange={setRules} disabled={isLoading} /></div>
         <aside className="self-start rounded-[var(--radius-card)] border border-[var(--border-color)] bg-[var(--bg-elevated)] p-5"><h3 className="text-sm font-semibold text-[var(--text-primary)]">Trước khi tạo</h3><p className="mt-2 text-xs leading-relaxed text-[var(--text-secondary)]">Tên cộng đồng sẽ là địa chỉ cố định. Mô tả và danh mục giúp thành viên biết đây có phải là nơi phù hợp với họ.</p><div className="mt-4 space-y-2 border-t border-[var(--border-color)] pt-4 text-xs text-[var(--text-secondary)]"><div className="flex justify-between gap-3"><span>Danh mục</span><span className="font-semibold text-[var(--text-primary)]">{selectedCategory?.name}</span></div><div className="flex justify-between gap-3"><span>Quyền riêng tư</span><span className="font-semibold text-[var(--text-primary)]">{visibility === 'PUBLIC' ? 'Công khai' : 'Riêng tư'}</span></div></div></aside>
       </div>}
 

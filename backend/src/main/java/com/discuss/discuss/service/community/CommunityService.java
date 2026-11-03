@@ -158,6 +158,7 @@ public class CommunityService {
     /*
     * Get information detail community
     * */
+    @Transactional(readOnly = true)
     public CommunityDetailResponseDTO getCommunityDetail(String name) {
         Community community = this.getCommunityByNameAndStatusActive(name);
 

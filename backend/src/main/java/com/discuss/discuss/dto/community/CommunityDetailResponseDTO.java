@@ -21,6 +21,9 @@ public class CommunityDetailResponseDTO {
     private String name;
     private String description;
 
+    @Builder.Default
+    private String rules = "";
+
     private String avatarUrl;
     private String bannerUrl;
 

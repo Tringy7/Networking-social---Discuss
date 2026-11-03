@@ -190,6 +190,7 @@ export const userService = {
 };
 
 interface CommunityApiResponse {
+  rules?: string | null;
   id: string | number;
   name: string;
   displayName?: string | null;
@@ -252,7 +253,7 @@ function mapCommunity(value: CommunityApiResponse): Community {
     ownerId: String(value.ownerId || value.owner?.userId || ''),
     ownerUsername: value.ownerUsername || value.owner?.username || '',
     createdAt: value.createdAt,
-    rules: [],
+    rules: typeof value.rules === 'string' ? value.rules : '',
   };
 }
 
@@ -347,13 +348,19 @@ export const communityService = {
     const response = await apiClient.get<CommunityApiResponse>(`/communities/${encodeURIComponent(name)}`);
     return mapCommunity(response);
   },
+  getDefaultRules: async (): Promise<string> => {
+    const response = await apiClient.get<{ rules: string }>('/communities/default-rules');
+    return response.rules;
+  },
   create: async (data: {
+    rules?: string;
     name: string;
     description: string;
     categoryId: number;
     visibility: Community['visibility'];
   }) => {
     const response = await apiClient.post<CommunityApiResponse>('/communities', {
+      rules: data.rules,
       name: data.name,
       description: data.description,
       categoryId: data.categoryId,
@@ -372,6 +379,7 @@ export const communityService = {
     const response = await apiClient.patch<CommunityApiResponse>(
       `/communities/${encodeURIComponent(name)}`,
       {
+        rules: data.rules,
         description: data.description,
         categoryId,
         visibility: data.visibility,

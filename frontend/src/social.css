@@ -287,6 +287,13 @@ html[data-motion='reduced'] *,html[data-motion='reduced'] *::before,html[data-mo
 .discussion-row { border:0; border-bottom:1px solid var(--border-color); border-radius:0; padding:20px 0 16px; background:transparent; }
 .discussion-row:hover { border-color:var(--border-color); }
 .context-section { border:0; border-left:1px solid var(--border-color); border-radius:0; padding:8px 0 16px 20px; background:transparent; }
+.community-context { gap:0; min-width:0; padding:4px 0 0 20px; border-left:1px solid var(--border-color); }
+.community-context > .context-section { border:0; padding:0 0 20px; }
+.community-context > .context-section + .context-section { border-top:1px solid var(--border-color); padding-top:20px; }
+.community-context > .context-section:last-child { padding-bottom:0; }
+@media(max-width:1100px) {
+  .community-context { margin-top:20px; padding:20px 0 0; border-left:0; border-top:1px solid var(--border-color); }
+}
 .context-note { background:var(--bg-main); border-top:1px solid var(--border-color); border-radius:0; padding:16px 0; }
 .composer-strip,.guest-strip { border:0; border-bottom:1px solid var(--border-color); border-radius:0; padding:12px 0 20px; }
 .post-reading-body,.post-reading-page > section { padding:12px 0 20px; background:transparent; border:0; border-bottom:1px solid var(--border-color); border-radius:0; }

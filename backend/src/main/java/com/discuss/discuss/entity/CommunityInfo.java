@@ -31,6 +31,10 @@ public class CommunityInfo {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(columnDefinition = "TEXT")
+    @Builder.Default
+    private String rules = "";
+
     @Column(length = 500)
     private String avatar;
 

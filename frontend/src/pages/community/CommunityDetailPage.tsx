@@ -1,3 +1,4 @@
+import CommunityRulesContent from '../../components/community/CommunityRulesContent';
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCommunityStore } from '../../store/useCommunityStore';
@@ -169,7 +170,7 @@ export const CommunityDetailPage: React.FC = () => {
           <div className="community-actions">
             <Button variant={isJoined ? 'secondary' : 'primary'} size="sm" isLoading={isMembershipUpdating} onClick={handleJoinToggle} aria-pressed={isJoined} leftIcon={isJoined ? <Check size={15} /> : <Plus size={15} />}>{isJoined ? 'Đã tham gia' : 'Tham gia cộng đồng'}</Button>
             <Button variant="outline" size="sm" onClick={() => openCreateModal(community.name)} leftIcon={<Plus size={15} />}>Đăng bài</Button>
-            {isManager && <Link className="icon-button" aria-label="Cài đặt cộng đồng" to={`/c/${community.name}/settings`}><Settings size={18} /></Link>}
+            {(isManager || canEditMedia) && <Link className="icon-button" aria-label="Cài đặt cộng đồng" to={`/c/${community.name}/settings`}><Settings size={18} /></Link>}
           </div>
         </div>
         <div className="community-facts"><span><Users size={15} /> {community.memberCount.toLocaleString('vi-VN')} thành viên</span>{community.category && <span>{community.category}</span>}<span><Calendar size={15} /> {new Date(community.createdAt).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span><button onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); addToast('Đã sao chép liên kết cộng đồng!', 'success'); } catch { addToast('Không thể sao chép liên kết.', 'error'); } }}><Share2 size={15} /> Chia sẻ</button></div>
@@ -187,9 +188,9 @@ export const CommunityDetailPage: React.FC = () => {
             <p className="entity-about-description">{community.description || 'Cộng đồng chưa có mô tả.'}</p>
           </section>
           <section className="context-section"><div className="context-title"><h2>Nội quy cộng đồng</h2><BookOpen size={16} /></div>
-            {community.rules?.length ? <ol className="community-rules">{community.rules.map((rule) => <li key={rule.id}><h3>{rule.title}</h3><p>{rule.description}</p></li>)}</ol> : <p className="text-sm text-[var(--text-secondary)]">Tôn trọng góc nhìn khác biệt và tuân thủ tiêu chuẩn cộng đồng DISCUSS.</p>}
+            <CommunityRulesContent markdown={community.rules} />
           </section>
-          <section className="context-section"><div className="context-title"><h2>Ban quản trị</h2>{isManager && <Link to={`/c/${community.name}/members`}>Quản lý</Link>}</div>
+          <section className="context-section"><div className="context-title"><h2>Ban quản trị</h2>{isManager && <Link to={`/c/${community.name}/settings?tab=members`}>Quản lý</Link>}</div>
             <Link to={`/u/${community.ownerUsername}`} className="context-community"><Avatar alt={community.ownerUsername} size="sm" /><div className="community-info"><span className="text-sm font-semibold">@{community.ownerUsername}</span><p>Chủ cộng đồng</p></div></Link>
             {isManager && <Link to={`/c/${community.name}/moderation`} className="side-link"><ShieldAlert size={16} />Hàng đợi kiểm duyệt</Link>}
           </section>

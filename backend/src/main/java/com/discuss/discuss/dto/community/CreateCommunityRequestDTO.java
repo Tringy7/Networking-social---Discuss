@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,6 +29,9 @@ public class CreateCommunityRequestDTO {
 
     @Size(max = 500, message = "Description must not exceed 500 characters")
     private String description;
+
+    @Size(max = 16000, message = "Community rules must not exceed 16000 characters")
+    private String rules;
 
     @NotNull(message = "Category ID is required")
     private Long categoryId;

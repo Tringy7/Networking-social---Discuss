@@ -3,6 +3,7 @@ import { Community, CommunityMember } from '../types';
 import { communityService } from '../services';
 
 interface CommunityInput {
+  rules?: string;
   name: string;
   description: string;
   categoryId: number;
@@ -41,13 +42,14 @@ interface CommunityState {
 // List/membership DTOs omit bannerUrl. A preview refresh must not erase the
 // banner obtained from the detail endpoint (or after a successful upload).
 function mergeCommunityPreview(preview: Community, existing?: Community): Community {
-  return { ...preview, bannerUrl: preview.bannerUrl || existing?.bannerUrl || '' };
+  return { ...preview, rules: existing?.rules || preview.rules, bannerUrl: preview.bannerUrl || existing?.bannerUrl || '' };
 }
 
 // A fetch started before an upload must not replace the newly saved image.
 function preserveNewerMedia(incoming: Community, current?: Community, atRequestStart?: Community): Community {
   return {
     ...incoming,
+    rules: current && current.rules !== atRequestStart?.rules ? current.rules : incoming.rules,
     avatarUrl: current && current.avatarUrl !== atRequestStart?.avatarUrl ? current.avatarUrl : incoming.avatarUrl,
     bannerUrl: current && current.bannerUrl !== atRequestStart?.bannerUrl ? current.bannerUrl : incoming.bannerUrl,
   };
@@ -189,6 +191,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
 
   createCommunity: async (data) => {
     const created = await communityService.create({
+      rules: data.rules,
       name: data.name,
       description: data.description,
       categoryId: data.categoryId,

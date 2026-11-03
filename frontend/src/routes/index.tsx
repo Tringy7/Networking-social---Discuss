@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 
 // Layouts
 import AppLayout from '../layouts/AppLayout';
@@ -41,7 +41,6 @@ const NotificationSettingsPage = React.lazy(() => import('../pages/settings/Noti
 const CreateCommunityPage = React.lazy(() => import('../pages/community/CreateCommunityPage'));
 const MyCommunitiesPage = React.lazy(() => import('../pages/community/MyCommunitiesPage'));
 const EditCommunityPage = React.lazy(() => import('../pages/community/EditCommunityPage'));
-const CommunityMembersPage = React.lazy(() => import('../pages/community/CommunityMembersPage'));
 const CommunityModerationPage = React.lazy(() => import('../pages/community/CommunityModerationPage'));
 
 // Admin Pages
@@ -55,6 +54,11 @@ const AccessDeniedPage = React.lazy(() => import('../pages/error/AccessDeniedPag
 const NotFoundPage = React.lazy(() => import('../pages/error/NotFoundPage'));
 
 const routeLoading = <div role="status" aria-live="polite" className="route-loading"><span />Đang mở nội dung…</div>;
+
+function CommunityMembersSettingsRedirect() {
+  const { communityName } = useParams<{ communityName: string }>();
+  return <Navigate to={`/c/${encodeURIComponent(communityName || '')}/settings?tab=members`} replace />;
+}
 
 function LegacyEntityRedirect() {
   const { pathname, search, hash, state } = useLocation();
@@ -94,7 +98,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/community/:communityName/members" element={<LegacyEntityRedirect />} />
           <Route path="/community/:communityName/moderation" element={<LegacyEntityRedirect />} />
           <Route path="/c/:communityName/settings" element={<React.Suspense fallback={routeLoading}><EditCommunityPage /></React.Suspense>} />
-          <Route path="/c/:communityName/members" element={<React.Suspense fallback={routeLoading}><CommunityMembersPage /></React.Suspense>} />
+          <Route path="/c/:communityName/members" element={<CommunityMembersSettingsRedirect />} />
           <Route path="/c/:communityName/moderation" element={<React.Suspense fallback={routeLoading}><CommunityModerationPage /></React.Suspense>} />
 
           {/* Settings Hub Nested Routes */}
