@@ -21,7 +21,18 @@ public class PostController {
     public ResponseEntity<PostResponseDTO> createPost(@Valid @RequestBody CreatePostRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(postService.createPost(request));
     }
-    @GetMapping("/{id:\\d+}")
+
+    @PutMapping("/{id}/vote")
+    public PostResponseDTO vote(@PathVariable Long id, @Valid @RequestBody VoteRequestDTO request) {
+        return postService.vote(id, request.type());
+    }
+
+    @DeleteMapping("/{id}/vote")
+    public PostResponseDTO removeVote(@PathVariable Long id) {
+        return postService.vote(id, null);
+    }
+
+    @GetMapping("/{id}")
     public PostResponseDTO getPost(@PathVariable Long id) { return postService.getPost(id); }
 
     /** Full editable document replacement; community is immutable; Markdown, type, link and media are replaced together. */

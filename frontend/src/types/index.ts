@@ -124,9 +124,9 @@ export interface Post {
     language: string;
     code: string;
   };
-  heartCount: number;
+  voteScore: number;
   commentCount: number;
-  isHearted: boolean;
+  userVote: 'UP' | 'DOWN' | null;
   isSaved: boolean;
   createdAt: string;
   pinned?: boolean;

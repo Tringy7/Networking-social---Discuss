@@ -25,11 +25,11 @@ import com.discuss.discuss.repository.CommunityMemberRepository;
 import com.discuss.discuss.repository.PostContentRepository;
 import com.discuss.discuss.repository.PostMediaRepository;
 import com.discuss.discuss.repository.PostRepository;
+import com.discuss.discuss.repository.PostVoteRepository;
 import com.discuss.discuss.service.community.CommunityAuthorizationService;
 import com.discuss.discuss.service.community.CommunityService;
 import com.discuss.discuss.service.media.ImageService;
 import com.discuss.discuss.service.user.UserService;
-import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Order;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -53,18 +53,19 @@ import java.util.TreeSet;
 @Validated
 public class PostService {
 
-    private final PostRepository posts;
-    private final PostContentRepository contents;
-    private final PostMediaRepository media;
-    private final CommunityMemberRepository members;
+    private final PostRepository postRepository;
+    private final PostVoteRepository postVoteRepository;
+    private final PostContentRepository postContentRepository;
+    private final PostMediaRepository postMediaRepository;
+    private final CommunityMemberRepository communityMemberRepository;
 
     private final UserService userService;
     private final CommunityService communityService;
-    private final CommunityAuthorizationService authorization;
+    private final CommunityAuthorizationService communityAuthorizationService;
     private final ImageService imageService;
 
-    private final PostMapper mapper;
-    private final PageMapper pages;
+    private final PostMapper postMapper;
+    private final PageMapper pageMapper;
 
     // ==================== CREATE ====================
     @Transactional
@@ -73,11 +74,11 @@ public class PostService {
         User user = userService.getCurrentUser();
 
         Community community = communityService.getCommunityByNameAndStatusActive(request.getCommunityName());
-        authorization.requireMembership(community, user);
+        communityAuthorizationService.requireMembership(community, user);
 
         imageService.validateAndLockPostImages(extractImageKeys(request), user);
 
-        Post post = posts.saveAndFlush(Post.builder()
+        Post post = postRepository.saveAndFlush(Post.builder()
                 .user(user)
                 .community(community)
                 .type(request.getType())
@@ -85,38 +86,65 @@ public class PostService {
                 .status(PostStatus.PUBLISHED)
                 .build());
 
-        PostContent content = PostContent.builder().post(post).build();
-        writeContent(content, request);
-        contents.save(content);
+        PostContent postContent = PostContent.builder().post(post).build();
+        this.writeContent(postContent, request);
+        postContentRepository.save(postContent);
 
-        List<PostMedia> attachments = saveAttachments(post, request);
-        return mapper.toResponse(post, content, attachments, 0, 0, false);
+        List<PostMedia> postAttachments =  this.saveAttachments(post, request);
+        return postMapper.toResponse(post, postContent, postAttachments, 0, 0, null);
+    }
+
+    /** Sets the current user's vote; null removes it. The post lock serializes concurrent writes. */
+    @Transactional
+    public PostResponseDTO vote(Long id, VoteType type) {
+        User user = userService.getCurrentUser();
+
+        Post post = postRepository.lockById(id)
+                .filter(p -> p.getStatus() == PostStatus.PUBLISHED)
+                .orElseThrow(this::notFound);
+
+        requireRead(post, user);
+        PostVote existingVote = postVoteRepository.findByPostIdAndUserId(id, user.getId()).orElse(null);
+
+        if (type == null) {
+            if (existingVote != null) postVoteRepository.delete(existingVote);
+        } else if (existingVote == null) {
+            postVoteRepository.save(PostVote.builder().post(post).user(user).voteType(type).build());
+        } else {
+            existingVote.setVoteType(type);
+        }
+        postVoteRepository.flush();
+        return toResponse(post, user);
+    }
+
+    private VoteType userVote(Long id, User user) {
+        return postVoteRepository.findByPostIdAndUserId(id, user.getId()).map(PostVote::getVoteType).orElse(null);
     }
 
     // ==================== READ ====================
     @Transactional(readOnly = true)
     public PostResponseDTO getPost(Long id) {
-        User viewer = userService.getCurrentUser();
+        User currentUser = userService.getCurrentUser();
         Post post = findPublished(id);
-        requireRead(post, viewer);
-        return toResponse(post, viewer);
+        requireRead(post, currentUser);
+        return toResponse(post, currentUser);
     }
 
     @Transactional(readOnly = true)
     public PageResponseDTO<PostResponseDTO> list(String communityName, String username, String tab,
-                                                 int page, int size, String q) {
-        User viewer = userService.getCurrentUser();
-        Community community = resolveListCommunity(communityName, viewer);
+                                                 int page, int size, String searchKeyword) {
+        User currentUser = userService.getCurrentUser();
+        Community community = resolveListCommunity(communityName, currentUser);
         if (username != null) userService.getUserActive(username);
 
-        Specification<Post> spec = visibleTo(viewer);
-        if (community != null) spec = spec.and(inCommunity(community));
-        if (username != null) spec = spec.and(writtenBy(username));
-        if (q != null && !q.isBlank()) spec = spec.and(matchesText(q));
-        spec = spec.and(ordered(community != null, "popular".equals(tab)));
+        Specification<Post> postSpecification = visibleTo(currentUser);
+        if (community != null) postSpecification = postSpecification.and(inCommunity(community));
+        if (username != null) postSpecification = postSpecification.and(writtenBy(username));
+        if (searchKeyword != null && !searchKeyword.isBlank()) postSpecification = postSpecification.and(matchesText(searchKeyword));
+        postSpecification = postSpecification.and(ordered(community != null, "popular".equals(tab)));
 
-        return pages.toResponse(
-                posts.findAll(spec, PageRequest.of(page, size)).map(p -> toResponse(p, viewer)));
+        return pageMapper.toResponse(
+                postRepository.findAll(postSpecification, PageRequest.of(page, size)).map(p -> toResponse(p, currentUser)));
     }
 
     // ==================== UPDATE ====================
@@ -125,27 +153,27 @@ public class PostService {
         validateRequest(request);
         User user = userService.getCurrentUser();
 
-        Post post = posts.lockById(id)
+        Post post = postRepository.lockById(id)
                 .filter(p -> p.getStatus() == PostStatus.PUBLISHED)
                 .orElseThrow(this::notFound);
         requireAuthor(post, user);
 
-        Community target = communityService.getCommunityByNameAndStatusActive(request.getCommunityName());
-        if (!Objects.equals(target.getId(), post.getCommunity().getId())) {
+        Community targetCommunity = communityService.getCommunityByNameAndStatusActive(request.getCommunityName());
+        if (!Objects.equals(targetCommunity.getId(), post.getCommunity().getId())) {
             throw new PostException(PostErrorCode.COMMUNITY_CHANGE_NOT_ALLOWED);
         }
-        authorization.requireMembership(target, user);
+        communityAuthorizationService.requireMembership(targetCommunity, user);
 
-        PostContent content = findContent(post);
+        PostContent postContent = findContent(post);
         post.setType(request.getType());
         post.setUpdatedAt(LocalDateTime.now());
-        writeContent(content, request);
+        writeContent(postContent, request);
 
-        List<PostMedia> attachments = replaceAttachments(post, request, user);
+        List<PostMedia> postAttachments = replaceAttachments(post, request, user);
 
-        return mapper.toResponse(post, content, attachments,
-                posts.countHearts(id), posts.countComments(id),
-                posts.countUserHeart(id, user.getId()) > 0);
+        return postMapper.toResponse(post, postContent, postAttachments,
+                postRepository.voteScore(id), postRepository.countComments(id),
+                userVote(id, user));
     }
 
     /**
@@ -154,20 +182,20 @@ public class PostService {
      */
     private List<PostMedia> replaceAttachments(Post post, CreatePostRequestDTO request, User user) {
         Long postId = post.getId();
-        List<String> newKeys = extractImageKeys(request);
+        List<String> newImageKeys = extractImageKeys(request);
 
         // Gom key cũ + mới, lock theo thứ tự cố định rồi mới validate (tránh deadlock).
-        Set<String> allKeys = new TreeSet<>(newKeys);
-        media.findByPostIdOrderByDisplayOrderAsc(postId).stream()
+        Set<String> imageKeysToLock = new TreeSet<>(newImageKeys);
+        postMediaRepository.findByPostIdOrderByDisplayOrderAsc(postId).stream()
                 .map(PostMedia::getObjectKey)
                 .filter(Objects::nonNull)
-                .forEach(allKeys::add);
+                .forEach(imageKeysToLock::add);
 
-        imageService.releasePostImages(allKeys);
-        imageService.validateAndLockPostImages(newKeys, user);
+        imageService.releasePostImages(imageKeysToLock);
+        imageService.validateAndLockPostImages(newImageKeys, user);
 
-        media.deleteByPostId(postId);
-        media.flush();
+        postMediaRepository.deleteByPostId(postId);
+        postMediaRepository.flush();
         return saveAttachments(post, request);
     }
 
@@ -175,110 +203,106 @@ public class PostService {
     @Transactional
     public void deletePost(Long id) {
         User user = userService.getCurrentUser();
-        Post post = posts.lockById(id)
+        Post post = postRepository.lockById(id)
                 .filter(p -> p.getStatus() != PostStatus.DELETED)
                 .orElseThrow(this::notFound);
 
-        boolean isAuthor = Objects.equals(post.getUser().getId(), user.getId());
-        if (!isAuthor && user.getRole() != UserRole.ADMIN) {
-            authorization.requireModeratorOrOwner(post.getCommunity(), user);
+        boolean isPostAuthor = Objects.equals(post.getUser().getId(), user.getId());
+        if (!isPostAuthor && user.getRole() != UserRole.ADMIN) {
+            communityAuthorizationService.requireModeratorOrOwner(post.getCommunity(), user);
         }
 
         imageService.releasePostImages(
-                media.findByPostIdOrderByDisplayOrderAsc(id).stream()
+                postMediaRepository.findByPostIdOrderByDisplayOrderAsc(id).stream()
                         .map(PostMedia::getObjectKey)
                         .filter(Objects::nonNull)
                         .toList());
 
         post.setStatus(PostStatus.DELETED);
         post.setDeletedAt(LocalDateTime.now());
-        media.deleteByPostId(id);
+        postMediaRepository.deleteByPostId(id);
     }
 
     // ==================== LIST: SPECIFICATIONS ====================
-    private Community resolveListCommunity(String communityName, User viewer) {
+    private Community resolveListCommunity(String communityName, User currentUser) {
         if (communityName == null) return null;
         Community community = communityService.getCommunityByNameAndStatusActive(communityName);
         if (community.getVisibility() == CommunityVisibility.PRIVATE) {
-            authorization.requireMembership(community, viewer);
+            communityAuthorizationService.requireMembership(community, currentUser);
         }
         return community;
     }
 
-    /** Post đã đăng, community còn hoạt động, và (community public hoặc viewer là member active). */
-    private Specification<Post> visibleTo(User viewer) {
-        return (root, query, cb) -> {
-            var membership = query.subquery(Long.class);
-            var member = membership.from(CommunityMember.class);
-            membership.select(member.get("id")).where(
-                    cb.equal(member.get("community"), root.get("community")),
-                    cb.equal(member.get("user").get("id"), viewer.getId()),
-                    cb.equal(member.get("status"), MembershipStatus.ACTIVE));
+    /** Post đã đăng, community còn hoạt động, và (community public hoặc currentUser là memberRoot active). */
+    private Specification<Post> visibleTo(User currentUser) {
+        return (postRoot, criteriaQuery, criteriaBuilder) -> {
+            var membershipQuery = criteriaQuery.subquery(Long.class);
+            var memberRoot = membershipQuery.from(CommunityMember.class);
+            membershipQuery.select(memberRoot.get("id")).where(
+                    criteriaBuilder.equal(memberRoot.get("community"), postRoot.get("community")),
+                    criteriaBuilder.equal(memberRoot.get("user").get("id"), currentUser.getId()),
+                    criteriaBuilder.equal(memberRoot.get("status"), MembershipStatus.ACTIVE));
 
-            return cb.and(
-                    cb.equal(root.get("status"), PostStatus.PUBLISHED),
-                    cb.equal(root.get("community").get("status"), CommunityStatus.ACTIVE),
-                    cb.or(cb.equal(root.get("community").get("visibility"), CommunityVisibility.PUBLIC),
-                            cb.exists(membership)));
+            return criteriaBuilder.and(
+                    criteriaBuilder.equal(postRoot.get("status"), PostStatus.PUBLISHED),
+                    criteriaBuilder.equal(postRoot.get("community").get("status"), CommunityStatus.ACTIVE),
+                    criteriaBuilder.or(criteriaBuilder.equal(postRoot.get("community").get("visibility"), CommunityVisibility.PUBLIC),
+                            criteriaBuilder.exists(membershipQuery)));
         };
     }
 
     private Specification<Post> inCommunity(Community community) {
-        return (root, query, cb) -> cb.equal(root.get("community"), community);
+        return (postRoot, criteriaQuery, criteriaBuilder) -> criteriaBuilder.equal(postRoot.get("community"), community);
     }
 
     private Specification<Post> writtenBy(String username) {
-        return (root, query, cb) -> cb.equal(root.get("user").get("username"), username);
+        return (postRoot, criteriaQuery, criteriaBuilder) -> criteriaBuilder.equal(postRoot.get("user").get("username"), username);
     }
 
-    /** Tìm trong title, content và các block cũ (legacy). */
-    private Specification<Post> matchesText(String q) {
-        String term = likePattern(q);
-        return (root, query, cb) -> {
-            var search = query.subquery(Long.class);
-            var text = search.from(PostContent.class);
-            var block = text.join("blocks", JoinType.LEFT);
+    /** Tìm trong title và nội dung Markdown. */
+    private Specification<Post> matchesText(String searchKeyword) {
+        String searchPattern = likePattern(searchKeyword);
+        return (postRoot, criteriaQuery, criteriaBuilder) -> {
+            var contentQuery = criteriaQuery.subquery(Long.class);
+            var contentRoot = contentQuery.from(PostContent.class);
 
-            search.select(text.get("id")).where(
-                    cb.equal(text.get("post"), root),
-                    cb.or(cb.like(cb.lower(text.get("title")), term, '!'),
-                            cb.like(cb.lower(text.get("content")), term, '!'),
-                            cb.like(cb.lower(block.get("text")), term, '!'),
-                            cb.like(cb.lower(block.get("code")), term, '!'),
-                            cb.like(cb.lower(block.get("url")), term, '!')));
-            return cb.exists(search);
+            contentQuery.select(contentRoot.get("id")).where(
+                    criteriaBuilder.equal(contentRoot.get("post"), postRoot),
+                    criteriaBuilder.or(criteriaBuilder.like(criteriaBuilder.lower(contentRoot.get("title")), searchPattern, '!'),
+                            criteriaBuilder.like(criteriaBuilder.lower(contentRoot.get("content")), searchPattern, '!')));
+            return criteriaBuilder.exists(contentQuery);
         };
     }
 
-    /** Chỉ áp dụng ORDER BY cho query lấy dữ liệu, bỏ qua query count. */
-    private Specification<Post> ordered(boolean pinnedFirst, boolean byPopularity) {
-        return (root, query, cb) -> {
-            if (query.getResultType() == Long.class) return null;
+    /** Chỉ áp dụng ORDER BY cho criteriaQuery lấy dữ liệu, bỏ qua criteriaQuery count. */
+    private Specification<Post> ordered(boolean sortPinnedFirst, boolean sortByPopularity) {
+        return (postRoot, criteriaQuery, criteriaBuilder) -> {
+            if (criteriaQuery.getResultType() == Long.class) return null;
 
-            List<Order> order = new ArrayList<>();
-            if (pinnedFirst) order.add(cb.desc(root.get("isPinned")));
-            if (byPopularity) {
-                var hearts = query.subquery(Long.class);
-                var vote = hearts.from(PostVote.class);
-                hearts.select(cb.count(vote)).where(
-                        cb.equal(vote.get("post"), root),
-                        cb.equal(vote.get("voteType"), VoteType.UP));
-                order.add(cb.desc(hearts));
+            List<Order> sortOrders = new ArrayList<>();
+            if (sortPinnedFirst) sortOrders.add(criteriaBuilder.desc(postRoot.get("isPinned")));
+            if (sortByPopularity) {
+                var voteScoreQuery = criteriaQuery.subquery(Long.class);
+                var voteRoot = voteScoreQuery.from(PostVote.class);
+                voteScoreQuery.select(criteriaBuilder.coalesce(criteriaBuilder.sum(criteriaBuilder.<Long>selectCase()
+                        .when(criteriaBuilder.equal(voteRoot.get("voteType"), VoteType.UP), 1L)
+                        .otherwise(-1L)), 0L)).where(criteriaBuilder.equal(voteRoot.get("post"), postRoot));
+                sortOrders.add(criteriaBuilder.desc(voteScoreQuery));
             }
-            order.add(cb.desc(root.get("createdAt")));
-            order.add(cb.desc(root.get("id")));
-            query.orderBy(order);
+            sortOrders.add(criteriaBuilder.desc(postRoot.get("createdAt")));
+            sortOrders.add(criteriaBuilder.desc(postRoot.get("id")));
+            criteriaQuery.orderBy(sortOrders);
             return null;
         };
     }
 
     /** Escape ký tự đặc biệt của LIKE (dùng '!' làm escape char). */
-    private String likePattern(String q) {
-        String escaped = q.toLowerCase(Locale.ROOT)
+    private String likePattern(String searchKeyword) {
+        String escapedKeyword = searchKeyword.toLowerCase(Locale.ROOT)
                 .replace("!", "!!")
                 .replace("%", "!%")
                 .replace("_", "!_");
-        return "%" + escaped + "%";
+        return "%" + escapedKeyword + "%";
     }
 
     // ==================== REQUEST HANDLING ====================
@@ -286,28 +310,28 @@ public class PostService {
         if (request.getType() != PostType.TEXT) {
             throw new PostException(PostErrorCode.UNSUPPORTED_POST_TYPE);
         }
-        boolean noContent = request.getContent() == null || request.getContent().isBlank();
-        boolean noMedia = request.getMedia() == null || request.getMedia().isEmpty();
-        if (noContent && noMedia) {
+        boolean hasNoContent = request.getContent() == null || request.getContent().isBlank();
+        boolean hasNoMedia = request.getMedia() == null || request.getMedia().isEmpty();
+        if (hasNoContent && hasNoMedia) {
             throw new PostException(PostErrorCode.EMPTY_POST);
         }
     }
 
     /** Lấy danh sách key ảnh (giữ thứ tự), chặn sai loại, trùng, và ảnh trong markdown mà không đính kèm. */
     private List<String> extractImageKeys(CreatePostRequestDTO request) {
-        Set<String> keys = new LinkedHashSet<>();
-        for (PostMediaDTO item : mediaOf(request)) {
-            if (item.getType() != MediaType.IMAGE) {
+        Set<String> imageKeys = new LinkedHashSet<>();
+        for (PostMediaDTO mediaItem : mediaOf(request)) {
+            if (mediaItem.getType() != MediaType.IMAGE) {
                 throw new PostException(PostErrorCode.UNSUPPORTED_MEDIA_TYPE);
             }
-            if (!keys.add(item.getObjectKey())) {
+            if (!imageKeys.add(mediaItem.getObjectKey())) {
                 throw new PostException(PostErrorCode.DUPLICATE_MEDIA);
             }
         }
-        if (!keys.containsAll(PostMarkdown.imageKeys(request.getContent()))) {
+        if (!imageKeys.containsAll(PostMarkdown.imageKeys(request.getContent()))) {
             throw new PostException(PostErrorCode.MARKDOWN_MEDIA_MISSING);
         }
-        return List.copyOf(keys);
+        return List.copyOf(imageKeys);
     }
 
     private List<PostMediaDTO> mediaOf(CreatePostRequestDTO request) {
@@ -315,51 +339,49 @@ public class PostService {
     }
 
     private List<PostMedia> saveAttachments(Post post, CreatePostRequestDTO request) {
-        Set<String> inlineKeys = PostMarkdown.imageKeys(request.getContent());
-        List<PostMediaDTO> requested = mediaOf(request);
+        List<PostMediaDTO> requestedMedia = mediaOf(request);
 
-        List<PostMedia> attachments = new ArrayList<>(requested.size());
-        for (int i = 0; i < requested.size(); i++) {
-            PostMediaDTO item = requested.get(i);
-            attachments.add(PostMedia.builder()
+        List<PostMedia> postAttachments = new ArrayList<>(requestedMedia.size());
+        for (int i = 0; i < requestedMedia.size(); i++) {
+            PostMediaDTO mediaItem = requestedMedia.get(i);
+            if (postMediaRepository.existsByObjectKey(mediaItem.getObjectKey())) {
+                throw new PostException(PostErrorCode.DUPLICATE_MEDIA);
+            }
+            postAttachments.add(PostMedia.builder()
                     .post(post)
-                    .objectKey(item.getObjectKey())
-                    .mediaType(item.getType())
-                    .caption(item.getCaption())
+                    .objectKey(mediaItem.getObjectKey())
+                    .type(mediaItem.getType())
+                    .caption(mediaItem.getCaption())
                     .displayOrder(i)
-                    .inlineImage(inlineKeys.contains(item.getObjectKey()))
                     .build());
         }
-        return media.saveAll(attachments);
+        return postMediaRepository.saveAll(postAttachments);
     }
 
-    private void writeContent(PostContent content, CreatePostRequestDTO request) {
-        content.setTitle(request.getTitle().strip());
-        content.setContent(request.getContent() == null ? "" : request.getContent());
-        content.setTags(request.getTags() == null
+    private void writeContent(PostContent postContent, CreatePostRequestDTO request) {
+        postContent.setTitle(request.getTitle().strip());
+        postContent.setContent(request.getContent() == null ? "" : request.getContent());
+        postContent.setTags(request.getTags() == null
                 ? new ArrayList<>()
                 : new ArrayList<>(request.getTags().stream().map(String::strip).distinct().toList()));
-        content.setLinkUrl(null);
-        content.setCode(null);
-        content.setCodeLanguage(null);
-        content.setBlocks(new ArrayList<>()); // Bỏ block legacy khi đã có request thay thế đầy đủ.
+
     }
 
     // ==================== HELPERS ====================
-    private PostResponseDTO toResponse(Post post, User viewer) {
+    private PostResponseDTO toResponse(Post post, User currentUser) {
         Long id = post.getId();
-        return mapper.toResponse(post, findContent(post),
-                media.findByPostIdOrderByDisplayOrderAsc(id),
-                posts.countHearts(id), posts.countComments(id),
-                posts.countUserHeart(id, viewer.getId()) > 0);
+        return postMapper.toResponse(post, findContent(post),
+                postMediaRepository.findByPostIdOrderByDisplayOrderAsc(id),
+                postRepository.voteScore(id), postRepository.countComments(id),
+                userVote(id, currentUser));
     }
 
     private PostContent findContent(Post post) {
-        return contents.findByPostId(post.getId()).orElseThrow(this::notFound);
+        return postContentRepository.findByPostId(post.getId()).orElseThrow(this::notFound);
     }
 
     private Post findPublished(Long id) {
-        return posts.findById(id)
+        return postRepository.findById(id)
                 .filter(p -> p.getStatus() == PostStatus.PUBLISHED)
                 .orElseThrow(this::notFound);
     }
@@ -368,8 +390,8 @@ public class PostService {
         Community community = post.getCommunity();
         if (community.getStatus() != CommunityStatus.ACTIVE) throw notFound();
 
-        boolean isPrivate = community.getVisibility() == CommunityVisibility.PRIVATE;
-        if (isPrivate && members.findByCommunityAndUserAndStatus(
+        boolean isPrivateCommunity = community.getVisibility() == CommunityVisibility.PRIVATE;
+        if (isPrivateCommunity && communityMemberRepository.findByCommunityAndUserAndStatus(
                 community, user, MembershipStatus.ACTIVE).isEmpty()) {
             throw notFound(); // Ẩn sự tồn tại của post trong community private.
         }

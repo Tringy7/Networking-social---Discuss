@@ -33,7 +33,7 @@ export default function HomePage() {
     hydrate(currentTab).catch((error: unknown) => addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'));
   }, [addToast, currentTab, hydrate, isAuthenticated]);
   const sorted = posts.filter((post) => feedIds.includes(post.id)).sort((a, b) => {
-    if (currentTab === 'popular') return b.heartCount - a.heartCount;
+    if (currentTab === 'popular') return b.voteScore - a.voteScore;
     if (currentTab === 'for-you' && a.pinned !== b.pinned) return a.pinned ? -1 : 1;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });

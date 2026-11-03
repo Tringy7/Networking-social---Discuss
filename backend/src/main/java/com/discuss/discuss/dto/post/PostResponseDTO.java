@@ -10,7 +10,7 @@ public record PostResponseDTO(
         String id, String communityName, String communityDisplayName, String communityAvatar,
         Author author, String title, PostType type, String content, List<String> tags,
         List<Media> media, String linkUrl,
-        long heartCount, long commentCount, boolean isHearted, boolean isSaved,
+        long voteScore, long commentCount, com.discuss.discuss.enums.VoteType userVote, boolean isSaved,
         boolean pinned, PostStatus status, LocalDateTime createdAt, LocalDateTime updatedAt
 ) {
     public record Author(String id, String username, String displayName, String avatarUrl) {}

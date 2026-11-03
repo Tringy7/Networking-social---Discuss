@@ -216,7 +216,7 @@ export const Navbar: React.FC = () => {
                               {p.title}
                             </div>
                             <div className="text-xs text-[var(--text-muted)] mt-0.5">
-                              {p.communityDisplayName} · {p.heartCount} lượt thích
+                              {p.communityDisplayName} · {p.voteScore} điểm
                             </div>
                           </Link>
                         ))}

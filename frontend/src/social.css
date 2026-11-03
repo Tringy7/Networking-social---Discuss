@@ -533,3 +533,26 @@ code:not(pre code) { background:var(--bg-code); padding:2px 5px; border-radius:4
   .image-crop-editor input[type="range"] { min-height:44px; }
 }
 @media(prefers-reduced-motion:reduce) { .community-directory-row,.directory-visit,.directory-category-filter,.directory-sort,.profile-empty-action { transition:none; } }
+
+
+
+/* One shared post vote control, including negative scores and touch targets. */
+.post-votes { --vote-up:var(--color-orange-ink); --vote-down: #3d63bd; display:inline-flex; position:relative; align-items:center; flex-shrink:0; gap:0; border:1px solid var(--border-color); border-radius:999px; background:var(--bg-main); color:var(--text-secondary); }
+.dark .post-votes { --vote-up:#fb923c; --vote-down:#93b4ff; }
+.post-votes__button { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; width:40px; height:40px; border-radius:50%; color:var(--text-secondary); transition:color 140ms, background-color 140ms; cursor:pointer; }
+.post-votes__button svg { width:21px; height:21px; stroke-width:1.75; }
+.post-votes__button--up:hover, .post-votes__button--up[aria-pressed="true"] { color:var(--vote-up); background:var(--color-orange-soft); }
+.post-votes__button--down:hover, .post-votes__button--down[aria-pressed="true"] { color:var(--vote-down); background:color-mix(in srgb, var(--vote-down) 12%, transparent); }
+.post-votes__button:focus-visible { outline:2px solid var(--vote-up); outline-offset:2px; }
+.post-votes__button--down:focus-visible { outline-color:var(--vote-down); }
+.post-votes__button:disabled { cursor:wait; opacity:.55; }
+.post-votes__score { min-width:34px; padding:0 4px; font-size:13px; line-height:1; font-weight:700; font-variant-numeric:tabular-nums; text-align:center; white-space:nowrap; }
+.post-votes[data-vote="up"] .post-votes__score { color:var(--vote-up); }
+.post-votes[data-vote="down"] .post-votes__score, .post-votes[data-vote="neutral"] .post-votes__score[data-negative="true"] { color:var(--vote-down); }
+.post-votes__pending { position:absolute; right:-5px; top:-5px; padding:2px; border-radius:50%; background:var(--bg-surface); color:var(--text-secondary); }
+.post-votes__pending svg { width:12px; height:12px; animation:vote-pending 1s linear infinite; }
+.post-votes--vertical { flex-direction:column; border-radius:24px; }
+.post-votes--vertical .post-votes__score { padding:5px 3px; }
+@keyframes vote-pending { to { transform:rotate(360deg); } }
+@media (pointer:coarse) { .post-votes__button { width:44px; height:44px; } }
+@media (prefers-reduced-motion:reduce) { .post-votes__button { transition:none; } .post-votes__pending svg { animation:none; } }

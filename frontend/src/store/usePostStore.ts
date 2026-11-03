@@ -18,7 +18,7 @@ interface PostState {
   hydrateSaved: () => Promise<void>;
   loadPost: (id: string) => Promise<Post>;
   loadComments: (id: string) => Promise<void>;
-  toggleHeart: (id: string) => Promise<void>;
+  vote: (id: string, type: 'UP' | 'DOWN' | null) => Promise<void>;
   toggleSave: (id: string) => Promise<void>;
   addPost: (input: PostInput) => Promise<Post>;
   editPost: (id: string, input: PostInput) => Promise<Post>;
@@ -101,7 +101,15 @@ export const usePostStore = create<PostState>((set, get) => ({
   },
   hydrateSaved: async () => { set({ savedPosts: [] }); },
   loadComments: async () => { /* Comment API has not been implemented; never synthesize demo comments. */ },
-  toggleHeart: unsupported, toggleSave: unsupported, addComment: unsupported, toggleCommentHeart: unsupported,
+  vote: async (id, type) => {
+    const generation = session;
+    const post = await postService.vote(id, type);
+    if (generation === session) set((state) => ({
+      posts: merge(state.posts, [post]),
+      savedPosts: state.savedPosts.map((item) => item.id === id ? post : item),
+    }));
+  },
+  toggleSave: unsupported, addComment: unsupported, toggleCommentHeart: unsupported,
   openCreateModal: (name) => set({ isCreateModalOpen: true, targetCommunityName: name, editingPost: undefined }),
   openEditModal: (post) => set({ isCreateModalOpen: true, targetCommunityName: post.communityName, editingPost: post }),
   closeCreateModal: () => set({ isCreateModalOpen: false, targetCommunityName: undefined, editingPost: undefined }),

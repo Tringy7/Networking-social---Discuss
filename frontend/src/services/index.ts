@@ -430,6 +430,9 @@ export interface PostPage {
   totalPages: number; first: boolean; last: boolean; empty: boolean;
 }
 export const postService = {
+  vote: (id: string, type: 'UP' | 'DOWN' | null) => type === null
+    ? apiClient.delete<Post>(`/posts/${id}/vote`)
+    : apiClient.put<Post>(`/posts/${id}/vote`, { type }),
   list: (tab = 'for-you', page = 0) => apiClient.get<PostPage>(`/posts?tab=${encodeURIComponent(tab)}&page=${page}&size=20`),
   getById: (id: string) => apiClient.get<Post>(`/posts/${id}`),
   create: (input: import('../types').PostInput) => apiClient.post<Post>('/posts', input),

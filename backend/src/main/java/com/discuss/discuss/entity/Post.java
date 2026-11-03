@@ -33,7 +33,6 @@ public class Post {
     @Column(name = "post_type", length = 16)
     private PostType type;
 
-
     @Column(nullable = false)
     private Boolean isPinned;
 

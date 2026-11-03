@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
 
 @DataJpaTest(showSql = false, properties = {"spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect", "spring.jpa.show-sql=false"})
-@Import({PostService.class, PostMapper.class, PageMapper.class, CommunityAuthorizationService.class, PostImageService.class})
+@Import({PostService.class, PostMapper.class, PageMapper.class, CommunityAuthorizationService.class, ImageService.class, PostImageService.class})
 class PostServiceTest {
     @Autowired EntityManager em;
     @Autowired PostService service;
@@ -147,16 +147,24 @@ class PostServiceTest {
         var ex = assertThrows(PostException.class, () -> service.updatePost(id, request("Other")));
         assertEquals(PostErrorCode.POST_EDIT_FORBIDDEN, ex.getError());
     }
-    @Test void cleanupProtectsSharedMediaAndSoftDeletedPostsAreNotReadable() {
-        String key = upload("shared"); var input = request("Body", image(key, "Shared"));
-        Long first = Long.valueOf(service.createPost(input).id()), second = Long.valueOf(service.createPost(input).id());
-        service.deletePost(first); em.flush();
+    @Test void cleanupProtectsAttachedMediaAndSoftDeletedPostsAreNotReadable() {
+        String key = upload("attached");
+        Long id = Long.valueOf(service.createPost(request("Body", image(key, "Attached"))).id());
+        em.flush();
         uploads.findById(key).orElseThrow().setExpiresAt(LocalDateTime.now().minusDays(1)); em.flush();
         imageService.cleanup(); verify(minio, never()).deleteFile(key);
-        service.deletePost(second); em.flush();
+        service.deletePost(id); em.flush();
         uploads.findById(key).orElseThrow().setExpiresAt(LocalDateTime.now().minusDays(1)); em.flush();
         imageService.cleanup(); verify(minio).deleteFile(key); assertFalse(uploads.existsById(key));
-        assertThrows(PostException.class, () -> service.getPost(first));
+        assertThrows(PostException.class, () -> service.getPost(id));
+    }
+    @Test void rejectsImageAlreadyAttachedToAnotherPost() {
+        String key = upload("exclusive");
+        service.createPost(request("First", image(key, null)));
+        em.flush();
+        var ex = assertThrows(PostException.class,
+                () -> service.createPost(request("Second", image(key, null))));
+        assertEquals(PostErrorCode.DUPLICATE_MEDIA, ex.getError());
     }
     @Test void cleanupOnlyRemovesExpiredUnusedUploadsAndRetriesFailures() {
         String old = upload("old"), fresh = upload("fresh"), fail = upload("fail");
@@ -165,30 +173,6 @@ class PostServiceTest {
         doThrow(new RuntimeException("Storage down")).when(minio).deleteFile(fail);
         imageService.cleanup(); verify(minio).deleteFile(old); verify(minio, never()).deleteFile(fresh);
         assertTrue(uploads.existsById(fail));
-    }
-    @Test void legacyCodeAndBlockDocumentsRemainReadableAndMigrateOnEdit() {
-        String key = upload("legacy");
-        Post post = posts.saveAndFlush(Post.builder().user(user).community(community).isPinned(false).status(PostStatus.PUBLISHED).build());
-        contents.saveAndFlush(PostContent.builder().post(post).title("Legacy").content("Old excerpt")
-                .blocks(new ArrayList<>(List.of(
-                        PostBlock.builder().type(PostBlockType.TEXT).text("Introduction").build(),
-                        PostBlock.builder().type(PostBlockType.CODE).language("java").code("  return 1;\n").build(),
-                        PostBlock.builder().type(PostBlockType.IMAGE).objectKey(key).build(),
-                        PostBlock.builder().type(PostBlockType.LINK).url("https://spring.io").build()))).build());
-        media.saveAndFlush(PostMedia.builder().post(post).objectKey(key).mediaType(MediaType.IMAGE).displayOrder(0).build());
-        var result = service.getPost(post.getId());
-        assertTrue(result.content().contains("```java\n  return 1;"));
-        assertTrue(result.content().contains("post-image:" + key));
-        assertTrue(result.content().contains("<https://spring.io>")); assertTrue(result.media().getFirst().inlineImage());
-        service.updatePost(post.getId(), request(result.content(), image(key, "Migrated")));
-        em.flush(); em.clear(); var reloaded = service.getPost(post.getId());
-        assertEquals(result.content(), reloaded.content()); assertEquals("Migrated", reloaded.media().getFirst().caption());
-        assertTrue(contents.findByPostId(post.getId()).orElseThrow().getBlocks().isEmpty());
-    }
-    @Test void legacyScalarCodeBecomesFencedMarkdown() {
-        Post post = posts.saveAndFlush(Post.builder().user(user).community(community).isPinned(false).status(PostStatus.PUBLISHED).build());
-        contents.saveAndFlush(PostContent.builder().post(post).title("Old code").content("Intro").codeLanguage("java").code("return 1;").build());
-        assertTrue(service.getPost(post.getId()).content().contains("```java\nreturn 1;"));
     }
     @Test void privateFeedVisibilityAndSearchRemainCorrect() {
         service.createPost(request("unique_search"));
@@ -201,5 +185,38 @@ class PostServiceTest {
         var video = new PostMediaDTO(); video.setType(MediaType.VIDEO); video.setObjectKey("posts/draft-12/movie.mp4");
         var ex = assertThrows(PostException.class, () -> service.createPost(request("Video", video)));
         assertEquals(HttpStatus.UNSUPPORTED_MEDIA_TYPE, ex.getError().getStatus()); assertEquals(0, posts.count());
+    }
+    @Test void votesCanBeNegativeChangedAndRemoved() {
+        Long id = Long.valueOf(service.createPost(request("Body")).id());
+        var down = service.vote(id, VoteType.DOWN);
+        assertEquals(-1, down.voteScore());
+        assertEquals(VoteType.DOWN, down.userVote());
+        assertEquals(-1, service.vote(id, VoteType.DOWN).voteScore());
+        assertEquals(1, service.vote(id, VoteType.UP).voteScore());
+        assertEquals(VoteType.UP, service.getPost(id).userVote());
+        var removed = service.vote(id, null);
+        assertEquals(0, removed.voteScore());
+        assertNull(removed.userVote());
+        assertEquals(0, service.vote(id, null).voteScore());
+    }
+    @Test void votesAggregateAcrossUsersAndPopularSortUsesNetScore() {
+        Long negative = Long.valueOf(service.createPost(request("Negative")).id());
+        Long neutral = Long.valueOf(service.createPost(request("Neutral")).id());
+        service.vote(negative, VoteType.UP);
+        for (int index = 0; index < 2; index++) {
+            User other = User.builder().username("voter" + index).email("voter" + index + "@example.com")
+                    .role(UserRole.USER).status(UserStatus.ACTIVE).build();
+            em.persist(other);
+            when(users.getCurrentUser()).thenReturn(other);
+            service.vote(negative, VoteType.DOWN);
+        }
+        assertEquals(-1, service.getPost(negative).voteScore());
+        assertEquals(neutral.toString(), service.list(null, null, "popular", 0, 20, null).getContent().getFirst().id());
+    }
+    @Test void rejectsVotingOnDeletedOrInaccessiblePosts() {
+        Long id = Long.valueOf(service.createPost(request("Body")).id());
+        community.setVisibility(CommunityVisibility.PRIVATE);
+        em.createQuery("delete from CommunityMember").executeUpdate(); em.flush();
+        assertThrows(PostException.class, () -> service.vote(id, VoteType.UP));
     }
 }

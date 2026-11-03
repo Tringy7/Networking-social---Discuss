@@ -1,3 +1,4 @@
+import PostVotes from '../../components/post/PostVotes';
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { usePostStore } from '../../store/usePostStore';
@@ -30,7 +31,7 @@ export const PostDetailPage: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
 
-  const { posts, comments, loadPost, loadComments, toggleHeart, toggleSave, deletePost, addComment, toggleCommentHeart, openEditModal } =
+  const { posts, comments, loadPost, loadComments, toggleSave, deletePost, addComment, toggleCommentHeart, openEditModal } =
     usePostStore();
   const { user, isAuthenticated } = useAuthStore();
   const { addToast } = useToastStore();
@@ -85,19 +86,6 @@ export const PostDetailPage: React.FC = () => {
   }
 
   const postComments = comments[post.id] || [];
-
-  const handleHeartClick = async () => {
-    if (!isAuthenticated) {
-      addToast('Vui lòng đăng nhập để thích bài viết', 'warning');
-      navigate('/login');
-      return;
-    }
-    try {
-      await toggleHeart(post.id);
-    } catch (error) {
-      addToast(error instanceof Error ? error.message : 'Không thể cập nhật lượt thích.', 'error');
-    }
-  };
 
   const handleSaveClick = async () => {
     if (!isAuthenticated) {
@@ -369,17 +357,7 @@ export const PostDetailPage: React.FC = () => {
         {/* Actions Bar */}
         <div className="flex items-center justify-between pt-3 text-sm">
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleHeartClick} disabled={!POST_INTERACTIONS_AVAILABLE}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-[background-color,border-color,color,opacity,transform] ${
-                post.isHearted
-                  ? 'bg-[var(--color-orange-soft)] border-[var(--color-orange-border)] text-[var(--color-orange)] font-semibold'
-                  : 'bg-[var(--bg-elevated)] border-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--color-orange)]'
-              }`}
-            >
-              <Heart className={`w-4 h-4 ${post.isHearted ? 'fill-[var(--color-orange)]' : ''}`} />
-              <span className="tabular-nums">{post.heartCount} Thích</span>
-            </button>
+            <PostVotes post={post} />
 
             <div className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--bg-elevated)] text-[var(--text-secondary)]">
               <MessageSquare className="w-4 h-4" />

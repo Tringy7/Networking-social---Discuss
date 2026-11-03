@@ -1,30 +1,25 @@
+import PostVotes from './PostVotes';
 import { Link, useNavigate } from 'react-router-dom';
 import React, { useEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
 import { Post } from '../../types';
 import { usePostStore } from '../../store/usePostStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { useSettingsStore } from '../../store/useSettingsStore';
 import Avatar from '../ui/Avatar';
 import PostBody from './PostBody';
 import { POST_INTERACTIONS_AVAILABLE } from '../../services';
 import ReportModal from './ReportModal';
-import { Heart, MessageSquare, Bookmark, Share2, Flag, MoreHorizontal, Pin } from 'lucide-react';
+import { MessageSquare, Bookmark, Share2, Flag, MoreHorizontal, Pin } from 'lucide-react';
 
 interface PostCardProps { post: Post; showCommunity?: boolean; }
 export default function PostCard({ post, showCommunity = true }: PostCardProps) {
   const navigate = useNavigate();
-  const { toggleHeart, toggleSave } = usePostStore();
+  const { toggleSave } = usePostStore();
   const addToast = useToastStore((state) => state.addToast);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const intensity = useSettingsStore((state) => state.settings.animationIntensity);
-  const reduced = useReducedMotion();
-  const quiet = reduced || intensity !== 'full';
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [heartPending, setHeartPending] = useState(false);
   const [savePending, setSavePending] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -36,22 +31,6 @@ export default function PostCard({ post, showCommunity = true }: PostCardProps) 
     document.addEventListener('keydown', escape);
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', escape); };
   }, [showMenu]);
-  const handleHeartClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isAuthenticated) {
-      addToast('Vui lòng đăng nhập để tương tác bài viết', 'warning');
-      navigate('/login');
-      return;
-    }
-    if (heartPending) return;
-    setHeartPending(true);
-    try {
-      await toggleHeart(post.id);
-    } catch (error) {
-      addToast(error instanceof Error ? error.message : 'Không thể cập nhật lượt thích.', 'error');
-    } finally { setHeartPending(false); }
-  };
-
   const handleSaveClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isAuthenticated) {
@@ -112,10 +91,7 @@ export default function PostCard({ post, showCommunity = true }: PostCardProps) 
         {!!post.tags?.length && <div className="discussion-tags">{post.tags.map((tag) => <Link key={tag} to={`/search?q=${encodeURIComponent(tag)}&type=posts`}>#{tag}</Link>)}</div>}
       </div>
       <div className="discussion-actions">
-        <motion.button type="button" className="discussion-action" onClick={handleHeartClick} aria-pressed={post.isHearted} disabled={heartPending || !POST_INTERACTIONS_AVAILABLE} title={!POST_INTERACTIONS_AVAILABLE ? "Chưa hỗ trợ lượt thích" : undefined}
-          aria-label={`${post.isHearted ? 'Bỏ thích' : 'Thích'} bài viết, ${post.heartCount} lượt thích`} whileTap={quiet ? undefined : { scale: 0.9 }}>
-          <motion.span animate={quiet ? undefined : { scale: post.isHearted ? [1, 1.3, 1] : 1 }} transition={{ duration: 0.25 }}><Heart className="heart-icon" /></motion.span><span className="hidden sm:inline">Thích</span><span className="tabular-nums">{post.heartCount}</span>
-        </motion.button>
+        <PostVotes post={post} />
         <Link to={`/post/${post.id}#comments`} className="discussion-action" aria-label={`${post.commentCount} bình luận`}><MessageSquare /><span>{post.commentCount}</span><span className="hidden sm:inline">bình luận</span></Link>
         <button type="button" className="discussion-action ml-auto" onClick={handleSaveClick} aria-pressed={post.isSaved} disabled={savePending || !POST_INTERACTIONS_AVAILABLE} title={!POST_INTERACTIONS_AVAILABLE ? "Chưa hỗ trợ lưu bài" : undefined} aria-label={post.isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}><Bookmark fill={post.isSaved ? 'currentColor' : 'none'} /><span className="hidden sm:inline">{post.isSaved ? 'Đã lưu' : 'Lưu'}</span></button>
         <button type="button" className="discussion-action" onClick={handleShareClick} aria-label="Sao chép liên kết bài viết"><Share2 /><span className="hidden sm:inline">Chia sẻ</span></button>

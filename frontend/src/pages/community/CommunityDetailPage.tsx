@@ -136,7 +136,7 @@ export const CommunityDetailPage: React.FC = () => {
 
   const communityPosts = posts.filter((p) => p.communityName === community.name);
   const sortedPosts = [...communityPosts].sort((a, b) => {
-    if (tab === 'popular') return b.heartCount - a.heartCount;
+    if (tab === 'popular') return b.voteScore - a.voteScore;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 

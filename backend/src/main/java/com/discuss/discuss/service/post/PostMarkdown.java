@@ -18,12 +18,4 @@ public final class PostMarkdown {
         return keys;
     }
 
-    public static String legacyMarkdown(String content, String language, String code) {
-        String markdown = content == null ? "" : content;
-        if (code == null || code.isBlank()) return markdown;
-        String fence = "```";
-        while (code.contains(fence)) fence += "`";
-        String safeLanguage = language == null ? "" : language.replaceAll("[^a-zA-Z0-9_+#.-]", "");
-        return markdown + "\n\n" + fence + safeLanguage + "\n" + code + "\n" + fence;
-    }
 }
