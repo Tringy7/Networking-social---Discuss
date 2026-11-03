@@ -250,9 +250,9 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const changePassword = async ({ oldPassword, password, confirmPassword }) => {
+  const changePassword = async ({ password, confirmPassword }) => {
     try {
-      const res = await authService.changePassword({ oldPassword, password, confirmPassword });
+      const res = await authService.changePassword({ password, confirmPassword });
       if (res?.message) {
         success(res.message);
       } else {

@@ -56,7 +56,7 @@ interface AuthState {
   forgotPassword: (email: string) => Promise<void>;
   verifyForgotPasswordOtp: (email: string, code: string) => Promise<void>;
   resetPassword: (password: string, confirmPassword: string) => Promise<void>;
-  changePassword: (oldPassword: string, password: string, confirmPassword: string) => Promise<void>;
+  changePassword: (password: string, confirmPassword: string) => Promise<void>;
   clearSession: () => void;
 }
 
@@ -316,8 +316,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await authService.resetPassword({ password, confirmPassword });
   },
 
-  changePassword: async (oldPassword, password, confirmPassword) => {
-    await authService.changePassword({ oldPassword, password, confirmPassword });
+  changePassword: async (password, confirmPassword) => {
+    await authService.changePassword({ password, confirmPassword });
   },
 
   clearSession: () => {

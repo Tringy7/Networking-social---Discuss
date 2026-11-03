@@ -128,7 +128,12 @@ export const authService = {
   resetPassword: (data: { password: string; confirmPassword: string }) =>
     apiClient.post<{ message?: string }>('/auth/forgot-password/reset', data),
 
-  changePassword: (data: { oldPassword: string; password: string; confirmPassword: string }) =>
+  requestChangePasswordOtp: () => apiClient.post<{ message?: string }>('/auth/change-password/request'),
+
+  verifyChangePasswordOtp: (code: string) =>
+    apiClient.post<{ message?: string }>('/auth/change-password/verify', { code }),
+
+  changePassword: (data: { password: string; confirmPassword: string }) =>
     apiClient.patch<{ message?: string }>('/auth/change-password', data),
 };
 

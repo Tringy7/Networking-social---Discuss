@@ -43,6 +43,7 @@ public class LocalAuthService {
     private final UserProfileService userProfileService;
     private final TokenService tokenService;
     private final PasswordResetTokenService passwordResetTokenService;
+    private final com.discuss.discuss.service.auth.email.OtpService otpService;
 
     /*
         Register new user local
@@ -181,22 +182,46 @@ public class LocalAuthService {
         passwordResetTokenService.consumeToken(resetToken);
     }
 
-    @Transactional
-    public void changePassword(String oldPassword, String newPassword) {
+    public String requestChangePasswordOtp() {
+        User user = getPasswordChangeUser();
+        return emailVerificationService.generateAndSendOtp(
+                OtpPurpose.CHANGE_PASSWORD, user.getEmail(), user.getUsername());
+    }
 
-        User user = this.userService.getCurrentUser();
-
-        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            throw new AuthException(AuthErrorCode.INVALID_CREDENTIALS);
+    public String verifyChangePasswordOtp(String code) {
+        User user = getPasswordChangeUser();
+        if (!otpService.verifyOtp(OtpPurpose.CHANGE_PASSWORD, normalize(user.getEmail()), code)) {
+            throw new AuthException(AuthErrorCode.INVALID_VERIFICATION_CODE);
         }
+        // A distinct subject prevents recovery tokens being used to change a logged-in account.
+        return passwordResetTokenService.generateToken(changePasswordSubject(user));
+    }
 
+    @Transactional
+    public void changePassword(String verificationToken, String newPassword) {
+        User user = getPasswordChangeUser();
+        if (!changePasswordSubject(user).equals(passwordResetTokenService.getEmailByToken(verificationToken))) {
+            throw new AuthException(AuthErrorCode.INVALID_RESET_TOKEN);
+        }
         if (passwordEncoder.matches(newPassword, user.getPassword())) {
             throw new AuthException(AuthErrorCode.PASSWORD_UNCHANGED);
         }
-
+        passwordResetTokenService.consumeToken(verificationToken);
         user.setPassword(passwordEncoder.encode(newPassword));
-
         userRepository.save(user);
+    }
+
+    private String changePasswordSubject(User user) {
+        return "change-password:" + user.getId() + ":" + normalize(user.getEmail());
+    }
+
+    private User getPasswordChangeUser() {
+        User user = userService.getCurrentUser();
+        validateAccountStatus(user);
+        if (user.getProvider() != Provider.LOCAL) {
+            throw new AuthException(AuthErrorCode.PASSWORD_RESET_NOT_SUPPORTED);
+        }
+        return user;
     }
 
 

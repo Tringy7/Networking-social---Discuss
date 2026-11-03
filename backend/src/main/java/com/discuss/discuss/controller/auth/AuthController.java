@@ -132,15 +132,35 @@ public class AuthController {
                 ));
     }
 
+    public record ChangePasswordOtpDTO(
+            @NotBlank @jakarta.validation.constraints.Pattern(regexp = "\\d{6}") String code) {}
+
+    @PostMapping("/change-password/request")
+    public ResponseEntity<ApiResponse> requestChangePassword() {
+        localAuthService.requestChangePasswordOtp();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookieUtil.clearCookie(
+                        CookieUtil.CHANGE_PASSWORD_TOKEN_COOKIE, "/auth/change-password").toString())
+                .body(new ApiResponse("Mã OTP đã được gửi đến email tài khoản của bạn."));
+    }
+
+    @PostMapping("/change-password/verify")
+    public ResponseEntity<ApiResponse> verifyChangePassword(@Valid @RequestBody ChangePasswordOtpDTO request) {
+        String token = localAuthService.verifyChangePasswordOtp(request.code());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookieUtil.buildChangePasswordTokenCookie(token).toString())
+                .body(new ApiResponse("Xác thực OTP thành công."));
+    }
+
     @PatchMapping("/change-password")
     public ResponseEntity<ApiResponse> changePassword(
-            @Valid @RequestBody ChanegPasswordDTO request
-    ) {
-        localAuthService.changePassword(request.getOldPassword(), request.getPassword());
-
-        return ResponseEntity.ok(
-                new ApiResponse("Password changed successfully")
-        );
+            @CookieValue(name = CookieUtil.CHANGE_PASSWORD_TOKEN_COOKIE, defaultValue = "") String token,
+            @Valid @RequestBody ForgotPasswordDTO request) {
+        localAuthService.changePassword(token, request.getPassword());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookieUtil.clearCookie(
+                        CookieUtil.CHANGE_PASSWORD_TOKEN_COOKIE, "/auth/change-password").toString())
+                .body(new ApiResponse("Đổi mật khẩu thành công."));
     }
 
     @PostMapping("/logout")

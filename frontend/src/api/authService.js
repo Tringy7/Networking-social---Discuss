@@ -56,9 +56,8 @@ export const authService = {
     }
   },
 
-  changePassword: ({ oldPassword, password, confirmPassword }) =>
+  changePassword: ({ password, confirmPassword }) =>
     apiClient.patch('/auth/change-password', {
-      oldPassword,
       password,
       confirmPassword,
     }),

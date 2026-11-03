@@ -1,48 +1,15 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
-import Input from '../../components/ui/Input';
+import ChangePasswordDialog from '../../components/auth/ChangePasswordDialog';
 import Button from '../../components/ui/Button';
-import Modal from '../../components/ui/Modal';
 import { KeyRound, Shield, Laptop, Smartphone, LogOut, CheckCircle2 } from 'lucide-react';
 
 export const AccountSettingsPage: React.FC = () => {
-  const { user, logout, changePassword } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { addToast } = useToastStore();
 
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isChanging, setIsChanging] = useState(false);
-
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword.length < 8) {
-      addToast('Mật khẩu mới phải có tối thiểu 8 ký tự!', 'error');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      addToast('Mật khẩu xác nhận không trùng khớp!', 'error');
-      return;
-    }
-
-    setIsChanging(true);
-    try {
-      await changePassword(currentPassword, newPassword, confirmPassword);
-      setIsChanging(false);
-      setIsPasswordModalOpen(false);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      addToast('Đổi mật khẩu thành công!', 'success');
-    } catch (error: unknown) {
-      addToast(error instanceof Error ? error.message : 'Đổi mật khẩu thất bại.', 'error');
-    } finally {
-      setIsChanging(false);
-    }
-  };
-
   const handleLogout = async () => {
     try {
       await logout();
@@ -174,52 +141,9 @@ export const AccountSettingsPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Change Password Modal */}
-      <Modal
-        isOpen={isPasswordModalOpen}
-        onClose={() => setIsPasswordModalOpen(false)}
-        title="Đổi mật khẩu"
-        description="Nhập mật khẩu hiện tại và tạo mật khẩu mới an toàn"
-        maxWidth="md"
-      >
-        <form onSubmit={handleChangePassword} className="space-y-4 text-left">
-          <Input
-            label="Mật khẩu hiện tại"
-            type="password"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            required
-          />
-          <Input
-            label="Mật khẩu mới (tối thiểu 8 ký tự)"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-          />
-          <Input
-            label="Xác nhận mật khẩu mới"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
-
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsPasswordModalOpen(false)}
-            >
-              Hủy
-            </Button>
-            <Button type="submit" variant="primary" size="sm" isLoading={isChanging}>
-              Cập nhật mật khẩu
-            </Button>
-          </div>
-        </form>
-      </Modal>
+      {isPasswordModalOpen && (
+        <ChangePasswordDialog email={user?.email} onClose={() => setIsPasswordModalOpen(false)} />
+      )}
     </div>
   );
 };

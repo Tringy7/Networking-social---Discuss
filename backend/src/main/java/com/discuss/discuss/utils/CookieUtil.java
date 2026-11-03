@@ -25,6 +25,7 @@ public class CookieUtil {
     @Value("${app.password-reset.expiration-minutes}")
     private long expirationMinutes;
 
+    public static final String CHANGE_PASSWORD_TOKEN_COOKIE = "change_password_token";
     public static final String ACCESS_TOKEN_COOKIE = "access_token";
     public static final String REFRESH_TOKEN_COOKIE = "refresh_token";
     public static final String RESET_PASSWORD_TOKEN_COOKIE =
@@ -59,6 +60,13 @@ public class CookieUtil {
                 .path("/auth/forgot-password/reset")
                 .maxAge(Duration.ofMinutes(expirationMinutes))
                 .build();
+    }
+
+    public ResponseCookie buildChangePasswordTokenCookie(String token) {
+        return ResponseCookie.from(CHANGE_PASSWORD_TOKEN_COOKIE, token)
+                .httpOnly(true).secure(secure).sameSite("Strict")
+                .path("/auth/change-password")
+                .maxAge(Duration.ofMinutes(expirationMinutes)).build();
     }
 
     public ResponseCookie clearCookie(String name, String path) {
