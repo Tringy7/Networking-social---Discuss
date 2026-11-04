@@ -48,4 +48,6 @@ public class Post {
     private LocalDateTime updatedAt;
 
     private LocalDateTime deletedAt;
+
+    private Long deletedByUserId;
 }

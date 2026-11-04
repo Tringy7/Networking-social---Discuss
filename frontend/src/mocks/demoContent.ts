@@ -18,7 +18,6 @@ export const demoPosts: Post[] = [
     title: 'Mọi người tổ chức state trong React app lớn như thế nào?',
     content:
       'Mình đang refactor một ứng dụng React có nhiều màn hình và muốn tìm cách chia state hợp lý. Phần nào nên để trong server state, phần nào giữ ở local state hoặc Zustand? Mọi người chia sẻ kinh nghiệm thực tế nhé.',
-    tags: ['React', 'Frontend', 'State Management'],
     voteScore: 48,
     commentCount: 12,
     userVote: null,
@@ -40,7 +39,6 @@ export const demoPosts: Post[] = [
     title: 'REST API phân trang: offset hay cursor cho bảng tin?',
     content:
       'Với danh sách có thể tăng nhanh và người dùng liên tục tải thêm, cursor pagination thường cho kết quả ổn định hơn. Nhưng offset lại đơn giản khi cần nhảy đến một trang cụ thể. Dự án của bạn đang dùng cách nào?',
-    tags: ['Backend', 'API', 'Database'],
     voteScore: 31,
     commentCount: 8,
     userVote: 'UP',
@@ -65,7 +63,6 @@ export const demoPosts: Post[] = [
       language: 'TypeScript',
       code: "type Result = { ok: true; value: string } | { ok: false; error: string };\n\nfunction printResult(result: Result) {\n  if (result.ok) return result.value;\n  return result.error;\n}",
     },
-    tags: ['TypeScript', 'Tips'],
     voteScore: 25,
     commentCount: 5,
     userVote: null,
@@ -86,7 +83,6 @@ export const demoPosts: Post[] = [
     title: 'Checklist nhỏ trước khi bàn giao một màn hình UI',
     content:
       'Mình thường kiểm tra trạng thái loading, empty, error, responsive ở các breakpoint, focus keyboard và độ tương phản trước khi bàn giao. Bạn còn bổ sung mục nào không?',
-    tags: ['UI', 'UX', 'Checklist'],
     voteScore: 19,
     commentCount: 4,
     userVote: null,
@@ -104,7 +100,6 @@ export const demoPosts: Post[] = [
     content: 'Mình vẽ lại cách chia local state, shared state và server state. Mọi người thường bắt đầu từ đâu khi một component ngày càng phức tạp?',
     mediaUrl: '/images/discuss-state-map.svg',
     mediaType: 'image' as const,
-    tags: ['React', 'Frontend'],
     voteScore: 16,
     commentCount: 0,
     userVote: null,

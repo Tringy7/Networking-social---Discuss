@@ -94,7 +94,6 @@ export interface PostInput {
   title: string;
   type: 'TEXT';
   content: string;
-  tags: string[];
   media: PostMediaInput[];
 }
 export interface Post {
@@ -115,7 +114,6 @@ export interface Post {
   media?: PostMedia[];
   linkUrl?: string | null;
   updatedAt?: string;
-  tags?: string[];
   mediaUrl?: string;
   mediaType?: 'image' | 'code' | 'link';
   codeSnippet?: {

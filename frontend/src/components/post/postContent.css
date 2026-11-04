@@ -1,10 +1,6 @@
 /* Discuss post editor: 12-column shell retained; the editor is the main workspace.
    The existing modal is 64rem wide, with 24px gutters. Gallery: 3 equal tracks + 2 x 12px gaps. */
 .post-composer { display: grid; gap: 16px; min-width: 0; }
-.discussion-tags.post-highlight-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
-.discussion-tags.post-highlight-tags a { display: inline-flex; align-items: center; min-height: 32px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--color-orange-ink); font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
-.discussion-tags.post-highlight-tags a:hover { background: transparent; text-decoration: underline; }
-.discussion-tags.post-highlight-tags a:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .post-content-divider { border-top: 1px solid var(--border-color); margin-top: 16px; padding-top: 16px; }
 .discussion-row .post-content-divider .post-body-content { margin-top: 0; }
 .post-byline-time { color: var(--text-muted); font-size: 12px; font-weight: 400; white-space: nowrap; }
@@ -133,3 +129,23 @@
   .post-composer-preview { padding: 12px; }
   .post-markdown .post-markdown-heading { font-size: 22px; }
 }
+
+/* Up to six previews: two rows, with 4px gutters between equal columns. */
+.post-media-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; height: clamp(240px, 48vw, 360px); overflow: hidden; border-radius: var(--radius-control); background: var(--bg-main); }
+.post-media-grid[data-count="1"] { grid-template-columns: minmax(0, 1fr); height: auto; max-height: 420px; }
+.post-media-grid[data-count="3"], .post-media-grid[data-count="4"] { grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.post-media-grid[data-count="3"] .post-media-tile:first-child { grid-row: span 2; }
+.post-media-tile { position: relative; min-width: 0; min-height: 0; overflow: hidden; padding: 0; border: 0; }
+.post-media-grid .post-media-tile img { width: 100%; height: 100%; max-height: none; object-fit: cover; }
+.post-media-grid[data-count="1"] .post-media-tile img { height: auto; max-height: 420px; object-fit: contain; }
+.post-media-more { position: absolute; inset: 0; display: grid; place-items: center; background: rgb(0 0 0 / 58%); color: #fff; font-size: clamp(24px, 5vw, 36px); font-weight: 600; pointer-events: none; }
+.post-media-tile:hover img { opacity: .9; }
+.post-lightbox[open] { padding: 64px 72px; }
+@media (max-width: 600px) {
+  .post-lightbox[open] { padding: 72px 12px; }
+  .post-lightbox-prev { left: 8px; }
+  .post-lightbox-next { right: 8px; }
+}
+
+.post-media-grid[data-count="5"], .post-media-grid[data-count="6"] { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.post-media-grid[data-count="5"] .post-media-tile:first-child { grid-row: span 2; }

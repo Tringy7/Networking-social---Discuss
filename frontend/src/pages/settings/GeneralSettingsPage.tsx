@@ -1,9 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, KeyRound, Lock, Palette, Bell, ChevronRight } from 'lucide-react';
+import { User, KeyRound, Lock, Palette, Bell, Trash2, ChevronRight } from 'lucide-react';
 
 export const GeneralSettingsPage: React.FC = () => {
   const sections = [
+    {
+      to: '/settings/trash',
+      title: 'Thùng rác',
+      desc: 'Xem lại nội dung và khôi phục các bài viết của bạn đã xóa.',
+      icon: <Trash2 className="w-5 h-5 text-[var(--text-secondary)]" />,
+    },
     {
       to: '/settings/profile',
       title: 'Hồ sơ cá nhân',

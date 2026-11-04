@@ -14,7 +14,7 @@ export default function FeedPage({
   onSelectUser,
   onOpenCreatePost,
 }) {
-  const { posts, searchKeyword, setSearchKeyword, activeSort, setActiveSort, selectedTag, setSelectedTag } = usePost();
+  const { posts, searchKeyword, setSearchKeyword, activeSort, setActiveSort } = usePost();
   const { communities } = useCommunity();
 
   // 1. Filter by community if specified
@@ -28,17 +28,12 @@ export default function FeedPage({
     filtered = filtered.filter(p => {
       const matchTitle = p.title.toLowerCase().includes(q);
       const matchContent = p.content.toLowerCase().includes(q);
-      const matchTag = p.tags && p.tags.some(t => t.toLowerCase().includes(q));
       const comm = communities.find(c => c.id === p.communityId);
       const matchComm = comm ? comm.slug.toLowerCase().includes(q) || comm.name.toLowerCase().includes(q) : false;
-      return matchTitle || matchContent || matchTag || matchComm;
+      return matchTitle || matchContent || matchComm;
     });
   }
 
-  // 3. Filter by selected tag
-  if (selectedTag) {
-    filtered = filtered.filter(p => p.tags && p.tags.includes(selectedTag));
-  }
 
   // 4. Sort posts: Pinned posts always first, then by sort option
   filtered = [...filtered].sort((a, b) => {
@@ -58,7 +53,7 @@ export default function FeedPage({
   return (
     <div className="space-y-4">
       {/* Active Filter Indicators */}
-      {(searchKeyword || selectedTag) && (
+      {searchKeyword && (
         <div className="bg-[#1a1a1b] border border-[#343536] p-3 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
             <span className="font-bold text-[#d7dadc]">Bộ lọc đang áp dụng:</span>
@@ -73,23 +68,11 @@ export default function FeedPage({
                 </button>
               </span>
             )}
-            {selectedTag && (
-              <span className="bg-[#272729] px-2.5 py-1 rounded-full border border-[#343536] text-orange-400 font-medium flex items-center gap-1">
-                Tag: #{selectedTag}
-                <button
-                  onClick={() => setSelectedTag(null)}
-                  className="hover:text-rose-400 font-bold ml-1 cursor-pointer"
-                >
-                  ×
-                </button>
-              </span>
-            )}
           </div>
 
           <button
             onClick={() => {
               setSearchKeyword('');
-              setSelectedTag(null);
             }}
             className="text-xs text-orange-400 hover:text-orange-300 font-semibold cursor-pointer underline"
           >

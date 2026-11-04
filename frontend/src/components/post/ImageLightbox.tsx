@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 export default function ImageLightbox({ images, index, onChange, onClose }: {
-  images: { url: string }[];
+  images: { url: string; alt?: string }[];
   index: number; onChange: (index: number) => void; onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -25,7 +25,7 @@ export default function ImageLightbox({ images, index, onChange, onClose }: {
       if (event.key === 'ArrowRight') { event.preventDefault(); move(1); }
     }}>
     <button autoFocus type="button" className="post-lightbox-close" aria-label="Đóng ảnh" onClick={onClose}><X /></button>
-    <img className="post-lightbox-image" src={current.url} alt={`Ảnh ${index + 1}`} />
+    <img className="post-lightbox-image" src={current.url} alt={current.alt || `Ảnh ${index + 1}`} />
     {images.length > 1 && <>
       <button type="button" className="post-lightbox-prev" aria-label="Ảnh trước" onClick={() => move(-1)}><ChevronLeft /></button>
       <button type="button" className="post-lightbox-next" aria-label="Ảnh tiếp" onClick={() => move(1)}><ChevronRight /></button>

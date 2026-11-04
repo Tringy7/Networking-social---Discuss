@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { NavLink, Outlet } from 'react-router-dom';
 import PageTransition from '../components/layout/PageTransition';
-import { User, Lock, Palette, Bell, KeyRound, SlidersHorizontal } from 'lucide-react';
+import { User, Lock, Palette, Bell, KeyRound, Trash2, SlidersHorizontal } from 'lucide-react';
 
 export const SettingsLayout: React.FC = () => {
   const reduced = useReducedMotion();
@@ -15,6 +15,7 @@ export const SettingsLayout: React.FC = () => {
     { to: '/settings/privacy', label: 'Quyền riêng tư', icon: <Lock className="w-4 h-4" /> },
     { to: '/settings/appearance', label: 'Giao diện & Trải nghiệm', icon: <Palette className="w-4 h-4 text-[var(--color-orange)]" /> },
     { to: '/settings/notifications', label: 'Thông báo', icon: <Bell className="w-4 h-4" /> },
+    { to: '/settings/trash', label: 'Thùng rác', icon: <Trash2 className="w-4 h-4" /> },
   ];
 
   return (

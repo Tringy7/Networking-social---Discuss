@@ -28,13 +28,6 @@ public class CreatePostRequestDTO {
     @Size(max = 50000)
     private String content;
 
-    @Size(max = 5)
-    private List<
-            @NotBlank
-            @Size(max = 50)
-                    String
-            > tags;
-
     @Valid
     @Size(max = 20)
     private List<@NotNull PostMediaDTO> media;

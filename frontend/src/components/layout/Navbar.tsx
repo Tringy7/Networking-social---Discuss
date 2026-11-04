@@ -1,3 +1,4 @@
+import { postPath } from '../../utils/postPath';
 import ThemeToggle from '../ui/ThemeToggle';
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -21,7 +22,6 @@ import {
   LogOut,
   Shield,
   X,
-  TrendingUp,
   Clock,
   ChevronDown,
   ArrowUpRight,
@@ -208,7 +208,7 @@ export const Navbar: React.FC = () => {
                         {filteredPosts.map((p) => (
                           <Link
                             key={p.id}
-                            to={`/post/${p.id}`}
+                            to={postPath(p)}
                             onClick={() => { setIsSearchOpen(false); setIsMobileSearchOpen(false); }}
                             className="block p-2 rounded-xl hover:bg-[var(--bg-elevated)] transition-colors"
                           >
@@ -232,32 +232,6 @@ export const Navbar: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <div>
-                    <div className="text-xs font-semibold text-[var(--text-muted)] px-2 mb-1.5 flex items-center gap-1.5">
-                      <TrendingUp className="w-3.5 h-3.5 text-[var(--color-orange)]" />
-                      <span>Chủ đề thảo luận</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 px-2">
-                      {[...new Set(posts.flatMap((post) => post.tags || []))].slice(0, 8).map(
-                        (tag) => (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => {
-                              setSearchQuery(tag);
-                              rememberSearch(tag);
-                              navigate(`/search?q=${encodeURIComponent(tag)}&type=all`);
-                              setIsSearchOpen(false);
-                              setIsMobileSearchOpen(false);
-                            }}
-                            className="text-xs px-2.5 py-1 rounded-full bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-                          >
-                            {tag}
-                          </button>
-                        )
-                      )}
-                    </div>
-                  </div>
                   <div className="border-t border-[var(--border-color)] pt-2">
                     <div className="text-xs font-semibold text-[var(--text-muted)] px-2 mb-1 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" />

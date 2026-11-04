@@ -5,8 +5,6 @@ import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "post_contents")
@@ -30,13 +28,6 @@ public class PostContent {
 
     @Column(columnDefinition = "MEDIUMTEXT", nullable = false)
     private String content;
-
-    @ElementCollection
-    @CollectionTable(name = "post_tags", joinColumns = @JoinColumn(name = "post_content_id"))
-    @OrderColumn(name = "display_order")
-    @Column(name = "tag", nullable = false, length = 50)
-    @Builder.Default
-    private List<String> tags = new ArrayList<>();
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;

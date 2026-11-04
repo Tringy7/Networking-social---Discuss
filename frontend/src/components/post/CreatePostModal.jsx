@@ -4,7 +4,7 @@ import { usePost } from '../../context/PostContext';
 import { useCommunity } from '../../context/CommunityContext';
 import { useAuth } from '../../context/AuthContext';
 import { permissions } from '../../utils/permissions';
-import { Send, Tag, Plus, Loader2 } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 
 export default function CreatePostModal({ isOpen, onClose, defaultCommunityId, onCreated }) {
   const { createPost } = usePost();
@@ -14,24 +14,10 @@ export default function CreatePostModal({ isOpen, onClose, defaultCommunityId, o
   const [communityId, setCommunityId] = useState(defaultCommunityId || (communities[0]?.id || ''));
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [tagInput, setTagInput] = useState('');
-  const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const roleInSelected = getUserCommunityRole(communityId);
   const canPostInSelected = permissions.canCreatePost(currentUser, roleInSelected);
-
-  const handleAddTag = () => {
-    const clean = tagInput.trim().replace(/^#/, '');
-    if (clean && !tags.includes(clean)) {
-      setTags([...tags, clean]);
-      setTagInput('');
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove) => {
-    setTags(tags.filter(t => t !== tagToRemove));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,13 +29,11 @@ export default function CreatePostModal({ isOpen, onClose, defaultCommunityId, o
         communityId,
         title: title.trim(),
         content: content.trim(),
-        tags,
       });
 
       if (newPost) {
         setTitle('');
         setContent('');
-        setTags(['ThảoLuận']);
         if (onCreated) onCreated(newPost);
         onClose();
       }
@@ -117,51 +101,6 @@ export default function CreatePostModal({ isOpen, onClose, defaultCommunityId, o
           />
         </div>
 
-        {/* Tags */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-            Thẻ (Tags)
-          </label>
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2.5 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold flex items-center gap-1.5"
-              >
-                #{tag}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveTag(tag)}
-                  className="hover:text-rose-600 font-bold ml-0.5"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              placeholder="Nhập tên tag và ấn Enter hoặc Thêm..."
-              className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddTag();
-                }
-              }}
-            />
-            <button
-              type="button"
-              onClick={handleAddTag}
-              className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer"
-            >
-              Thêm Tag
-            </button>
-          </div>
-        </div>
 
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
           <button

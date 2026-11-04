@@ -208,19 +208,6 @@ export default function PostCard({
             {post.content}
           </p>
 
-          {/* Tags */}
-          {post.tags && post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {post.tags.map((tag, idx) => (
-                <span
-                  key={idx}
-                  className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#272729] text-[#818384] border border-[#343536]"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
 
           {/* Footer Bar */}
           <div className="flex items-center gap-4 text-xs text-[#818384] pt-2 border-t border-[#343536]">

@@ -1,6 +1,8 @@
+import { postPath } from '../../utils/postPath';
 import PostVotes from '../../components/post/PostVotes';
+import PostActionsMenu from '../../components/post/PostActionsMenu';
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { usePostStore } from '../../store/usePostStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
@@ -18,24 +20,24 @@ import {
   MessageSquare,
   Bookmark,
   Share2,
-  Flag,
   ArrowLeft,
   Send,
   CornerDownRight,
   ChevronDown,
   ChevronUp,
-  Trash2,
 } from 'lucide-react';
 
 export const PostDetailPage: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { posts, comments, loadPost, loadComments, toggleSave, deletePost, addComment, toggleCommentHeart, openEditModal } =
     usePostStore();
   const { user, isAuthenticated } = useAuthStore();
   const { addToast } = useToastStore();
 
+  const [savePending, setSavePending] = useState(false);
   const [commentInput, setCommentInput] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyInput, setReplyInput] = useState('');
@@ -85,25 +87,34 @@ export const PostDetailPage: React.FC = () => {
     );
   }
 
+  const canonicalPath = postPath(post);
+  if (location.pathname !== canonicalPath) {
+    return <Navigate replace to={`${canonicalPath}${location.search}${location.hash}`} />;
+  }
+
   const postComments = comments[post.id] || [];
 
   const handleSaveClick = async () => {
+    if (savePending) return;
     if (!isAuthenticated) {
       addToast('Vui lòng đăng nhập để lưu bài viết', 'warning');
       navigate('/login');
       return;
     }
+    setSavePending(true);
     try {
       await toggleSave(post.id);
       addToast(post.isSaved ? 'Đã bỏ lưu bài viết' : 'Đã lưu bài viết', 'info');
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Không thể lưu bài viết.', 'error');
-    }
+    } finally { setSavePending(false); }
   };
 
-  const handleShare = () => {
-    navigator.clipboard?.writeText(window.location.href);
-    addToast('Đã sao chép liên kết bài viết!', 'success');
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}${postPath(post)}`);
+      addToast('Đã sao chép liên kết bài viết!', 'success');
+    } catch { addToast('Không thể sao chép liên kết. Vui lòng thử lại.', 'error'); }
   };
 
   const handleDeletePost = async () => {
@@ -277,7 +288,6 @@ export const PostDetailPage: React.FC = () => {
     );
   };
 
-  const isPostOwner = user?.username === post.author.username;
 
   return (
     <div className="feed-layout"><div className="post-reading-page space-y-5 text-left pb-8">
@@ -311,25 +321,9 @@ export const PostDetailPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {isPostOwner && <Button variant="ghost" size="sm" onClick={() => openEditModal(post)}>Chỉnh sửa</Button>}
-            {isPostOwner && (
-              <button
-                onClick={() => setIsDeleteDialogOpen(true)}
-                className="p-2 rounded-xl text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 transition-colors"
-                title="Xóa bài viết"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
-            <button
-              onClick={() => setIsReportOpen(true)}
-              className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--bg-elevated)] transition-colors"
-              title="Báo cáo vi phạm"
-            >
-              <Flag className="w-4 h-4" />
-            </button>
-          </div>
+          <PostActionsMenu post={post} onEdit={() => openEditModal(post)}
+            onDelete={() => setIsDeleteDialogOpen(true)} onReport={() => setIsReportOpen(true)}
+            onShare={handleShare} />
         </div>
 
         {/* Title */}
@@ -339,9 +333,6 @@ export const PostDetailPage: React.FC = () => {
 
         <div className="post-content-divider"><PostBody post={post} /></div>
 
-        {!!post.tags?.length && <nav className="discussion-tags post-highlight-tags" aria-label="Thẻ bài viết">
-          {post.tags.map((tag) => <Link key={tag} to={`/search?q=${encodeURIComponent(tag)}&type=posts`}>#{tag}</Link>)}
-        </nav>}
 
         {/* Actions Bar */}
         <div className="flex items-center justify-between pt-3 text-sm">
@@ -356,7 +347,7 @@ export const PostDetailPage: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handleSaveClick} disabled={!POST_INTERACTIONS_AVAILABLE}
+              onClick={handleSaveClick} disabled={savePending || !POST_INTERACTIONS_AVAILABLE} aria-pressed={post.isSaved}
               className={`p-2.5 rounded-full border border-[var(--bg-elevated)] transition-colors ${
                 post.isSaved
                   ? 'text-[var(--color-orange)] bg-[var(--color-orange-soft)] border-[var(--color-orange-border)]'
@@ -451,7 +442,7 @@ export const PostDetailPage: React.FC = () => {
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleDeletePost}
         title="Xóa bài viết"
-        message="Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác."
+        message="Bạn có chắc chắn muốn xóa bài viết này không? Bạn có thể xem lại và khôi phục trong Cài đặt → Thùng rác."
         confirmLabel="Xóa bài viết"
         variant="danger"
       />

@@ -1,22 +1,17 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCommunity } from '../../context/CommunityContext';
-import { usePost } from '../../context/PostContext';
 import { formatNumber } from '../../utils/formatters';
-import { Flame, Hash, Shield } from 'lucide-react';
+import { Flame, Shield } from 'lucide-react';
 
-export default function RightSidebar({ onSelectCommunity, onSelectTag }) {
+export default function RightSidebar({ onSelectCommunity }) {
   const navigate = useNavigate();
   const { communities, joinCommunity, getUserCommunityRole } = useCommunity();
-  const { posts, selectedTag } = usePost();
 
   const trendingCommunities = [...communities]
     .sort((a, b) => ((b.memberCount || 0) + (b.postCount || 0)) - ((a.memberCount || 0) + (a.postCount || 0)))
     .slice(0, 4);
 
-  const popularTags = Array.from(
-    new Set((posts || []).flatMap(p => p.tags || []))
-  ).slice(0, 8);
 
   return (
     <aside className="hidden xl:block w-80 shrink-0 space-y-4 sticky top-16">
@@ -76,37 +71,6 @@ export default function RightSidebar({ onSelectCommunity, onSelectTag }) {
         </div>
       )}
 
-      {popularTags.length > 0 && (
-        <div className="bg-[#1a1a1b] rounded-2xl border border-[#343536] p-4 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-1.5 rounded-lg bg-[#272729] text-orange-400 border border-[#343536]">
-              <Hash className="w-4 h-4" />
-            </div>
-            <h3 className="font-bold text-[#d7dadc] text-xs uppercase tracking-wider">
-              Chủ đề thảo luận
-            </h3>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {popularTags.map((tag) => {
-              const isSelected = selectedTag === tag;
-              return (
-                <button
-                  key={tag}
-                  onClick={() => onSelectTag(isSelected ? null : tag)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer ${
-                    isSelected
-                      ? 'bg-orange-600 text-white font-bold'
-                      : 'bg-[#272729] hover:bg-[#343536] text-[#818384] hover:text-[#d7dadc] border border-[#343536]'
-                  }`}
-                >
-                  #{tag}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </aside>
   );
 }

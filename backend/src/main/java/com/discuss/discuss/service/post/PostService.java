@@ -8,6 +8,8 @@ import com.discuss.discuss.entity.Post;
 import com.discuss.discuss.entity.PostContent;
 import com.discuss.discuss.entity.PostMedia;
 import com.discuss.discuss.entity.PostVote;
+import com.discuss.discuss.entity.PostSave;
+import com.discuss.discuss.repository.PostSaveRepository;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.CommunityStatus;
 import com.discuss.discuss.enums.CommunityVisibility;
@@ -55,6 +57,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostVoteRepository postVoteRepository;
+    private final PostSaveRepository postSaveRepository;
     private final PostContentRepository postContentRepository;
     private final PostMediaRepository postMediaRepository;
     private final CommunityMemberRepository communityMemberRepository;
@@ -91,7 +94,7 @@ public class PostService {
         postContentRepository.save(postContent);
 
         List<PostMedia> postAttachments =  this.saveAttachments(post, request);
-        return postMapper.toResponse(post, postContent, postAttachments, 0, 0, null);
+        return postMapper.toResponse(post, postContent, postAttachments, 0, 0, null, false);
     }
 
     /** Sets the current user's vote; null removes it. The post lock serializes concurrent writes. */
@@ -109,7 +112,12 @@ public class PostService {
         if (type == null) {
             if (existingVote != null) postVoteRepository.delete(existingVote);
         } else if (existingVote == null) {
-            postVoteRepository.save(PostVote.builder().post(post).user(user).voteType(type).build());
+            postVoteRepository.save(
+                    PostVote.builder()
+                            .post(post)
+                            .user(user)
+                            .voteType(type)
+                            .build());
         } else {
             existingVote.setVoteType(type);
         }
@@ -119,6 +127,39 @@ public class PostService {
 
     private VoteType userVote(Long id, User user) {
         return postVoteRepository.findByPostIdAndUserId(id, user.getId()).map(PostVote::getVoteType).orElse(null);
+    }
+
+    @Transactional
+    public PostResponseDTO savePost(Long id, boolean saved) {
+        User user = userService.getCurrentUser();
+        Post post = postRepository.lockById(id)
+                .filter(p -> p.getStatus() == PostStatus.PUBLISHED).orElseThrow(this::notFound);
+        requireRead(post, user);
+        var existing = postSaveRepository.findByPostIdAndUserId(id, user.getId());
+        if (saved && existing.isEmpty()) {
+            postSaveRepository.save(PostSave.builder().post(post).user(user).build());
+        } else if (!saved) {
+            existing.ifPresent(postSaveRepository::delete);
+        }
+        postSaveRepository.flush();
+        return toResponse(post, user);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponseDTO<PostResponseDTO> listSaved(int page, int size) {
+        User user = userService.getCurrentUser();
+        Specification<Post> savedByUser = (root, query, cb) -> {
+            var saves = query.subquery(Long.class);
+            var saved = saves.from(PostSave.class);
+            saves.select(saved.get("id")).where(cb.equal(saved.get("post"), root),
+                    cb.equal(saved.get("user").get("id"), user.getId()));
+            if (query.getResultType() != Long.class) {
+                query.orderBy(cb.desc(saves), cb.desc(root.get("id")));
+            }
+            return cb.exists(saves);
+        };
+        return pageMapper.toResponse(postRepository.findAll(visibleTo(user).and(savedByUser),
+                PageRequest.of(page, size)).map(post -> toResponse(post, user)));
     }
 
     // ==================== READ ====================
@@ -173,7 +214,7 @@ public class PostService {
 
         return postMapper.toResponse(post, postContent, postAttachments,
                 postRepository.voteScore(id), postRepository.countComments(id),
-                userVote(id, user));
+                userVote(id, user), postSaveRepository.existsByPostIdAndUserId(id, user.getId()));
     }
 
     /**
@@ -212,15 +253,46 @@ public class PostService {
             communityAuthorizationService.requireModeratorOrOwner(post.getCommunity(), user);
         }
 
-        imageService.releasePostImages(
-                postMediaRepository.findByPostIdOrderByDisplayOrderAsc(id).stream()
-                        .map(PostMedia::getObjectKey)
-                        .filter(Objects::nonNull)
-                        .toList());
-
         post.setStatus(PostStatus.DELETED);
         post.setDeletedAt(LocalDateTime.now());
-        postMediaRepository.deleteByPostId(id);
+        post.setDeletedByUserId(user.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponseDTO<TrashedPostResponseDTO> listTrash(int page, int size) {
+        User user = userService.getCurrentUser();
+        Specification<Post> ownedDeleted = (root, query, cb) -> cb.and(
+                cb.equal(root.get("user").get("id"), user.getId()),
+                cb.equal(root.get("status"), PostStatus.DELETED));
+        var result = postRepository.findAll(ownedDeleted, PageRequest.of(page, size,
+                org.springframework.data.domain.Sort.by("deletedAt").descending().and(
+                        org.springframework.data.domain.Sort.by("id").descending())));
+        return pageMapper.toResponse(result.map(post -> new TrashedPostResponseDTO(
+                toResponse(post, user), post.getDeletedAt(),
+                canRestoreDeletedPost(post, user))));
+    }
+
+    static boolean canRestoreDeletedPost(Post post, User user) {
+        // Legacy deletions predate actor tracking; known moderation deletions remain blocked.
+        return Objects.equals(post.getUser().getId(), user.getId())
+                && (post.getDeletedByUserId() == null
+                    || Objects.equals(post.getDeletedByUserId(), user.getId()));
+    }
+
+    @Transactional
+    public PostResponseDTO restorePost(Long id) {
+        User user = userService.getCurrentUser();
+        Post post = postRepository.lockById(id)
+                .filter(p -> p.getStatus() == PostStatus.DELETED)
+                .filter(p -> Objects.equals(p.getUser().getId(), user.getId()))
+                .filter(p -> canRestoreDeletedPost(p, user))
+                .orElseThrow(this::notFound);
+        requireRead(post, user);
+        communityAuthorizationService.requireMembership(post.getCommunity(), user);
+        post.setStatus(PostStatus.PUBLISHED);
+        post.setDeletedAt(null);
+        post.setDeletedByUserId(null);
+        return toResponse(post, user);
     }
 
     // ==================== LIST: SPECIFICATIONS ====================
@@ -361,9 +433,6 @@ public class PostService {
     private void writeContent(PostContent postContent, CreatePostRequestDTO request) {
         postContent.setTitle(request.getTitle().strip());
         postContent.setContent(request.getContent() == null ? "" : request.getContent());
-        postContent.setTags(request.getTags() == null
-                ? new ArrayList<>()
-                : new ArrayList<>(request.getTags().stream().map(String::strip).distinct().toList()));
 
     }
 
@@ -373,7 +442,7 @@ public class PostService {
         return postMapper.toResponse(post, findContent(post),
                 postMediaRepository.findByPostIdOrderByDisplayOrderAsc(id),
                 postRepository.voteScore(id), postRepository.countComments(id),
-                userVote(id, currentUser));
+                userVote(id, currentUser), postSaveRepository.existsByPostIdAndUserId(id, currentUser.getId()));
     }
 
     private PostContent findContent(Post post) {

@@ -15,7 +15,7 @@ interface PostState {
   loadMore: () => Promise<void>;
   loadCommunityPosts: (name: string, page?: number) => Promise<boolean>;
   loadUserPosts: (username: string, page?: number) => Promise<boolean>;
-  hydrateSaved: () => Promise<void>;
+  hydrateSaved: (page?: number) => Promise<boolean>;
   loadPost: (id: string) => Promise<Post>;
   loadComments: (id: string) => Promise<void>;
   vote: (id: string, type: 'UP' | 'DOWN' | null) => Promise<void>;
@@ -39,10 +39,12 @@ const merge = (existing: Post[], incoming: Post[]) =>
 
 let feedRequest = 0;
 let session = 0;
+let savedRequest = 0;
+const saving = new Set<string>();
 export const usePostStore = create<PostState>((set, get) => ({
   posts: [], feedIds: [], feedTab: 'for-you', feedPage: 0, hasMore: false, loading: false,
   savedPosts: [], comments: {}, isCreateModalOpen: false,
-  reset: () => { session++; feedRequest++; set({ posts: [], feedIds: [], savedPosts: [], comments: {},
+  reset: () => { session++; feedRequest++; savedRequest++; saving.clear(); set({ posts: [], feedIds: [], savedPosts: [], comments: {},
     hasMore: false, loading: false, isCreateModalOpen: false, editingPost: undefined }); },
   hydrate: async (tab = 'for-you') => {
     const request = ++feedRequest;
@@ -91,15 +93,24 @@ export const usePostStore = create<PostState>((set, get) => ({
   editPost: async (id, input) => {
     const generation = session;
     const post = await postService.update(id, input);
-    if (generation === session) set((state) => ({ posts: merge(state.posts, [post]) }));
+    if (generation === session) set((state) => ({ posts: merge(state.posts, [post]), savedPosts: state.savedPosts.map((item) => item.id === id ? post : item) }));
     return post;
   },
   deletePost: async (id) => {
     const generation = session;
     await postService.delete(id);
-    if (generation === session) set((state) => ({ posts: state.posts.filter((post) => post.id !== id), feedIds: state.feedIds.filter((item) => item !== id) }));
+    if (generation === session) set((state) => ({ posts: state.posts.filter((post) => post.id !== id), savedPosts: state.savedPosts.filter((post) => post.id !== id), feedIds: state.feedIds.filter((item) => item !== id) }));
   },
-  hydrateSaved: async () => { set({ savedPosts: [] }); },
+  hydrateSaved: async (number = 0) => {
+    const generation = session;
+    const request = ++savedRequest;
+    const page = await postService.saved(number);
+    if (generation === session && request === savedRequest) set((state) => ({
+      savedPosts: number === 0 ? page.content : [...state.savedPosts, ...page.content.filter((post) => !state.savedPosts.some((item) => item.id === post.id))],
+      posts: merge(state.posts, page.content),
+    }));
+    return !page.last;
+  },
   loadComments: async () => { /* Comment API has not been implemented; never synthesize demo comments. */ },
   vote: async (id, type) => {
     const generation = session;
@@ -109,7 +120,21 @@ export const usePostStore = create<PostState>((set, get) => ({
       savedPosts: state.savedPosts.map((item) => item.id === id ? post : item),
     }));
   },
-  toggleSave: unsupported, addComment: unsupported, toggleCommentHeart: unsupported,
+  toggleSave: async (id) => {
+    if (saving.has(id)) return;
+    const generation = session;
+    const current = get().posts.find((post) => post.id === id) || get().savedPosts.find((post) => post.id === id);
+    if (!current) throw new Error('Không tìm thấy bài viết.');
+    saving.add(id);
+    try {
+      const post = await postService.save(id, !current.isSaved);
+      if (generation === session) {
+        savedRequest++;
+        set((state) => ({ posts: merge(state.posts, [post]),
+          savedPosts: post.isSaved ? [post, ...state.savedPosts.filter((item) => item.id !== id)] : state.savedPosts.filter((item) => item.id !== id) }));
+      }
+    } finally { if (generation === session) saving.delete(id); }
+  }, addComment: unsupported, toggleCommentHeart: unsupported,
   openCreateModal: (name) => set({ isCreateModalOpen: true, targetCommunityName: name, editingPost: undefined }),
   openEditModal: (post) => set({ isCreateModalOpen: true, targetCommunityName: post.communityName, editingPost: post }),
   closeCreateModal: () => set({ isCreateModalOpen: false, targetCommunityName: undefined, editingPost: undefined }),

@@ -62,7 +62,7 @@ const API_GENDERS: Record<string, string> = {
 };
 
 export const POSTS_AVAILABLE = true;
-export const POST_INTERACTIONS_AVAILABLE = false;
+export const POST_INTERACTIONS_AVAILABLE = true;
 export const COMMENTS_AVAILABLE = false;
 export const NOTIFICATIONS_AVAILABLE = false;
 export const MESSAGES_AVAILABLE = false;
@@ -429,7 +429,15 @@ export interface PostPage {
   content: Post[]; page: number; size: number; totalElements: number;
   totalPages: number; first: boolean; last: boolean; empty: boolean;
 }
+export interface TrashedPost { post: Post; deletedAt: string | null; canRestore: boolean; }
+export interface TrashPage extends Omit<PostPage, 'content'> { content: TrashedPost[]; }
 export const postService = {
+  saved: (page = 0) => apiClient.get<PostPage>(`/posts/saved?page=${page}&size=20`),
+  save: (id: string, saved: boolean) => saved
+    ? apiClient.put<Post>(`/posts/${id}/save`)
+    : apiClient.delete<Post>(`/posts/${id}/save`),
+  trash: (page = 0) => apiClient.get<TrashPage>(`/posts/trash?page=${page}&size=20`),
+  restore: (id: string) => apiClient.post<Post>(`/posts/${id}/restore`),
   vote: (id: string, type: 'UP' | 'DOWN' | null) => type === null
     ? apiClient.delete<Post>(`/posts/${id}/vote`)
     : apiClient.put<Post>(`/posts/${id}/vote`, { type }),

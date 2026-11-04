@@ -61,8 +61,7 @@ export const SearchResultsPage: React.FC = () => {
     return posts.filter(
       (p) =>
         p.title.toLowerCase().includes(q) ||
-        p.content.toLowerCase().includes(q) ||
-        p.tags?.some((t) => t.toLowerCase().includes(q))
+        p.content.toLowerCase().includes(q)
     );
   }, [posts, query]);
 

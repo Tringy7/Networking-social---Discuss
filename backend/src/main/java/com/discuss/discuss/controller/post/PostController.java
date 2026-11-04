@@ -1,5 +1,6 @@
 package com.discuss.discuss.controller.post;
 
+import com.discuss.discuss.dto.common.ApiResponse;
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.post.*;
 import com.discuss.discuss.service.post.PostService;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @Validated
 @RequestMapping("/posts")
 public class PostController {
+
     private final PostService postService;
 
     @PostMapping
@@ -32,19 +34,51 @@ public class PostController {
         return postService.vote(id, null);
     }
 
-    @GetMapping("/{id}")
-    public PostResponseDTO getPost(@PathVariable Long id) { return postService.getPost(id); }
+    @PutMapping("/{id}/save")
+    public PostResponseDTO save(@PathVariable Long id) { return postService.savePost(id, true); }
 
-    /** Full editable document replacement; community is immutable; Markdown, type, link and media are replaced together. */
-    @PatchMapping("/{id:\\d+}")
+    @DeleteMapping("/{id}/save")
+    public PostResponseDTO unsave(@PathVariable Long id) { return postService.savePost(id, false); }
+
+    @GetMapping("/saved")
+    public PageResponseDTO<PostResponseDTO> saved(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+        return postService.listSaved(page, size);
+    }
+
+    @GetMapping("/trash")
+    public PageResponseDTO<TrashedPostResponseDTO> trash(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+        return postService.listTrash(page, size);
+    }
+
+    @PostMapping("/{id}/restore")
+    public PostResponseDTO restore(@PathVariable Long id) {
+        return postService.restorePost(id);
+    }
+
+    @GetMapping("/{id}")
+    public PostResponseDTO getPost(@PathVariable Long id) {
+        return postService.getPost(id);
+    }
+
+    /**
+     * Full editable document replacement; community is immutable; Markdown,
+     * type, link and media are replaced together.
+     */
+    @PatchMapping("/{id}")
     public PostResponseDTO updatePost(@PathVariable Long id, @Valid @RequestBody CreatePostRequestDTO request) {
         return postService.updatePost(id, request);
     }
-    @DeleteMapping("/{id:\\d+}")
-    public ResponseEntity<Void> deletePost(@PathVariable Long id) {
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse> deletePost(@PathVariable Long id) {
         postService.deletePost(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().body(new ApiResponse("Post deleted successfully"));
     }
+
     @GetMapping
     public PageResponseDTO<PostResponseDTO> list(
             @RequestParam(defaultValue = "for-you") @Pattern(regexp = "for-you|latest|popular") String tab,

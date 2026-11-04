@@ -35,6 +35,7 @@ const EditProfilePage = React.lazy(() => import('../pages/settings/EditProfilePa
 const AccountSettingsPage = React.lazy(() => import('../pages/settings/AccountSettingsPage'));
 const PrivacySettingsPage = React.lazy(() => import('../pages/settings/PrivacySettingsPage'));
 const AppearanceSettingsPage = React.lazy(() => import('../pages/settings/AppearanceSettingsPage'));
+const TrashSettingsPage = React.lazy(() => import('../pages/settings/TrashSettingsPage'));
 const NotificationSettingsPage = React.lazy(() => import('../pages/settings/NotificationSettingsPage'));
 
 // Community Management Pages
@@ -82,6 +83,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/community/:communityName" element={<LegacyEntityRedirect />} />
         <Route path="/c/:communityName" element={<React.Suspense fallback={routeLoading}><CommunityDetailPage /></React.Suspense>} />
         <Route path="/post/:postId" element={<React.Suspense fallback={routeLoading}><PostDetailPage /></React.Suspense>} />
+        <Route path="/c/:communityName/comments/:postId/:slug?" element={<React.Suspense fallback={routeLoading}><PostDetailPage /></React.Suspense>} />
         <Route path="/user/:username" element={<LegacyEntityRedirect />} />
         <Route path="/u/:username" element={<React.Suspense fallback={routeLoading}><UserProfilePage /></React.Suspense>} />
 
@@ -105,6 +107,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/settings" element={<SettingsLayout />}>
             <Route index element={<React.Suspense fallback={routeLoading}><GeneralSettingsPage /></React.Suspense>} />
             <Route path="profile" element={<React.Suspense fallback={routeLoading}><EditProfilePage /></React.Suspense>} />
+            <Route path="trash" element={<React.Suspense fallback={routeLoading}><TrashSettingsPage /></React.Suspense>} />
             <Route path="account" element={<React.Suspense fallback={routeLoading}><AccountSettingsPage /></React.Suspense>} />
             <Route path="privacy" element={<React.Suspense fallback={routeLoading}><PrivacySettingsPage /></React.Suspense>} />
             <Route path="appearance" element={<React.Suspense fallback={routeLoading}><AppearanceSettingsPage /></React.Suspense>} />

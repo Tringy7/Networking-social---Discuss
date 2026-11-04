@@ -149,24 +149,12 @@ export default function PostDetailModal({
           </div>
         </div>
 
-        {/* Post Title & Tags */}
+        {/* Post Title */}
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mb-3">
             {post.title}
           </h1>
 
-          {post.tags && post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-4">
-              {post.tags.map((tag, idx) => (
-                <span
-                  key={idx}
-                  className="px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Full Post Content */}

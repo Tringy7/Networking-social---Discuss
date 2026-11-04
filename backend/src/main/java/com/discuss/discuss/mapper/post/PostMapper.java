@@ -22,7 +22,8 @@ public class PostMapper {
             List<PostMedia> media,
             long voteScore,
             long comments,
-            VoteType userVote
+            VoteType userVote,
+            boolean isSaved
     ) {
         User user = post.getUser();
         UserProfile profile = user.getProfile();
@@ -59,7 +60,6 @@ public class PostMapper {
                 content.getTitle(),
                 type,
                 markdown,
-                List.copyOf(content.getTags()),
 
                 media.stream()
                         .map(m -> new PostResponseDTO.Media(
@@ -79,7 +79,7 @@ public class PostMapper {
                 voteScore,
                 comments,
                 userVote,
-                false,
+                isSaved,
                 Boolean.TRUE.equals(post.getIsPinned()),
                 post.getStatus(),
                 post.getCreatedAt(),

@@ -1,3 +1,4 @@
+import { postPath } from '../../utils/postPath';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCommunityStore } from '../../store/useCommunityStore';
@@ -14,7 +15,7 @@ export default function RightSidebar() {
   return <aside className="context-rail" aria-label="Khám phá thêm">
     <section className="context-section">
       <div className="context-title"><h2>Đang được quan tâm</h2><Link to="/?tab=popular" aria-label="Xem thảo luận phổ biến"><ArrowUpRight size={17} /></Link></div>
-      {trending.length ? trending.map((post) => <Link key={post.id} to={`/post/${post.id}`} className="context-story">
+      {trending.length ? trending.map((post) => <Link key={post.id} to={postPath(post)} className="context-story">
         <p>{post.communityDisplayName}</p><h3>{post.title}</h3><p>{post.commentCount} bình luận · {post.voteScore} điểm</p>
       </Link>) : <p className="text-sm text-[var(--text-secondary)]">Chưa có thảo luận nổi bật.</p>}
     </section>

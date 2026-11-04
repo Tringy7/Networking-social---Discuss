@@ -22,7 +22,6 @@ export default function PostComposerModal() {
   const type = 'TEXT' as const;
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [tags, setTags] = useState('');
   const [media, setMedia] = useState<DraftMedia[]>([]);
   const [busy, setBusy] = useState(false);
   const [inlineBusy, setInlineBusy] = useState(false);
@@ -40,7 +39,6 @@ export default function PostComposerModal() {
     setCommunityName(editingPost?.communityName || targetCommunityName || '');
     setTitle(editingPost?.title || '');
     setContent(editingPost?.content || '');
-    setTags(editingPost?.tags?.join(', ') || '');
     setMedia((editingPost?.media || []).map((item) => ({ ...item, objectKey: item.objectKey || undefined, id: crypto.randomUUID(), preview: item.url })));
     setPreview(false);
     setFormError('');
@@ -86,8 +84,6 @@ export default function PostComposerModal() {
     if (!title.trim()) { toast('Vui lòng nhập tiêu đề bài viết.', 'error'); return; }
     if (type === 'TEXT' && !content.trim() && !media.length) { toast('Vui lòng nhập nội dung hoặc chọn ảnh.', 'error'); return; }
     if (inlineKeys.some((key) => !media.some((item) => item.objectKey === key))) { toast('Ảnh chèn trong nội dung phải có trong danh sách media.', 'error'); return; }
-    const parsedTags = [...new Set(tags.split(',').map((tag) => tag.trim()).filter(Boolean))];
-    if (parsedTags.length > 5 || parsedTags.some((tag) => tag.length > 50)) { toast('Tối đa 5 tag, mỗi tag tối đa 50 ký tự.', 'error'); return; }
     setBusy(true);
     setFormError('');
     setUploadProgress(0);
@@ -98,7 +94,7 @@ export default function PostComposerModal() {
         setUploadProgress(attachments.length);
       }
       const input = {
-        communityName: selectedCommunity, title: title.trim(), type, content, tags: parsedTags,
+        communityName: selectedCommunity, title: title.trim(), type, content,
         media: attachments,
       };
       if (editingPost) await editPost(editingPost.id, input); else await addPost(input);
@@ -158,7 +154,6 @@ export default function PostComposerModal() {
             }}><X size={16} /></button>
           </div>
         </section>)}</div>
-        <label>Tag (phân cách bằng dấu phẩy)<input aria-label="Tag bài viết" value={tags} onChange={(event) => setTags(event.target.value)} placeholder="java, spring" /></label>
         <button type="button" className="post-preview-button" aria-expanded={preview} onClick={() => setPreview(!preview)}>{preview ? 'Ẩn xem trước' : 'Xem trước bài viết'}</button>
         {preview && <section className="post-composer-preview"><h2>{title || 'Tiêu đề bài viết'}</h2>
           <PostBody preview post={{ title, type, content, media: resolvedMedia, linkUrl: null }} />
