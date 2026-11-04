@@ -46,13 +46,13 @@ export interface StoredPostImage {
 }
 
 /**
- * Uploads a cropped post image and returns its persisted media URL.
+ * Uploads a post image without cropping and returns its owned object key and URL.
  */
 export async function uploadPostImage(file: File): Promise<StoredPostImage> {
   const formData = new FormData();
   formData.append('file', file);
 
-  return apiClient.post<StoredPostImage>('/media/post-image', formData);
+  return apiClient.post<StoredPostImage>('/posts/images', formData);
 }
 
 /**

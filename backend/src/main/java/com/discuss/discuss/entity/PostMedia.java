@@ -3,36 +3,35 @@ package com.discuss.discuss.entity;
 import com.discuss.discuss.enums.MediaType;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "post_media")
-@Data
+@Table(name = "post_media", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_post_media_object_key", columnNames = "object_key")
+})
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class PostMedia {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
-    @Column(nullable = false)
-    private String mediaUrl;
-
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private MediaType mediaType;
+    @Column(nullable = false, length = 20)
+    private MediaType type;
 
+    @Column(name = "object_key", nullable = false, length = 500)
+    private String objectKey;
+
+    @Column(name = "display_order", nullable = false)
     private Integer displayOrder;
 
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
+    @Column(length = 500)
+    private String caption;
 }

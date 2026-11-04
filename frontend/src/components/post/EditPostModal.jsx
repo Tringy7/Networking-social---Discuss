@@ -7,29 +7,14 @@ export default function EditPostModal({ isOpen, onClose, post }) {
   const { updatePost } = usePost();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [tagInput, setTagInput] = useState('');
-  const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (post) {
       setTitle(post.title || '');
       setContent(post.content || '');
-      setTags(post.tags || []);
     }
   }, [post, isOpen]);
-
-  const handleAddTag = () => {
-    const clean = tagInput.trim().replace(/^#/, '');
-    if (clean && !tags.includes(clean)) {
-      setTags([...tags, clean]);
-      setTagInput('');
-    }
-  };
-
-  const handleRemoveTag = (tag) => {
-    setTags(tags.filter(t => t !== tag));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,7 +24,6 @@ export default function EditPostModal({ isOpen, onClose, post }) {
       await updatePost(post.id, {
         title: title.trim(),
         content: content.trim(),
-        tags,
       });
       onClose();
     } catch {
@@ -78,44 +62,6 @@ export default function EditPostModal({ isOpen, onClose, post }) {
           />
         </div>
 
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-            Thẻ (Tags)
-          </label>
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5"
-              >
-                #{tag}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveTag(tag)}
-                  className="hover:text-rose-600 font-bold ml-0.5"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              placeholder="Thêm tag mới..."
-              className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-            />
-            <button
-              type="button"
-              onClick={handleAddTag}
-              className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer"
-            >
-              Thêm
-            </button>
-          </div>
-        </div>
 
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
           <button

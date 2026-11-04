@@ -11,7 +11,7 @@ export const postService = {
    */
   createPost: async (postData, authorId) => {
     await apiClient.delay(200);
-    const { communityId, title, content, tags } = postData;
+    const { communityId, title, content } = postData;
 
     if (!title || !content || !communityId) {
       throw new Error('Vui lòng nhập đầy đủ tiêu đề, nội dung và chọn cộng đồng!');
@@ -23,7 +23,6 @@ export const postService = {
       authorId,
       title: title.trim(),
       content: content.trim(),
-      tags: Array.isArray(tags) ? tags : [],
       upvotes: 1, // Tác giả tự động upvote mặc định
       downvotes: 0,
       voteScore: 1,

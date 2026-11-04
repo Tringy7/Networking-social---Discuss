@@ -12,6 +12,8 @@ public interface PostMediaRepository extends JpaRepository<PostMedia, Long> {
     long countByPostId(Long postId);
     Optional<PostMedia> findByIdAndPostId(Long id, Long postId);
     List<PostMedia> findByPostIdOrderByDisplayOrderAsc(Long postId);
+    boolean existsByObjectKey(String objectKey);
+    void deleteByPostId(Long postId);
 
 //    @Query("select coalesce(max(m.displayOrder), -1) from PostMedia m where m.postId = :postId")
 //    int findMaxDisplayOrder(@Param("postId") Long postId);

@@ -53,7 +53,6 @@ export function PostProvider({ children }) {
 
   const [searchKeyword, setSearchKeyword] = useState('');
   const [activeSort, setActiveSort] = useState(SORT_OPTIONS.HOT);
-  const [selectedTag, setSelectedTag] = useState(null);
 
   // Sync state to localStorage
   useEffect(() => {
@@ -376,8 +375,6 @@ export function PostProvider({ children }) {
         setSearchKeyword,
         activeSort,
         setActiveSort,
-        selectedTag,
-        setSelectedTag,
         createPost,
         updatePost,
         deletePost,

@@ -1,10 +1,14 @@
+import { postPath } from '../../utils/postPath';
+import PostVotes from '../../components/post/PostVotes';
+import PostActionsMenu from '../../components/post/PostActionsMenu';
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { usePostStore } from '../../store/usePostStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
-import { POSTS_AVAILABLE } from '../../services';
+import { POSTS_AVAILABLE, POST_INTERACTIONS_AVAILABLE, COMMENTS_AVAILABLE } from '../../services';
 import { Comment } from '../../types';
+import PostBody from '../../components/post/PostBody';
 import RightSidebar from '../../components/layout/RightSidebar';
 import Avatar from '../../components/ui/Avatar';
 import Badge from '../../components/ui/Badge';
@@ -16,25 +20,24 @@ import {
   MessageSquare,
   Bookmark,
   Share2,
-  Flag,
   ArrowLeft,
   Send,
   CornerDownRight,
   ChevronDown,
   ChevronUp,
-  Trash2,
-  Code2,
 } from 'lucide-react';
 
 export const PostDetailPage: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const { posts, comments, loadPost, loadComments, toggleHeart, toggleSave, deletePost, addComment, toggleCommentHeart } =
+  const { posts, comments, loadPost, loadComments, toggleSave, deletePost, addComment, toggleCommentHeart, openEditModal } =
     usePostStore();
   const { user, isAuthenticated } = useAuthStore();
   const { addToast } = useToastStore();
 
+  const [savePending, setSavePending] = useState(false);
   const [commentInput, setCommentInput] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyInput, setReplyInput] = useState('');
@@ -84,38 +87,34 @@ export const PostDetailPage: React.FC = () => {
     );
   }
 
+  const canonicalPath = postPath(post);
+  if (location.pathname !== canonicalPath) {
+    return <Navigate replace to={`${canonicalPath}${location.search}${location.hash}`} />;
+  }
+
   const postComments = comments[post.id] || [];
 
-  const handleHeartClick = async () => {
-    if (!isAuthenticated) {
-      addToast('Vui lòng đăng nhập để thích bài viết', 'warning');
-      navigate('/login');
-      return;
-    }
-    try {
-      await toggleHeart(post.id);
-    } catch (error) {
-      addToast(error instanceof Error ? error.message : 'Không thể cập nhật lượt thích.', 'error');
-    }
-  };
-
   const handleSaveClick = async () => {
+    if (savePending) return;
     if (!isAuthenticated) {
       addToast('Vui lòng đăng nhập để lưu bài viết', 'warning');
       navigate('/login');
       return;
     }
+    setSavePending(true);
     try {
       await toggleSave(post.id);
       addToast(post.isSaved ? 'Đã bỏ lưu bài viết' : 'Đã lưu bài viết', 'info');
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Không thể lưu bài viết.', 'error');
-    }
+    } finally { setSavePending(false); }
   };
 
-  const handleShare = () => {
-    navigator.clipboard?.writeText(window.location.href);
-    addToast('Đã sao chép liên kết bài viết!', 'success');
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}${postPath(post)}`);
+      addToast('Đã sao chép liên kết bài viết!', 'success');
+    } catch { addToast('Không thể sao chép liên kết. Vui lòng thử lại.', 'error'); }
   };
 
   const handleDeletePost = async () => {
@@ -289,7 +288,6 @@ export const PostDetailPage: React.FC = () => {
     );
   };
 
-  const isPostOwner = user?.id === post.author.id;
 
   return (
     <div className="feed-layout"><div className="post-reading-page space-y-5 text-left pb-8">
@@ -312,36 +310,20 @@ export const PostDetailPage: React.FC = () => {
         {/* Community & Author Header */}
         <div className="flex items-center justify-between gap-4 pb-1">
           <div className="thread-author flex min-w-0 items-center gap-3">
-            <Link to={`/u/${post.author.username}`}><Avatar src={post.author.avatarUrl} alt={post.author.displayName || post.author.username} size="md" /></Link>
+            <Link to={`/c/${post.communityName}`} aria-label={`Cộng đồng c/${post.communityName}`}><Avatar src={post.communityAvatar} alt={post.communityDisplayName || post.communityName} size="sm" /></Link>
             <div className="min-w-0">
-              <Link to={`/c/${post.communityName}`} className="text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange-ink)] block truncate">{post.communityDisplayName}</Link>
+              <div className="flex flex-wrap items-center gap-1.5 text-xs"><Link to={`/c/${post.communityName}`} className="font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange-ink)]">c/{post.communityName}</Link><span className="text-[var(--text-muted)]" aria-hidden="true">·</span><time className="text-[var(--text-muted)]" dateTime={post.createdAt}>{new Date(post.createdAt).toLocaleDateString('vi-VN', {day:'numeric',month:'short'})}</time></div>
               <div className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                <Link to={`/u/${post.author.username}`}>{post.author.displayName || post.author.username}</Link><span aria-hidden="true">·</span>
-                <time dateTime={post.createdAt}>{new Date(post.createdAt).toLocaleDateString('vi-VN', {day:'numeric',month:'short'})}</time>
+                <Link to={`/u/${post.author.username}`}>u/{post.author.username}</Link>
                 {post.author.role === 'OWNER' && <Badge role="OWNER" size="sm" />}
                 {post.author.role === 'MODERATOR' && <Badge role="MODERATOR" size="sm" />}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {isPostOwner && (
-              <button
-                onClick={() => setIsDeleteDialogOpen(true)}
-                className="p-2 rounded-xl text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 transition-colors"
-                title="Xóa bài viết"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
-            <button
-              onClick={() => setIsReportOpen(true)}
-              className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--bg-elevated)] transition-colors"
-              title="Báo cáo vi phạm"
-            >
-              <Flag className="w-4 h-4" />
-            </button>
-          </div>
+          <PostActionsMenu post={post} onEdit={() => openEditModal(post)}
+            onDelete={() => setIsDeleteDialogOpen(true)} onReport={() => setIsReportOpen(true)}
+            onShare={handleShare} />
         </div>
 
         {/* Title */}
@@ -349,62 +331,13 @@ export const PostDetailPage: React.FC = () => {
           {post.title}
         </h1>
 
-        {/* Tags */}
-        {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {post.tags.map((tag) => (
-              <span
-                key={tag}
-                className="text-xs font-medium text-[var(--color-orange)] bg-[var(--color-orange-soft)] px-2.5 py-0.5 rounded-full"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="post-content-divider"><PostBody post={post} /></div>
 
-        {/* Full Text Content */}
-        <div className="thread-content text-[var(--text-primary)] whitespace-pre-line space-y-4">
-          {post.content}
-        </div>
-
-        {/* Code Snippet Box */}
-        {post.codeSnippet && (
-          <div data-ui="code-sample" className="bg-[var(--bg-main)] border border-[var(--bg-elevated)] rounded-xl p-4 font-code text-xs overflow-x-auto">
-            <div className="flex items-center justify-between pb-2 mb-2 text-xs text-[var(--text-muted)]">
-              <span className="flex items-center gap-1.5 text-[var(--color-orange)]">
-                <Code2 className="w-4 h-4" />
-                {post.codeSnippet.language} snippet
-              </span>
-              <span>UTF-8</span>
-            </div>
-            <pre className="text-[var(--text-primary)]">
-              <code>{post.codeSnippet.code}</code>
-            </pre>
-          </div>
-        )}
-
-        {/* Image Preview */}
-        {post.mediaUrl && (
-          <div className="rounded-[var(--radius-card)] overflow-hidden border border-[var(--bg-elevated)] bg-[var(--bg-main)]">
-            <img src={post.mediaUrl} alt={post.title} className="w-full object-cover max-h-[500px]" />
-          </div>
-        )}
 
         {/* Actions Bar */}
         <div className="flex items-center justify-between pt-3 text-sm">
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleHeartClick}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-[background-color,border-color,color,opacity,transform] ${
-                post.isHearted
-                  ? 'bg-[var(--color-orange-soft)] border-[var(--color-orange-border)] text-[var(--color-orange)] font-semibold'
-                  : 'bg-[var(--bg-elevated)] border-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--color-orange)]'
-              }`}
-            >
-              <Heart className={`w-4 h-4 ${post.isHearted ? 'fill-[var(--color-orange)]' : ''}`} />
-              <span className="tabular-nums">{post.heartCount} Thích</span>
-            </button>
+            <PostVotes post={post} />
 
             <div className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--bg-elevated)] text-[var(--text-secondary)]">
               <MessageSquare className="w-4 h-4" />
@@ -414,7 +347,7 @@ export const PostDetailPage: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handleSaveClick}
+              onClick={handleSaveClick} disabled={savePending || !POST_INTERACTIONS_AVAILABLE} aria-pressed={post.isSaved}
               className={`p-2.5 rounded-full border border-[var(--bg-elevated)] transition-colors ${
                 post.isSaved
                   ? 'text-[var(--color-orange)] bg-[var(--color-orange-soft)] border-[var(--color-orange-border)]'
@@ -436,6 +369,7 @@ export const PostDetailPage: React.FC = () => {
         </div>
       </article>
 
+      {!COMMENTS_AVAILABLE && <p role="status" className="text-sm text-[var(--text-muted)]">Bình luận hiện chưa khả dụng.</p>}
       {/* COMMENTS SECTION */}
       <section id="comments" className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-card)] p-4 sm:p-7 space-y-6">
         <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
@@ -453,7 +387,7 @@ export const PostDetailPage: React.FC = () => {
             />
             <div className="flex-1 space-y-2">
               <textarea
-                aria-label="Nội dung bình luận"
+                aria-label="Nội dung bình luận" disabled={!COMMENTS_AVAILABLE}
                 rows={3}
                 value={commentInput}
                 onChange={(e) => setCommentInput(e.target.value)}
@@ -470,7 +404,7 @@ export const PostDetailPage: React.FC = () => {
                   variant="primary"
                   size="sm"
                   rightIcon={<Send className="w-3.5 h-3.5" />}
-                  disabled={!commentInput.trim()}
+                  disabled={!commentInput.trim() || !COMMENTS_AVAILABLE}
                 >
                   Gửi bình luận
                 </Button>
@@ -508,8 +442,8 @@ export const PostDetailPage: React.FC = () => {
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleDeletePost}
         title="Xóa bài viết"
-        message="Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác."
-        confirmLabel="Xóa vĩnh viễn"
+        message="Bạn có chắc chắn muốn xóa bài viết này không? Bạn có thể xem lại và khôi phục trong Cài đặt → Thùng rác."
+        confirmLabel="Xóa bài viết"
         variant="danger"
       />
     </div><RightSidebar /></div>

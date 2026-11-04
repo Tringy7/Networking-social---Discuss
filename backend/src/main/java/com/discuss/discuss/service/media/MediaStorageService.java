@@ -45,6 +45,11 @@ public class MediaStorageService {
         return upload(file, kind, kind.prefixFor(ownerId));
     }
 
+    /** Persist the ownership lease before writing bytes, so interrupted uploads remain collectible. */
+    public StoredImageDTO storePostDraft(Object ownerId, MultipartFile file, java.util.function.Consumer<String> reserve) {
+        return upload(file, ImageKind.POST, ImageKind.POST.prefixFor("draft-" + ownerId), reserve);
+    }
+
     /** All-or-nothing: if any image fails, delete the images already uploaded in this request. */
     public List<StoredImageDTO> storePostImages(String postId, List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {
@@ -87,9 +92,14 @@ public class MediaStorageService {
      * Chỉ lỗi khi ghi lên MinIO mới là STORAGE_UPLOAD_FAILED.
      */
     private StoredImageDTO upload(MultipartFile file, ImageKind kind, String prefix) {
+        return upload(file, kind, prefix, key -> {});
+    }
+
+    private StoredImageDTO upload(MultipartFile file, ImageKind kind, String prefix, java.util.function.Consumer<String> reserve) {
         var processed = imageProcessor.process(file, kind);
 
         String key = prefix + UUID.randomUUID() + extensionFor(processed.contentType());
+        reserve.accept(key);
         try {
             minioService.upload(key, processed.data(), processed.contentType());
         } catch (MediaException e) {

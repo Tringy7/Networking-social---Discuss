@@ -21,7 +21,7 @@ const tabs = [
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get('tab') || 'for-you';
-  const { posts, openCreateModal, hydrate } = usePostStore();
+  const { posts, feedIds, hasMore, loading, loadMore, openCreateModal, hydrate } = usePostStore();
   const { user, isAuthenticated } = useAuthStore();
   const addToast = useToastStore((state) => state.addToast);
   const intensity = useSettingsStore((state) => state.settings.animationIntensity);
@@ -29,11 +29,11 @@ export default function HomePage() {
   const quiet = reduced || intensity !== 'full';
   const [displayCount, setDisplayCount] = useState(6);
   useEffect(() => {
-    if (!isAuthenticated || currentTab === 'for-you') return;
+    if (!isAuthenticated) return;
     hydrate(currentTab).catch((error: unknown) => addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'));
   }, [addToast, currentTab, hydrate, isAuthenticated]);
-  const sorted = [...posts].sort((a, b) => {
-    if (currentTab === 'popular') return b.heartCount - a.heartCount;
+  const sorted = posts.filter((post) => feedIds.includes(post.id)).sort((a, b) => {
+    if (currentTab === 'popular') return b.voteScore - a.voteScore;
     if (currentTab === 'for-you' && a.pinned !== b.pinned) return a.pinned ? -1 : 1;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
@@ -58,6 +58,7 @@ export default function HomePage() {
         <span className="feed-count">{sorted.length} bài viết</span>
       </nav>
       {!POSTS_AVAILABLE && <p role="status" className="feed-notice">Bài viết mẫu · Tương tác được lưu trong phiên hiện tại.</p>}
+      {loading && <p role="status" className="feed-notice">Đang tải bài viết…</p>}
       <div className="discussion-list">
         {sorted.slice(0, displayCount).map((post) => <motion.div key={post.id}
           initial={quiet ? false : { opacity: 0.8 }} animate={{ opacity: 1 }}
@@ -65,8 +66,13 @@ export default function HomePage() {
           <PostCard post={post} />
         </motion.div>)}
       </div>
-      {sorted.length === 0 && <section className="editorial-empty"><h2>Cuộc trò chuyện tiếp theo?</h2><p>Hãy là người đầu tiên mở đầu một chủ đề.</p></section>}
-      {displayCount < sorted.length && <Button variant="secondary" className="mt-5 w-full" onClick={() => setDisplayCount((count) => count + 5)}>Đọc thêm thảo luận</Button>}
+      {!loading && sorted.length === 0 && <section className="editorial-empty"><h2>Cuộc trò chuyện tiếp theo?</h2><p>Hãy là người đầu tiên mở đầu một chủ đề.</p></section>}
+      {(displayCount < sorted.length || hasMore) && <Button variant="secondary" className="mt-5 w-full" disabled={loading} onClick={async () => {
+        if (displayCount >= sorted.length) {
+          try { await loadMore(); } catch (error) { addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); }
+        }
+        setDisplayCount((count) => count + 20);
+      }}>Đọc thêm thảo luận</Button>}
     </div>
     <RightSidebar />
   </div>;
