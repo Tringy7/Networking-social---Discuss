@@ -128,7 +128,7 @@ async function rawRequest<T>(method: string, path: string, body?: unknown): Prom
     let message = typeof payload?.message === 'string' ? payload.message : '';
 
     if (status === 409) {
-      message = 'Tên người dùng đã tồn tại';
+      message = message || 'Dữ liệu bị trùng hoặc đã được sử dụng. Vui lòng kiểm tra lại.';
     } else if (status === 413) {
       message = 'File vượt giới hạn dung lượng';
     } else if (status === 403) {

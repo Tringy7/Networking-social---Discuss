@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController @RequiredArgsConstructor
-@RequestMapping("/media")
+@RequestMapping("/posts")
 public class PostImageController {
     private final ImageService imageService;
 
-    @PostMapping(value = "/post-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<StoredImageDTO> upload(@RequestParam("file") MultipartFile file) {
         return ResponseEntity.status(HttpStatus.CREATED).body(imageService.uploadPostImage(file));
     }

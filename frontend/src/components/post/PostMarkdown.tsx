@@ -19,7 +19,7 @@ function CodeBlock({ children, ...props }: React.ComponentProps<'pre'>) {
   </div>;
 }
 
-export default function PostMarkdown({ content, images = [] }: { content: string; images?: PostImage[] }) {
+export default function PostMarkdown({ content, images = [], onImageClick }: { content: string; images?: PostImage[]; onImageClick?: (url: string) => void }) {
   return <div className="post-markdown">
     <ReactMarkdown skipHtml remarkPlugins={[remarkGfm]} rehypePlugins={[[rehypeHighlight, { detect: false, ignoreMissing: true }]]}
       urlTransform={(url, key) => key === 'src' ? (url.startsWith('post-image:') ? url : '') : httpUrl(url) || ''}
@@ -30,7 +30,7 @@ export default function PostMarkdown({ content, images = [] }: { content: string
           : <span>{children as ReactNode}</span>,
         img: ({ src, alt }) => {
           const url = markdownImageUrl(typeof src === 'string' ? src : undefined, images);
-          return url ? <img src={url} alt={alt || 'Ảnh trong bài viết'} loading="lazy" />
+          return url ? (onImageClick ? <button type="button" className="post-inline-image-button" aria-label={`Xem ảnh ${alt || 'trong bài viết'} kích thước lớn`} onClick={() => onImageClick(url)}><img src={url} alt={alt || 'Ảnh trong bài viết'} loading="lazy" /></button> : <img src={url} alt={alt || 'Ảnh trong bài viết'} loading="lazy" />)
             : <span className="post-image-unavailable">[Ảnh chưa được xác minh: {alt || 'ảnh'}]</span>;
         },
         pre: CodeBlock,

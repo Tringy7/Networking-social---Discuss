@@ -79,7 +79,6 @@ export type PostMediaType = 'IMAGE' | 'VIDEO';
 export interface PostMediaInput {
   type: PostMediaType;
   objectKey: string;
-  caption?: string;
 }
 export interface PostImage {
   objectKey: string | null;
@@ -89,7 +88,6 @@ export interface PostImage {
 }
 export interface PostMedia extends PostImage {
   type: PostMediaType;
-  caption?: string | null;
 }
 export interface PostInput {
   communityName: string;

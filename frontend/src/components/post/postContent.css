@@ -1,6 +1,20 @@
 /* Discuss post editor: 12-column shell retained; the editor is the main workspace.
    The existing modal is 64rem wide, with 24px gutters. Gallery: 3 equal tracks + 2 x 12px gaps. */
 .post-composer { display: grid; gap: 16px; min-width: 0; }
+.discussion-tags.post-highlight-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.discussion-tags.post-highlight-tags a { display: inline-flex; align-items: center; min-height: 32px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--color-orange-ink); font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.discussion-tags.post-highlight-tags a:hover { background: transparent; text-decoration: underline; }
+.discussion-tags.post-highlight-tags a:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.post-content-divider { border-top: 1px solid var(--border-color); margin-top: 16px; padding-top: 16px; }
+.discussion-row .post-content-divider .post-body-content { margin-top: 0; }
+.post-byline-time { color: var(--text-muted); font-size: 12px; font-weight: 400; white-space: nowrap; }
+.post-community-line .byline-community { max-width: 100%; }
+.post-community-line { flex-wrap: wrap; }
+.post-composer-section { display: grid; gap: 5px; }
+.post-composer-section h2 { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 600; }
+.post-composer-section h2 span { font-size: 12px; font-weight: 400; color: var(--text-secondary); }
+.post-composer-section p, .post-composer-help { font-size: 13px; line-height: 1.6; color: var(--text-secondary); }
+.post-composer-error { padding: 12px; border: 1px solid var(--color-danger); border-radius: var(--radius-control); font-size: 13px; line-height: 1.6; color: var(--color-danger); overflow-wrap: anywhere; }
 .post-composer-fields { display: grid; gap: 16px; min-width: 0; padding: 0; border: 0; margin: 0; }
 .post-composer-fields:disabled { opacity: .7; }
 .post-add-blocks { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -57,7 +71,6 @@
 .post-composer footer { position: sticky; bottom: -24px; z-index: 2; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-color); padding: 12px 0; background: var(--bg-surface); }
 .post-body-content { min-width: 0; display: grid; gap: 20px; }
 .post-media-list { display: grid; gap: 16px; }
-.post-media-caption { padding: 10px 14px; font-size: 13px; color: var(--text-secondary); overflow-wrap: anywhere; }
 .post-inline-media-note { color: var(--text-muted) !important; }
 .post-image-draft label { margin-top: 10px; }
 .post-markdown { min-width: 0; font-size: 15px; line-height: 1.75; overflow-wrap: anywhere; color: var(--text-primary); }
@@ -88,11 +101,23 @@
 .dark .hljs-title, .dark .hljs-function, .dark .hljs-number, .dark .hljs-built_in { color: #a9c8ed; }
 .post-image-unavailable { font-size: 12px; color: var(--text-muted); }
 .post-gallery { min-width: 0; overflow: hidden; border: 1px solid var(--border-color); border-radius: var(--radius-control); background: var(--bg-main); }
-.post-gallery-image { display: block; width: 100%; }
+.post-gallery-image { display: block; width: 100%; cursor: zoom-in; background: #252a32; }
 .post-gallery-image img { display: block; width: 100%; height: auto; max-height: 520px; object-fit: contain; }
 .post-gallery-controls { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px; font-size: 12px; }
 .post-gallery-controls button { display: grid; place-items: center; min-width: 36px; min-height: 36px; border: 1px solid var(--border-color); border-radius: 6px; }
 .post-gallery-full { width: 100%; max-height: 72vh; object-fit: contain; }
+.post-inline-image-button { display: inline-block; max-width: 100%; cursor: zoom-in; padding: 0; border: 0; background: transparent; }
+.post-inline-image-button:focus-visible, .post-gallery-image:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+.post-lightbox[open] { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: #252a32; color: #fff; overflow: hidden; }
+.post-lightbox::backdrop { background: #252a32; }
+.post-lightbox-image { display: block; width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; }
+.post-lightbox button { position: absolute; z-index: 1; display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%; background: #101318; color: #fff; cursor: pointer; }
+.post-lightbox button:hover { background: #3b424c; }
+.post-lightbox button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.post-lightbox-close { top: 16px; right: 16px; }
+.post-lightbox-prev { left: 16px; top: calc(50% - 24px); }
+.post-lightbox-next { right: 16px; top: calc(50% - 24px); }
+.post-lightbox-counter { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 32px); padding: 6px 12px; background: #101318; border-radius: 4px; font-size: 13px; text-align: center; overflow-wrap: anywhere; }
 .post-link-card { display: flex; gap: 14px; align-items: center; padding: 16px; border: 1px solid var(--border-color); border-radius: var(--radius-control); color: var(--text-secondary); min-width: 0; }
 .post-link-card > span { min-width: 0; display: grid; gap: 4px; }
 .post-link-card strong { color: var(--text-primary); font-size: 14px; }

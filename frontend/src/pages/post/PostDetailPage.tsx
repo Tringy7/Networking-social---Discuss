@@ -300,12 +300,11 @@ export const PostDetailPage: React.FC = () => {
         {/* Community & Author Header */}
         <div className="flex items-center justify-between gap-4 pb-1">
           <div className="thread-author flex min-w-0 items-center gap-3">
-            <Link to={`/u/${post.author.username}`}><Avatar src={post.author.avatarUrl} alt={post.author.displayName || post.author.username} size="md" /></Link>
+            <Link to={`/c/${post.communityName}`} aria-label={`Cộng đồng c/${post.communityName}`}><Avatar src={post.communityAvatar} alt={post.communityDisplayName || post.communityName} size="sm" /></Link>
             <div className="min-w-0">
-              <Link to={`/c/${post.communityName}`} className="text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange-ink)] block truncate">{post.communityDisplayName}</Link>
+              <div className="flex flex-wrap items-center gap-1.5 text-xs"><Link to={`/c/${post.communityName}`} className="font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange-ink)]">c/{post.communityName}</Link><span className="text-[var(--text-muted)]" aria-hidden="true">·</span><time className="text-[var(--text-muted)]" dateTime={post.createdAt}>{new Date(post.createdAt).toLocaleDateString('vi-VN', {day:'numeric',month:'short'})}</time></div>
               <div className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                <Link to={`/u/${post.author.username}`}>{post.author.displayName || post.author.username}</Link><span aria-hidden="true">·</span>
-                <time dateTime={post.createdAt}>{new Date(post.createdAt).toLocaleDateString('vi-VN', {day:'numeric',month:'short'})}</time>
+                <Link to={`/u/${post.author.username}`}>u/{post.author.username}</Link>
                 {post.author.role === 'OWNER' && <Badge role="OWNER" size="sm" />}
                 {post.author.role === 'MODERATOR' && <Badge role="MODERATOR" size="sm" />}
               </div>
@@ -338,21 +337,11 @@ export const PostDetailPage: React.FC = () => {
           {post.title}
         </h1>
 
-        {/* Tags */}
-        {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {post.tags.map((tag) => (
-              <span
-                key={tag}
-                className="text-xs font-medium text-[var(--color-orange)] bg-[var(--color-orange-soft)] px-2.5 py-0.5 rounded-full"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="post-content-divider"><PostBody post={post} /></div>
 
-        <PostBody post={post} />
+        {!!post.tags?.length && <nav className="discussion-tags post-highlight-tags" aria-label="Thẻ bài viết">
+          {post.tags.map((tag) => <Link key={tag} to={`/search?q=${encodeURIComponent(tag)}&type=posts`}>#{tag}</Link>)}
+        </nav>}
 
         {/* Actions Bar */}
         <div className="flex items-center justify-between pt-3 text-sm">

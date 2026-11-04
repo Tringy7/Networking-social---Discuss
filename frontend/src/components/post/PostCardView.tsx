@@ -12,7 +12,7 @@ import ReportModal from './ReportModal';
 import { MessageSquare, Bookmark, Share2, Flag, MoreHorizontal, Pin } from 'lucide-react';
 
 interface PostCardProps { post: Post; showCommunity?: boolean; }
-export default function PostCard({ post, showCommunity = true }: PostCardProps) {
+export default function PostCard({ post }: PostCardProps) {
   const navigate = useNavigate();
   const { toggleSave } = usePostStore();
   const addToast = useToastStore((state) => state.addToast);
@@ -63,16 +63,17 @@ export default function PostCard({ post, showCommunity = true }: PostCardProps) 
   return <>
     <article className="discussion-row" aria-labelledby={`post-title-${post.id}`}>
       <div className="discussion-byline">
-        <Link to={`/u/${post.author.username}`} className="post-author-avatar" aria-label={`Hồ sơ ${post.author.displayName || post.author.username}`}>
-          <Avatar src={post.author.avatarUrl} alt={post.author.displayName || post.author.username} size="md" />
+        <Link to={`/c/${post.communityName}`} className="post-author-avatar" aria-label={`Cộng đồng c/${post.communityName}`}>
+          <Avatar src={post.communityAvatar} alt={post.communityDisplayName || post.communityName} size="sm" />
         </Link>
         <div className="post-identity">
           <div className="post-community-line">
-            {showCommunity ? <Link className="byline-community" to={`/c/${post.communityName}`}><Avatar src={post.communityAvatar} alt={post.communityDisplayName} size="xs" shape="rounded" /><span>{post.communityDisplayName}</span></Link> : <Link className="post-author-name" to={`/u/${post.author.username}`}>{post.author.displayName || post.author.username}</Link>}
+            <Link className="byline-community" to={`/c/${post.communityName}`}><span>c/{post.communityName}</span></Link>
+            <span className="post-byline-time"><span aria-hidden="true">·</span> <time dateTime={post.createdAt} title={date.toLocaleString('vi-VN')}>{time}</time></span>
             {post.pinned && <span className="post-pinned"><Pin size={12} />Ghim</span>}
           </div>
           <div className="post-author-line">
-            <Link to={`/u/${post.author.username}`}>{showCommunity ? (post.author.displayName || post.author.username) : `@${post.author.username}`}</Link><span aria-hidden="true">·</span><time dateTime={post.createdAt} title={date.toLocaleString('vi-VN')}>{time}</time>
+            <Link to={`/u/${post.author.username}`}>u/{post.author.username}</Link>
             {(post.author.role === 'OWNER' || post.author.role === 'MODERATOR') && <span className="byline-role">{post.author.role === 'OWNER' ? 'Chủ cộng đồng' : 'Kiểm duyệt'}</span>}
           </div>
         </div>
@@ -86,9 +87,9 @@ export default function PostCard({ post, showCommunity = true }: PostCardProps) 
       </div>
       <div className="min-w-0">
         <h2 id={`post-title-${post.id}`} className="discussion-title"><Link to={`/post/${post.id}`}>{post.title}</Link></h2>
-        <div className={expanded ? '' : 'max-h-[420px] overflow-hidden'}><PostBody post={post} /></div>
+        <div className={`post-content-divider${expanded ? '' : ' max-h-[420px] overflow-hidden'}`}><PostBody post={post} /></div>
         {(post.content.length > 180 || (post.media?.length || 0) > 0) && <button type="button" className="discussion-expand" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? 'Thu gọn' : 'Xem thêm'}</button>}
-        {!!post.tags?.length && <div className="discussion-tags">{post.tags.map((tag) => <Link key={tag} to={`/search?q=${encodeURIComponent(tag)}&type=posts`}>#{tag}</Link>)}</div>}
+        {!!post.tags?.length && <nav className="discussion-tags post-highlight-tags" aria-label="Thẻ bài viết">{post.tags.map((tag) => <Link key={tag} to={`/search?q=${encodeURIComponent(tag)}&type=posts`}>#{tag}</Link>)}</nav>}
       </div>
       <div className="discussion-actions">
         <PostVotes post={post} />
