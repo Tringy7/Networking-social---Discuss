@@ -128,7 +128,15 @@ export interface Post {
   pinned?: boolean;
 }
 
+export interface CommentAttachment {
+  id: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+}
 export interface Comment {
+  attachments?: CommentAttachment[];
+  status?: 'VISIBLE' | 'HIDDEN' | 'DELETED';
   id: string;
   postId: string;
   author: {

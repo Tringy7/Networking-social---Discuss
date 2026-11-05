@@ -4,6 +4,8 @@ import com.discuss.discuss.dto.common.ApiResponse;
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.post.*;
 import com.discuss.discuss.service.post.PostService;
+import com.discuss.discuss.service.post.PostInteractionService;
+import com.discuss.discuss.service.post.PostQueryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 public class PostController {
 
     private final PostService postService;
+    private final PostInteractionService postInteractionService;
+    private final PostQueryService postQueryService;
 
     @PostMapping
     public ResponseEntity<PostResponseDTO> createPost(@Valid @RequestBody CreatePostRequestDTO request) {
@@ -26,25 +30,25 @@ public class PostController {
 
     @PutMapping("/{id}/vote")
     public PostResponseDTO vote(@PathVariable Long id, @Valid @RequestBody VoteRequestDTO request) {
-        return postService.vote(id, request.type());
+        return postInteractionService.vote(id, request.type());
     }
 
     @DeleteMapping("/{id}/vote")
     public PostResponseDTO removeVote(@PathVariable Long id) {
-        return postService.vote(id, null);
+        return postInteractionService.vote(id, null);
     }
 
     @PutMapping("/{id}/save")
-    public PostResponseDTO save(@PathVariable Long id) { return postService.savePost(id, true); }
+    public PostResponseDTO save(@PathVariable Long id) { return postInteractionService.savePost(id, true); }
 
     @DeleteMapping("/{id}/save")
-    public PostResponseDTO unsave(@PathVariable Long id) { return postService.savePost(id, false); }
+    public PostResponseDTO unsave(@PathVariable Long id) { return postInteractionService.savePost(id, false); }
 
     @GetMapping("/saved")
     public PageResponseDTO<PostResponseDTO> saved(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
-        return postService.listSaved(page, size);
+        return postQueryService.listSaved(page, size);
     }
 
     @GetMapping("/trash")
@@ -85,6 +89,6 @@ public class PostController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
             @RequestParam(required = false) @Size(max = 200) String q) {
-        return postService.list(null, null, tab, page, size, q);
+        return postQueryService.list(null, null, tab, page, size, q);
     }
 }

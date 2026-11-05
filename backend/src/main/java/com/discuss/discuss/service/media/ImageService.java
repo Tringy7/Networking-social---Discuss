@@ -1,6 +1,7 @@
 package com.discuss.discuss.service.media;
 
 import com.discuss.discuss.dto.media.StoredImageDTO;
+import com.discuss.discuss.dto.media.StoredCommentImageDTO;
 import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.entity.CommunityInfo;
 import com.discuss.discuss.entity.PostImageUpload;
@@ -31,6 +32,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
+import java.util.List;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -176,6 +179,31 @@ public class ImageService {
 
         minio.deleteFile(key); // Lỗi thì ném ra để retry; không dùng safeDelete ở đây.
         uploads.delete(upload);
+    }
+
+    // ==================== COMMENT ====================
+    public void validateCommentImages(List<MultipartFile> images) {
+        storage.validateCommentImages(images);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public StoredCommentImageDTO storeCommentImage(Long commentId, MultipartFile file) {
+        return storage.storeCommentImage(commentId, file, this::deleteCommentImageOnRollback);
+    }
+
+    public InputStream openCommentImage(String objectKey) {
+        return storage.openImage(objectKey);
+    }
+
+    private void deleteCommentImageOnRollback(String key) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status != STATUS_COMMITTED) {
+                    storage.safeDelete(key);
+                }
+            }
+        });
     }
 
     // ==================== SHARED ====================

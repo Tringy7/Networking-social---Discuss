@@ -348,8 +348,8 @@ export function PostProvider({ children }) {
 
     try {
       await commentService.deleteComment(commentId);
-      // Xóa bình luận và các reply con
-      setComments(prev => prev.filter(c => c.id !== commentId && c.parentId !== commentId));
+      // Keep the deleted parent as a placeholder for replies.
+      setComments(prev => prev.map(c => c.id === commentId ? { ...c, content: '[deleted]', status: 'DELETED' } : c));
       setPosts(prev => prev.map(p => p.id === postId ? { ...p, commentsCount: Math.max(0, (p.commentsCount || 1) - 1) } : p));
       success('Đã xóa bình luận.');
     } catch (err) {

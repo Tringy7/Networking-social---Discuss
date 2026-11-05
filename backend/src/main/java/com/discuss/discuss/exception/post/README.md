@@ -6,7 +6,7 @@ Theo cấu trúc Community/Auth/Media đang có trong dự án:
 - PostException: mang mã lỗi; hỗ trợ thông báo riêng và nguyên nhân gốc.
 - GlobalExceptionHandler.handlePostException: ghi log và trả response thống nhất.
 - PostService/PostMarkdown: chỉ throw theo mã lỗi, không tự ghép status/message.
-- PostImageService: dùng MediaException/MediaErrorCode hiện có cho lỗi ảnh.
+- ImageService: dùng MediaException/MediaErrorCode hiện có cho lỗi ảnh.
 
 ## Các mẫu sử dụng
 
@@ -93,6 +93,6 @@ LINK đã bị chặn trong create/update bằng UNSUPPORTED_POST_TYPE theo lự
 - Thông báo/status của Post: PostErrorCode.java.
 - Thông báo/status của ảnh: MediaErrorCode.java.
 - Định dạng response và log: GlobalExceptionHandler.java.
-- Điều kiện phát sinh lỗi: PostService.java, PostMarkdown.java, PostImageService.java.
+- Điều kiện phát sinh lỗi: PostService.java, PostMarkdown.java, ImageService.java.
 
 Không catch lỗi nghiệp vụ rồi trả thành công hoặc để exception lộ stack trace ra JSON.

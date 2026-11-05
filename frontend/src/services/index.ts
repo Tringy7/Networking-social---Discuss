@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { Community, CommunityMember, Post, Comment, User, Report, NotificationItem, Conversation, ChatMessage } from '../types';
+import { Community, CommunityMember, Post, User, Report, NotificationItem, Conversation, ChatMessage } from '../types';
 import { demoConversations, demoNotifications } from '../mocks/demoContent';
 interface AuthResponse {
   message?: string;
@@ -63,7 +63,7 @@ const API_GENDERS: Record<string, string> = {
 
 export const POSTS_AVAILABLE = true;
 export const POST_INTERACTIONS_AVAILABLE = true;
-export const COMMENTS_AVAILABLE = false;
+export const COMMENTS_AVAILABLE = true;
 export const NOTIFICATIONS_AVAILABLE = false;
 export const MESSAGES_AVAILABLE = false;
 
@@ -455,17 +455,34 @@ export const postService = {
   listUser: (name: string, page = 0) => apiClient.get<PostPage>(`/users/${encodeURIComponent(name)}/posts?page=${page}&size=20`),
 };
 
+export interface CommentMutationResponse {
+  attachments: { id: number; fileName: string; contentType: string; size: number }[];
+  id: number;
+  postId: number;
+  authorId: number;
+  parentId: number | null;
+  content: string;
+  status: 'VISIBLE' | 'HIDDEN' | 'DELETED';
+  createdAt: string;
+  updatedAt: string;
+  author: { id: number; username: string; displayName: string | null; avatarUrl: string | null; isAuthor: boolean };
+}
+
 export const commentService = {
-  list: async (postId: string): Promise<Comment[]> =>
-    COMMENTS_AVAILABLE ? apiClient.get<Comment[]>(`/posts/${postId}/comments`) : [],
-  create: async (
-    postId: string,
-    content: string,
-    parentCommentId?: string
-  ): Promise<Comment> => {
-    if (!COMMENTS_AVAILABLE) throw postsUnavailableError();
-    return apiClient.post<Comment>(`/posts/${postId}/comments`, { content, parentCommentId });
+  list: (postId: string) => apiClient.get<CommentMutationResponse[]>(`/posts/${postId}/comments`),
+  create: (postId: string, content: string, parentCommentId?: string, files: File[] = []) => {
+    if (!files.length) return apiClient.post<CommentMutationResponse>('/comments', {
+      postId, content, parentId: parentCommentId ?? null,
+    });
+    const body = new FormData();
+    body.append('postId', postId); body.append('content', content);
+    if (parentCommentId) body.append('parentId', parentCommentId);
+    files.forEach(file => body.append('files', file));
+    return apiClient.post<CommentMutationResponse>('/comments', body);
   },
+  update: (commentId: string, content: string) =>
+    apiClient.patch<CommentMutationResponse>(`/comments/${commentId}`, { content }),
+  delete: (commentId: string) => apiClient.delete<{ message: string }>(`/comments/${commentId}`),
   toggleHeart: async (postId: string, commentId: string): Promise<{ isHearted: boolean }> => {
     if (!COMMENTS_AVAILABLE) throw postsUnavailableError();
     return apiClient.put<{ isHearted: boolean }>(`/posts/${postId}/comments/${commentId}/vote`);

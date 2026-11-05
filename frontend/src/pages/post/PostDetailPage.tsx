@@ -1,3 +1,4 @@
+import { CommentFilePicker, CommentAttachmentList } from '../../components/comment/CommentAttachments';
 import { postPath } from '../../utils/postPath';
 import PostVotes from '../../components/post/PostVotes';
 import PostActionsMenu from '../../components/post/PostActionsMenu';
@@ -32,19 +33,27 @@ export const PostDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { posts, comments, loadPost, loadComments, toggleSave, deletePost, addComment, toggleCommentHeart, openEditModal } =
+  const { posts, comments, loadPost, loadComments, toggleSave, deletePost, addComment, openEditModal } =
     usePostStore();
   const { user, isAuthenticated } = useAuthStore();
   const { addToast } = useToastStore();
 
   const [savePending, setSavePending] = useState(false);
   const [commentInput, setCommentInput] = useState('');
+  const [commentFiles, setCommentFiles] = useState<File[]>([]);
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
+  const [commentPending, setCommentPending] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyInput, setReplyInput] = useState('');
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [collapsedThreads, setCollapsedThreads] = useState<Record<string, boolean>>({});
   const [isPostLoading, setIsPostLoading] = useState(true);
+
+  useEffect(() => {
+    setCommentInput(''); setCommentFiles([]);
+    setReplyInput(''); setReplyFiles([]); setReplyingTo(null);
+  }, [postId]);
 
   useEffect(() => {
     if (!postId) return;
@@ -134,15 +143,16 @@ export const PostDetailPage: React.FC = () => {
       navigate('/login');
       return;
     }
-    if (!commentInput.trim()) return;
+    if (commentPending || (!commentInput.trim() && !commentFiles.length)) return;
 
+    setCommentPending(true);
     try {
-      await addComment(post.id, commentInput.trim());
-      setCommentInput('');
+      await addComment(post.id, commentInput.trim(), undefined, commentFiles);
+      setCommentInput(''); setCommentFiles([]);
       addToast('Đã đăng bình luận!', 'success');
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Không thể đăng bình luận.', 'error');
-    }
+    } finally { setCommentPending(false); }
   };
 
   const handleAddReply = async (parentCommentId: string) => {
@@ -151,29 +161,17 @@ export const PostDetailPage: React.FC = () => {
       navigate('/login');
       return;
     }
-    if (!replyInput.trim()) return;
+    if (commentPending || (!replyInput.trim() && !replyFiles.length)) return;
 
+    setCommentPending(true);
     try {
-      await addComment(post.id, replyInput.trim(), parentCommentId);
-      setReplyInput('');
+      await addComment(post.id, replyInput.trim(), parentCommentId, replyFiles);
+      setReplyInput(''); setReplyFiles([]);
       setReplyingTo(null);
       addToast('Đã đăng câu trả lời!', 'success');
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Không thể gửi câu trả lời.', 'error');
-    }
-  };
-
-  const handleCommentHeart = async (commentId: string) => {
-    if (!isAuthenticated) {
-      addToast('Vui lòng đăng nhập để thích bình luận.', 'warning');
-      navigate('/login');
-      return;
-    }
-    try {
-      await toggleCommentHeart(post.id, commentId);
-    } catch (error) {
-      addToast(error instanceof Error ? error.message : 'Không thể cập nhật lượt thích.', 'error');
-    }
+    } finally { setCommentPending(false); }
   };
 
   const toggleThread = (commentId: string) => {
@@ -234,10 +232,11 @@ export const PostDetailPage: React.FC = () => {
               {cmt.content}
             </p>
 
+            <CommentAttachmentList attachments={cmt.attachments} />
             {/* Comment Reactions & Reply Button */}
             <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] pl-8">
               <button
-                onClick={() => void handleCommentHeart(cmt.id)}
+                disabled title="Tính năng thả tim chưa khả dụng"
                 className={`flex items-center gap-1 hover:text-[var(--color-orange)] transition-colors ${
                   cmt.isHearted ? 'text-[var(--color-orange)] font-semibold' : ''
                 }`}
@@ -247,7 +246,8 @@ export const PostDetailPage: React.FC = () => {
               </button>
 
               <button
-                onClick={() => setReplyingTo(replyingTo === cmt.id ? null : cmt.id)}
+                disabled={cmt.status !== 'VISIBLE' || commentPending}
+                onClick={() => { setReplyingTo(replyingTo === cmt.id ? null : cmt.id); setReplyFiles([]); setReplyInput(''); }}
                 className="flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors font-medium"
               >
                 <CornerDownRight className="w-3.5 h-3.5" />
@@ -257,7 +257,7 @@ export const PostDetailPage: React.FC = () => {
 
             {/* Inline reply composer */}
             {replyingTo === cmt.id && (
-              <div className="pl-8 pt-2 flex items-center gap-2">
+              <div className="pl-8 pt-2 flex flex-wrap items-center gap-2">
                 <input
                   type="text"
                   value={replyInput}
@@ -267,12 +267,14 @@ export const PostDetailPage: React.FC = () => {
                   className="flex-1 bg-[var(--bg-main)] border border-[var(--bg-elevated)] focus:border-[var(--color-orange)] rounded-xl px-3 py-1.5 text-xs text-[var(--text-primary)] outline-none"
                   autoFocus
                 />
-                <Button variant="primary" size="sm" onClick={() => handleAddReply(cmt.id)}>
+                <Button variant="primary" size="sm" disabled={commentPending || (!replyInput.trim() && !replyFiles.length)} onClick={() => handleAddReply(cmt.id)}>
                   Gửi
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setReplyingTo(null)}>
+                <Button variant="ghost" size="sm" disabled={commentPending} onClick={() => setReplyingTo(null)}>
                   Hủy
                 </Button>
+                <div className="w-full"><CommentFilePicker files={replyFiles} onChange={setReplyFiles} disabled={commentPending}
+                  onError={message => addToast(message, 'error')} /></div>
               </div>
             )}
 
@@ -387,7 +389,7 @@ export const PostDetailPage: React.FC = () => {
             />
             <div className="flex-1 space-y-2">
               <textarea
-                aria-label="Nội dung bình luận" disabled={!COMMENTS_AVAILABLE}
+                aria-label="Nội dung bình luận" disabled={!COMMENTS_AVAILABLE || commentPending}
                 rows={3}
                 value={commentInput}
                 onChange={(e) => setCommentInput(e.target.value)}
@@ -398,15 +400,17 @@ export const PostDetailPage: React.FC = () => {
                 }
               className="w-full bg-[var(--bg-main)] border border-[var(--border-color)] focus:border-[var(--color-orange)] rounded-xl p-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
               />
+              <CommentFilePicker files={commentFiles} onChange={setCommentFiles} disabled={!isAuthenticated || commentPending}
+                onError={message => addToast(message, 'error')} />
               <div className="flex justify-end">
                 <Button
                   type="submit"
                   variant="primary"
                   size="sm"
                   rightIcon={<Send className="w-3.5 h-3.5" />}
-                  disabled={!commentInput.trim() || !COMMENTS_AVAILABLE}
+                  disabled={(!commentInput.trim() && !commentFiles.length) || !COMMENTS_AVAILABLE || commentPending}
                 >
-                  Gửi bình luận
+                  {commentPending ? 'Đang gửi…' : 'Gửi bình luận'}
                 </Button>
               </div>
             </div>

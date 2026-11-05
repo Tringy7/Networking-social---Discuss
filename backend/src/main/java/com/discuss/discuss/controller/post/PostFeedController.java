@@ -2,7 +2,7 @@ package com.discuss.discuss.controller.post;
 
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.post.PostResponseDTO;
-import com.discuss.discuss.service.post.PostService;
+import com.discuss.discuss.service.post.PostQueryService;
 import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController @RequiredArgsConstructor @Validated
 public class PostFeedController {
-    private final PostService posts;
+    private final PostQueryService posts;
 
     @GetMapping("/communities/{name}/posts")
     public PageResponseDTO<PostResponseDTO> community(@PathVariable String name,

@@ -2,7 +2,6 @@ package com.discuss.discuss.controller.post;
 
 import com.discuss.discuss.dto.media.StoredImageDTO;
 import com.discuss.discuss.service.media.ImageService;
-import com.discuss.discuss.service.media.PostImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Post, PostInput, Comment } from '../types';
-import { postService } from '../services';
+import { postService, commentService, type CommentMutationResponse } from '../services';
+import { useAuthStore } from './useAuthStore';
 
 interface PostState {
   posts: Post[];
@@ -23,7 +24,9 @@ interface PostState {
   addPost: (input: PostInput) => Promise<Post>;
   editPost: (id: string, input: PostInput) => Promise<Post>;
   deletePost: (id: string) => Promise<void>;
-  addComment: (id: string, content: string, parent?: string) => Promise<void>;
+  addComment: (id: string, content: string, parent?: string, files?: File[]) => Promise<void>;
+  editComment: (postId: string, commentId: string, content: string) => Promise<void>;
+  deleteComment: (postId: string, commentId: string) => Promise<void>;
   toggleCommentHeart: (postId: string, commentId: string) => Promise<void>;
   isCreateModalOpen: boolean;
   targetCommunityName?: string;
@@ -36,6 +39,23 @@ interface PostState {
 const unsupported = async () => { throw new Error('Chức năng này chưa có API hỗ trợ.'); };
 const merge = (existing: Post[], incoming: Post[]) =>
   [...existing.filter((post) => !incoming.some((item) => item.id === post.id)), ...incoming];
+
+const commentTree = (rows: CommentMutationResponse[]): Comment[] => {
+  const nodes = new Map(rows.map(row => [String(row.id), {
+    id: String(row.id), postId: String(row.postId), content: row.content, status: row.status,
+    parentCommentId: row.parentId == null ? null : String(row.parentId),
+    author: { ...row.author, id: String(row.author.id),
+      displayName: row.author.displayName || row.author.username, avatarUrl: row.author.avatarUrl || '' },
+    createdAt: row.createdAt, heartCount: 0, replies: [],
+    attachments: (row.attachments || []).map(file => ({ ...file, id: String(file.id) })),
+  } as Comment]));
+  const roots: Comment[] = [];
+  for (const node of nodes.values()) {
+    const parent = node.parentCommentId && nodes.get(node.parentCommentId);
+    if (parent) parent.replies!.push(node); else roots.push(node);
+  }
+  return roots;
+};
 
 let feedRequest = 0;
 let session = 0;
@@ -111,7 +131,11 @@ export const usePostStore = create<PostState>((set, get) => ({
     }));
     return !page.last;
   },
-  loadComments: async () => { /* Comment API has not been implemented; never synthesize demo comments. */ },
+  loadComments: async (id) => {
+    const generation = session;
+    const rows = await commentService.list(id);
+    if (generation === session) set(state => ({ comments: { ...state.comments, [id]: commentTree(rows) } }));
+  },
   vote: async (id, type) => {
     const generation = session;
     const post = await postService.vote(id, type);
@@ -134,7 +158,31 @@ export const usePostStore = create<PostState>((set, get) => ({
           savedPosts: post.isSaved ? [post, ...state.savedPosts.filter((item) => item.id !== id)] : state.savedPosts.filter((item) => item.id !== id) }));
       }
     } finally { if (generation === session) saving.delete(id); }
-  }, addComment: unsupported, toggleCommentHeart: unsupported,
+  },
+  addComment: async (id, content, parent, files) => {
+    const generation = session;
+    const user = useAuthStore.getState().user;
+    if (!user) throw new Error('Vui lòng đăng nhập.');
+    await commentService.create(id, content, parent, files);
+    if (generation === session) {
+      await get().loadComments(id);
+      await get().loadPost(id);
+    }
+  },
+  editComment: async (postId, commentId, content) => {
+    const generation = session;
+    await commentService.update(commentId, content);
+    if (generation === session) await get().loadComments(postId);
+  },
+  deleteComment: async (postId, commentId) => {
+    const generation = session;
+    await commentService.delete(commentId);
+    if (generation === session) {
+      await get().loadComments(postId);
+      await get().loadPost(postId);
+    }
+  },
+  toggleCommentHeart: unsupported,
   openCreateModal: (name) => set({ isCreateModalOpen: true, targetCommunityName: name, editingPost: undefined }),
   openEditModal: (post) => set({ isCreateModalOpen: true, targetCommunityName: post.communityName, editingPost: post }),
   closeCreateModal: () => set({ isCreateModalOpen: false, targetCommunityName: undefined, editingPost: undefined }),

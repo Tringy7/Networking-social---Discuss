@@ -1,0 +1,67 @@
+package com.discuss.discuss.service.post;
+
+import com.discuss.discuss.dto.common.PageResponseDTO;
+import com.discuss.discuss.dto.post.PostResponseDTO;
+import com.discuss.discuss.entity.Community;
+import com.discuss.discuss.entity.Post;
+import com.discuss.discuss.entity.User;
+import com.discuss.discuss.enums.CommunityVisibility;
+import com.discuss.discuss.mapper.page.PageMapper;
+import com.discuss.discuss.repository.PostRepository;
+import com.discuss.discuss.service.community.CommunityAuthorizationService;
+import com.discuss.discuss.service.community.CommunityService;
+import com.discuss.discuss.service.user.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import static com.discuss.discuss.service.post.PostSpecifications.*;
+
+@Service
+@RequiredArgsConstructor
+public class PostQueryService {
+
+    private final PostRepository postRepository;
+    private final UserService userService;
+    private final CommunityService communityService;
+    private final CommunityAuthorizationService communityAuthorizationService;
+    private final PostSupport postSupport;
+    private final PageMapper pageMapper;
+
+    // ==================== LIST: SPECIFICATIONS ====================
+    @Transactional(readOnly = true)
+    public PageResponseDTO<PostResponseDTO> list(String communityName, String username, String tab,
+                                                 int page, int size, String searchKeyword) {
+        User currentUser = userService.getCurrentUser();
+        Community community = resolveListCommunity(communityName, currentUser);
+        if (username != null) userService.getUserActive(username);
+
+        Specification<Post> postSpecification = visibleTo(currentUser);
+        if (community != null) postSpecification = postSpecification.and(inCommunity(community));
+        if (username != null) postSpecification = postSpecification.and(writtenBy(username));
+        if (searchKeyword != null && !searchKeyword.isBlank()) postSpecification = postSpecification.and(matchesText(searchKeyword));
+        postSpecification = postSpecification.and(ordered(community != null, "popular".equals(tab)));
+
+        return pageMapper.toResponse(
+                postRepository.findAll(postSpecification, PageRequest.of(page, size)).map(p -> postSupport.toResponse(p, currentUser)));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponseDTO<PostResponseDTO> listSaved(int page, int size) {
+        User user = userService.getCurrentUser();
+        Specification<Post> savedByUser = savedBy(user);
+        return pageMapper.toResponse(postRepository.findAll(visibleTo(user).and(savedByUser),
+                PageRequest.of(page, size)).map(post -> postSupport.toResponse(post, user)));
+    }
+
+    private Community resolveListCommunity(String communityName, User currentUser) {
+        if (communityName == null) return null;
+        Community community = communityService.getCommunityByNameAndStatusActive(communityName);
+        if (community.getVisibility() == CommunityVisibility.PRIVATE) {
+            communityAuthorizationService.requireMembership(community, currentUser);
+        }
+        return community;
+    }
+}
