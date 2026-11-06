@@ -16,6 +16,9 @@ public class PostMediaDTO {
     @Size(max = 500)
     private String objectKey;
 
+    @Min(0)
+    private Integer fileIndex;
+
     @Size(max = 500)
     private String caption;
 

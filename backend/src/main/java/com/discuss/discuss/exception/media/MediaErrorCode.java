@@ -5,8 +5,6 @@ import org.springframework.http.HttpStatus;
 public enum MediaErrorCode {
 
     // 400 - Bad Request
-    UPLOAD_NOT_FOUND(HttpStatus.BAD_REQUEST, "Unknown image upload"),
-    UPLOAD_EXPIRED(HttpStatus.BAD_REQUEST, "Image upload has expired; upload it again"),
     EMPTY_FILE(HttpStatus.BAD_REQUEST, "The uploaded file is empty"),
     INVALID_IMAGE(HttpStatus.BAD_REQUEST, "The file is not a valid or readable image"),
     UNSUPPORTED_IMAGE_FORMAT(HttpStatus.BAD_REQUEST, "Only JPEG, PNG and WebP images are supported"),

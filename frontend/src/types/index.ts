@@ -77,8 +77,10 @@ export interface Community {
 export type PostType = 'TEXT' | 'LINK';
 export type PostMediaType = 'IMAGE' | 'VIDEO';
 export interface PostMediaInput {
+  caption?: string | null;
   type: PostMediaType;
   objectKey: string;
+  fileIndex?: number;
 }
 export interface PostImage {
   objectKey: string | null;
@@ -87,6 +89,7 @@ export interface PostImage {
   inlineImage: boolean;
 }
 export interface PostMedia extends PostImage {
+  caption?: string | null;
   type: PostMediaType;
 }
 export interface PostInput {
@@ -95,6 +98,7 @@ export interface PostInput {
   type: 'TEXT';
   content: string;
   media: PostMediaInput[];
+  files?: File[];
 }
 export interface Post {
   id: string;
@@ -129,6 +133,8 @@ export interface Post {
 }
 
 export interface CommentAttachment {
+  expiresAt?: string;
+  url: string;
   id: string;
   fileName: string;
   contentType: string;

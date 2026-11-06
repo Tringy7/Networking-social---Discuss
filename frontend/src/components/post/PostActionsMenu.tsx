@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { MoreHorizontal, Pencil, Trash2, Share2, Flag } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+import { REPORTS_AVAILABLE } from '../../services';
 import type { Post } from '../../types';
 
 interface PostActionsMenuProps {
@@ -34,7 +35,7 @@ export default function PostActionsMenu({ post, onEdit, onDelete, onReport, onSh
               <button type="button" role="menuitem" className="side-link text-[var(--color-danger)]" onClick={() => { setShowMenu(false); onDelete(); }}><Trash2 size={15} /> Xóa bài viết</button>
             </>}
             <button type="button" role="menuitem" className="side-link" onClick={(e) => { void onShare(e); setShowMenu(false); }}><Share2 size={15} /> Sao chép liên kết</button>
-            <button type="button" role="menuitem" className="side-link" onClick={() => { setShowMenu(false); onReport(); }}><Flag size={15} /> Báo cáo bài viết</button>
+            {REPORTS_AVAILABLE && <button type="button" role="menuitem" className="side-link" onClick={() => { setShowMenu(false); onReport(); }}><Flag size={15} /> Báo cáo bài viết</button>}
           </div>}
         </div>
   );

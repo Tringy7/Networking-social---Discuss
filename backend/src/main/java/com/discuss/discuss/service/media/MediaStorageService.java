@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,9 +51,8 @@ public class MediaStorageService {
         return upload(file, kind, kind.prefixFor(ownerId), key -> {});
     }
 
-    /** Persist the ownership lease before writing bytes, so interrupted uploads remain collectible. */
-    public StoredImageDTO storePostDraft(Object ownerId, MultipartFile file, Consumer<String> reserve) {
-        return upload(file, ImageKind.POST, ImageKind.POST.prefixFor("draft-" + ownerId), reserve);
+    public StoredImageDTO storePostImage(Long postId, MultipartFile file, Consumer<String> reserve) {
+        return upload(file, ImageKind.POST, ImageKind.POST.prefixFor(postId), reserve);
     }
 
     /** All-or-nothing: if any image fails, delete the images already uploaded in this request. */
@@ -92,15 +90,6 @@ public class MediaStorageService {
 
         return new StoredCommentImageDTO(key, sanitizeFileName(file.getOriginalFilename()),
                 processed.contentType(), processed.data().length);
-    }
-
-    public InputStream openImage(String objectKey) {
-        try {
-            return minioService.getFileInputStream(objectKey);
-        } catch (RuntimeException ex) {
-            throw new MediaException(MediaErrorCode.STORAGE_READ_FAILED,
-                    MediaErrorCode.STORAGE_READ_FAILED.getDefaultMessage(), ex);
-        }
     }
 
     public void safeDelete(String objectKey) {

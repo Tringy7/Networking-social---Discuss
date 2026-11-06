@@ -1,3 +1,4 @@
+import { ADMIN_AVAILABLE, REPORTS_AVAILABLE } from '../../services';
 import React from 'react';
 import { NavLink, Link, useLocation, matchPath } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -61,10 +62,10 @@ export default function Sidebar() {
             {link('/communities/mine', 'Tất cả cộng đồng', Users)}
             {collapsed && link('/communities/create', 'Tạo cộng đồng', Plus)}
           </nav>
-          {(managed || activeRole === 'ADMIN') && <nav className="side-group">
+          {((REPORTS_AVAILABLE && managed) || (ADMIN_AVAILABLE && activeRole === 'ADMIN')) && <nav className="side-group">
             {!collapsed && <p className="sidebar-caption">Quản lý</p>}
-            {managed && link(`/c/${managed.name}/moderation`, 'Kiểm duyệt', ShieldAlert, moderationActive, true)}
-            {activeRole === 'ADMIN' && link('/admin', 'Trung tâm quản trị', ShieldCheck)}
+            {REPORTS_AVAILABLE && managed && link(`/c/${managed.name}/moderation`, 'Kiểm duyệt', ShieldAlert, moderationActive, true)}
+            {ADMIN_AVAILABLE && activeRole === 'ADMIN' && link('/admin', 'Trung tâm quản trị', ShieldCheck)}
           </nav>}
         </> : !collapsed ? <div className="sidebar-invitation">
           <p className="sidebar-invitation-title">Có cộng đồng dành cho bạn</p><p>Gặp những người cùng sở thích và chia sẻ câu chuyện của bạn.</p>

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, FileText, ImagePlus } from 'lucide-react';
+import { imageRequestError } from '../../utils/imageUploadLimits';
 import type { CommentAttachment } from '../../types';
 
 export const MAX_COMMENT_FILE_SIZE = 10 * 1024 * 1024;
 const sizeLabel = (size: number) => size < 1024 * 1024
   ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / (1024 * 1024)).toFixed(1)} MB`;
-const fileUrl = (id: string) => `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/comments/attachments/${id}`;
 
 function FilePreview({ file }: { file: File }) {
   const [url, setUrl] = useState('');
@@ -30,6 +30,8 @@ export function CommentFilePicker({ files, onChange, disabled, onError }: {
     if (next.some(file => file.size > MAX_COMMENT_FILE_SIZE || file.size === 0)) {
       onError('Chọn ảnh có dung lượng lớn hơn 0 và không quá 10 MB.'); return;
     }
+    const sizeError = imageRequestError(next);
+    if (sizeError) { onError(sizeError); return; }
     onChange(next);
   };
   return <div className="space-y-2 min-w-0">
@@ -38,7 +40,6 @@ export function CommentFilePicker({ files, onChange, disabled, onError }: {
         className="inline-flex items-center gap-1.5 py-1.5 disabled:opacity-40 hover:text-[var(--text-primary)]">
         <ImagePlus size={16} />Ảnh
       </button>
-      <span className="text-[var(--text-muted)]">10 MB/ảnh · Tổng mỗi lần gửi tối đa 55 MB</span>
     </div>
     <input ref={images} type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" aria-label="Chọn ảnh đính kèm"
       onChange={e => { select(e.target.files); e.target.value = ''; }} />
@@ -52,16 +53,25 @@ export function CommentFilePicker({ files, onChange, disabled, onError }: {
   </div>;
 }
 
-export function CommentAttachmentList({ attachments }: { attachments?: CommentAttachment[] }) {
+export function CommentAttachmentList({ attachments, onRefresh }: { attachments?: CommentAttachment[]; onRefresh?: () => Promise<void> }) {
+  const [failedImages, setFailedImages] = useState(new Set<string>());
+  const [refreshing, setRefreshing] = useState(false);
   if (!attachments?.length) return null;
-  return <ul className="space-y-2 pl-8" aria-label="Tệp đính kèm bình luận">
+  return <ul className="space-y-2 pl-8" aria-label="Ảnh bình luận">
     {attachments.map(file => <li key={file.id}>
-      <a href={fileUrl(file.id)} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full flex-col gap-1.5 text-[13px] text-[var(--text-secondary)] hover:underline">
+      <a href={file.url} target="_blank" rel="noopener noreferrer" className="inline-block max-w-[25%] align-top">
         {file.contentType.startsWith('image/')
-          ? <img src={fileUrl(file.id)} alt={file.fileName} loading="lazy" className="max-h-64 max-w-full rounded-lg object-contain" />
+          ? <img src={file.url} alt={file.fileName} loading="lazy"
+              onError={() => setFailedImages(previous => new Set(previous).add(file.id))}
+              onLoad={() => setFailedImages(previous => { const next = new Set(previous); next.delete(file.id); return next; })}
+              className="block h-auto max-h-16 w-auto max-w-full rounded-lg object-contain" />
           : <span className="inline-flex items-center gap-2"><FileText size={16} /><span className="break-all">{file.fileName}</span></span>}
-        <span className="break-all">{file.contentType.startsWith('image/') ? `${file.fileName} · ` : ''}{sizeLabel(file.size)} · Mở / tải xuống</span>
       </a>
+      {failedImages.has(file.id) && onRefresh && <button type="button" disabled={refreshing}
+        className="block text-xs text-[var(--text-secondary)] underline" onClick={async () => {
+          setRefreshing(true);
+          try { await onRefresh(); } catch { /* Keep the retry action visible. */ } finally { setRefreshing(false); }
+        }}>{refreshing ? 'Đang tải lại ảnh…' : 'Ảnh chưa tải được. Thử lại'}</button>}
     </li>)}
   </ul>;
 }

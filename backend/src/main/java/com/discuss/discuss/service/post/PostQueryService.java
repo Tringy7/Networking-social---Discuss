@@ -2,10 +2,12 @@ package com.discuss.discuss.service.post;
 
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.post.PostResponseDTO;
+import com.discuss.discuss.dto.post.TrashedPostResponseDTO;
 import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.entity.Post;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.CommunityVisibility;
+import com.discuss.discuss.enums.PostStatus;
 import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.repository.PostRepository;
 import com.discuss.discuss.service.community.CommunityAuthorizationService;
@@ -13,6 +15,7 @@ import com.discuss.discuss.service.community.CommunityService;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +57,23 @@ public class PostQueryService {
         Specification<Post> savedByUser = savedBy(user);
         return pageMapper.toResponse(postRepository.findAll(visibleTo(user).and(savedByUser),
                 PageRequest.of(page, size)).map(post -> postSupport.toResponse(post, user)));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponseDTO<TrashedPostResponseDTO> listTrash(int page, int size) {
+        User user = userService.getCurrentUser();
+
+        var pageable = PageRequest.of(page, size,
+                Sort.by("deletedAt").descending()
+                        .and(Sort.by("id").descending()));
+
+        var result = postRepository.findByUserIdAndStatus(
+                user.getId(), PostStatus.DELETED, pageable);
+
+        return pageMapper.toResponse(result.map(post -> new TrashedPostResponseDTO(
+                postSupport.toResponse(post, user),
+                post.getDeletedAt(),
+                PostService.canRestoreDeletedPost(post, user))));
     }
 
     private Community resolveListCommunity(String communityName, User currentUser) {

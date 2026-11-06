@@ -7,6 +7,8 @@ import com.discuss.discuss.entity.Comment;
 import com.discuss.discuss.entity.CommentAttachment;
 import com.discuss.discuss.enums.CommentStatus;
 import com.discuss.discuss.service.media.MinioService;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,6 @@ public class CommentMapper {
 
     private CommentAttachmentDTO toAttachment(CommentAttachment attachment) {
         return new CommentAttachmentDTO(attachment.getId(), attachment.getFileName(),
-                attachment.getContentType(), attachment.getSize());
+                attachment.getContentType(), attachment.getSize(), minio.getPresignedUrl(attachment.getObjectKey(), 15), Instant.now().plus(15, ChronoUnit.MINUTES));
     }
 }

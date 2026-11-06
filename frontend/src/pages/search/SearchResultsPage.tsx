@@ -1,14 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { usePostStore } from '../../store/usePostStore';
-import { useCommunityStore } from '../../store/useCommunityStore';
+import { useAuthStore } from '../../store/useAuthStore';
+import type { Community, Post } from '../../types';
 import PostCard from '../../components/post/PostCardView';
 import CommunityCard from '../../components/community/CommunityCard.tsx';
 import Avatar from '../../components/ui/Avatar';
 import Button from '../../components/ui/Button';
-import { userService, type UserSearchResult } from '../../services';
-import { useToastStore } from '../../store/useToastStore';
-import { Search, Sparkles, FileText, Users, User, ArrowLeft, Filter } from 'lucide-react';
+import { userService, communityService, USER_SEARCH_AVAILABLE, type UserSearchResult } from '../../services';
+import { Search, Sparkles, FileText, Users, User, ArrowLeft } from 'lucide-react';
 
 export const SearchResultsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -17,64 +17,66 @@ export const SearchResultsPage: React.FC = () => {
   const query = searchParams.get('q') || '';
   const activeTab = searchParams.get('type') || 'all';
 
-  const { posts } = usePostStore();
-  const { communities } = useCommunityStore();
-  const { addToast } = useToastStore();
+  const { posts, searchPosts } = usePostStore();
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const [matchingPeople, setMatchingPeople] = useState<UserSearchResult[]>([]);
   const [isPeopleSearchLoading, setIsPeopleSearchLoading] = useState(false);
   const [peopleSearchFailed, setPeopleSearchFailed] = useState(false);
   const [searchRetry, setSearchRetry] = useState(0);
 
+  const [postResults, setPostResults] = useState<{ query: string; ids: string[]; total: number; page: number; last: boolean } | null>(null);
+  const [communityResults, setCommunityResults] = useState<{ query: string; items: Community[] } | null>(null);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [postSearchFailed, setPostSearchFailed] = useState(false);
+  const [communitiesLoading, setCommunitiesLoading] = useState(false);
+  const [communitySearchFailed, setCommunitySearchFailed] = useState(false);
+  const searchGeneration = useRef(0);
+
   useEffect(() => {
-    let isCurrent = true;
-    if (!query.trim()) {
-      setMatchingPeople([]);
-      setIsPeopleSearchLoading(false);
-      setPeopleSearchFailed(false);
-      return () => {
-        isCurrent = false;
-      };
-    }
-
-    setMatchingPeople([]);
-    setIsPeopleSearchLoading(true);
-    setPeopleSearchFailed(false);
-    userService.search(query).then((people) => {
-      if (isCurrent) setMatchingPeople(people);
-    }).catch((error: unknown) => {
-      if (isCurrent) {
-        setPeopleSearchFailed(true);
-        addToast(error instanceof Error ? error.message : 'Không thể tìm thành viên.', 'error');
+    const generation = ++searchGeneration.current;
+    let active = true;
+    setPostResults(null); setCommunityResults(null); setMatchingPeople([]);
+    setPostSearchFailed(false); setCommunitySearchFailed(false); setPeopleSearchFailed(false);
+    setPostsLoading(!!query.trim() && isAuthenticated);
+    setCommunitiesLoading(!!query.trim());
+    setIsPeopleSearchLoading(!!query.trim() && USER_SEARCH_AVAILABLE && isAuthenticated);
+    if (!query.trim()) return;
+    const timer = setTimeout(() => {
+      if (isAuthenticated) {
+        searchPosts(query).then(page => {
+          if (active) setPostResults({ query, ids: page.content.map(post => post.id), total: page.totalElements, page: page.page, last: page.last });
+        }).catch(() => { if (active) setPostSearchFailed(true); })
+          .finally(() => { if (active) setPostsLoading(false); });
       }
-    }).finally(() => {
-      if (isCurrent) setIsPeopleSearchLoading(false);
-    });
+      communityService.search(query).then(items => {
+        if (active) setCommunityResults({ query, items });
+      }).catch(() => { if (active) setCommunitySearchFailed(true); })
+        .finally(() => { if (active) setCommunitiesLoading(false); });
+      if (USER_SEARCH_AVAILABLE && isAuthenticated) {
+        userService.search(query).then(people => { if (active) setMatchingPeople(people); })
+          .catch(() => { if (active) setPeopleSearchFailed(true); })
+          .finally(() => { if (active) setIsPeopleSearchLoading(false); });
+      }
+    }, 250);
+    return () => { active = false; clearTimeout(timer); if (searchGeneration.current === generation) searchGeneration.current++; };
+  }, [query, isAuthenticated, searchPosts, searchRetry]);
 
-    return () => {
-      isCurrent = false;
-    };
-  }, [query, addToast, searchRetry]);
-
-  const matchingPosts = useMemo(() => {
-    if (!query) return posts;
-    const q = query.toLowerCase();
-    return posts.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.content.toLowerCase().includes(q)
-    );
-  }, [posts, query]);
-
-  const matchingCommunities = useMemo(() => {
-    if (!query) return communities;
-    const q = query.toLowerCase();
-    return communities.filter(
-      (c) =>
-        c.displayName.toLowerCase().includes(q) ||
-        c.name.toLowerCase().includes(q) ||
-        c.description.toLowerCase().includes(q)
-    );
-  }, [communities, query]);
+  const currentPosts = postResults?.query === query ? postResults : null;
+  const matchingPosts = (currentPosts?.ids || []).map(id => posts.find(post => post.id === id)).filter((post): post is Post => !!post);
+  const matchingCommunities = communityResults?.query === query ? communityResults.items : [];
+  const postTotal = currentPosts?.total || 0;
+  const loadMorePosts = async () => {
+    if (!currentPosts || currentPosts.last || postsLoading) return;
+    const generation = searchGeneration.current;
+    setPostsLoading(true); setPostSearchFailed(false);
+    try {
+      const page = await searchPosts(query, currentPosts.page + 1);
+      if (generation === searchGeneration.current) setPostResults(previous => previous?.query === query
+        ? { query, ids: [...new Set([...previous.ids, ...page.content.map(post => post.id)])], total: page.totalElements, page: page.page, last: page.last }
+        : previous);
+    } catch { if (generation === searchGeneration.current) setPostSearchFailed(true); }
+    finally { if (generation === searchGeneration.current) setPostsLoading(false); }
+  };
 
   const setType = (type: string) => {
     const params = new URLSearchParams(searchParams);
@@ -82,16 +84,20 @@ export const SearchResultsPage: React.FC = () => {
     setSearchParams(params);
   };
 
-  const totalResults = matchingPosts.length + matchingCommunities.length + matchingPeople.length;
+  const totalResults = postTotal + matchingCommunities.length + matchingPeople.length;
   const visibleResultsCount = activeTab === 'posts'
-    ? matchingPosts.length
+    ? postTotal
     : activeTab === 'communities'
       ? matchingCommunities.length
       : activeTab === 'people'
         ? matchingPeople.length
         : totalResults;
-  const shouldWaitForPeople = isPeopleSearchLoading && (activeTab === 'all' || activeTab === 'people');
-  const shouldShowPeopleError = peopleSearchFailed && (activeTab === 'all' || activeTab === 'people');
+  const shouldWaitForPeople = (isPeopleSearchLoading && (activeTab === 'all' || activeTab === 'people'))
+    || (postsLoading && (activeTab === 'all' || activeTab === 'posts'))
+    || (communitiesLoading && (activeTab === 'all' || activeTab === 'communities'));
+  const shouldShowPeopleError = (peopleSearchFailed && (activeTab === 'all' || activeTab === 'people'))
+    || (postSearchFailed && (activeTab === 'all' || activeTab === 'posts'))
+    || (communitySearchFailed && (activeTab === 'all' || activeTab === 'communities'));
 
   return (
     <div className="utility-page space-y-5 text-left pb-8">
@@ -109,7 +115,7 @@ export const SearchResultsPage: React.FC = () => {
             Kết quả tìm kiếm cho "{query}"
           </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Tìm thấy {totalResults} kết quả phù hợp trên toàn hệ thống
+            Tìm thấy {totalResults} kết quả phù hợp
           </p>
         </div>
       </div>
@@ -139,7 +145,7 @@ export const SearchResultsPage: React.FC = () => {
           }`}
         >
           <FileText className="w-3.5 h-3.5" />
-          <span>Bài viết ({matchingPosts.length})</span>
+          <span>Bài viết ({postTotal})</span>
         </button>
 
         <button
@@ -157,6 +163,8 @@ export const SearchResultsPage: React.FC = () => {
 
         <button
           onClick={() => setType('people')}
+          disabled={!USER_SEARCH_AVAILABLE}
+          title={!USER_SEARCH_AVAILABLE ? 'Tìm kiếm thành viên hiện chưa khả dụng' : undefined}
           aria-pressed={activeTab === 'people'}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
             activeTab === 'people'
@@ -173,15 +181,19 @@ export const SearchResultsPage: React.FC = () => {
       <div className="space-y-6">
         {shouldWaitForPeople && (
           <div role="status" className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
-            Đang tìm thành viên…
+            Đang tìm kiếm…
           </div>
         )}
         {shouldShowPeopleError && (
           <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
-            <span className="text-sm text-[var(--text-secondary)]">Không thể tải kết quả tìm thành viên.</span>
+            <span className="text-sm text-[var(--text-secondary)]">Không thể tải đầy đủ kết quả tìm kiếm.</span>
             <Button variant="secondary" size="sm" onClick={() => setSearchRetry((count) => count + 1)}>Thử lại</Button>
           </div>
         )}
+        {!isAuthenticated && (activeTab === 'all' || activeTab === 'posts') && <p role="status" className="text-sm text-[var(--text-secondary)]">
+          <Link to="/login" className="underline">Đăng nhập</Link> để tìm kiếm bài viết.
+        </p>}
+        {!USER_SEARCH_AVAILABLE && activeTab === 'people' && <p role="status" className="text-sm text-[var(--text-secondary)]">Tìm kiếm thành viên hiện chưa khả dụng.</p>}
         {/* COMMUNITIES SECTION */}
         {(activeTab === 'all' || activeTab === 'communities') && matchingCommunities.length > 0 && (
           <div className="space-y-3">
@@ -206,7 +218,7 @@ export const SearchResultsPage: React.FC = () => {
                   className="p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--border-hover)] rounded-xl flex items-center justify-between gap-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
                 >
                   <div className="flex items-center gap-3">
-                    <Avatar src={person.avatarUrl} alt={person.displayName} size="md" />
+                    <Avatar src={person.avatarUrl || undefined} alt={person.displayName} size="md" />
                     <div>
                       <div className="text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange-ink)] transition-colors">
                         {person.displayName}
@@ -235,8 +247,12 @@ export const SearchResultsPage: React.FC = () => {
           </div>
         )}
 
+        {(activeTab === 'all' || activeTab === 'posts') && currentPosts && !currentPosts.last && <Button
+          variant="secondary" disabled={postsLoading} onClick={() => void loadMorePosts()}>
+          {postsLoading ? 'Đang tải…' : 'Đọc thêm bài viết'}
+        </Button>}
         {/* Empty state */}
-        {visibleResultsCount === 0 && !shouldWaitForPeople && !shouldShowPeopleError && (
+        {visibleResultsCount === 0 && !shouldWaitForPeople && !shouldShowPeopleError && activeTab !== 'people' && (activeTab !== 'posts' || isAuthenticated) && (
           <div className="py-16 text-center bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-card)] p-8 space-y-4">
             <Search className="w-10 h-10 text-[var(--color-orange)] mx-auto opacity-60" />
             <h2 className="text-base font-semibold text-[var(--text-primary)]">

@@ -1,3 +1,4 @@
+import { ADMIN_AVAILABLE } from '../services';
 import ThemeToggle from '../components/ui/ThemeToggle';
 import React from 'react';
 import { NavLink, Outlet, Link, Navigate, useLocation } from 'react-router-dom';
@@ -26,6 +27,12 @@ export const AdminLayout: React.FC = () => {
   if (activeRole !== 'ADMIN') {
     return <Navigate to="/403" replace />;
   }
+
+  if (!ADMIN_AVAILABLE) return <main className="utility-page space-y-4 py-12">
+    <h1 className="text-xl font-semibold">Trung tâm quản trị</h1>
+    <p role="status">Chức năng quản trị hiện chưa khả dụng.</p>
+    <Link to="/">Quay lại trang chủ</Link>
+  </main>;
 
   const navLinks = [
     { to: '/admin', end: true, label: 'Tổng quan hệ thống', icon: <LayoutDashboard className="w-4 h-4" /> },

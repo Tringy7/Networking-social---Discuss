@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import { assertImageRequestSize } from '../utils/imageUploadLimits';
 import { Community, CommunityMember, Post, User, Report, NotificationItem, Conversation, ChatMessage } from '../types';
 import { demoConversations, demoNotifications } from '../mocks/demoContent';
 interface AuthResponse {
@@ -64,6 +65,13 @@ const API_GENDERS: Record<string, string> = {
 export const POSTS_AVAILABLE = true;
 export const POST_INTERACTIONS_AVAILABLE = true;
 export const COMMENTS_AVAILABLE = true;
+export const REPORTS_AVAILABLE = false;
+export const ADMIN_AVAILABLE = false;
+export const USER_SEARCH_AVAILABLE = false;
+
+function requireFeature(available: boolean, name: string): void {
+  if (!available) throw new Error(`${name} hiện chưa khả dụng.`);
+}
 export const NOTIFICATIONS_AVAILABLE = false;
 export const MESSAGES_AVAILABLE = false;
 
@@ -141,8 +149,10 @@ export const authService = {
 
 export const userService = {
   getMe: () => apiClient.get<UserResponse>('/user/me'),
-  search: (query: string) =>
-    apiClient.get<UserSearchResult[]>(`/users/search?q=${encodeURIComponent(query)}`),
+  search: async (query: string) => {
+    requireFeature(USER_SEARCH_AVAILABLE, 'Tìm kiếm thành viên');
+    return apiClient.get<UserSearchResult[]>(`/users/search?q=${encodeURIComponent(query)}`);
+  },
   getPublicProfile: async (username: string): Promise<User> => {
     const response = await apiClient.get<PublicUserProfileResponse>(
       `/user/${encodeURIComponent(username)}`
@@ -373,7 +383,7 @@ export const communityService = {
       categoryId: data.categoryId,
       visibility: data.visibility,
     });
-    return { ...mapCommunity(response), currentUserRole: 'OWNER' };
+    return { ...mapCommunity(response), currentUserRole: 'OWNER' as const };
   },
   update: async (name: string, data: Partial<Community>) => {
     let categoryId: number | undefined;
@@ -436,6 +446,15 @@ export interface PostPage {
 }
 export interface TrashedPost { post: Post; deletedAt: string | null; canRestore: boolean; }
 export interface TrashPage extends Omit<PostPage, 'content'> { content: TrashedPost[]; }
+function postFormData(input: import('../types').PostInput): FormData {
+  const { files = [], ...post } = input;
+  assertImageRequestSize(files, post);
+  const form = new FormData();
+  form.append('post', new Blob([JSON.stringify(post)], { type: 'application/json' }));
+  files.forEach(file => form.append('files', file));
+  return form;
+}
+
 export const postService = {
   saved: (page = 0) => apiClient.get<PostPage>(`/posts/saved?page=${page}&size=20`),
   save: (id: string, saved: boolean) => saved
@@ -448,15 +467,16 @@ export const postService = {
     : apiClient.put<Post>(`/posts/${id}/vote`, { type }),
   list: (tab = 'for-you', page = 0) => apiClient.get<PostPage>(`/posts?tab=${encodeURIComponent(tab)}&page=${page}&size=20`),
   getById: (id: string) => apiClient.get<Post>(`/posts/${id}`),
-  create: (input: import('../types').PostInput) => apiClient.post<Post>('/posts', input),
-  update: (id: string, input: import('../types').PostInput) => apiClient.patch<Post>(`/posts/${id}`, input),
+  search: (query: string, page = 0) => apiClient.get<PostPage>(`/posts?tab=latest&q=${encodeURIComponent(query.trim())}&page=${page}&size=20`),
+  create: (input: import('../types').PostInput) => apiClient.post<Post>('/posts', postFormData(input)),
+  update: (id: string, input: import('../types').PostInput) => apiClient.patch<Post>(`/posts/${id}`, postFormData(input)),
   delete: (id: string) => apiClient.delete<void>(`/posts/${id}`),
   listCommunity: (name: string, page = 0) => apiClient.get<PostPage>(`/communities/${encodeURIComponent(name)}/posts?page=${page}&size=20`),
   listUser: (name: string, page = 0) => apiClient.get<PostPage>(`/users/${encodeURIComponent(name)}/posts?page=${page}&size=20`),
 };
 
 export interface CommentMutationResponse {
-  attachments: { id: number; fileName: string; contentType: string; size: number }[];
+  attachments: { id: number; fileName: string; contentType: string; size: number; url: string; expiresAt?: string }[];
   id: number;
   postId: number;
   authorId: number;
@@ -471,12 +491,12 @@ export interface CommentMutationResponse {
 export const commentService = {
   list: (postId: string) => apiClient.get<CommentMutationResponse[]>(`/posts/${postId}/comments`),
   create: (postId: string, content: string, parentCommentId?: string, files: File[] = []) => {
+    assertImageRequestSize(files, { postId, content, parentId: parentCommentId ?? null });
     if (!files.length) return apiClient.post<CommentMutationResponse>('/comments', {
       postId, content, parentId: parentCommentId ?? null,
     });
     const body = new FormData();
-    body.append('postId', postId); body.append('content', content);
-    if (parentCommentId) body.append('parentId', parentCommentId);
+    body.append('comment', new Blob([JSON.stringify({ postId, content, parentId: parentCommentId ?? null })], { type: 'application/json' }));
     files.forEach(file => body.append('files', file));
     return apiClient.post<CommentMutationResponse>('/comments', body);
   },
@@ -491,13 +511,21 @@ export const commentService = {
 
 export const reportService = {
   create: async (data: Omit<Report, 'id' | 'status' | 'createdAt' | 'reporterUsername'>) => {
+    requireFeature(REPORTS_AVAILABLE, 'Báo cáo');
     return apiClient.post<Report>('/reports', data);
   },
-  list: async (): Promise<Report[]> => apiClient.get<Report[]>('/reports'),
-  listForCommunity: async (communityName: string): Promise<Report[]> =>
-    apiClient.get<Report[]>(`/reports/community/${encodeURIComponent(communityName)}`),
-  resolve: async (reportId: string, status: 'RESOLVED' | 'REJECTED', resolutionNote?: string) =>
-    apiClient.patch<Report>(`/reports/${reportId}`, { status, resolutionNote }),
+  list: async (): Promise<Report[]> => {
+    requireFeature(REPORTS_AVAILABLE, 'Báo cáo');
+    return apiClient.get<Report[]>('/reports');
+  },
+  listForCommunity: async (communityName: string): Promise<Report[]> => {
+    requireFeature(REPORTS_AVAILABLE, 'Báo cáo');
+    return apiClient.get<Report[]>(`/reports/community/${encodeURIComponent(communityName)}`);
+  },
+  resolve: async (reportId: string, status: 'RESOLVED' | 'REJECTED', resolutionNote?: string) => {
+    requireFeature(REPORTS_AVAILABLE, 'Báo cáo');
+    return apiClient.patch<Report>(`/reports/${reportId}`, { status, resolutionNote });
+  },
 };
 
 export interface AdminStats {
@@ -520,8 +548,12 @@ interface AdminUserApiResponse {
 }
 
 export const adminService = {
-  getStats: async (): Promise<AdminStats> => apiClient.get<AdminStats>('/admin/stats'),
+  getStats: async (): Promise<AdminStats> => {
+    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
+    return apiClient.get<AdminStats>('/admin/stats');
+  },
   listUsers: async (): Promise<User[]> => {
+    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
     const users = await apiClient.get<AdminUserApiResponse[]>('/admin/users');
     return users.map((user) => ({
       id: user.id,
@@ -539,6 +571,7 @@ export const adminService = {
     }));
   },
   updateUserStatus: async (id: string, status: string): Promise<User> => {
+    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
     const updated = await apiClient.patch<AdminUserApiResponse>(`/admin/users/${id}/status`, { status });
     return {
       id: updated.id,
@@ -556,11 +589,14 @@ export const adminService = {
     };
   },
   listCommunities: async (): Promise<Community[]> => {
+    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
     const communities = await apiClient.get<CommunityApiResponse[]>('/admin/communities');
     return communities.map(mapCommunity);
   },
-  setCommunityStatus: async (name: string, status: Community['status']) =>
-    apiClient.patch<void>(`/communities/${encodeURIComponent(name)}/status`, { status }),
+  setCommunityStatus: async (name: string, status: Community['status']) => {
+    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
+    return apiClient.patch<void>(`/communities/${encodeURIComponent(name)}/status`, { status });
+  },
 };
 
 export const notificationService = {

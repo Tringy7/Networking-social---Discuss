@@ -5,6 +5,7 @@ import com.discuss.discuss.dto.post.PostResponseDTO;
 import com.discuss.discuss.service.post.PostQueryService;
 import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,16 +14,16 @@ public class PostFeedController {
     private final PostQueryService posts;
 
     @GetMapping("/communities/{name}/posts")
-    public PageResponseDTO<PostResponseDTO> community(@PathVariable String name,
+    public ResponseEntity<PageResponseDTO<PostResponseDTO>> community(@PathVariable String name,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
-        return posts.list(name, null, "latest", page, size, null);
+        return ResponseEntity.ok(posts.list(name, null, "latest", page, size, null));
     }
 
     @GetMapping("/users/{username}/posts")
-    public PageResponseDTO<PostResponseDTO> user(@PathVariable String username,
+    public ResponseEntity<PageResponseDTO<PostResponseDTO>> user(@PathVariable String username,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
-        return posts.list(null, username, "latest", page, size, null);
+        return ResponseEntity.ok(posts.list(null, username, "latest", page, size, null));
     }
 }

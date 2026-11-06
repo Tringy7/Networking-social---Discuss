@@ -53,11 +53,15 @@ public class MinioConfig {
                       "Effect": "Allow",
                       "Principal": {"AWS": ["*"]},
                       "Action": ["s3:GetObject"],
-                      "Resource": ["arn:aws:s3:::%s/*"]
+                      "Resource": [
+                        "arn:aws:s3:::%s/profiles/*",
+                        "arn:aws:s3:::%s/communities/*",
+                        "arn:aws:s3:::%s/posts/*"
+                      ]
                     }
                   ]
                 }
-                """.formatted(defaultBucket);
+                """.formatted(defaultBucket, defaultBucket, defaultBucket);
 
             client.setBucketPolicy(
                     SetBucketPolicyArgs.builder()
@@ -65,10 +69,10 @@ public class MinioConfig {
                             .config(policy)
                             .build()
             );
-            log.info("Public read policy configured for bucket '{}'.", defaultBucket);
+            log.info("Public image prefixes configured for bucket '{}'; comment images require signed access.", defaultBucket);
 
         } catch (Exception e) {
-            log.warn("MinIO bucket initialization notice for '{}': {}", defaultBucket, e.getMessage());
+            throw new IllegalStateException("Cannot initialize the required MinIO bucket access policy", e);
         }
 
         return client;

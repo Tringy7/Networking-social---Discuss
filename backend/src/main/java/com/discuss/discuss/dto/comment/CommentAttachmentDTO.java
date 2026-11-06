@@ -1,5 +1,6 @@
 package com.discuss.discuss.dto.comment;
 
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,4 +15,6 @@ public class CommentAttachmentDTO {
     private String fileName;
     private String contentType;
     private long size;
+    private String url;
+    private Instant expiresAt;
 }

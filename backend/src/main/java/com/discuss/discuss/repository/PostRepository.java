@@ -1,6 +1,9 @@
 package com.discuss.discuss.repository;
 
 import com.discuss.discuss.entity.Post;
+import com.discuss.discuss.enums.PostStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -17,4 +20,6 @@ public interface PostRepository extends JpaRepository<Post, Long>, org.springfra
 
     @Query("select count(c) from Comment c where c.post.id = :id and c.status = com.discuss.discuss.enums.CommentStatus.VISIBLE")
     long countComments(Long id);
+
+    Page<Post> findByUserIdAndStatus(Long userId, PostStatus status, Pageable pageable);
 }

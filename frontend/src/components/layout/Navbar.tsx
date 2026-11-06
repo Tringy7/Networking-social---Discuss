@@ -1,3 +1,4 @@
+import { ADMIN_AVAILABLE } from '../../services';
 import { postPath } from '../../utils/postPath';
 import ThemeToggle from '../ui/ThemeToggle';
 import React, { useState, useRef, useEffect } from 'react';
@@ -427,7 +428,7 @@ export const Navbar: React.FC = () => {
                       <span>Cài đặt hệ thống</span>
                     </Link>
 
-                    {activeRole === 'ADMIN' && (
+                    {ADMIN_AVAILABLE && activeRole === 'ADMIN' && (
                       <Link
                         to="/admin"
                         onClick={() => setIsUserMenuOpen(false)}

@@ -1,4 +1,5 @@
 import { CommentFilePicker, CommentAttachmentList } from '../../components/comment/CommentAttachments';
+import { useCommentImageRefresh } from '../../hooks/useCommentImageRefresh';
 import { postPath } from '../../utils/postPath';
 import PostVotes from '../../components/post/PostVotes';
 import PostActionsMenu from '../../components/post/PostActionsMenu';
@@ -49,6 +50,7 @@ export const PostDetailPage: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [collapsedThreads, setCollapsedThreads] = useState<Record<string, boolean>>({});
   const [isPostLoading, setIsPostLoading] = useState(true);
+  const refreshImages = useCommentImageRefresh(postId, comments[postId || '']);
 
   useEffect(() => {
     setCommentInput(''); setCommentFiles([]);
@@ -232,7 +234,7 @@ export const PostDetailPage: React.FC = () => {
               {cmt.content}
             </p>
 
-            <CommentAttachmentList attachments={cmt.attachments} />
+            <CommentAttachmentList attachments={cmt.attachments} onRefresh={refreshImages} />
             {/* Comment Reactions & Reply Button */}
             <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] pl-8">
               <button

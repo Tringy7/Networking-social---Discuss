@@ -141,20 +141,6 @@ public class CommunityService {
         return pageMapper.toResponse(members);
     }
 
-//    /*
-//    * Delete community with the name
-//    * */
-//    @Transactional
-//    public void deleteCommunity(String communityName) {
-//        User user = userService.getCurrentUser();
-//
-//        Community community = this.getCommunityByNameAndStatusActive(communityName);
-//
-//        communityAuthorizationService.requireOwner(community, user);
-//        community.setStatus(CommunityStatus.DELETED);
-//        communityRepository.save(community);
-//    }
-
     /*
     * Get information detail community
     * */

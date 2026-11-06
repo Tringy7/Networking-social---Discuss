@@ -40,11 +40,13 @@ public class CommentService {
         if (request.content() != null && request.content().length() > 10000) {
             throw new CommentException(CommentErrorCode.CONTENT_TOO_LONG);
         }
+
         User user = userService.getCurrentUser();
         Post post = postRepository.lockById(request.postId())
                 .orElseThrow(() -> commentSupport.notFound(CommentErrorCode.POST_NOT_FOUND));
         commentSupport.requireAvailablePost(post);
         authorization.requireMembership(post.getCommunity(), user);
+
         Comment parent = null;
         if (request.parentId() != null) {
             parent = commentSupport.visibleComment(request.parentId());
@@ -52,8 +54,13 @@ public class CommentService {
                 throw new CommentException(CommentErrorCode.PARENT_POST_MISMATCH);
             }
         }
-        Comment comment = Comment.builder().post(post).user(user).parentComment(parent)
-                .content(request.content() == null ? "" : request.content().strip()).status(CommentStatus.VISIBLE).build();
+
+        Comment comment = Comment.builder()
+                .post(post)
+                .user(user)
+                .parentComment(parent)
+                .content(request.content() == null ? "" : request.content().strip())
+                .status(CommentStatus.VISIBLE).build();
         commentRepository.saveAndFlush(comment);
         attachmentService.store(comment, files);
         return commentSupport.toResponse(comment);
@@ -65,7 +72,9 @@ public class CommentService {
         if (!Objects.equals(comment.getUser().getId(), user.getId())) {
             throw new CommentException(CommentErrorCode.COMMENT_EDIT_FORBIDDEN);
         }
+
         authorization.requireMembership(comment.getPost().getCommunity(), user);
+
         comment.setContent(request.content().strip());
         commentRepository.flush();
         return commentSupport.toResponse(comment);
