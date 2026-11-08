@@ -13,8 +13,6 @@ import com.discuss.discuss.mapper.community.CommunityMapper;
 import com.discuss.discuss.mapper.community.CommunityMemberMapper;
 import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.repository.CommunityRepository;
-import com.discuss.discuss.service.community.spectification.CommunitySpecifications;
-import com.discuss.discuss.service.community.support.CommunityNameNormalizer;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -24,19 +22,13 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class CommunityService {
 
-    private static final Set<String> RESERVED_NAMES = Set.of(
-            "me", "explore", "new", "create",
-            "search", "admin", "popular"
-    );
-
     private final CommunityRepository communityRepository;
+    private final CommunitySupport communitySupport;
 
     private final CommunityInfoService communityInfoService;
     private final CommunityMemberService communityMemberService;
@@ -58,8 +50,8 @@ public class CommunityService {
 
         String name = this.nameNormalizer.normalize(req.getName());
 
-        this.checkNameCommunityReserved(name);
-        if (this.checkExistsCommunityByName(name)) {
+        communitySupport.checkNameCommunityReserved(name);
+        if (communitySupport.checkExistsCommunityByName(name)) {
             throw new CommunityException(
                     CommunityErrorCode.COMMUNITY_NAME_TAKEN
             );
@@ -105,7 +97,7 @@ public class CommunityService {
             UpdateCommunityRequestDTO request
     ) {
         User user = userService.getCurrentUser();
-        Community community = this.getCommunityByNameAndStatusActive(communityName);
+        Community community = communitySupport.getCommunityByNameAndStatusActive(communityName);
 
         // Check role user into community
         communityAuthorizationService.requireOwner(community, user);
@@ -131,7 +123,7 @@ public class CommunityService {
             String name,
             CommunityRole role
     ) {
-        Community community = getCommunityByNameAndStatusActive(name);
+        Community community = communitySupport.getCommunityByNameAndStatusActive(name);
 
         Page<CommunityMemberResponseDTO> members =
                 communityMemberService
@@ -146,7 +138,7 @@ public class CommunityService {
     * */
     @Transactional(readOnly = true)
     public CommunityDetailResponseDTO getCommunityDetail(String name) {
-        Community community = this.getCommunityByNameAndStatusActive(name);
+        Community community = communitySupport.getCommunityByNameAndStatusActive(name);
 
         CommunityInfo info = community.getInfo();
 
@@ -259,50 +251,6 @@ public class CommunityService {
                         });
 
         return pageMapper.toResponse(communities);
-    }
-
-    /*
-     * Get community by name with status active
-     * */
-    public Community getCommunityByNameAndStatusActive(String name) {
-        String normalizedName = nameNormalizer.normalize(name);
-
-        Community community = communityRepository.findByName(normalizedName)
-                .orElseThrow(() ->
-                        new CommunityException(
-                                CommunityErrorCode.COMMUNITY_NOT_FOUND
-                        )
-                );
-
-        if (!community.getStatus().equals(CommunityStatus.ACTIVE)) {
-            throw new CommunityException(
-                    CommunityErrorCode.COMMUNITY_NOT_FOUND
-            );
-        }
-
-        return community;
-    }
-
-    /*
-     * Check exists community with name
-     * => Exists -> true
-     * */
-    public boolean checkExistsCommunityByName(String name) {
-        if (communityRepository.existsByName(name)) {
-            return true;
-        }
-        return false;
-    }
-
-    /*
-     * Check name communtiy reserved
-     * */
-    public void checkNameCommunityReserved(String name) {
-        if (RESERVED_NAMES.contains(name)) {
-            throw new CommunityException(
-                    CommunityErrorCode.COMMUNITY_NAME_RESERVED
-            );
-        }
     }
 
 }

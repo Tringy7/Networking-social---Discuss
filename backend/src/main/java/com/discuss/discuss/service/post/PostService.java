@@ -14,7 +14,7 @@ import com.discuss.discuss.mapper.post.PostMapper;
 import com.discuss.discuss.repository.PostRepository;
 import com.discuss.discuss.repository.PostSaveRepository;
 import com.discuss.discuss.service.community.CommunityAuthorizationService;
-import com.discuss.discuss.service.community.CommunityService;
+import com.discuss.discuss.service.community.CommunitySupport;
 import com.discuss.discuss.service.user.UserService;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
@@ -40,7 +40,7 @@ public class PostService {
     private final PostMediaService postMediaService;
 
     private final UserService userService;
-    private final CommunityService communityService;
+    private final CommunitySupport communitySupport;
     private final CommunityAuthorizationService communityAuthorizationService;
     private final PostSupport postSupport;
 
@@ -63,7 +63,7 @@ public class PostService {
         postContentService.validateRequest(request);
         User user = userService.getCurrentUser();
 
-        Community community = communityService.getCommunityByNameAndStatusActive(request.getCommunityName());
+        Community community = communitySupport.getCommunityByNameAndStatusActive(request.getCommunityName());
         communityAuthorizationService.requireMembership(community, user);
 
         postMediaService.validateMedia(request, files, Set.of());
@@ -106,7 +106,7 @@ public class PostService {
         Post post = postSupport.findPublished(id);
         postSupport.requireAuthor(post, user);
 
-        Community targetCommunity = communityService.getCommunityByNameAndStatusActive(request.getCommunityName());
+        Community targetCommunity = communitySupport.getCommunityByNameAndStatusActive(request.getCommunityName());
         if (!Objects.equals(targetCommunity.getId(), post.getCommunity().getId())) {
             throw new PostException(PostErrorCode.COMMUNITY_CHANGE_NOT_ALLOWED);
         }

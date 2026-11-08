@@ -19,6 +19,13 @@ public class CommentSupport {
     private final CommentMapper commentMapper;
     private final CommentVoteRepository voteRepository;
 
+    public Comment findComment(Long id) {
+        return commentRepository.findById(id)
+                .filter(comment -> comment.getStatus() == CommentStatus.VISIBLE
+                        && comment.getDeletedAt() == null)
+                .orElseThrow(() -> notFound(CommentErrorCode.COMMENT_NOT_FOUND));
+    }
+
     public Comment visibleComment(Long id) {
         return commentRepository.lockById(id).filter(c -> c.getStatus() == CommentStatus.VISIBLE)
                 .orElseThrow(() -> notFound(CommentErrorCode.COMMENT_NOT_FOUND));
