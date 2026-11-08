@@ -149,3 +149,12 @@
 
 .post-media-grid[data-count="5"], .post-media-grid[data-count="6"] { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
 .post-media-grid[data-count="5"] .post-media-tile:first-child { grid-row: span 2; }
+
+/* Comment attachments share post image tiles, with at most three images per row. */
+.comment-media-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 372px; }
+.comment-media-grid[data-count="1"] { grid-template-columns: minmax(0, 1fr); max-width: 120px; }
+.comment-media-grid[data-count="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 246px; }
+.comment-media-grid > li { min-width: 0; }
+.comment-media-tile { width: 100%; aspect-ratio: 4 / 3; border-radius: var(--radius-control); background: var(--bg-elevated); }
+.comment-media-tile img { display: block; width: 100%; height: 100%; max-height: none; object-fit: cover; }
+.comment-media-tile:hover img { opacity: .9; }

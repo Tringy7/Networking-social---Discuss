@@ -17,6 +17,7 @@ public class CommentSupport {
     private final CommentRepository commentRepository;
     private final CommentAttachmentRepository attachmentRepository;
     private final CommentMapper commentMapper;
+    private final CommentVoteRepository voteRepository;
 
     public Comment visibleComment(Long id) {
         return commentRepository.lockById(id).filter(c -> c.getStatus() == CommentStatus.VISIBLE)
@@ -33,10 +34,16 @@ public class CommentSupport {
         return new CommentException(error);
     }
 
-    public CommentResponseDTO toResponse(Comment comment) {
+    public CommentResponseDTO toResponse(Comment comment, User user) {
         List<CommentAttachment> attachments = comment.getStatus() == CommentStatus.VISIBLE
                 ? attachmentRepository.findByCommentIdOrderByIdAsc(comment.getId())
                 : List.of();
-        return commentMapper.toResponse(comment, attachments);
+        CommentResponseDTO response = commentMapper.toResponse(comment, attachments);
+        if (comment.getStatus() == CommentStatus.VISIBLE) {
+            response.setVoteScore(voteRepository.voteScore(comment.getId()));
+            response.setUserVote(voteRepository.findByCommentIdAndUserId(comment.getId(), user.getId())
+                    .map(CommentVote::getVoteType).orElse(null));
+        }
+        return response;
     }
 }

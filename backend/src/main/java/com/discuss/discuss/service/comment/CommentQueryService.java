@@ -26,6 +26,6 @@ public class CommentQueryService {
         postSupport.requireRead(post, user);
 
         return commentRepository.findByPostIdOrderByCreatedAtAscIdAsc(postId).stream()
-                .map(commentSupport::toResponse).toList();
+                .map(comment -> commentSupport.toResponse(comment, user)).toList();
     }
 }

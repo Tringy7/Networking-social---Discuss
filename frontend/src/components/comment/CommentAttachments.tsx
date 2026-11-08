@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { X, FileText, ImagePlus } from 'lucide-react';
 import { imageRequestError } from '../../utils/imageUploadLimits';
 import type { CommentAttachment } from '../../types';
+import ImageLightbox from '../post/ImageLightbox';
+import '../post/postContent.css';
 
 export const MAX_COMMENT_FILE_SIZE = 10 * 1024 * 1024;
 const sizeLabel = (size: number) => size < 1024 * 1024
@@ -56,22 +58,32 @@ export function CommentFilePicker({ files, onChange, disabled, onError }: {
 export function CommentAttachmentList({ attachments, onRefresh }: { attachments?: CommentAttachment[]; onRefresh?: () => Promise<void> }) {
   const [failedImages, setFailedImages] = useState(new Set<string>());
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const images = (attachments || []).filter(file => file.contentType.startsWith('image/'));
+  const selectedIndex = images.findIndex(file => file.id === selectedId);
   if (!attachments?.length) return null;
-  return <ul className="space-y-2 pl-8" aria-label="Ảnh bình luận">
+  return <div className="pl-8 min-w-0">
+    <ul className="comment-media-grid" data-count={Math.min(attachments.length, 3)} aria-label="Ảnh bình luận">
     {attachments.map(file => <li key={file.id}>
-      <a href={file.url} target="_blank" rel="noopener noreferrer" className="inline-block max-w-[25%] align-top">
-        {file.contentType.startsWith('image/')
-          ? <img src={file.url} alt={file.fileName} loading="lazy"
+      {file.contentType.startsWith('image/')
+        ? <button type="button" className="post-gallery-image post-media-tile comment-media-tile"
+            aria-label={`Xem ${file.fileName} kích thước lớn`} onClick={() => setSelectedId(file.id)}>
+            <img src={file.url} alt={file.fileName} loading="lazy"
               onError={() => setFailedImages(previous => new Set(previous).add(file.id))}
               onLoad={() => setFailedImages(previous => { const next = new Set(previous); next.delete(file.id); return next; })}
-              className="block h-auto max-h-16 w-auto max-w-full rounded-lg object-contain" />
-          : <span className="inline-flex items-center gap-2"><FileText size={16} /><span className="break-all">{file.fileName}</span></span>}
-      </a>
+            />
+          </button>
+        : <a href={file.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2">
+            <FileText size={16} /><span className="break-all">{file.fileName}</span>
+          </a>}
       {failedImages.has(file.id) && onRefresh && <button type="button" disabled={refreshing}
         className="block text-xs text-[var(--text-secondary)] underline" onClick={async () => {
           setRefreshing(true);
           try { await onRefresh(); } catch { /* Keep the retry action visible. */ } finally { setRefreshing(false); }
         }}>{refreshing ? 'Đang tải lại ảnh…' : 'Ảnh chưa tải được. Thử lại'}</button>}
     </li>)}
-  </ul>;
+    </ul>
+    {selectedIndex >= 0 && <ImageLightbox images={images.map(file => ({ url: file.url, alt: file.fileName }))}
+      index={selectedIndex} onChange={index => setSelectedId(images[index].id)} onClose={() => setSelectedId(null)} />}
+  </div>;
 }

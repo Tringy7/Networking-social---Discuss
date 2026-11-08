@@ -1,6 +1,8 @@
 package com.discuss.discuss.controller.comment;
+
 import com.discuss.discuss.dto.comment.*;
 import com.discuss.discuss.dto.common.ApiResponse;
+import com.discuss.discuss.dto.post.VoteRequestDTO;
 import com.discuss.discuss.service.comment.CommentService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -36,6 +38,17 @@ public class CommentController {
     public ResponseEntity<CommentResponseDTO> update(@PathVariable @Positive Long id,
             @Valid @RequestBody UpdateCommentRequestDTO request) {
         return ResponseEntity.status(HttpStatus.OK).body(commentService.update(id, request));
+    }
+
+    @PutMapping("/{id}/vote")
+    public ResponseEntity<CommentResponseDTO> vote(@PathVariable @Positive Long id,
+            @Valid @RequestBody VoteRequestDTO request) {
+        return ResponseEntity.ok(commentService.vote(id, request.type()));
+    }
+
+    @DeleteMapping("/{id}/vote")
+    public ResponseEntity<CommentResponseDTO> removeVote(@PathVariable @Positive Long id) {
+        return ResponseEntity.ok(commentService.vote(id, null));
     }
 
     @DeleteMapping("/{id}")

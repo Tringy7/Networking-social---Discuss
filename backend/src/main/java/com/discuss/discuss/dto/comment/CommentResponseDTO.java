@@ -23,4 +23,6 @@ public class CommentResponseDTO {
     private LocalDateTime updatedAt;
     private CommentAuthorDTO author;
     private List<CommentAttachmentDTO> attachments;
+    private long voteScore;
+    private com.discuss.discuss.enums.VoteType userVote;
 }

@@ -1,8 +1,9 @@
+import { parseSearchQuery } from '../../utils/searchQuery';
 import { ADMIN_AVAILABLE } from '../../services';
 import { postPath } from '../../utils/postPath';
 import ThemeToggle from '../ui/ThemeToggle';
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import NotificationBadge from '../ui/NotificationBadge';
 import Logo from '../common/Logo';
 import Avatar from '../ui/Avatar';
@@ -30,6 +31,7 @@ import {
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, logout, activeRole } = useAuthStore();
   const { communities } = useCommunityStore();
   const { posts, openCreateModal } = usePostStore();
@@ -37,6 +39,9 @@ export const Navbar: React.FC = () => {
   const addToast = useToastStore((state) => state.addToast);
 
   const [searchQuery, setSearchQuery] = useState('');
+  useEffect(() => {
+    if (location.pathname === '/search') setSearchQuery(new URLSearchParams(location.search).get('q') || '');
+  }, [location.pathname, location.search]);
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     try {
       const saved: unknown = JSON.parse(localStorage.getItem('discuss_searches') || '[]');
@@ -103,7 +108,7 @@ export const Navbar: React.FC = () => {
     setIsSearchOpen(false);
     setIsMobileSearchOpen(false);
     rememberSearch(searchQuery.trim());
-    navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}&type=all`);
+    navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
   const handleLogout = async () => {
@@ -116,16 +121,18 @@ export const Navbar: React.FC = () => {
     }
   };
 
-  const filteredCommunities = communities
+  const search = parseSearchQuery(searchQuery);
+  const keyword = search.keyword.toLowerCase();
+  const filteredCommunities = (search.type === 'communities' && keyword ? communities : [])
     .filter(
       (c) =>
-        c.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.name.toLowerCase().includes(searchQuery.toLowerCase())
+        c.displayName.toLowerCase().includes(keyword) ||
+        c.name.toLowerCase().includes(keyword)
     )
     .slice(0, 3);
 
-  const filteredPosts = posts
-    .filter((p) => p.title.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredPosts = (search.type === 'posts' && keyword ? posts : [])
+    .filter((p) => p.title.toLowerCase().includes(keyword) || p.content?.toLowerCase().includes(keyword))
     .slice(0, 3);
 
   return (
@@ -146,8 +153,8 @@ export const Navbar: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchOpen(true)}
-              placeholder="Tìm kiếm bài viết, cộng đồng, tác giả..."
-              aria-label="Tìm kiếm bài viết, cộng đồng, tác giả"
+              placeholder="Tìm nội dung, u/người dùng, c/cộng đồng..."
+              aria-label="Tìm nội dung, u/ để tìm người dùng, c/ để tìm cộng đồng"
               className="w-full h-10 pl-10 pr-20 sm:pr-9 bg-[var(--bg-main)] border border-[var(--border-color)] hover:border-[var(--border-hover)] focus:border-[var(--color-orange-ink)] rounded-full text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus:ring-2 focus:ring-[var(--focus-ring)]"
             />
             {searchQuery && (
@@ -227,7 +234,7 @@ export const Navbar: React.FC = () => {
 
                   {filteredCommunities.length === 0 && filteredPosts.length === 0 && (
                     <div className="py-6 text-center text-xs text-[var(--text-secondary)]">
-                      Không tìm thấy kết quả phù hợp cho "{searchQuery}"
+                      {search.keyword ? `Nhấn Enter để tìm ${search.type === 'people' ? 'người dùng' : search.type === 'communities' ? 'cộng đồng' : 'nội dung'} “${search.keyword}”` : 'Nhập từ khóa sau u/ hoặc c/ để tìm kiếm'}
                     </div>
                   )}
                 </>
@@ -247,7 +254,7 @@ export const Navbar: React.FC = () => {
                           onClick={() => {
                             setSearchQuery(recent);
                             rememberSearch(recent);
-                            navigate(`/search?q=${encodeURIComponent(recent)}&type=all`);
+                            navigate(`/search?q=${encodeURIComponent(recent)}`);
                             setIsSearchOpen(false);
                             setIsMobileSearchOpen(false);
                           }}

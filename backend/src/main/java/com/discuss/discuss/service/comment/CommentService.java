@@ -21,6 +21,8 @@ import java.util.Objects;
 public class CommentService {
     private final CommentSupport commentSupport;
     private final CommentRepository commentRepository;
+    private final CommentVoteRepository voteRepository;
+    private final com.discuss.discuss.service.post.PostSupport postSupport;
     private final PostRepository postRepository;
 
     private final CommentAttachmentService attachmentService;
@@ -63,7 +65,7 @@ public class CommentService {
                 .status(CommentStatus.VISIBLE).build();
         commentRepository.saveAndFlush(comment);
         attachmentService.store(comment, files);
-        return commentSupport.toResponse(comment);
+        return commentSupport.toResponse(comment, user);
     }
     public CommentResponseDTO update(Long id, UpdateCommentRequestDTO request) {
         User user = userService.getCurrentUser();
@@ -77,8 +79,27 @@ public class CommentService {
 
         comment.setContent(request.content().strip());
         commentRepository.flush();
-        return commentSupport.toResponse(comment);
+        return commentSupport.toResponse(comment, user);
     }
+    /** Serializes vote changes on the comment, keeping PUT and DELETE idempotent. */
+    public CommentResponseDTO vote(Long id, VoteType type) {
+        User user = userService.getCurrentUser();
+
+        Comment comment = commentSupport.visibleComment(id);
+        commentSupport.requireAvailablePost(comment.getPost());
+        postSupport.requireRead(comment.getPost(), user);
+        CommentVote existing = voteRepository.findByCommentIdAndUserId(id, user.getId()).orElse(null);
+        if (type == null) {
+            if (existing != null) voteRepository.delete(existing);
+        } else if (existing == null) {
+            voteRepository.save(CommentVote.builder().comment(comment).user(user).voteType(type).build());
+        } else {
+            existing.setVoteType(type);
+        }
+        voteRepository.flush();
+        return commentSupport.toResponse(comment, user);
+    }
+
     public void delete(Long id) {
         User user = userService.getCurrentUser();
         Comment comment = commentSupport.visibleComment(id);

@@ -29,7 +29,7 @@ interface PostState {
   addComment: (id: string, content: string, parent?: string, files?: File[]) => Promise<void>;
   editComment: (postId: string, commentId: string, content: string) => Promise<void>;
   deleteComment: (postId: string, commentId: string) => Promise<void>;
-  toggleCommentHeart: (postId: string, commentId: string) => Promise<void>;
+  voteComment: (postId: string, commentId: string, type: 'UP' | 'DOWN' | null) => Promise<void>;
   isCreateModalOpen: boolean;
   targetCommunityName?: string;
   editingPost?: Post;
@@ -38,7 +38,6 @@ interface PostState {
   closeCreateModal: () => void;
   reset: () => void;
 }
-const unsupported = async () => { throw new Error('Chức năng này chưa có API hỗ trợ.'); };
 const merge = (existing: Post[], incoming: Post[]) =>
   [...existing.filter((post) => !incoming.some((item) => item.id === post.id)), ...incoming];
 
@@ -48,7 +47,7 @@ const commentTree = (rows: CommentMutationResponse[]): Comment[] => {
     parentCommentId: row.parentId == null ? null : String(row.parentId),
     author: { ...row.author, id: String(row.author.id),
       displayName: row.author.displayName || row.author.username, avatarUrl: row.author.avatarUrl || '' },
-    createdAt: row.createdAt, heartCount: 0, replies: [],
+    createdAt: row.createdAt, voteScore: row.voteScore ?? 0, userVote: row.userVote ?? null, replies: [],
     attachments: (row.attachments || []).map(file => ({ ...file, id: String(file.id) })),
   } as Comment]));
   const roots: Comment[] = [];
@@ -63,8 +62,7 @@ const flattenComments = (comments: Comment[]): Comment[] => comments.flatMap(com
 const upsertComment = (comments: Comment[], response: CommentMutationResponse): Comment[] => {
   const nodes = new Map<string, Comment>(flattenComments(comments).map(comment => [comment.id, { ...comment, replies: [] as Comment[] }]));
   const next = commentTree([response])[0];
-  const previous = nodes.get(next.id);
-  nodes.set(next.id, { ...next, heartCount: previous?.heartCount || 0, isHearted: previous?.isHearted });
+  nodes.set(next.id, next);
   const roots: Comment[] = [];
   for (const node of nodes.values()) {
     const parent = node.parentCommentId && nodes.get(node.parentCommentId);
@@ -232,7 +230,14 @@ export const usePostStore = create<PostState>((set, get) => ({
         posts: adjustCommentCount(state.posts, postId, delta), savedPosts: adjustCommentCount(state.savedPosts, postId, delta) };
     });
   },
-  toggleCommentHeart: unsupported,
+  voteComment: async (postId, commentId, type) => {
+    const generation = session;
+    if (!useAuthStore.getState().user) throw new Error('Vui lòng đăng nhập.');
+    const response = await commentService.vote(commentId, type);
+    if (generation !== session) return;
+    bumpComments(postId);
+    set(state => ({ comments: { ...state.comments, [postId]: upsertComment(state.comments[postId] || [], response) } }));
+  },
   openCreateModal: (name) => set({ isCreateModalOpen: true, targetCommunityName: name, editingPost: undefined }),
   openEditModal: (post) => set({ isCreateModalOpen: true, targetCommunityName: post.communityName, editingPost: post }),
   closeCreateModal: () => set({ isCreateModalOpen: false, targetCommunityName: undefined, editingPost: undefined }),

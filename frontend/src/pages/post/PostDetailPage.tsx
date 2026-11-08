@@ -2,6 +2,7 @@ import { CommentFilePicker, CommentAttachmentList } from '../../components/comme
 import { useCommentImageRefresh } from '../../hooks/useCommentImageRefresh';
 import { postPath } from '../../utils/postPath';
 import PostVotes from '../../components/post/PostVotes';
+import CommentVotes from '../../components/comment/CommentVotes';
 import PostActionsMenu from '../../components/post/PostActionsMenu';
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
@@ -18,7 +19,6 @@ import Button from '../../components/ui/Button';
 import ReportModal from '../../components/post/ReportModal';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import {
-  Heart,
   MessageSquare,
   Bookmark,
   Share2,
@@ -237,15 +237,7 @@ export const PostDetailPage: React.FC = () => {
             <CommentAttachmentList attachments={cmt.attachments} onRefresh={refreshImages} />
             {/* Comment Reactions & Reply Button */}
             <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] pl-8">
-              <button
-                disabled title="Tính năng thả tim chưa khả dụng"
-                className={`flex items-center gap-1 hover:text-[var(--color-orange)] transition-colors ${
-                  cmt.isHearted ? 'text-[var(--color-orange)] font-semibold' : ''
-                }`}
-              >
-                <Heart className={`w-3.5 h-3.5 ${cmt.isHearted ? 'fill-[var(--color-orange)]' : ''}`} />
-                <span className="tabular-nums">{cmt.heartCount}</span>
-              </button>
+              <CommentVotes comment={cmt} />
 
               <button
                 disabled={cmt.status !== 'VISIBLE' || commentPending}

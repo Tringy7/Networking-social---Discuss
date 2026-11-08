@@ -155,8 +155,8 @@ export interface Comment {
   };
   content: string;
   parentCommentId: string | null;
-  heartCount: number;
-  isHearted?: boolean;
+  voteScore: number;
+  userVote: 'UP' | 'DOWN' | null;
   replies?: Comment[];
   createdAt: string;
 }

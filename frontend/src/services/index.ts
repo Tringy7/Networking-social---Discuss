@@ -67,7 +67,7 @@ export const POST_INTERACTIONS_AVAILABLE = true;
 export const COMMENTS_AVAILABLE = true;
 export const REPORTS_AVAILABLE = false;
 export const ADMIN_AVAILABLE = false;
-export const USER_SEARCH_AVAILABLE = false;
+export const USER_SEARCH_AVAILABLE = true;
 
 function requireFeature(available: boolean, name: string): void {
   if (!available) throw new Error(`${name} hiện chưa khả dụng.`);
@@ -151,7 +151,11 @@ export const userService = {
   getMe: () => apiClient.get<UserResponse>('/user/me'),
   search: async (query: string) => {
     requireFeature(USER_SEARCH_AVAILABLE, 'Tìm kiếm thành viên');
-    return apiClient.get<UserSearchResult[]>(`/users/search?q=${encodeURIComponent(query)}`);
+    const path = `/users/search?q=${encodeURIComponent(query.trim())}&size=100`;
+    const first = await apiClient.get<{ content: UserSearchResult[]; totalPages: number }>(`${path}&page=0`);
+    const rest = await Promise.all(Array.from({ length: Math.max(0, first.totalPages - 1) }, (_, index) =>
+      apiClient.get<{ content: UserSearchResult[] }>(`${path}&page=${index + 1}`)));
+    return [...first.content, ...rest.flatMap(page => page.content)];
   },
   getPublicProfile: async (username: string): Promise<User> => {
     const response = await apiClient.get<PublicUserProfileResponse>(
@@ -476,6 +480,8 @@ export const postService = {
 };
 
 export interface CommentMutationResponse {
+  voteScore: number;
+  userVote: 'UP' | 'DOWN' | null;
   attachments: { id: number; fileName: string; contentType: string; size: number; url: string; expiresAt?: string }[];
   id: number;
   postId: number;
@@ -503,10 +509,9 @@ export const commentService = {
   update: (commentId: string, content: string) =>
     apiClient.patch<CommentMutationResponse>(`/comments/${commentId}`, { content }),
   delete: (commentId: string) => apiClient.delete<{ message: string }>(`/comments/${commentId}`),
-  toggleHeart: async (postId: string, commentId: string): Promise<{ isHearted: boolean }> => {
-    if (!COMMENTS_AVAILABLE) throw postsUnavailableError();
-    return apiClient.put<{ isHearted: boolean }>(`/posts/${postId}/comments/${commentId}/vote`);
-  },
+  vote: (commentId: string, type: 'UP' | 'DOWN' | null) => type === null
+    ? apiClient.delete<CommentMutationResponse>(`/comments/${commentId}/vote`)
+    : apiClient.put<CommentMutationResponse>(`/comments/${commentId}/vote`, { type }),
 };
 
 export const reportService = {

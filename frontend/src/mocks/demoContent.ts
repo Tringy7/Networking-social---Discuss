@@ -121,8 +121,8 @@ export const demoComments: Comment[] = [
     content:
       'Mình thường dùng query library cho dữ liệu từ server, còn state tương tác ngắn hạn thì để trong component. Zustand phù hợp với state cần chia sẻ giữa nhiều màn hình.',
     parentCommentId: null,
-    heartCount: 6,
-    isHearted: false,
+    voteScore: 6,
+    userVote: null,
     createdAt: new Date(now - 1000 * 60 * 12).toISOString(),
     replies: [
       {
@@ -136,8 +136,8 @@ export const demoComments: Comment[] = [
         },
         content: 'Cảm ơn bạn, cách chia theo nguồn dữ liệu nghe rất dễ áp dụng.',
         parentCommentId: 'demo-comment-1',
-        heartCount: 2,
-        isHearted: false,
+        voteScore: 2,
+        userVote: null,
         createdAt: new Date(now - 1000 * 60 * 8).toISOString(),
       },
     ],
@@ -154,8 +154,8 @@ export const demoComments: Comment[] = [
     content:
       'Nên tránh đưa mọi thứ vào global store. Form state và trạng thái mở modal mình vẫn để gần component sử dụng.',
     parentCommentId: null,
-    heartCount: 3,
-    isHearted: false,
+    voteScore: 3,
+    userVote: null,
     createdAt: new Date(now - 1000 * 60 * 5).toISOString(),
   },
 ];

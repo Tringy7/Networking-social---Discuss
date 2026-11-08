@@ -31,7 +31,7 @@ public class CommentMapper {
                         c.getPost().getUser() != null && Objects.equals(c.getUser().getId(), c.getPost().getUser().getId())),
                 c.getStatus() == CommentStatus.VISIBLE
                         ? attachments.stream().map(this::toAttachment).toList()
-                        : List.of());
+                        : List.of(), 0L, null);
     }
 
     private CommentAttachmentDTO toAttachment(CommentAttachment attachment) {
