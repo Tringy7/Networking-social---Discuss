@@ -77,8 +77,10 @@ export interface Community {
 export type PostType = 'TEXT' | 'LINK';
 export type PostMediaType = 'IMAGE' | 'VIDEO';
 export interface PostMediaInput {
+  caption?: string | null;
   type: PostMediaType;
   objectKey: string;
+  fileIndex?: number;
 }
 export interface PostImage {
   objectKey: string | null;
@@ -87,6 +89,7 @@ export interface PostImage {
   inlineImage: boolean;
 }
 export interface PostMedia extends PostImage {
+  caption?: string | null;
   type: PostMediaType;
 }
 export interface PostInput {
@@ -95,6 +98,7 @@ export interface PostInput {
   type: 'TEXT';
   content: string;
   media: PostMediaInput[];
+  files?: File[];
 }
 export interface Post {
   id: string;
@@ -128,7 +132,17 @@ export interface Post {
   pinned?: boolean;
 }
 
+export interface CommentAttachment {
+  expiresAt?: string;
+  url: string;
+  id: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+}
 export interface Comment {
+  attachments?: CommentAttachment[];
+  status?: 'VISIBLE' | 'HIDDEN' | 'DELETED';
   id: string;
   postId: string;
   author: {
@@ -141,8 +155,8 @@ export interface Comment {
   };
   content: string;
   parentCommentId: string | null;
-  heartCount: number;
-  isHearted?: boolean;
+  voteScore: number;
+  userVote: 'UP' | 'DOWN' | null;
   replies?: Comment[];
   createdAt: string;
 }

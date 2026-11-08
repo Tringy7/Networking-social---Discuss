@@ -1,3 +1,4 @@
+import { REPORTS_AVAILABLE } from '../../services';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useReportStore } from '../../store/useReportStore';
@@ -26,7 +27,7 @@ export const CommunityModerationPage: React.FC = () => {
   const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
-    if (!communityName) return;
+    if (!communityName || !REPORTS_AVAILABLE) return;
     let active = true;
     setIsLoading(true);
     setLoadFailed(false);
@@ -69,6 +70,12 @@ export const CommunityModerationPage: React.FC = () => {
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? 'Ngày không rõ' : date.toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' });
   };
+
+  if (!REPORTS_AVAILABLE) return <div className="utility-page space-y-4 py-12">
+    <h1 className="text-xl font-semibold">Hàng đợi kiểm duyệt</h1>
+    <p role="status">Chức năng xử lý báo cáo hiện chưa khả dụng.</p>
+    <Button variant="secondary" onClick={() => navigate(`/c/${communityName}`)}>Quay lại cộng đồng</Button>
+  </div>;
 
   return (
     <div className="utility-page space-y-5 text-left pb-8">
@@ -127,7 +134,7 @@ export const CommunityModerationPage: React.FC = () => {
             <h2 className="text-base font-semibold text-[var(--text-primary)]">Không tải được hàng đợi</h2>
             <p className="text-sm text-[var(--text-secondary)]">Kiểm tra kết nối rồi thử tải lại.</p>
             <Button variant="secondary" size="sm" onClick={() => {
-              if (!communityName) return;
+              if (!communityName || !REPORTS_AVAILABLE) return;
               setIsLoading(true);
               setLoadFailed(false);
               hydrateCommunity(communityName)

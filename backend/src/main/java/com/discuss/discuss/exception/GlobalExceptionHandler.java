@@ -1,6 +1,7 @@
 package com.discuss.discuss.exception;
 
 import com.discuss.discuss.exception.auth.AuthException;
+import com.discuss.discuss.exception.comment.CommentException;
 import com.discuss.discuss.exception.community.CommunityException;
 import com.discuss.discuss.exception.media.MediaException;
 import com.discuss.discuss.exception.user.UserException;
@@ -24,6 +25,15 @@ import java.util.Map;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+    @ExceptionHandler(CommentException.class)
+    public ResponseEntity<Map<String, Object>> handleCommentException(
+            CommentException ex) {
+        log.warn("[COMMENT] error={}, status={}, message={}",
+                ex.getError().name(), ex.getError().getStatus().value(), ex.getMessage());
+        return ResponseEntity.status(ex.getError().getStatus())
+                .body(Map.of("status", ex.getError().getStatus().value(), "message", ex.getMessage()));
+    }
+
 
     @ExceptionHandler({jakarta.validation.ConstraintViolationException.class,
             org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,

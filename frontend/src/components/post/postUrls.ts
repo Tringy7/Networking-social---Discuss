@@ -11,7 +11,10 @@ export function httpUrl(value?: string | null): string | undefined {
 // A Markdown image can only address a server-verified attachment, never an arbitrary URL.
 export function markdownImageUrl(token: string | undefined, images: PostImage[]): string | undefined {
   if (!token?.startsWith('post-image:')) return undefined;
-  return httpUrl(images.find((image) => image.objectKey === token.slice(11))?.url);
+  const key = token.slice(11);
+  const image = images.find(image => image.objectKey === key);
+  if (key.startsWith('local/') && image?.url.startsWith('blob:')) return image.url;
+  return httpUrl(image?.url);
 }
 
 export function markdownImageKeys(markdown: string): string[] {

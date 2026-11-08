@@ -3,6 +3,7 @@ import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { useReportStore } from '../../store/useReportStore';
 import { useToastStore } from '../../store/useToastStore';
+import { REPORTS_AVAILABLE } from '../../services';
 import { ReportContentType } from '../../types';
 
 interface ReportModalProps {
@@ -30,6 +31,11 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   const [selectedReason, setSelectedReason] = useState('Spam hoặc nội dung quảng cáo trái phép');
   const [customNote, setCustomNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!REPORTS_AVAILABLE) return <Modal isOpen={isOpen} onClose={onClose} title="Báo cáo vi phạm">
+    <p role="status" className="text-sm text-[var(--text-secondary)]">Chức năng báo cáo hiện chưa khả dụng.</p>
+    <Button type="button" variant="secondary" onClick={onClose}>Đóng</Button>
+  </Modal>;
 
   const reasons = [
     'Spam hoặc nội dung quảng cáo trái phép',

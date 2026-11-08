@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 
 public enum PostErrorCode {
     // 400 - Bad Request
+    INVALID_MEDIA(HttpStatus.BAD_REQUEST, "Invalid post image references or upload indexes"),
     EMPTY_POST(HttpStatus.BAD_REQUEST, "Post content or media is required"),
     UNSUPPORTED_POST_TYPE(HttpStatus.BAD_REQUEST, "Only TEXT posts can be created or updated"),
     COMMUNITY_CHANGE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "A post cannot be moved to another community"),

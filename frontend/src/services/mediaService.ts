@@ -36,25 +36,6 @@ export interface CoverKeys {
   height: number;
 }
 
-export interface StoredPostImage {
-  objectKey: string;
-  url: string;
-  contentType: string;
-  width: number;
-  height: number;
-  size: number;
-}
-
-/**
- * Uploads a post image without cropping and returns its owned object key and URL.
- */
-export async function uploadPostImage(file: File): Promise<StoredPostImage> {
-  const formData = new FormData();
-  formData.append('file', file);
-
-  return apiClient.post<StoredPostImage>('/posts/images', formData);
-}
-
 /**
  * Upload avatar vuông cắt từ giữa ảnh
  */

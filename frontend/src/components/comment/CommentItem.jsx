@@ -31,9 +31,9 @@ export default function CommentItem({
   const communityRole = getUserCommunityRole(communityId);
   const authorRoleInComm = getUserCommunityRole(communityId, comment.authorId);
 
-  const canEdit = permissions.canEditComment(currentUser, comment);
-  const canDelete = permissions.canDeleteComment(currentUser, comment, communityRole);
-  const canReply = permissions.canComment(currentUser);
+  const canEdit = comment.status !== 'DELETED' && permissions.canEditComment(currentUser, comment);
+  const canDelete = comment.status !== 'DELETED' && permissions.canDeleteComment(currentUser, comment, communityRole);
+  const canReply = comment.status !== 'DELETED' && permissions.canComment(currentUser);
 
   // Find direct child replies
   const replies = allComments.filter(c => c.parentId === comment.id);

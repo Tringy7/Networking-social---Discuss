@@ -1,5 +1,9 @@
 package com.discuss.discuss.service.media;
 
+import java.util.Set;
+import java.util.Optional;
+import java.util.Locale;
+import java.util.List;
 import com.discuss.discuss.enums.ImageKind;
 import com.discuss.discuss.exception.media.MediaErrorCode;
 import com.discuss.discuss.exception.media.MediaException;
@@ -38,6 +42,10 @@ import java.util.concurrent.Semaphore;
  */
 @Service
 public class ImageProcessingService {
+    private static final long COMMENT_MAX_SIZE = 10 * 1024 * 1024;
+    private static final Set<String> COMMENT_IMAGE_CONTENT_TYPES =
+            Set.of("image/jpeg", "image/png", "image/webp", "image/gif");
+
 
     /** Supported formats. The content type always describes the actual output bytes. */
     private enum Format {
@@ -94,6 +102,60 @@ public class ImageProcessingService {
         if (!(q > 0f && q <= 1f)) {
             throw new IllegalArgumentException(name + " must be in the range (0, 1], got " + q);
         }
+    }
+
+    // ==================== COMMENT ====================
+    public void validateCommentImages(List<MultipartFile> files) {
+        for (MultipartFile file : files) {
+            if (!COMMENT_IMAGE_CONTENT_TYPES.contains(Optional.ofNullable(file.getContentType()).orElse("").toLowerCase(Locale.ROOT))) {
+                throw new MediaException(MediaErrorCode.UNSUPPORTED_IMAGE_FORMAT, "Only JPEG, PNG, WebP or GIF images are allowed in comments");
+            }
+            if (file.isEmpty()) throw new MediaException(MediaErrorCode.EMPTY_FILE);
+            if (file.getSize() > COMMENT_MAX_SIZE) throw new MediaException(MediaErrorCode.FILE_TOO_LARGE);
+        }
+    }
+
+    /** Comment images are always decoded and re-encoded as PNG, including the first GIF frame. */
+    public Processed processComment(MultipartFile file) {
+        validateCommentImages(List.of(file));
+        concurrency.acquireUninterruptibly();
+        try {
+            return processCommentImage(file);
+        } finally {
+            concurrency.release();
+        }
+    }
+
+    private Processed processCommentImage(MultipartFile file) {
+        byte[] bytes;
+        try {
+            bytes = file.getBytes();
+            // Decode every upload and store only re-encoded PNG image bytes.
+            java.awt.image.BufferedImage image;
+            try (var input = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
+                if (input == null) throw new MediaException(MediaErrorCode.INVALID_IMAGE);
+                var readers = ImageIO.getImageReaders(input);
+                if (!readers.hasNext()) throw new MediaException(MediaErrorCode.INVALID_IMAGE);
+                var reader = readers.next();
+                try {
+                    String format = reader.getFormatName().toLowerCase(Locale.ROOT);
+                    if (!Set.of("jpeg", "jpg", "png", "webp", "gif").contains(format)) {
+                        throw new MediaException(MediaErrorCode.UNSUPPORTED_IMAGE_FORMAT, "Only JPEG, PNG, WebP or GIF images are allowed in comments");
+                    }
+                    reader.setInput(input);
+                    if ((long) reader.getWidth(0) * reader.getHeight(0) > 25000000L) {
+                        throw new MediaException(MediaErrorCode.INVALID_IMAGE, "Image exceeds 25 megapixels");
+                    }
+                    image = reader.read(0);
+                } finally { reader.dispose(); }
+            }
+            if (image == null) throw new MediaException(MediaErrorCode.INVALID_IMAGE);
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            if (!ImageIO.write(image, "png", output)) throw new MediaException(MediaErrorCode.INVALID_IMAGE);
+            bytes = output.toByteArray();
+            if (bytes.length > COMMENT_MAX_SIZE) throw new MediaException(MediaErrorCode.INVALID_IMAGE, "Processed image exceeds 10 MB");
+            return new Processed(bytes, image.getWidth(), image.getHeight(), "image/png");
+        } catch (IOException ex) { throw new MediaException(MediaErrorCode.INVALID_IMAGE, "Cannot read image", ex); }
     }
 
     // ------------------------------------------------------------------ main flow

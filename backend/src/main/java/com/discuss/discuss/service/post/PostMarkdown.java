@@ -18,4 +18,9 @@ public final class PostMarkdown {
         return keys;
     }
 
+    public static String replaceImageKeys(String content, Map<String, String> replacements) {
+        if (content == null) return null;
+        return IMAGE.matcher(content).replaceAll(match -> java.util.regex.Matcher.quoteReplacement(
+                "post-image:" + replacements.getOrDefault(match.group(1), match.group(1))));
+    }
 }
