@@ -1,6 +1,6 @@
 import apiClient from './apiClient';
 import { assertImageRequestSize } from '../utils/imageUploadLimits';
-import { Community, CommunityMember, Post, User, Report, NotificationItem, Conversation, ChatMessage } from '../types';
+import { Community, CommunityMember, Post, User, Report, CreateReportRequest, NotificationItem, Conversation, ChatMessage } from '../types';
 import { demoConversations, demoNotifications } from '../mocks/demoContent';
 interface AuthResponse {
   message?: string;
@@ -66,6 +66,7 @@ export const POSTS_AVAILABLE = true;
 export const POST_INTERACTIONS_AVAILABLE = true;
 export const COMMENTS_AVAILABLE = true;
 export const REPORTS_AVAILABLE = false;
+export const REPORT_CREATION_AVAILABLE = true;
 export const ADMIN_AVAILABLE = false;
 export const USER_SEARCH_AVAILABLE = true;
 
@@ -85,6 +86,19 @@ let localConversations = demoConversations.map((conversation) => ({
   participant: { ...conversation.participant },
   messages: conversation.messages.map((message) => ({ ...message })),
 }));
+
+export interface LoginSession {
+  id: string;
+  deviceName: string;
+  createdAt: string;
+  lastActiveAt: string;
+  expiresAt: string;
+  current: boolean;
+}
+export const sessionService = {
+  list: () => apiClient.get<LoginSession[]>('/auth/sessions'),
+  revoke: (id: string) => apiClient.delete<{ message: string }>(`/auth/sessions/${encodeURIComponent(id)}`),
+};
 
 export const authService = {
   login: (emailOrUsername: string, password: string) =>
@@ -515,9 +529,20 @@ export const commentService = {
 };
 
 export const reportService = {
-  create: async (data: Omit<Report, 'id' | 'status' | 'createdAt' | 'reporterUsername'>) => {
-    requireFeature(REPORTS_AVAILABLE, 'Báo cáo');
-    return apiClient.post<Report>('/reports', data);
+  create: async (data: CreateReportRequest): Promise<Report> => {
+    requireFeature(REPORT_CREATION_AVAILABLE, 'Báo cáo');
+    if (!Number.isSafeInteger(data.targetId) || data.targetId <= 0) throw new Error('Nội dung báo cáo không hợp lệ.');
+    const response = await apiClient.post<{
+      id: number; targetType: CreateReportRequest['targetType']; targetId: number;
+      communityName: string; reporterUsername: string; reason: string; description: string | null;
+      status: Report['status']; resolutionNote: string | null; createdAt: string;
+    }>('/reports', data);
+    return {
+      id: String(response.id), contentType: response.targetType, contentId: String(response.targetId),
+      communityName: response.communityName, reporterUsername: response.reporterUsername,
+      reason: response.reason, description: response.description ?? undefined, status: response.status,
+      resolutionNote: response.resolutionNote ?? undefined, createdAt: response.createdAt,
+    };
   },
   list: async (): Promise<Report[]> => {
     requireFeature(REPORTS_AVAILABLE, 'Báo cáo');

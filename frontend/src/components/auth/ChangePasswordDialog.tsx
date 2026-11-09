@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { authService } from '../../services';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../store/useAuthStore';
+import { useToastStore } from '../../store/useToastStore';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 
 export default function ChangePasswordDialog({ email, onClose }: { email?: string; onClose: () => void }) {
-  const [step, setStep] = useState<'confirm' | 'verify' | 'password' | 'success'>('confirm');
+  const navigate = useNavigate();
+  const changePassword = useAuthStore((state) => state.changePassword);
+  const notify = useToastStore((state) => state.addToast);
+  const [step, setStep] = useState<'confirm' | 'verify' | 'password'>('confirm');
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -57,26 +63,19 @@ export default function ChangePasswordDialog({ email, onClose }: { email?: strin
       } else if (step === 'password') {
         if (password.length < 8) throw new Error('Mật khẩu mới phải có tối thiểu 8 ký tự.');
         if (password !== confirmPassword) throw new Error('Mật khẩu xác nhận không khớp.');
-        await authService.changePassword({ password, confirmPassword });
-        setPassword('');
-        setConfirmPassword('');
-        setStep('success');
+        await changePassword(password, confirmPassword);
+        notify('Đổi mật khẩu thành công. Vui lòng đăng nhập lại bằng mật khẩu mới.', 'success');
+        navigate('/login', { replace: true });
       }
     });
   };
 
-  const titles = { confirm: 'Xác nhận đổi mật khẩu', verify: 'Xác minh mã OTP', password: 'Tạo mật khẩu mới', success: 'Đổi mật khẩu thành công' };
+  const titles = { confirm: 'Xác nhận đổi mật khẩu', verify: 'Xác minh mã OTP', password: 'Tạo mật khẩu mới' };
   return (
     <Modal isOpen onClose={() => { if (!busy) onClose(); }} closeDisabled={busy} title={titles[step]} maxWidth="md">
       <div className="space-y-4 text-left">
         {error && <p role="alert" className="rounded-lg bg-[var(--color-danger)]/10 p-3 text-sm text-[var(--color-danger)]">{error}</p>}
         {notice && <p role="status" className="text-sm text-[var(--text-secondary)]">{notice}</p>}
-        {step === 'success' ? (
-          <>
-            <p role="status" className="text-sm text-[var(--text-secondary)]">Mật khẩu mới đã được cập nhật. Bạn có thể sử dụng mật khẩu mới cho lần đăng nhập tiếp theo.</p>
-            <Button className="w-full" onClick={onClose}>Hoàn tất</Button>
-          </>
-        ) : (
           <form onSubmit={submit} className="space-y-4">
             {step === 'confirm' && <p className="text-sm leading-6 text-[var(--text-secondary)]">Gửi mã OTP đến email liên kết{email ? <> <strong className="break-all text-[var(--text-primary)]">{email}</strong></> : ' của bạn'} để xác nhận đổi mật khẩu?</p>}
             {step === 'verify' && (
@@ -97,7 +96,6 @@ export default function ChangePasswordDialog({ email, onClose }: { email?: strin
               <Button type="submit" isLoading={busy}>{step === 'confirm' ? 'Xác nhận gửi OTP' : step === 'verify' ? 'Xác minh OTP' : 'Lưu mật khẩu mới'}</Button>
             </div>
           </form>
-        )}
       </div>
     </Modal>
   );

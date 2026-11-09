@@ -121,7 +121,7 @@ public class LocalAuthService {
                             new AuthException(AuthErrorCode.INVALID_CREDENTIALS)
                     );
 
-            validateAccountStatus(user);
+            this.validateAccountStatus(user);
 
             return tokenService.issueTokens(user);
 
@@ -178,6 +178,7 @@ public class LocalAuthService {
         user.setPassword(passwordEncoder.encode(newPassword));
 
         userRepository.save(user);
+        tokenService.revokeAllUserTokens(user);
 
         passwordResetTokenService.consumeToken(resetToken);
     }
@@ -209,6 +210,7 @@ public class LocalAuthService {
         passwordResetTokenService.consumeToken(verificationToken);
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+        tokenService.revokeAllUserTokens(user);
     }
 
     private String changePasswordSubject(User user) {

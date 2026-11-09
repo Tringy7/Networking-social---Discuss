@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Flag } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { useReportStore } from '../../store/useReportStore';
 import { useToastStore } from '../../store/useToastStore';
-import { REPORTS_AVAILABLE } from '../../services';
-import { ReportContentType } from '../../types';
+import { useAuthStore } from '../../store/useAuthStore';
+import { ApiError } from '../../services/apiClient';
+import { REPORT_CREATION_AVAILABLE } from '../../services';
+import type { ReportContentType, ReportReason, ReportTargetType } from '../../types';
+import './reportModal.css';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -15,117 +20,82 @@ interface ReportModalProps {
   communityName?: string;
   targetUsername?: string;
 }
+const reasons: { value: ReportReason; label: string }[] = [
+  { value: 'SPAM', label: 'Spam hoặc quảng cáo' },
+  { value: 'HARASSMENT', label: 'Quấy rối hoặc bắt nạt' },
+  { value: 'HATE_SPEECH', label: 'Ngôn từ thù địch' },
+  { value: 'INAPPROPRIATE_CONTENT', label: 'Nội dung không phù hợp' },
+  { value: 'MISINFORMATION', label: 'Thông tin sai lệch' },
+  { value: 'OTHER', label: 'Lý do khác' },
+];
+const targetLabels = { POST: 'bài viết', COMMENT: 'bình luận', COMMUNITY: 'cộng đồng', USER: 'tài khoản' };
 
-export const ReportModal: React.FC<ReportModalProps> = ({
-  isOpen,
-  onClose,
-  contentType,
-  contentId,
-  contentTitle,
-  communityName,
-  targetUsername,
-}) => {
-  const { addReport } = useReportStore();
-  const { addToast } = useToastStore();
-
-  const [selectedReason, setSelectedReason] = useState('Spam hoặc nội dung quảng cáo trái phép');
-  const [customNote, setCustomNote] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (!REPORTS_AVAILABLE) return <Modal isOpen={isOpen} onClose={onClose} title="Báo cáo vi phạm">
-    <p role="status" className="text-sm text-[var(--text-secondary)]">Chức năng báo cáo hiện chưa khả dụng.</p>
-    <Button type="button" variant="secondary" onClick={onClose}>Đóng</Button>
-  </Modal>;
-
-  const reasons = [
-    'Spam hoặc nội dung quảng cáo trái phép',
-    'Gây hấn, quấy rối hoặc ngôn từ thù địch',
-    'Thông tin sai lệch hoặc tin giả mạo',
-    'Vi phạm bản quyền hoặc sở hữu trí tuệ',
-    'Nội dung khiêu dâm hoặc bạo lực',
-    'Lý do khác',
-  ];
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+export default function ReportModal({ isOpen, onClose, contentType, contentId, contentTitle, communityName }: ReportModalProps) {
+  const addReport = useReportStore((state) => state.addReport);
+  const addToast = useToastStore((state) => state.addToast);
+  const authenticated = useAuthStore((state) => state.isAuthenticated);
+  const [reason, setReason] = useState<ReportReason | ''>('');
+  const [description, setDescription] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [duplicate, setDuplicate] = useState(false);
+  const pending = useRef(false);
+  const fieldId = useId();
+  useEffect(() => {
+    if (!isOpen) return;
+    setReason(''); setDescription(''); setError(''); setDuplicate(false);
+  }, [isOpen, contentType, contentId]);
+  const close = () => { if (!pending.current) onClose(); };
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (pending.current || duplicate || !authenticated || !reason || contentType === 'USER') return;
+    if (reason === 'OTHER' && !description.trim()) { setError('Vui lòng mô tả lý do báo cáo.'); return; }
+    const targetId = Number(contentId);
+    if (!Number.isSafeInteger(targetId) || targetId <= 0) { setError('Không tìm thấy nội dung để báo cáo. Vui lòng tải lại trang.'); return; }
+    pending.current = true; setSubmitting(true); setError('');
     try {
-      await addReport({
-        contentType,
-        contentId,
-        contentTitle,
-        communityName,
-        targetUsername,
-        reason: selectedReason === 'Lý do khác' && customNote ? customNote : selectedReason,
-      });
-      addToast('Cảm ơn bạn! Báo cáo đã được gửi tới đội ngũ kiểm duyệt.', 'success');
+      await addReport({ targetType: contentType as ReportTargetType, targetId, reason,
+        ...(description.trim() ? { description: description.trim() } : {}) });
+      addToast('Đã gửi báo cáo. Cảm ơn bạn đã giúp cộng đồng an toàn hơn.', 'success');
       onClose();
-    } catch (error) {
-      addToast(error instanceof Error ? error.message : 'Không thể gửi báo cáo.', 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
+    } catch (cause) {
+      if (cause instanceof ApiError && cause.status === 409) {
+        setDuplicate(true); setError('Bạn đã báo cáo nội dung này. Báo cáo trước đó đang chờ xử lý.');
+      } else if (cause instanceof ApiError && cause.status === 404) {
+        setError('Nội dung không còn tồn tại hoặc bạn không có quyền truy cập.');
+      } else if (cause instanceof ApiError && cause.status === 401) {
+        setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      } else setError(cause instanceof Error ? cause.message : 'Không thể gửi báo cáo. Vui lòng thử lại.');
+    } finally { pending.current = false; setSubmitting(false); }
   };
 
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Báo cáo vi phạm"
-      description={`Gửi báo cáo nội dung "${contentTitle || contentId}" tới ban quản trị`}
-      maxWidth="md"
-    >
-      <form onSubmit={handleSubmit} className="space-y-4 text-left">
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-[var(--text-secondary)]">Lý do vi phạm:</label>
-          <div className="space-y-1.5">
-            {reasons.map((r) => (
-              <label
-                key={r}
-                className={`flex items-center gap-3 p-2.5 rounded-xl border text-xs cursor-pointer transition-colors ${
-                  selectedReason === r
-                    ? 'border-[var(--color-orange)] bg-[var(--color-orange)]/10 text-[var(--text-primary)]'
-                    : 'border-[var(--border-color)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="reportReason"
-                  checked={selectedReason === r}
-                  onChange={() => setSelectedReason(r)}
-                  className="accent-[var(--color-orange)]"
-                />
-                <span>{r}</span>
-              </label>
-            ))}
-          </div>
+  return <Modal isOpen={isOpen} onClose={close} closeDisabled={submitting}
+    title={`Báo cáo ${targetLabels[contentType]}`} maxWidth="md">
+    {!REPORT_CREATION_AVAILABLE || contentType === 'USER' ? <p className="report-form-notice" role="status">Báo cáo {targetLabels[contentType]} hiện chưa được hỗ trợ.</p>
+      : !authenticated ? <div className="report-sign-in"><p>Bạn cần đăng nhập để gửi báo cáo.</p><Link to="/login" onClick={onClose}>Đăng nhập</Link></div>
+      : <form className="report-form" onSubmit={submit}>
+        <div className="report-target"><Flag size={18} aria-hidden="true" /><div>
+          {communityName && <span>c/{communityName}</span>}
+          <p>{contentTitle || `${targetLabels[contentType]} #${contentId}`}</p>
+        </div></div>
+        <fieldset disabled={submitting || duplicate} className="report-reasons">
+          <legend>Vì sao bạn báo cáo nội dung này?</legend>
+          {reasons.map((item) => <label key={item.value} className={reason === item.value ? 'is-selected' : ''}>
+            <input type="radio" name={`${fieldId}-reason`} value={item.value} required checked={reason === item.value}
+              onChange={() => { setReason(item.value); setError(''); }} />
+            <span>{item.label}</span>
+          </label>)}
+        </fieldset>
+        <div className="report-description">
+          <div><label htmlFor={`${fieldId}-description`}>Thông tin bổ sung <span>{reason === 'OTHER' ? '(bắt buộc)' : '(không bắt buộc)'}</span></label>
+            <span id={`${fieldId}-limit`}>{description.length}/2.000</span></div>
+          <textarea id={`${fieldId}-description`} rows={3} maxLength={2000} required={reason === 'OTHER'}
+            disabled={submitting || duplicate} value={description} onChange={(event) => setDescription(event.target.value)}
+            aria-describedby={`${fieldId}-limit`} placeholder="Chia sẻ thêm chi tiết để hỗ trợ việc xem xét…" />
         </div>
-
-        {selectedReason === 'Lý do khác' && (
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[var(--text-secondary)]">Mô tả chi tiết:</label>
-            <textarea
-              value={customNote}
-              onChange={(e) => setCustomNote(e.target.value)}
-              placeholder="Vui lòng cung cấp thêm thông tin giúp chúng tôi xử lý..."
-              rows={3}
-              required
-              className="w-full bg-[var(--bg-main)] border border-[var(--border-color)] focus:border-[var(--color-orange)] rounded-xl p-3 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none"
-            />
-          </div>
-        )}
-
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            Hủy bỏ
-          </Button>
-          <Button type="submit" variant="primary" size="sm" isLoading={isSubmitting}>
-            Gửi báo cáo
-          </Button>
-        </div>
-      </form>
-    </Modal>
-  );
-};
-
-export default ReportModal;
+        {error && <p className="report-form-error" role="alert">{error}</p>}
+        <footer className="report-form-footer"><Button type="button" variant="ghost" size="sm" disabled={submitting} onClick={close}>{duplicate ? 'Đóng' : 'Hủy'}</Button>
+          <Button type="submit" size="sm" isLoading={submitting} disabled={!reason || duplicate || (reason === 'OTHER' && !description.trim())}>Gửi báo cáo</Button></footer>
+      </form>}
+  </Modal>;
+}

@@ -38,8 +38,21 @@ function readPersistedAuthSession(): boolean {
 let refreshPromise: Promise<void> | null = null;
 let sessionAuthenticated = readPersistedAuthSession();
 let refreshGeneration = 0;
+let sessionEpoch = 0;
+let logoutPromise: Promise<unknown> | null = null;
+
+function sessionChanged(): ApiError {
+  return new ApiError('SESSION_CHANGED', 0, 'Phiên đăng nhập đã thay đổi.');
+}
+
+async function withAuthLock<T>(action: () => Promise<T>): Promise<T> {
+  return typeof navigator !== 'undefined' && navigator.locks
+    ? navigator.locks.request('discuss-auth-refresh', action)
+    : action();
+}
 
 export function setApiSessionAuthenticated(authenticated: boolean): void {
+  if (!authenticated) sessionEpoch += 1;
   sessionAuthenticated = authenticated;
   if (typeof localStorage === 'undefined') return;
 
@@ -72,21 +85,31 @@ function notifyExpiredSession(error: unknown): void {
   window.dispatchEvent(new CustomEvent('auth:expired', { detail: error }));
 }
 
-async function refreshSession(): Promise<void> {
+async function refreshSession(epoch: number): Promise<void> {
   if (!refreshPromise) {
-    const refresh = async () => {
+    const operation = withAuthLock(async () => {
+      if (!sessionAuthenticated || epoch !== sessionEpoch || logoutPromise) throw sessionChanged();
       await rawRequest('POST', '/auth/refresh');
+      if (!sessionAuthenticated || epoch !== sessionEpoch) throw sessionChanged();
       refreshGeneration += 1;
-    };
-    const operation =
-      typeof navigator !== 'undefined' && navigator.locks
-        ? navigator.locks.request('discuss-auth-refresh', refresh)
-        : refresh();
-    refreshPromise = operation.finally(() => {
-      refreshPromise = null;
     });
+    refreshPromise = operation.finally(() => { refreshPromise = null; });
   }
   await refreshPromise;
+}
+
+async function logoutSession<T>(): Promise<T> {
+  if (!logoutPromise) {
+    setApiSessionAuthenticated(false);
+    const runningRefresh = refreshPromise;
+    const operation = (async () => {
+      // Let any refresh response finish setting cookies before logout clears/revokes them.
+      if (runningRefresh) await runningRefresh.catch(() => undefined);
+      return withAuthLock(() => rawRequest<T>('POST', '/auth/logout'));
+    })();
+    logoutPromise = operation.finally(() => { logoutPromise = null; });
+  }
+  return logoutPromise as Promise<T>;
 }
 
 async function rawRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -161,12 +184,18 @@ async function rawRequest<T>(method: string, path: string, body?: unknown): Prom
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  if (method === 'POST' && path === '/auth/logout') return logoutSession<T>();
+  if (logoutPromise) throw sessionChanged();
+  const epoch = sessionEpoch;
+  const startedAuthenticated = sessionAuthenticated;
   const requestGeneration = refreshGeneration;
   try {
-    return await rawRequest<T>(method, path, body);
+    const result = await rawRequest<T>(method, path, body);
+    if (startedAuthenticated && epoch !== sessionEpoch) throw sessionChanged();
+    return result;
   } catch (error) {
     const canRefresh =
-      sessionAuthenticated &&
+      sessionAuthenticated && epoch === sessionEpoch && !logoutPromise &&
       isAccessTokenExpired(error) &&
       !NO_REFRESH_PATHS.some((noRefreshPath) => path.startsWith(noRefreshPath));
 
@@ -176,7 +205,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
     if (requestGeneration === refreshGeneration) {
       try {
-        await refreshSession();
+        await refreshSession(epoch);
       } catch (refreshError) {
         if (refreshError instanceof ApiError && refreshError.status === 401) {
           notifyExpiredSession(refreshError);
@@ -185,8 +214,11 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
       }
     }
 
+    if (!sessionAuthenticated || epoch !== sessionEpoch || logoutPromise) throw sessionChanged();
     try {
-      return await rawRequest<T>(method, path, body);
+      const result = await rawRequest<T>(method, path, body);
+      if (epoch !== sessionEpoch) throw sessionChanged();
+      return result;
     } catch (retryError) {
       if (retryError instanceof ApiError && retryError.status === 401) {
         notifyExpiredSession(retryError);

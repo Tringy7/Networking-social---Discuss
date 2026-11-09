@@ -1,9 +1,12 @@
 package com.discuss.discuss.config;
 
+import com.discuss.discuss.service.auth.JwtService;
+import com.discuss.discuss.service.auth.SessionTokenValidator;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.util.Base64;
 import jakarta.servlet.http.Cookie;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -13,6 +16,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtClaimValidator;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
@@ -47,7 +56,7 @@ public class SecurityConfiguration {
             HttpSecurity http,
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
             CustomAccessDeniedHandler customAccessDeniedHandler,
-            JwtDecoder jwtDecoder,
+            @Qualifier("jwtDecoder") JwtDecoder jwtDecoder,
             JwtAuthenticationConverter jwtAuthenticationConverter,
             BearerTokenResolver bearerTokenResolver) throws Exception {
 
@@ -62,6 +71,7 @@ public class SecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(
                         authz -> authz
+                                .requestMatchers("/auth/sessions", "/auth/sessions/**").authenticated()
                                 .requestMatchers("/auth/change-password", "/auth/change-password/**").authenticated()
                                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                                 .anyRequest().authenticated())
@@ -106,6 +116,10 @@ public class SecurityConfiguration {
     @Bean
     public BearerTokenResolver bearerTokenResolver() {
         return request -> {
+            // Logout identifies the session by its refresh cookie, even if access is expired/invalid.
+            if ("POST".equals(request.getMethod()) && "/auth/logout".equals(request.getServletPath())) {
+                return null;
+            }
             if (request.getCookies() != null) {
                 String tokenFromCookie = Arrays.stream(request.getCookies())
                         .filter(c -> ACCESS_TOKEN_COOKIE.equals(c.getName()))
@@ -150,7 +164,24 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public JwtDecoder jwtDecoder(SecretKey jwtSecretKey) {
-        return NimbusJwtDecoder.withSecretKey(jwtSecretKey).build();
+    public JwtDecoder jwtDecoder(SecretKey jwtSecretKey, SessionTokenValidator sessions) {
+        return decoderForTokenType(jwtSecretKey, JwtService.ACCESS_TOKEN_TYPE, sessions);
+    }
+
+    @Bean
+    public JwtDecoder refreshJwtDecoder(SecretKey jwtSecretKey) {
+        return decoderForTokenType(jwtSecretKey, JwtService.REFRESH_TOKEN_TYPE, jwt -> OAuth2TokenValidatorResult.success());
+    }
+
+    private JwtDecoder decoderForTokenType(SecretKey secretKey, String expectedType,
+                                          OAuth2TokenValidator<Jwt> sessionValidator) {
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(secretKey)
+                .macAlgorithm(JwtService.JWT_ALGORITHM)
+                .build();
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                JwtValidators.createDefault(),
+                new JwtClaimValidator<String>(JwtService.TOKEN_TYPE_CLAIM, expectedType::equals),
+                sessionValidator));
+        return decoder;
     }
 }

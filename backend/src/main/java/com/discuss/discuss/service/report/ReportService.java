@@ -92,6 +92,7 @@ public class ReportService {
             String description
     ) {
         Comment comment = commentSupport.findComment(request.getTargetId());
+        commentSupport.requireAvailablePost(comment.getPost());
 
         Community community = comment.getPost().getCommunity();
         communitySupport.checkCommunity(community, reporter);

@@ -162,6 +162,14 @@ export interface Comment {
 }
 
 export type ReportContentType = 'POST' | 'COMMENT' | 'COMMUNITY' | 'USER';
+export type ReportTargetType = 'POST' | 'COMMENT' | 'COMMUNITY';
+export type ReportReason = 'SPAM' | 'HARASSMENT' | 'HATE_SPEECH' | 'INAPPROPRIATE_CONTENT' | 'MISINFORMATION' | 'OTHER';
+export interface CreateReportRequest {
+  targetType: ReportTargetType;
+  targetId: number;
+  reason: ReportReason;
+  description?: string;
+}
 export type ReportStatus = 'PENDING' | 'RESOLVED' | 'REJECTED';
 
 export interface Report {
@@ -174,6 +182,7 @@ export interface Report {
   reporterUsername: string;
   targetUsername?: string;
   reason: string;
+  description?: string;
   status: ReportStatus;
   resolutionNote?: string;
   createdAt: string;

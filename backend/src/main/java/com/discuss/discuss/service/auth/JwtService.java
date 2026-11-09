@@ -1,30 +1,32 @@
 package com.discuss.discuss.service.auth;
 
 import com.discuss.discuss.entity.User;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
 public class JwtService {
 
     public static final MacAlgorithm JWT_ALGORITHM = MacAlgorithm.HS256;
+    public static final String TOKEN_TYPE_CLAIM = "token_type";
+    public static final String ACCESS_TOKEN_TYPE = "access";
+    public static final String REFRESH_TOKEN_TYPE = "refresh";
 
     @Value("${jwt.expiration.access.token}")
     private long jwtExpirationAccessTokenMs;
@@ -33,13 +35,12 @@ public class JwtService {
     private long jwtExpirationRefreshTokenMs;
 
     private final JwtEncoder jwtEncoder;
-    private final JwtDecoder jwtDecoder;
-    private final SecretKey secretKey;
+    private final JwtDecoder refreshJwtDecoder;
 
-    public JwtService(JwtEncoder jwtEncoder, SecretKey secretKey, JwtDecoder jwtDecoder) {
+    public JwtService(JwtEncoder jwtEncoder,
+                      @Qualifier("refreshJwtDecoder") JwtDecoder refreshJwtDecoder) {
         this.jwtEncoder = jwtEncoder;
-        this.secretKey = secretKey;
-        this.jwtDecoder = jwtDecoder;
+        this.refreshJwtDecoder = refreshJwtDecoder;
     }
 
     public long getAccessExpirationSeconds() {
@@ -50,16 +51,16 @@ public class JwtService {
         return jwtExpirationRefreshTokenMs / 1000;
     }
 
-    public String createAccessToken(String userName, User user) {
+    public String createAccessToken(String userName, User user, String sessionId) {
         Instant now = Instant.now();
         Instant validity = now.plus(jwtExpirationAccessTokenMs, ChronoUnit.MILLIS);
-        return createToken(userName, user, now, validity);
+        return createToken(userName, user, now, validity, ACCESS_TOKEN_TYPE, sessionId);
     }
 
-    public String createRefreshToken(String userName, User user) {
+    public String createRefreshToken(String userName, User user, String sessionId) {
         Instant now = Instant.now();
         Instant validity = now.plus(jwtExpirationRefreshTokenMs, ChronoUnit.MILLIS);
-        return createToken(userName, user, now, validity);
+        return createToken(userName, user, now, validity, REFRESH_TOKEN_TYPE, sessionId);
     }
 
     public Instant getRefreshTokenExpiration() {
@@ -67,13 +68,16 @@ public class JwtService {
                 .plus(jwtExpirationRefreshTokenMs, ChronoUnit.MILLIS);
     }
 
-    private String createToken(String userName, User user, Instant now, Instant validity) {
+    private String createToken(String userName, User user, Instant now, Instant validity, String tokenType, String sessionId) {
         List<String> authorities = List.of(user.getRole().name());
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
+                .id(UUID.randomUUID().toString())
                 .issuedAt(now)
                 .expiresAt(validity)
                 .subject(userName)
+                .claim("sid", sessionId)
+                .claim(TOKEN_TYPE_CLAIM, tokenType)
                 .claim("authorities", authorities)
                 .build();
 
@@ -108,7 +112,7 @@ public class JwtService {
 
     public Jwt verifyRefreshToken(String refreshToken) {
         try {
-            return jwtDecoder.decode(refreshToken);
+            return refreshJwtDecoder.decode(refreshToken);
         } catch (JwtException e) {
             log.warn("Refresh token verification failed: {}", e.getMessage());
             throw e;

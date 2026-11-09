@@ -90,6 +90,13 @@ public class CookieUtil {
         return headers;
     }
 
+    public HttpHeaders buildClearedAuthHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, clearCookie(ACCESS_TOKEN_COOKIE, "/").toString());
+        headers.add(HttpHeaders.SET_COOKIE, clearCookie(REFRESH_TOKEN_COOKIE, "/auth").toString());
+        return headers;
+    }
+
     public HttpHeaders buildPasswordResetHeaders(String token) {
         HttpHeaders headers = new HttpHeaders();
 
