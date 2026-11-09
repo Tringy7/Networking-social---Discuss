@@ -173,6 +173,7 @@ public class CommunityMemberService {
 
         if (member.getRole() == CommunityRole.OWNER) {
             transferOwnershipBeforeLeaving(community);
+            member.setRole(CommunityRole.MEMBER);
         }
 
         member.setStatus(MembershipStatus.LEFT);
@@ -196,7 +197,7 @@ public class CommunityMemberService {
     }
 
     // Transfers ownership to another ACTIVE member; only the current Owner can do this.
-    // The previous Owner becomes a regular Member.
+    // The previous Owner remains ACTIVE and becomes a Moderator.
     @Transactional
     public void transferOwnership(String communityName, String newOwnerUsername) {
         User currentUser = userService.getCurrentUser();
@@ -220,8 +221,10 @@ public class CommunityMemberService {
                 getExistingMembership(community, targetUser);
         validateActiveMembership(targetMembership);
 
+        community.setOwner(targetUser);
+        communityRepository.save(community);
         targetMembership.setRole(CommunityRole.OWNER);
-        currentMembership.setRole(CommunityRole.MEMBER);
+        currentMembership.setRole(CommunityRole.MODERATOR);
 
         memberRepository.save(targetMembership);
         memberRepository.save(currentMembership);
@@ -244,6 +247,8 @@ public class CommunityMemberService {
                         .orElse(null));
 
         // If no other members remain, the community temporarily has no Owner.
+        community.setOwner(successor == null ? null : successor.getUser());
+        communityRepository.save(community);
         if (successor == null) {
             return;
         }
@@ -264,7 +269,7 @@ public class CommunityMemberService {
         CommunityMember member = CommunityMember.builder()
                 .community(community)
                 .user(user)
-                .role(determineRoleForJoining(community))
+                .role(determineRoleForJoining(community, user))
                 .status(MembershipStatus.ACTIVE)
                 .joinedAt(LocalDateTime.now())
                 .build();
@@ -274,7 +279,7 @@ public class CommunityMemberService {
 
     // Reactivates a LEFT/KICKED membership and determines the role based on the current Owner.
     private void reactivateMembership(CommunityMember member) {
-        member.setRole(determineRoleForJoining(member.getCommunity()));
+        member.setRole(determineRoleForJoining(member.getCommunity(), member.getUser()));
         member.setStatus(MembershipStatus.ACTIVE);
         member.setJoinedAt(LocalDateTime.now());
         member.setLeftAt(null);
@@ -283,13 +288,17 @@ public class CommunityMemberService {
     }
 
     // The joining user becomes Owner if the community has no ACTIVE Owner; otherwise Member.
-    private CommunityRole determineRoleForJoining(Community community) {
+    private CommunityRole determineRoleForJoining(Community community, User user) {
         boolean hasActiveOwner = memberRepository.existsByCommunityAndRoleAndStatus(
                 community,
                 CommunityRole.OWNER,
                 MembershipStatus.ACTIVE
         );
 
+        if (!hasActiveOwner) {
+            community.setOwner(user);
+            communityRepository.save(community);
+        }
         return hasActiveOwner ? CommunityRole.MEMBER : CommunityRole.OWNER;
     }
 
@@ -319,4 +328,22 @@ public class CommunityMemberService {
         return memberRepository.findByCommunityAndUser(community, user).orElse(null);
     }
 
+    // Finds a community by its normalized name and requires it to be ACTIVE.
+    private Community getCommunityByNameAndStatusActive(String name) {
+        String normalizedName = nameNormalizer.normalize(name);
+
+        Community community = communityRepository.findByNameForUpdate(normalizedName)
+                .orElseThrow(() -> new CommunityException(
+                        CommunityErrorCode.COMMUNITY_NOT_FOUND
+                ));
+
+        if (community.getStatus() != CommunityStatus.ACTIVE) {
+            throw new CommunityException(
+                    CommunityErrorCode.FORBIDDEN,
+                    "This community is not active"
+            );
+        }
+
+        return community;
+    }
 }

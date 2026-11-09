@@ -1,13 +1,9 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Camera, Eye, ImageOff, MoreHorizontal, Share2 } from 'lucide-react';
+import { Camera, Eye, MoreHorizontal } from 'lucide-react';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import { useToastStore } from '../../store/useToastStore';
-import Avatar from './Avatar';
-import Modal from './Modal';
-import Button from './Button';
+import ImageLightbox from '../post/ImageLightbox';
 
 interface Props {
   src?: string;
@@ -21,17 +17,15 @@ interface Props {
 }
 
 /** One interaction for every user/community image, with editing authorized by the caller. */
-export default function EntityImageActions({ src, kind, name, href, handle, avatarUrl, onEdit, children }: Props) {
+export default function EntityImageActions({ src, kind, name, onEdit, children }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [failedSrc, setFailedSrc] = useState<string>();
   const wrapper = useRef<HTMLDivElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
   const menuId = useId();
   const reduced = useReducedMotion();
   const intensity = useSettingsStore((state) => state.settings.animationIntensity);
-  const notify = useToastStore((state) => state.addToast);
   const quiet = reduced || intensity !== 'full';
   const label = kind === 'avatar' ? 'ảnh đại diện' : 'ảnh bìa';
   const title = kind === 'avatar' ? 'Ảnh đại diện' : 'Ảnh bìa';
@@ -75,14 +69,7 @@ export default function EntityImageActions({ src, kind, name, href, handle, avat
   };
   const view = () => { setMenuOpen(false); setPreviewOpen(true); };
   const edit = () => { setMenuOpen(false); closePreview(); onEdit?.(); };
-  const share = async () => {
-    try {
-      const url = new URL(href, window.location.origin);
-      url.searchParams.set('photo', kind);
-      await navigator.clipboard.writeText(url.href);
-      notify('Đã sao chép liên kết ảnh.', 'success');
-    } catch { notify('Không thể sao chép liên kết ảnh.', 'error'); }
-  };
+
 
   return <>
     <div ref={wrapper} className={`entity-image-control entity-image-control--${kind} ${menuOpen ? 'is-open' : ''}`}
@@ -105,21 +92,11 @@ export default function EntityImageActions({ src, kind, name, href, handle, avat
         </motion.div>}
       </AnimatePresence>
     </div>
-    {createPortal(<Modal isOpen={previewOpen || linkedPreview} onClose={closePreview} title={`${title} của ${name}`} maxWidth="4xl">
-      <article className="image-post" aria-label={`Bài đăng ${label} của ${name}`}>
-        <header className="image-post-author">
-          <Link to={href} onClick={closePreview}><Avatar src={avatarUrl} alt={name} size="md" /></Link>
-          <div><Link to={href} onClick={closePreview} className="post-author-name">{name}</Link><p>{handle} · {title}</p></div>
-        </header>
-        <div className="image-post-media">
-          {src && src !== failedSrc ? <img src={src} alt={`${title} của ${name}`} onError={() => setFailedSrc(src)} />
-            : <div className="image-post-unavailable" role="status"><ImageOff size={32} /><p>Không thể tải ảnh này.</p></div>}
-        </div>
-        <footer className="image-post-actions">
-          <Button type="button" variant="ghost" size="sm" leftIcon={<Share2 size={16} />} onClick={() => void share()}>Chia sẻ</Button>
-          {onEdit && <Button type="button" variant="secondary" size="sm" leftIcon={<Camera size={16} />} onClick={edit}>Chỉnh sửa {label}</Button>}
-        </footer>
-      </article>
-    </Modal>, document.body)}
+    {src && (previewOpen || linkedPreview) && <ImageLightbox
+      images={[{ url: src, alt: `${title} của ${name}` }]}
+      index={0}
+      onChange={() => {}}
+      onClose={closePreview}
+    />}
   </>;
 }

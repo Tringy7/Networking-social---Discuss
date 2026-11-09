@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import './postContent.css';
 
 export default function ImageLightbox({ images, index, onChange, onClose }: {
   images: { url: string; alt?: string }[];

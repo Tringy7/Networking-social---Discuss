@@ -4,9 +4,10 @@ import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.entity.CommunityMember;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.CommunityRole;
+import com.discuss.discuss.enums.CommunityStatus;
+import com.discuss.discuss.enums.CommunityVisibility;
 import com.discuss.discuss.enums.MembershipStatus;
 import com.discuss.discuss.repository.CommunityMemberRepository;
-import com.discuss.discuss.repository.CommunityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,21 @@ public class CommunityAuthorizationService {
                                 "You are not an active member"
                         )
                 );
+    }
+
+    /** Public communities allow signed-in nonmembers to comment; bans still apply. */
+    public void requireCommentPermission(Community community, User user) {
+        if (user == null || community.getStatus() != CommunityStatus.ACTIVE) {
+            throw new AccessDeniedException("Commenting is not allowed");
+        }
+        CommunityMember member = memberRepository.findByCommunityAndUser(community, user).orElse(null);
+        if (member != null && member.getStatus() == MembershipStatus.BANNED) {
+            throw new AccessDeniedException("You are banned from this community");
+        }
+        if (community.getVisibility() != CommunityVisibility.PUBLIC
+                && (member == null || member.getStatus() != MembershipStatus.ACTIVE)) {
+            throw new AccessDeniedException("You are not an active member");
+        }
     }
 
     public void requireModeratorOrOwner(
