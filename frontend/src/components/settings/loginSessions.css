@@ -1,0 +1,17 @@
+.login-sessions { padding:20px; background:var(--bg-elevated); border-radius:var(--radius-card); }
+.login-sessions-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+.login-sessions-heading h3 { margin:0; font-size:15px; line-height:23px; font-weight:600; color:var(--text-primary); }
+.login-sessions-heading p,.login-sessions-note { margin:5px 0 0; font-size:13px; line-height:21px; color:var(--text-secondary); }
+.login-sessions-list { list-style:none; padding:0; margin:18px 0; display:grid; gap:8px; }
+.login-session { display:flex; align-items:flex-start; gap:14px; padding:16px; background:var(--bg-surface); border-radius:8px; }
+.login-session > svg { flex-shrink:0; margin-top:3px; color:var(--text-secondary); }
+.login-session-details { flex:1; min-width:0; }
+.login-session-name { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; margin-bottom:7px; }
+.login-session-name strong { font-size:14px; line-height:22px; font-weight:600; overflow-wrap:anywhere; }
+.login-session-name span { font-size:11px; line-height:19px; color:var(--color-success); background:var(--bg-elevated); padding:1px 7px; border-radius:4px; }
+.login-session-details p { margin:3px 0 0; font-size:12px; line-height:20px; color:var(--text-secondary); }
+.login-session-revoke { display:flex; align-items:center; gap:6px; flex-shrink:0; min-height:36px; border:0; padding:7px 9px; border-radius:6px; background:transparent; color:var(--text-secondary); font-size:12px; }
+.login-session-revoke:hover { background:var(--bg-hover); color:var(--color-danger); }
+.login-sessions-status { padding:20px 0; font-size:13px; color:var(--text-secondary); }
+.login-sessions-status button { margin-top:10px; }
+@media(max-width:600px) { .login-sessions { padding:16px; } .login-session { flex-wrap:wrap; gap:10px; padding:14px; } .login-session-details { flex-basis:calc(100% - 35px); } .login-session-revoke { margin-left:31px; } }

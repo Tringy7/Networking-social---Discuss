@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
+import LoginSessions from '../../components/settings/LoginSessions';
 import ChangePasswordDialog from '../../components/auth/ChangePasswordDialog';
 import Button from '../../components/ui/Button';
-import { KeyRound, Shield, Laptop, Smartphone, LogOut, CheckCircle2 } from 'lucide-react';
+import { KeyRound, Shield, LogOut, CheckCircle2 } from 'lucide-react';
 
 export const AccountSettingsPage: React.FC = () => {
   const { user, logout } = useAuthStore();
@@ -93,40 +94,7 @@ export const AccountSettingsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Active sessions */}
-        <div className="setting-group space-y-3">
-          <h4 className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">Phiên đăng nhập đang hoạt động</h4>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-[var(--bg-surface)]">
-              <div className="flex items-center gap-3">
-                <Laptop className="w-4 h-4 text-[var(--color-orange)]" />
-                <div>
-                  <div className="text-xs font-semibold text-[var(--text-primary)]">
-                    Chrome trên macOS (Thiết bị hiện tại)
-                  </div>
-                  <div className="text-xs text-[var(--text-muted)]">IP: 14.161.x.x · TP. Hồ Chí Minh</div>
-                </div>
-              </div>
-              <span className="text-xs font-semibold text-[var(--color-success)]">Trực tuyến</span>
-            </div>
-
-            <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-[var(--bg-surface)]">
-              <div className="flex items-center gap-3">
-                <Smartphone className="w-4 h-4 text-[var(--text-secondary)]" />
-                <div>
-                  <div className="text-xs font-semibold text-[var(--text-primary)]">Safari trên iPhone 15 Pro</div>
-                  <div className="text-xs text-[var(--text-muted)]">Hoạt động 3 giờ trước</div>
-                </div>
-              </div>
-              <button
-                onClick={() => addToast('Đã thu hồi phiên đăng nhập di động!', 'info')}
-                className="text-xs text-[var(--color-danger)] hover:underline"
-              >
-                Đăng xuất
-              </button>
-            </div>
-          </div>
-        </div>
+        <LoginSessions />
       </div>
 
       {/* Logout button */}

@@ -11,7 +11,7 @@ import com.discuss.discuss.exception.auth.AuthErrorCode;
 import com.discuss.discuss.exception.auth.AuthException;
 import com.discuss.discuss.repository.CommunityInfoRepository;
 import com.discuss.discuss.repository.UserProfileRepository;
-import com.discuss.discuss.service.community.CommunityService;
+import com.discuss.discuss.service.community.CommunitySupport;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +33,7 @@ public class ImageService {
 
     private final MediaStorageService storage;
     private final UserService userService;
-    private final CommunityService communityService;
+    private final CommunitySupport communitySupport;
     private final UserProfileRepository profileRepository;
     private final CommunityInfoRepository communityInfoRepository;
 
@@ -61,7 +61,7 @@ public class ImageService {
     // ==================== COMMUNITY ====================
     @Transactional
     public void setAvatarForCommunity(String communityName, MultipartFile file) {
-        Community community = communityService.getCommunityByNameAndStatusActive(communityName);
+        Community community = communitySupport.getCommunityByNameAndStatusActive(communityName);
         CommunityInfo info = community.getInfo();
 
         replace(ImageKind.COMMUNITY_AVATAR, file, community.getId(), info,
@@ -70,7 +70,7 @@ public class ImageService {
 
     @Transactional
     public void setBannerForCommunity(String communityName, MultipartFile file) {
-        Community community = communityService.getCommunityByNameAndStatusActive(communityName);
+        Community community = communitySupport.getCommunityByNameAndStatusActive(communityName);
         CommunityInfo info = community.getInfo();
 
         replace(ImageKind.COMMUNITY_BANNER, file, community.getId(), info,

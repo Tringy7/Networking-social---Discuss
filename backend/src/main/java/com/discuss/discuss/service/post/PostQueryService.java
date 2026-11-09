@@ -11,7 +11,7 @@ import com.discuss.discuss.enums.PostStatus;
 import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.repository.PostRepository;
 import com.discuss.discuss.service.community.CommunityAuthorizationService;
-import com.discuss.discuss.service.community.CommunityService;
+import com.discuss.discuss.service.community.CommunitySupport;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -28,7 +28,7 @@ public class PostQueryService {
 
     private final PostRepository postRepository;
     private final UserService userService;
-    private final CommunityService communityService;
+    private final CommunitySupport communitySupport;
     private final CommunityAuthorizationService communityAuthorizationService;
     private final PostSupport postSupport;
     private final PageMapper pageMapper;
@@ -78,7 +78,7 @@ public class PostQueryService {
 
     private Community resolveListCommunity(String communityName, User currentUser) {
         if (communityName == null) return null;
-        Community community = communityService.getCommunityByNameAndStatusActive(communityName);
+        Community community = communitySupport.getCommunityByNameAndStatusActive(communityName);
         if (community.getVisibility() == CommunityVisibility.PRIVATE) {
             communityAuthorizationService.requireMembership(community, currentUser);
         }

@@ -4,14 +4,11 @@ import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.entity.CommunityMember;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.CommunityRole;
-import com.discuss.discuss.enums.CommunityStatus;
 import com.discuss.discuss.enums.CommunityVisibility;
 import com.discuss.discuss.enums.MembershipStatus;
 import com.discuss.discuss.exception.community.CommunityErrorCode;
 import com.discuss.discuss.exception.community.CommunityException;
 import com.discuss.discuss.repository.CommunityMemberRepository;
-import com.discuss.discuss.repository.CommunityRepository;
-import com.discuss.discuss.service.community.support.CommunityNameNormalizer;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,8 +23,7 @@ import java.time.LocalDateTime;
 public class CommunityMemberService {
 
     private final CommunityMemberRepository memberRepository;
-    private final CommunityRepository communityRepository;
-    private final CommunityNameNormalizer nameNormalizer;
+    private final CommunitySupport communitySupport;
     private final UserService userService;
 
     // Creates the initial Owner membership when a community is created.
@@ -48,7 +44,7 @@ public class CommunityMemberService {
     @Transactional
     public void appointModerator(String communityName, String username) {
         User currentUser = userService.getCurrentUser();
-        Community community = getCommunityByNameAndStatusActive(communityName);
+        Community community = communitySupport.getActiveCommunityForMembership(communityName);
 
         CommunityMember currentMembership =
                 getExistingMembership(community, currentUser);
@@ -82,7 +78,7 @@ public class CommunityMemberService {
     @Transactional
     public void removeModerator(String communityName, String username) {
         User currentUser = userService.getCurrentUser();
-        Community community = getCommunityByNameAndStatusActive(communityName);
+        Community community = communitySupport.getActiveCommunityForMembership(communityName);
 
         CommunityMember currentMembership =
                 getExistingMembership(community, currentUser);
@@ -143,7 +139,7 @@ public class CommunityMemberService {
     @Transactional
     public void joinCommunity(String communityName) {
         User user = userService.getCurrentUser();
-        Community community = getCommunityByNameAndStatusActive(communityName);
+        Community community = communitySupport.getActiveCommunityForMembership(communityName);
 
         validateCanJoin(community);
 
@@ -170,7 +166,7 @@ public class CommunityMemberService {
     @Transactional
     public void leaveCommunity(String communityName) {
         User user = userService.getCurrentUser();
-        Community community = getCommunityByNameAndStatusActive(communityName);
+        Community community = communitySupport.getActiveCommunityForMembership(communityName);
 
         CommunityMember member = getExistingMembership(community, user);
         validateActiveMembership(member);
@@ -189,7 +185,7 @@ public class CommunityMemberService {
     @Transactional
     public void kickMember(String communityName, String username) {
         User targetUser = userService.getUserActive(username);
-        Community community = getCommunityByNameAndStatusActive(communityName);
+        Community community = communitySupport.getActiveCommunityForMembership(communityName);
 
         CommunityMember member = getExistingMembership(community, targetUser);
         validateActiveMembership(member);
@@ -205,7 +201,7 @@ public class CommunityMemberService {
     @Transactional
     public void transferOwnership(String communityName, String newOwnerUsername) {
         User currentUser = userService.getCurrentUser();
-        Community community = getCommunityByNameAndStatusActive(communityName);
+        Community community = communitySupport.getActiveCommunityForMembership(communityName);
 
         CommunityMember currentMembership =
                 getExistingMembership(community, currentUser);

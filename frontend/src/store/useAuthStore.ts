@@ -314,10 +314,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   resetPassword: async (password, confirmPassword) => {
     await authService.resetPassword({ password, confirmPassword });
+    get().clearSession();
   },
 
   changePassword: async (password, confirmPassword) => {
     await authService.changePassword({ password, confirmPassword });
+    get().clearSession();
   },
 
   clearSession: () => {

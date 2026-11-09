@@ -25,6 +25,7 @@ import {
   ArrowLeft,
   Send,
   CornerDownRight,
+  Flag,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
@@ -47,6 +48,7 @@ export const PostDetailPage: React.FC = () => {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyInput, setReplyInput] = useState('');
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [reportedComment, setReportedComment] = useState<{ id: string; content: string } | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [collapsedThreads, setCollapsedThreads] = useState<Record<string, boolean>>({});
   const [isPostLoading, setIsPostLoading] = useState(true);
@@ -247,6 +249,10 @@ export const PostDetailPage: React.FC = () => {
                 <CornerDownRight className="w-3.5 h-3.5" />
                 <span>Trả lời</span>
               </button>
+              {cmt.status === 'VISIBLE' && <button type="button" onClick={() => { setReportedComment({ id: cmt.id, content: cmt.content }); setIsReportOpen(true); }}
+                className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]" aria-label={`Báo cáo bình luận của @${cmt.author.username}`}>
+                <Flag size={13} />Báo cáo
+              </button>}
             </div>
 
             {/* Inline reply composer */}
@@ -318,7 +324,7 @@ export const PostDetailPage: React.FC = () => {
           </div>
 
           <PostActionsMenu post={post} onEdit={() => openEditModal(post)}
-            onDelete={() => setIsDeleteDialogOpen(true)} onReport={() => setIsReportOpen(true)}
+            onDelete={() => setIsDeleteDialogOpen(true)} onReport={() => { setReportedComment(null); setIsReportOpen(true); }}
             onShare={handleShare} />
         </div>
 
@@ -427,9 +433,9 @@ export const PostDetailPage: React.FC = () => {
       <ReportModal
         isOpen={isReportOpen}
         onClose={() => setIsReportOpen(false)}
-        contentType="POST"
-        contentId={post.id}
-        contentTitle={post.title}
+        contentType={reportedComment ? "COMMENT" : "POST"}
+        contentId={reportedComment?.id ?? post.id}
+        contentTitle={reportedComment?.content ?? post.title}
         communityName={post.communityName}
         targetUsername={post.author.username}
       />

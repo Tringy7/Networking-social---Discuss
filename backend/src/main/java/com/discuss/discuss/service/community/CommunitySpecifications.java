@@ -1,4 +1,4 @@
-package com.discuss.discuss.service.community.spectification;
+package com.discuss.discuss.service.community;
 
 import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.enums.CommunityStatus;

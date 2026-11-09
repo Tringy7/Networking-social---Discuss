@@ -12,12 +12,15 @@ import com.discuss.discuss.utils.CookieUtil;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/auth")
@@ -33,6 +36,9 @@ public class AuthController {
     public record SocialLoginRequestDTO(@NotBlank String token) {}
     public record ResendOtpRequestDTO(@NotBlank @Email String email) {}
     public record RequestEmailDTO(@NotBlank @Email String email) {}
+
+    public record ChangePasswordOtpDTO(
+            @NotBlank @Pattern(regexp = "\\d{6}") String code) {}
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
@@ -123,6 +129,7 @@ public class AuthController {
         );
 
         return ResponseEntity.ok()
+                .headers(cookieUtil.buildClearedAuthHeaders())
                 .header(
                         HttpHeaders.SET_COOKIE,
                         resetPasswordCookie.toString()
@@ -131,9 +138,6 @@ public class AuthController {
                         "Password has been reset successfully"
                 ));
     }
-
-    public record ChangePasswordOtpDTO(
-            @NotBlank @jakarta.validation.constraints.Pattern(regexp = "\\d{6}") String code) {}
 
     @PostMapping("/change-password/request")
     public ResponseEntity<ApiResponse> requestChangePassword() {
@@ -158,13 +162,30 @@ public class AuthController {
             @Valid @RequestBody ForgotPasswordDTO request) {
         localAuthService.changePassword(token, request.getPassword());
         return ResponseEntity.ok()
+                .headers(cookieUtil.buildClearedAuthHeaders())
                 .header(HttpHeaders.SET_COOKIE, cookieUtil.clearCookie(
                         CookieUtil.CHANGE_PASSWORD_TOKEN_COOKIE, "/auth/change-password").toString())
                 .body(new ApiResponse("Đổi mật khẩu thành công."));
     }
 
+    @GetMapping("/sessions")
+    public List<AuthSessionResponse> sessions() {
+        return tokenService.listSessions();
+    }
+
+    @DeleteMapping("/sessions/{id}")
+    public ResponseEntity<ApiResponse> revokeSession(@PathVariable String id) {
+        boolean current = tokenService.revokeSession(id);
+        return ResponseEntity.ok()
+                .headers(current ? cookieUtil.buildClearedAuthHeaders() : new HttpHeaders())
+                .body(new ApiResponse("Session revoked successfully"));
+    }
+
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse> logout() {
+    public ResponseEntity<ApiResponse> logout(
+            @CookieValue(name = CookieUtil.REFRESH_TOKEN_COOKIE, defaultValue = "") String refreshToken) {
+        tokenService.revokeRefreshToken(refreshToken);
+
         ResponseCookie accessCookie =
                 cookieUtil.clearCookie(CookieUtil.ACCESS_TOKEN_COOKIE, "/");
 

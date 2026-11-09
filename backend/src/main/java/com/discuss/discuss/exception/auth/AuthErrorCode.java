@@ -4,6 +4,8 @@ import org.springframework.http.HttpStatus;
 
 public enum AuthErrorCode {
 
+    SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "Session not found"),
+
     // =========================
     // 409 - Conflict
     // =========================
@@ -73,7 +75,7 @@ public enum AuthErrorCode {
 
     REFRESH_TOKEN_REUSED(
             HttpStatus.UNAUTHORIZED,
-            "Refresh token reuse detected. All sessions have been revoked for security"
+            "Refresh token reuse detected. This session has been revoked for security"
     ),
 
     REFRESH_TOKEN_MISSING(

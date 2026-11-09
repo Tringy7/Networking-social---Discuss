@@ -11,7 +11,6 @@ import Avatar from '../../components/ui/Avatar';
 import EntityBanner from '../../components/ui/EntityBanner';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
-import ReportModal from '../../components/post/ReportModal';
 import EntityImageActions from '../../components/ui/EntityImageActions';
 import ImageCropEditor from '../../components/profile/ImageCropEditor';
 import {
@@ -21,7 +20,6 @@ import {
   Settings,
   Edit3,
   Share2,
-  Flag,
   FileText,
   MessageSquare,
   Award,
@@ -35,7 +33,6 @@ export const UserProfilePage: React.FC = () => {
   const { addToast } = useToastStore();
 
   const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
-  const [isReportOpen, setIsReportOpen] = useState(false);
   const [isAvatarEditorOpen, setIsAvatarEditorOpen] = useState(false);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [isBannerEditorOpen, setIsBannerEditorOpen] = useState(false);
@@ -174,16 +171,6 @@ export const UserProfilePage: React.FC = () => {
                       Nhắn tin
                     </Button>
                   </Link>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsReportOpen(true)}
-                    className="text-[var(--color-danger)]"
-                    title="Báo cáo tài khoản"
-                    aria-label="Báo cáo tài khoản"
-                  >
-                    <Flag className="w-4 h-4" />
-                  </Button>
                 </>
               )}
 
@@ -332,15 +319,6 @@ export const UserProfilePage: React.FC = () => {
             throw error;
           } finally { setIsSavingBanner(false); }
         }}
-      />
-      {/* Report Modal */}
-      <ReportModal
-        isOpen={isReportOpen}
-        onClose={() => setIsReportOpen(false)}
-        contentType="USER"
-        contentId={profileUser.id}
-        contentTitle={`Tài khoản @${profileUser.username}`}
-        targetUsername={profileUser.username}
       />
     </div>
   );

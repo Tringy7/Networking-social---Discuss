@@ -1,4 +1,4 @@
-package com.discuss.discuss.service.community.support;
+package com.discuss.discuss.service.community;
 
 import org.springframework.stereotype.Component;
 

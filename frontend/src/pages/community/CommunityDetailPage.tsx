@@ -1,3 +1,4 @@
+import ReportModal from '../../components/post/ReportModal';
 import CommunityRulesContent from '../../components/community/CommunityRulesContent';
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -26,6 +27,7 @@ import {
   BookOpen,
   Share2,
   Calendar,
+  Flag,
 } from 'lucide-react';
 
 export const CommunityDetailPage: React.FC = () => {
@@ -45,6 +47,7 @@ export const CommunityDetailPage: React.FC = () => {
   const [isMembershipUpdating, setIsMembershipUpdating] = useState(false);
   const [isCommunityLoading, setIsCommunityLoading] = useState(true);
   const [communityLoadFailed, setCommunityLoadFailed] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [mediaKind, setMediaKind] = useState<ProfileImageKind | null>(null);
 
   React.useEffect(() => {
@@ -186,7 +189,7 @@ export const CommunityDetailPage: React.FC = () => {
             {(isManager || canEditMedia) && <Link className="icon-button" aria-label="Cài đặt cộng đồng" to={`/c/${community.name}/settings`}><Settings size={18} /></Link>}
           </div>
         </div>
-        <div className="community-facts"><span><Users size={15} /> {community.memberCount.toLocaleString('vi-VN')} thành viên</span>{community.category && <span>{community.category}</span>}<span><Calendar size={15} /> {new Date(community.createdAt).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span><button onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); addToast('Đã sao chép liên kết cộng đồng!', 'success'); } catch { addToast('Không thể sao chép liên kết.', 'error'); } }}><Share2 size={15} /> Chia sẻ</button></div>
+        <div className="community-facts"><span><Users size={15} /> {community.memberCount.toLocaleString('vi-VN')} thành viên</span>{community.category && <span>{community.category}</span>}<span><Calendar size={15} /> {new Date(community.createdAt).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span><button onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); addToast('Đã sao chép liên kết cộng đồng!', 'success'); } catch { addToast('Không thể sao chép liên kết.', 'error'); } }}><Share2 size={15} /> Chia sẻ</button><button type="button" onClick={() => setIsReportOpen(true)}><Flag size={15} /> Báo cáo cộng đồng</button></div>
       </header>
       <div className="community-columns">
         <section className="min-w-0" aria-label="Bài viết cộng đồng">
@@ -216,6 +219,8 @@ export const CommunityDetailPage: React.FC = () => {
           </section>
         </aside>
       </div>
+      <ReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} contentType="COMMUNITY"
+        contentId={community.id} contentTitle={community.displayName} communityName={community.name} />
       {mediaKind && canEditMedia && <CommunityMediaEditor key={`${community.name}-${mediaKind}`} communityName={community.name} kind={mediaKind} onClose={() => setMediaKind(null)} />}
     </div>
   );

@@ -1,20 +1,12 @@
 import { create } from 'zustand';
-import { Report, ReportContentType } from '../types';
+import { Report, CreateReportRequest } from '../types';
 import { reportService } from '../services';
 
 interface ReportState {
   reports: Report[];
   hydrate: () => Promise<void>;
   hydrateCommunity: (communityName: string) => Promise<void>;
-  addReport: (data: {
-    contentType: ReportContentType;
-    contentId: string;
-    contentTitle?: string;
-    contentSnippet?: string;
-    communityName?: string;
-    reason: string;
-    targetUsername?: string;
-  }) => Promise<void>;
+  addReport: (data: CreateReportRequest) => Promise<void>;
   resolveReport: (reportId: string, note?: string) => Promise<void>;
   rejectReport: (reportId: string, note?: string) => Promise<void>;
 }
