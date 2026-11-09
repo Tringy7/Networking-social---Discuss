@@ -1,0 +1,457 @@
+import { CommentFilePicker, CommentAttachmentList } from '../../components/comment/CommentAttachments';
+import { useCommentImageRefresh } from '../../hooks/useCommentImageRefresh';
+import { postPath } from '../../utils/postPath';
+import PostVotes from '../../components/post/PostVotes';
+import CommentVotes from '../../components/comment/CommentVotes';
+import PostActionsMenu from '../../components/post/PostActionsMenu';
+import React, { useEffect, useState } from 'react';
+import { useParams, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { usePostStore } from '../../store/usePostStore';
+import { useAuthStore } from '../../store/useAuthStore';
+import { useToastStore } from '../../store/useToastStore';
+import { POSTS_AVAILABLE, POST_INTERACTIONS_AVAILABLE, COMMENTS_AVAILABLE } from '../../services';
+import { Comment } from '../../types';
+import PostBody from '../../components/post/PostBody';
+import RightSidebar from '../../components/layout/RightSidebar';
+import Avatar from '../../components/ui/Avatar';
+import Badge from '../../components/ui/Badge';
+import Button from '../../components/ui/Button';
+import ReportModal from '../../components/post/ReportModal';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
+import {
+  MessageSquare,
+  Bookmark,
+  Share2,
+  ArrowLeft,
+  Send,
+  CornerDownRight,
+  Flag,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
+
+export const PostDetailPage: React.FC = () => {
+  const { postId } = useParams<{ postId: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const { posts, comments, loadPost, loadComments, toggleSave, deletePost, addComment, openEditModal } =
+    usePostStore();
+  const { user, isAuthenticated } = useAuthStore();
+  const { addToast } = useToastStore();
+
+  const [savePending, setSavePending] = useState(false);
+  const [commentInput, setCommentInput] = useState('');
+  const [commentFiles, setCommentFiles] = useState<File[]>([]);
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
+  const [commentPending, setCommentPending] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyInput, setReplyInput] = useState('');
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [reportedComment, setReportedComment] = useState<{ id: string; content: string } | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [collapsedThreads, setCollapsedThreads] = useState<Record<string, boolean>>({});
+  const [isPostLoading, setIsPostLoading] = useState(true);
+  const refreshImages = useCommentImageRefresh(postId, comments[postId || '']);
+
+  useEffect(() => {
+    setCommentInput(''); setCommentFiles([]);
+    setReplyInput(''); setReplyFiles([]); setReplyingTo(null);
+  }, [postId]);
+
+  useEffect(() => {
+    if (!postId) return;
+    let active = true;
+    setIsPostLoading(true);
+    Promise.all([loadPost(postId), loadComments(postId)])
+      .catch((error: unknown) => {
+        if (active) {
+          addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error');
+        }
+      })
+      .finally(() => {
+        if (active) setIsPostLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [addToast, loadComments, loadPost, postId]);
+
+  const post = posts.find((p) => p.id === postId);
+
+  if (!post) {
+    if (isPostLoading) {
+      return <div role="status" className="py-12 text-center text-sm text-[var(--text-secondary)]">Đang tải bài viết...</div>;
+    }
+    return (
+      <div className="py-12 text-center space-y-4">
+        <h2 className="text-2xl font-semibold text-[var(--text-primary)]">
+          Không tìm thấy bài viết
+        </h2>
+        <p className="text-sm text-[var(--text-secondary)]">
+          Bài viết có thể đã bị xóa hoặc không còn khả dụng.
+        </p>
+        <Link to="/">
+          <Button variant="primary" size="sm">
+            Về trang chủ
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const canonicalPath = postPath(post);
+  if (location.pathname !== canonicalPath) {
+    return <Navigate replace to={`${canonicalPath}${location.search}${location.hash}`} />;
+  }
+
+  const postComments = comments[post.id] || [];
+
+  const handleSaveClick = async () => {
+    if (savePending) return;
+    if (!isAuthenticated) {
+      addToast('Vui lòng đăng nhập để lưu bài viết', 'warning');
+      navigate('/login');
+      return;
+    }
+    setSavePending(true);
+    try {
+      await toggleSave(post.id);
+      addToast(post.isSaved ? 'Đã bỏ lưu bài viết' : 'Đã lưu bài viết', 'info');
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Không thể lưu bài viết.', 'error');
+    } finally { setSavePending(false); }
+  };
+
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}${postPath(post)}`);
+      addToast('Đã sao chép liên kết bài viết!', 'success');
+    } catch { addToast('Không thể sao chép liên kết. Vui lòng thử lại.', 'error'); }
+  };
+
+  const handleDeletePost = async () => {
+    try {
+      await deletePost(post.id);
+      addToast('Đã xóa bài viết thành công!', 'info');
+      navigate('/');
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Không thể xóa bài viết.', 'error');
+    }
+  };
+
+  const handleAddTopComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      addToast('Vui lòng đăng nhập để bình luận', 'warning');
+      navigate('/login');
+      return;
+    }
+    if (commentPending || (!commentInput.trim() && !commentFiles.length)) return;
+
+    setCommentPending(true);
+    try {
+      await addComment(post.id, commentInput.trim(), undefined, commentFiles);
+      setCommentInput(''); setCommentFiles([]);
+      addToast('Đã đăng bình luận!', 'success');
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Không thể đăng bình luận.', 'error');
+    } finally { setCommentPending(false); }
+  };
+
+  const handleAddReply = async (parentCommentId: string) => {
+    if (!isAuthenticated) {
+      addToast('Vui lòng đăng nhập để trả lời', 'warning');
+      navigate('/login');
+      return;
+    }
+    if (commentPending || (!replyInput.trim() && !replyFiles.length)) return;
+
+    setCommentPending(true);
+    try {
+      await addComment(post.id, replyInput.trim(), parentCommentId, replyFiles);
+      setReplyInput(''); setReplyFiles([]);
+      setReplyingTo(null);
+      addToast('Đã đăng câu trả lời!', 'success');
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Không thể gửi câu trả lời.', 'error');
+    } finally { setCommentPending(false); }
+  };
+
+  const toggleThread = (commentId: string) => {
+    setCollapsedThreads((prev) => ({ ...prev, [commentId]: !prev[commentId] }));
+  };
+
+  const renderComment = (cmt: Comment, isNested = false) => {
+    const isCollapsed = collapsedThreads[cmt.id];
+
+    return (
+      <div
+        key={cmt.id}
+        className={`text-left space-y-2.5 ${
+          isNested ? 'ml-6 sm:ml-8 pl-3' : 'pt-4'
+        }`}
+      >
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <Avatar src={cmt.author.avatarUrl} alt={cmt.author.displayName} size="xs" />
+            <Link
+              to={`/u/${cmt.author.username}`}
+              className="font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange)] transition-colors"
+            >
+              {cmt.author.displayName}
+            </Link>
+            <span className="text-[var(--text-muted)]">@{cmt.author.username}</span>
+            {cmt.author.isAuthor && (
+              <span className="text-xs font-semibold text-[var(--color-orange)] bg-[var(--color-orange-soft)] px-1.5 py-0.5 rounded">
+                Tác giả
+              </span>
+            )}
+            <span className="text-[var(--text-muted)]">·</span>
+            <span className="text-[var(--text-muted)]">vừa xong</span>
+          </div>
+
+          {cmt.replies && cmt.replies.length > 0 && (
+            <button
+              aria-label={isCollapsed ? 'Mở chuỗi bình luận' : 'Thu gọn chuỗi bình luận'}
+              aria-expanded={!isCollapsed}
+              onClick={() => toggleThread(cmt.id)}
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 flex items-center gap-1 text-xs"
+            >
+              {isCollapsed ? (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                  <span>Mở rộng ({cmt.replies.length})</span>
+                </>
+              ) : (
+                <ChevronUp className="w-3.5 h-3.5" />
+              )}
+            </button>
+          )}
+        </div>
+
+        {!isCollapsed && (
+          <>
+            <p className="thread-comment text-[var(--text-primary)] leading-relaxed pl-8">
+              {cmt.content}
+            </p>
+
+            <CommentAttachmentList attachments={cmt.attachments} onRefresh={refreshImages} />
+            {/* Comment Reactions & Reply Button */}
+            <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] pl-8">
+              <CommentVotes comment={cmt} />
+
+              <button
+                disabled={cmt.status !== 'VISIBLE' || commentPending}
+                onClick={() => { setReplyingTo(replyingTo === cmt.id ? null : cmt.id); setReplyFiles([]); setReplyInput(''); }}
+                className="flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors font-medium"
+              >
+                <CornerDownRight className="w-3.5 h-3.5" />
+                <span>Trả lời</span>
+              </button>
+              {cmt.status === 'VISIBLE' && <button type="button" onClick={() => { setReportedComment({ id: cmt.id, content: cmt.content }); setIsReportOpen(true); }}
+                className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]" aria-label={`Báo cáo bình luận của @${cmt.author.username}`}>
+                <Flag size={13} />Báo cáo
+              </button>}
+            </div>
+
+            {/* Inline reply composer */}
+            {replyingTo === cmt.id && (
+              <div className="pl-8 pt-2 flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  value={replyInput}
+                  onChange={(e) => setReplyInput(e.target.value)}
+                  aria-label={`Trả lời @${cmt.author.username}`}
+                  placeholder={`Trả lời @${cmt.author.username}...`}
+                  className="flex-1 bg-[var(--bg-main)] border border-[var(--bg-elevated)] focus:border-[var(--color-orange)] rounded-xl px-3 py-1.5 text-xs text-[var(--text-primary)] outline-none"
+                  autoFocus
+                />
+                <Button variant="primary" size="sm" disabled={commentPending || (!replyInput.trim() && !replyFiles.length)} onClick={() => handleAddReply(cmt.id)}>
+                  Gửi
+                </Button>
+                <Button variant="ghost" size="sm" disabled={commentPending} onClick={() => setReplyingTo(null)}>
+                  Hủy
+                </Button>
+                <div className="w-full"><CommentFilePicker files={replyFiles} onChange={setReplyFiles} disabled={commentPending}
+                  onError={message => addToast(message, 'error')} /></div>
+              </div>
+            )}
+
+            {/* Nested replies recursive rendering */}
+            {cmt.replies && cmt.replies.length > 0 && (
+              <div className="space-y-3 pt-2">
+                {cmt.replies.map((reply) => renderComment(reply, true))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    );
+  };
+
+
+  return (
+    <div className="feed-layout"><div className="post-reading-page space-y-5 text-left pb-8">
+      {!POSTS_AVAILABLE && (
+        <div role="status" className="feed-notice text-xs text-[var(--text-primary)]">
+          Đang xem bài viết mẫu; thao tác chỉ được lưu trong phiên hiện tại.
+        </div>
+      )}
+      {/* Back button */}
+      <button
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] rounded"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span>Quay lại</span>
+      </button>
+
+      {/* Main Post Content Card */}
+      <article className="post-reading-body space-y-5">
+        {/* Community & Author Header */}
+        <div className="flex items-center justify-between gap-4 pb-1">
+          <div className="thread-author flex min-w-0 items-center gap-3">
+            <Link to={`/c/${post.communityName}`} aria-label={`Cộng đồng c/${post.communityName}`}><Avatar src={post.communityAvatar} alt={post.communityDisplayName || post.communityName} size="sm" /></Link>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 text-xs"><Link to={`/c/${post.communityName}`} className="font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange-ink)]">c/{post.communityName}</Link><span className="text-[var(--text-muted)]" aria-hidden="true">·</span><time className="text-[var(--text-muted)]" dateTime={post.createdAt}>{new Date(post.createdAt).toLocaleDateString('vi-VN', {day:'numeric',month:'short'})}</time></div>
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-muted)]">
+                <Link to={`/u/${post.author.username}`}>u/{post.author.username}</Link>
+                {post.author.role === 'OWNER' && <Badge role="OWNER" size="sm" />}
+                {post.author.role === 'MODERATOR' && <Badge role="MODERATOR" size="sm" />}
+              </div>
+            </div>
+          </div>
+
+          <PostActionsMenu post={post} onEdit={() => openEditModal(post)}
+            onDelete={() => setIsDeleteDialogOpen(true)} onReport={() => { setReportedComment(null); setIsReportOpen(true); }}
+            onShare={handleShare} />
+        </div>
+
+        {/* Title */}
+        <h1 className="editorial-title text-2xl sm:text-[32px] text-[var(--text-primary)] leading-snug">
+          {post.title}
+        </h1>
+
+        <div className="post-content-divider"><PostBody post={post} /></div>
+
+
+        {/* Actions Bar */}
+        <div className="flex items-center justify-between pt-3 text-sm">
+          <div className="flex items-center gap-3">
+            <PostVotes post={post} />
+
+            <div className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--bg-elevated)] text-[var(--text-secondary)]">
+              <MessageSquare className="w-4 h-4" />
+              <span className="tabular-nums">{post.commentCount} Bình luận</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSaveClick} disabled={savePending || !POST_INTERACTIONS_AVAILABLE} aria-pressed={post.isSaved}
+              className={`p-2.5 rounded-full border border-[var(--bg-elevated)] transition-colors ${
+                post.isSaved
+                  ? 'text-[var(--color-orange)] bg-[var(--color-orange-soft)] border-[var(--color-orange-border)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
+              }`}
+              title="Lưu bài viết"
+            >
+              <Bookmark className={`w-4 h-4 ${post.isSaved ? 'fill-[var(--color-orange)]' : ''}`} />
+            </button>
+
+            <button
+              onClick={handleShare}
+              className="p-2.5 rounded-full border border-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
+              title="Sao chép liên kết"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </article>
+
+      {!COMMENTS_AVAILABLE && <p role="status" className="text-sm text-[var(--text-muted)]">Bình luận hiện chưa khả dụng.</p>}
+      {/* COMMENTS SECTION */}
+      <section id="comments" className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-card)] p-4 sm:p-7 space-y-6">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <MessageSquare className="w-5 h-5 text-[var(--color-orange)]" />
+          <span>Bình luận thảo luận ({postComments.length})</span>
+        </h2>
+
+        {/* Comment Composer */}
+        <form onSubmit={handleAddTopComment} className="space-y-3">
+          <div className="flex gap-3">
+            <Avatar
+              src={user?.avatarUrl}
+              alt={user?.displayName || 'Guest'}
+              size="sm"
+            />
+            <div className="flex-1 space-y-2">
+              <textarea
+                aria-label="Nội dung bình luận" disabled={!COMMENTS_AVAILABLE || commentPending}
+                rows={3}
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value)}
+                placeholder={
+                  isAuthenticated
+                    ? 'Bạn nghĩ gì về chủ đề này? Hãy chia sẻ ý kiến văn minh...'
+                    : 'Đăng nhập để tham gia bình luận...'
+                }
+              className="w-full bg-[var(--bg-main)] border border-[var(--border-color)] focus:border-[var(--color-orange)] rounded-xl p-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+              />
+              <CommentFilePicker files={commentFiles} onChange={setCommentFiles} disabled={!isAuthenticated || commentPending}
+                onError={message => addToast(message, 'error')} />
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  rightIcon={<Send className="w-3.5 h-3.5" />}
+                  disabled={(!commentInput.trim() && !commentFiles.length) || !COMMENTS_AVAILABLE || commentPending}
+                >
+                  {commentPending ? 'Đang gửi…' : 'Gửi bình luận'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        {/* Comment List */}
+        <div className="space-y-4 pt-2">
+          {postComments.map((cmt) => renderComment(cmt))}
+
+          {postComments.length === 0 && (
+            <div className="py-12 text-center text-xs text-[var(--text-muted)]">
+              Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ suy nghĩ của bạn!
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        contentType={reportedComment ? "COMMENT" : "POST"}
+        contentId={reportedComment?.id ?? post.id}
+        contentTitle={reportedComment?.content ?? post.title}
+        communityName={post.communityName}
+        targetUsername={post.author.username}
+      />
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeletePost}
+        title="Xóa bài viết"
+        message="Bạn có chắc chắn muốn xóa bài viết này không? Bạn có thể xem lại và khôi phục trong Cài đặt → Thùng rác."
+        confirmLabel="Xóa bài viết"
+        variant="danger"
+      />
+    </div><RightSidebar /></div>
+  );
+};
+
+export default PostDetailPage;

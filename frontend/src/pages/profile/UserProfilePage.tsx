@@ -1,0 +1,327 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { useAuthStore } from '../../store/useAuthStore';
+import { usePostStore } from '../../store/usePostStore';
+import { useToastStore } from '../../store/useToastStore';
+import { userService } from '../../services';
+import { User } from '../../types';
+import EditorialTabs from '../../components/ui/EditorialTabs';
+import PostCard from '../../components/post/PostCardView';
+import Avatar from '../../components/ui/Avatar';
+import EntityBanner from '../../components/ui/EntityBanner';
+import Button from '../../components/ui/Button';
+import Badge from '../../components/ui/Badge';
+import EntityImageActions from '../../components/ui/EntityImageActions';
+import ImageCropEditor from '../../components/profile/ImageCropEditor';
+import {
+  Calendar,
+  MapPin,
+  Cake,
+  Settings,
+  Edit3,
+  Share2,
+  FileText,
+  MessageSquare,
+  Award,
+  Eye,
+} from 'lucide-react';
+
+export const UserProfilePage: React.FC = () => {
+  const { username } = useParams<{ username: string }>();
+  const { user: currentUser, authStatus, uploadAvatar, uploadBanner } = useAuthStore();
+  const { posts, loadUserPosts } = usePostStore();
+  const { addToast } = useToastStore();
+
+  const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
+  const [isAvatarEditorOpen, setIsAvatarEditorOpen] = useState(false);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
+  const [isBannerEditorOpen, setIsBannerEditorOpen] = useState(false);
+  const [isSavingBanner, setIsSavingBanner] = useState(false);
+  const [profileUser, setProfileUser] = useState<User | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  const [postPage, setPostPage] = useState(0);
+  const [hasMorePosts, setHasMorePosts] = useState(false);
+  const [postsLoading, setPostsLoading] = useState(false);
+  useEffect(() => {
+    if (!username || !currentUser) return;
+    let active = true;
+    setPostPage(0); setPostsLoading(true);
+    loadUserPosts(username).then((more) => { if (active) setHasMorePosts(more); })
+      .catch((error: unknown) => { if (active) addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); })
+      .finally(() => { if (active) setPostsLoading(false); });
+    return () => { active = false; };
+  }, [username, currentUser?.username, loadUserPosts, addToast]);
+
+  const isMe = currentUser?.username === username;
+
+  useEffect(() => {
+    // Wait for session restoration so a link to our own profile does not first
+    // issue a public-profile request using the username from the URL.
+    if (authStatus === 'INITIALIZING') return;
+    if (!username) {
+      setProfileUser(null);
+      setProfileLoading(false);
+      return;
+    }
+    let active = true;
+    setProfileLoading(true);
+    // The URL contains a username for shareable profile links, but the signed-in
+    // user's profile must come from the authenticated endpoint. This also keeps
+    // the page fresh after profile edits in another tab/session.
+    const request = isMe
+      ? userService.getMe().then((response): User => ({
+          id: response.id || currentUser?.id || response.username,
+          username: response.username,
+          displayName: response.profile?.displayName || response.username,
+          email: response.email,
+          avatarUrl: response.profile?.avatar || '',
+          bannerUrl: response.profile?.banner || '',
+          bio: response.profile?.bio || '',
+          location: response.profile?.location || undefined,
+          dateOfBirth: response.profile?.dateOfBirth || undefined,
+          gender: response.profile?.gender || undefined,
+          privacy: {
+            showDateOfBirth: response.privacySettings?.showDateOfBirth ?? false,
+            showLocation: response.privacySettings?.showLocation ?? false,
+            showPostsOnProfile: response.privacySettings?.showPostsOnProfile ?? true,
+          },
+          role: response.role,
+          status: response.status,
+          createdAt: response.createdAt || new Date().toISOString(),
+          karma: currentUser?.karma ?? 0,
+        }))
+      : userService.getPublicProfile(username);
+    request.then((profile) => {
+      if (active) setProfileUser(profile);
+    }).catch((error: unknown) => {
+      if (active) {
+        setProfileUser(null);
+        addToast(error instanceof Error ? error.message : 'Không thể tải hồ sơ người dùng.', 'error');
+      }
+    }).finally(() => {
+      if (active) setProfileLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [addToast, authStatus, currentUser, isMe, username]);
+
+  const closeAvatarEditor = () => setIsAvatarEditorOpen(false);
+  const closeBannerEditor = () => setIsBannerEditorOpen(false);
+  if (profileLoading) {
+    return <div role="status" className="py-12 text-center text-sm text-[var(--text-secondary)]">Đang tải hồ sơ...</div>;
+  }
+  if (!profileUser) {
+    return <div role="status" className="py-12 text-center text-sm text-[var(--text-secondary)]">Không tìm thấy người dùng.</div>;
+  }
+
+  const userPosts = posts.filter((p) => p.author.username === profileUser.username);
+  const joinedDate = new Date(profileUser.createdAt);
+  const joinedLabel = Number.isNaN(joinedDate.getTime())
+    ? 'Chưa có thông tin'
+    : joinedDate.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' });
+
+  const handleShareProfile = () => {
+    navigator.clipboard?.writeText(window.location.href);
+    addToast('Đã sao chép liên kết trang cá nhân!', 'success');
+  };
+
+  return (
+    <div className="profile-page w-full pb-8 text-left">
+      <section className="profile-editorial" aria-label="Hồ sơ người dùng">
+        <header className="profile-masthead">
+        <EntityBanner src={profileUser.bannerUrl} alt={`${profileUser.displayName} - ảnh bìa`} variant="user" className="profile-cover">
+          <EntityImageActions key={`${profileUser.username}-banner`} src={profileUser.bannerUrl} kind="banner"
+            name={profileUser.displayName} href={`/u/${profileUser.username}`} handle={`u/${profileUser.username}`} avatarUrl={profileUser.avatarUrl}
+            onEdit={isMe ? () => setIsBannerEditorOpen(true) : undefined} />
+        </EntityBanner>
+
+        <div className="profile-identity">
+          <div className="profile-avatar-position">
+            <EntityImageActions key={`${profileUser.username}-avatar`} src={profileUser.avatarUrl} kind="avatar"
+              name={profileUser.displayName} href={`/u/${profileUser.username}`} handle={`u/${profileUser.username}`} avatarUrl={profileUser.avatarUrl}
+              onEdit={isMe ? () => setIsAvatarEditorOpen(true) : undefined}>
+              <Avatar src={profileUser.avatarUrl} alt={profileUser.displayName} size="2xl" className="h-full w-full border-4 border-[var(--bg-surface)]" />
+            </EntityImageActions>
+          </div>
+          <div className="profile-name-row">
+            <div className="profile-name-wrap">
+              <div className="profile-display-name">
+                <h1 className="editorial-title profile-name text-[var(--text-primary)]">
+                  {profileUser.displayName}
+                </h1>
+                {profileUser.role === 'OWNER' && <Badge role="OWNER" />}
+                {profileUser.role === 'MODERATOR' && <Badge role="MODERATOR" />}
+                {profileUser.role === 'ADMIN' && <Badge role="ADMIN" />}
+              </div>
+              <p className="profile-handle">@{profileUser.username}</p>
+            </div>
+            <div className="profile-actions flex shrink-0 items-center gap-1.5 sm:gap-2">
+              {isMe ? (
+                <Link to="/settings/profile">
+                  <Button variant="secondary" size="sm" className="px-2.5 sm:px-3" leftIcon={<Edit3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}>
+                    Chỉnh sửa
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link to="/messages">
+                    <Button variant="primary" size="sm" leftIcon={<MessageSquare className="w-4 h-4" />}>
+                      Nhắn tin
+                    </Button>
+                  </Link>
+                </>
+              )}
+
+              <button
+                onClick={handleShareProfile}
+                className="rounded-full border border-[var(--border-color)] bg-[var(--bg-main)] p-2 text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] sm:p-2.5"
+                title="Chia sẻ hồ sơ"
+                aria-label="Chia sẻ hồ sơ"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+        </div>
+        </header>
+
+      <div className="profile-columns">
+        <section className="profile-activity min-w-0" aria-label="Hoạt động">
+        <EditorialTabs label="Hoạt động của người dùng" options={[{ id: 'posts', label: 'Bài viết', icon: <FileText /> }, { id: 'comments', label: 'Bình luận', icon: <MessageSquare /> }]} value={activeTab} onChange={setActiveTab} />
+
+        {/* Tab content */}
+        {postsLoading && <p role="status">Đang tải bài viết…</p>}
+        {activeTab === 'posts' && (
+          <div className="discussion-list">
+            {profileUser.privacy.showPostsOnProfile ? (
+              userPosts.length > 0 ? (
+                userPosts.map((p) => <PostCard key={p.id} post={p} />)
+              ) : (
+                <div className="profile-empty" role="status">
+                  <FileText size={24} aria-hidden="true" />
+                  <h2>Chưa có bài viết</h2>
+                  <p>Bài viết chia sẻ trong cộng đồng sẽ xuất hiện ở đây.</p>
+                  {isMe && <Link to="/explore" className="profile-empty-action">Khám phá cộng đồng</Link>}
+                </div>
+              )
+            ) : (
+              <div className="profile-empty" role="status">
+                <Eye size={24} aria-hidden="true" />
+                <h2>Bài viết được giữ riêng tư</h2>
+                <p>Bài viết của người dùng này không được công khai.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'posts' && hasMorePosts && <Button disabled={postsLoading} variant="secondary" onClick={async () => {
+          setPostsLoading(true);
+          try { setHasMorePosts(await loadUserPosts(profileUser.username, postPage + 1)); setPostPage(postPage + 1); }
+          catch (error) { addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); }
+          finally { setPostsLoading(false); }
+        }}>Xem thêm bài viết</Button>}
+        {activeTab === 'comments' && (
+          <div className="profile-empty" role="status">
+            <MessageSquare size={24} aria-hidden="true" />
+            <h2>Chưa có bình luận để hiển thị</h2>
+            <p>Hiện chưa có dữ liệu hoạt động bình luận.</p>
+          </div>
+        )}
+        </section>
+
+        <aside className="profile-about" aria-label="Giới thiệu người dùng">
+          <section className="profile-about-content">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">Giới thiệu</h2>
+              {isMe && (
+                <Link
+                  to="/settings/profile"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border-color)] text-[var(--text-secondary)] transition-colors hover:border-[var(--color-orange)] hover:text-[var(--color-orange)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-orange)]"
+                  title="Cài đặt hồ sơ"
+                  aria-label="Cài đặt hồ sơ"
+                >
+                  <Settings className="h-4 w-4" />
+                </Link>
+              )}
+            </div>
+            {profileUser.bio && <p className="entity-about-description">{profileUser.bio}</p>}
+            <div className="profile-facts">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
+                <span>Tham gia {joinedLabel}</span>
+              </div>
+              {profileUser.privacy.showLocation && profileUser.location && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
+                  <span>{profileUser.location}</span>
+                </div>
+              )}
+              {profileUser.privacy.showDateOfBirth && profileUser.dateOfBirth && (
+                <div className="flex items-center gap-2">
+                  <Cake className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
+                  <span>Sinh nhật {profileUser.dateOfBirth}</span>
+                </div>
+              )}
+            </div>
+            <div className="profile-post-count">
+              <Award className="h-4 w-4 text-[var(--color-orange)]" />
+              <span>{userPosts.length} bài viết</span>
+            </div>
+          </section>
+        </aside>
+      </div>
+      </section>
+
+      <footer className="site-footer flex flex-col gap-2 pt-5 text-xs text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
+        <span>© 2026 DISCUSS Community Network</span>
+        <nav aria-label="Liên kết chân trang" className="flex flex-wrap gap-x-4 gap-y-1">
+          <Link to="/explore" className="transition-colors hover:text-[var(--text-primary)]">Cộng đồng</Link>
+          <Link to="/settings/privacy" className="transition-colors hover:text-[var(--text-primary)]">Quyền riêng tư</Link>
+          <Link to="/settings" className="transition-colors hover:text-[var(--text-primary)]">Cài đặt</Link>
+        </nav>
+      </footer>
+
+      <ImageCropEditor
+        kind="avatar"
+        isOpen={isAvatarEditorOpen}
+        isSaving={isSavingAvatar}
+        onClose={closeAvatarEditor}
+        onSave={async (file) => {
+          setIsSavingAvatar(true);
+          try {
+            await uploadAvatar(file);
+            const updatedUser = useAuthStore.getState().user;
+            if (updatedUser) setProfileUser(updatedUser);
+            addToast('Đã cập nhật ảnh đại diện.', 'success');
+          } catch (error) {
+            addToast(error instanceof Error ? error.message : 'Không thể cập nhật ảnh đại diện.', 'error');
+            throw error;
+          } finally { setIsSavingAvatar(false); }
+        }}
+      />
+      <ImageCropEditor
+        kind="banner"
+        isOpen={isBannerEditorOpen}
+        isSaving={isSavingBanner}
+        onClose={closeBannerEditor}
+        onSave={async (file) => {
+          setIsSavingBanner(true);
+          try {
+            await uploadBanner(file);
+            const updatedUser = useAuthStore.getState().user;
+            if (updatedUser) setProfileUser(updatedUser);
+            addToast('Đã cập nhật ảnh bìa.', 'success');
+          } catch (error) {
+            addToast(error instanceof Error ? error.message : 'Không thể cập nhật ảnh bìa.', 'error');
+            throw error;
+          } finally { setIsSavingBanner(false); }
+        }}
+      />
+    </div>
+  );
+};
+
+export default UserProfilePage;

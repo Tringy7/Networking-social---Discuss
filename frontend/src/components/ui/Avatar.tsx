@@ -1,0 +1,70 @@
+import React, { useState } from 'react';
+
+interface AvatarProps {
+  src?: string;
+  alt?: string;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  shape?: 'circle' | 'rounded';
+  className?: string;
+  isOnline?: boolean;
+}
+
+export const Avatar: React.FC<AvatarProps> = ({
+  src,
+  alt = 'Avatar',
+  size = 'md',
+  shape = 'circle',
+  className = '',
+  isOnline,
+}) => {
+  const [failedSrc, setFailedSrc] = useState<string | undefined>();
+
+  const sizes = {
+    xs: 'w-6 h-6 text-xs',
+    sm: 'w-8 h-8 text-xs',
+    md: 'w-10 h-10 text-sm',
+    lg: 'w-14 h-14 text-base font-semibold',
+    xl: 'w-20 h-20 text-xl font-semibold',
+    '2xl': 'w-28 h-28 text-3xl font-semibold',
+  };
+
+  const tone = [...alt].reduce((total, character) => total + character.charCodeAt(0), 0) % 5;
+  const rounded = shape === 'circle' ? 'rounded-full' : 'rounded-[var(--radius-card)]';
+  const initials = alt
+    ? alt
+        .split(' ')
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : 'D';
+
+  return (
+    <div className={`avatar relative inline-block shrink-0 ${sizes[size]} ${rounded} ${className}`}>
+      {src && src !== failedSrc ? (
+        <img
+          src={src}
+          alt={alt}
+          onError={() => setFailedSrc(src)}
+          className={`block w-full h-full object-cover border-0 ${rounded}`}
+          loading="lazy"
+        />
+      ) : (
+        <div
+          className={`w-full h-full flex items-center justify-center avatar-fallback avatar-tone-${tone} font-semibold ${rounded}`}
+        >
+          {initials}
+        </div>
+      )}
+      {isOnline !== undefined && (
+        <span
+          className={`absolute bottom-0 right-0 block w-2.5 h-2.5 rounded-full ring-2 ring-[var(--bg-main)] ${
+            isOnline ? 'bg-[var(--color-success)]' : 'bg-[var(--text-muted)]'
+          }`}
+        />
+      )}
+    </div>
+  );
+};
+
+export default Avatar;

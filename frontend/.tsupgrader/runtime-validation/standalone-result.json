@@ -1,0 +1,103 @@
+{
+  "planHash": "4b4beac5cdb2f69346c5df2b7cc13813fec95cc21c3eab1b22eb581ff93e1493",
+  "phase": "standalone",
+  "recordedAtUtc": "2026-10-28T04:39:23.6820071Z",
+  "retryCount": 3,
+  "resetBaseline": false,
+  "complete": true,
+  "result": {
+    "setupSucceeded": true,
+    "setupDurationMs": 0,
+    "setupFailureOutput": null,
+    "assertions": [
+      {
+        "name": "production-build",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "\r\n\u003E frontend@0.0.0 build\r\n\u003E vite build\r\n\r\n\u001B[36mvite v8.3.4 \u001B[32mbuilding client environment for production...\u001B[36m\u001B[39m\r\ntransforming...\r\n\u2713 2983 modules transformed.\r\nrendering chunks...\r\ncomputing gzip size...\r\ndist/index.html                     1.62 kB \u2502 gzip:   0.76 kB\r\ndist/assets/index-BCZX19_h.css    100.97 kB \u2502 gzip:  16.82 kB\r\ndist/assets/index-DaRfg1Ch.js   1,059.68 kB \u2502 gzip: 301.12 kB\r\n\r\n\u001B[33m[plugin builtin:vite-reporter] \r\n(!) Some chunks are larger than 500 kB after minification. Consider:\r\n- Using dynamic import() to code-split the application\r\n- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting\r\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\u001B[39m\r\n\u001B[32m\u2713 built in 1.79s\u001B[39m\r\n",
+        "durationMs": 4434
+      },
+      {
+        "name": "dev-server-serves-home",
+        "kind": "http-probe",
+        "verificationMethod": "http-status",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": null,
+        "outputSample": "HTTP 200\n\u003C!doctype html\u003E\r\n\u003Chtml lang=\u0022vi\u0022\u003E\r\n  \u003Chead\u003E\n    \u003Cscript type=\u0022module\u0022\u003Eimport { injectIntoGlobalHook } from \u0022/@react-refresh\u0022;\ninjectIntoGlobalHook(window);\nwindow.$RefreshReg$ = () =\u003E {};\nwindow.$RefreshSig$ = () =\u003E (type) =\u003E type;\u003C/script\u003E\n\n    \u003Cscript type=\u0022module\u0022 src=\u0022/@vite/client\u0022\u003E\u003C/script\u003E\n\r\n    \u003Cmeta charset=\u0022UTF-8\u0022 /\u003E\r\n    \u003Cmeta name=\u0022viewport\u0022 content=\u0022width=device-width, initial-scale=1.0\u0022 /\u003E\r\n    \u003Ctitle\u003EDISCUSS - M\u1EA1ng X\u00E3 H\u1ED9i Th\u1EA3o Lu\u1EADn C\u1ED9ng \u0110\u1ED3ng\u003C/title\u003E\r\n    \u003Cmeta name=\u0022description\u0022 content=\u0022N\u1EC1n t\u1EA3ng m\u1EA1ng x\u00E3 h\u1ED9i chia s\u1EBB, th\u1EA3o lu\u1EADn theo c\u1ED9ng \u0111\u1ED3ng ch\u1EE7 \u0111\u1EC1 v\u1EDBi ph\u00E2n quy\u1EC1n \u0111a c\u1EA5p, qu\u1EA3n l\u00FD b\u00E0i vi\u1EBFt, b\u00ECnh lu\u1EADn, vote v\u00E0 qu\u1EA3n tr\u1ECB h\u1EC7 th\u1ED1ng.\u0022 /\u003E\r\n    \u003Cmeta property=\u0022og:title\u0022 content=\u0022Discuss - M\u1EA1ng X\u00E3 H\u1ED9i Th\u1EA3o Lu\u1EADn C\u1ED9ng \u0110\u1ED3ng\u0022 /\u003E\r\n    \u003Cmeta property=\u0022og:description\u0022 content=\u0022N\u1EC1n t\u1EA3ng m\u1EA1ng x\u00E3 h\u1ED9i chia s\u1EBB, th\u1EA3o lu\u1EADn theo c\u1ED9ng \u0111\u1ED3ng ch\u1EE7 \u0111\u1EC1 v\u1EDBi ph\u00E2n quy\u1EC1n \u0111a c\u1EA5p, qu\u1EA3n l\u00FD b\u00E0i vi\u1EBFt, b\u00ECnh lu\u1EADn, vote v\u00E0 qu\u1EA3n tr\u1ECB h\u1EC7 th\u1ED1ng.\u0022 /\u003E\r\n    \u003Cmeta property=\u0022og:type\u0022 content=\u0022website\u0022 /\u003E\r\n    \u003Cmeta name=\u0022twitter:card\u0022 content=\u0022summary_large_image\u0022 /\u003E\r\n    \u003Clink rel=\u0022preconnect\u0022 href=\u0022https://fonts.googleapis.com\u0022\u003E\r\n    \u003Clink rel=\u0022preconnect\u0022 href=\u0022https://fonts.gstatic.com\u0022 crossorigin\u003E\r\n    \u003Clink href=\u0022https://fonts.googleapis.com/css2?family=Plus\u002BJakarta\u002BSans:wght@400;500;600;700;800\u0026family=JetBrains\u002BMono:wght@400;500\u0026display=swap\u0022 rel=\u0022stylesheet\u0022\u003E\r\n    \u003Cscript src=\u0022https://accounts.google.com/gsi/client\u0022 async defer\u003E\u003C/script\u003E\r\n  \u003C/head\u003E\r\n  \u003Cbody class=\u0022bg-[#0C0E12] text-[#F1F3F7] antialiased selection:bg-orange-500/30 selection:text-white\u0022\u003E\r\n    \u003Cdiv id=\u0022root\u0022\u003E\u003C/div\u003E\r\n    \u003Cscript type=\u0022module\u0022 src=\u0022/src/main.jsx\u0022\u003E\u003C/script\u003E\r\n  \u003C/body\u003E\r\n\u003C/html\u003E\r\n\n--- server output ---\n\r\n\u003E frontend@0.0.0 dev\r\n\u003E vite --host 127.0.0.1 --port 5175 --strictPort\r\n\r\n\r\n  \u001B[32m\u001B[1mVITE\u001B[22m v8.3.4\u001B[39m  \u001B[2mready in \u001B[0m\u001B[1m792\u001B[22m\u001B[2m\u001B[0m ms\u001B[22m\r\n\r\n  \u001B[32m\u279C\u001B[39m  \u001B[1mLocal\u001B[22m:   \u001B[36mhttp://127.0.0.1:\u001B[1m5175\u001B[22m/\u001B[39m\r\n",
+        "durationMs": 2346
+      },
+      {
+        "name": "tests-pass",
+        "kind": "process",
+        "verificationMethod": "test-results",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "\r\n\u003E frontend@0.0.0 test\r\n\u003E vitest run\r\n\r\n\r\n RUN  v5.0.5 D:/Document/Project/TLCN/Networking-social---Discuss/frontend\r\n\r\n\r\n Test Files  1 passed (1)\r\n      Tests  3 passed (3)\r\n   Start at  11:39:23\r\n   Duration  469ms (import 54%, transform 29%, worker 11%, tests 6%, environment 1%)\r\n\r\n",
+        "durationMs": 2451,
+        "testResults": {
+          "testFramework": "vitest",
+          "runnerDetectedFrom": "package_json",
+          "testsTotal": 3,
+          "testsPassed": 3,
+          "testsFailed": 0,
+          "testsSkipped": 0,
+          "parseFailed": false
+        }
+      }
+    ],
+    "executions": [
+      {
+        "source": "production-build",
+        "resolvedExecutable": "C:\\nvm4w\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "build"
+        ],
+        "cwd": "D:\\Document\\Project\\TLCN\\Networking-social---Discuss\\frontend",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "dev-server-serves-home",
+        "resolvedExecutable": "C:\\nvm4w\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "dev",
+          "--",
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "5175",
+          "--strictPort"
+        ],
+        "cwd": "D:\\Document\\Project\\TLCN\\Networking-social---Discuss\\frontend",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "tests-pass",
+        "resolvedExecutable": "C:\\nvm4w\\nodejs\\npm.CMD",
+        "args": [
+          "test"
+        ],
+        "cwd": "D:\\Document\\Project\\TLCN\\Networking-social---Discuss\\frontend",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      }
+    ]
+  }
+}
