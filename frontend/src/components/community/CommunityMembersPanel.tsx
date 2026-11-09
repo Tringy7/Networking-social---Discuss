@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { Crown, Search, ShieldMinus, ShieldPlus, UserX } from 'lucide-react';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -9,6 +10,7 @@ import Avatar from '../ui/Avatar';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import ConfirmDialog from '../ui/ConfirmDialog';
 
 const roles = [
   { value: 'ALL', label: 'Tất cả' },
@@ -35,6 +37,8 @@ export default function CommunityMembersPanel({ community }: { community: Commun
   const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
+  const navigate = useNavigate();
+  const [transferTarget, setTransferTarget] = useState<CommunityMember | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -52,7 +56,6 @@ export default function CommunityMembersPanel({ community }: { community: Commun
 
   const act = async (member: CommunityMember, action: 'promote' | 'demote' | 'kick' | 'transfer') => {
     if (!isOwner || pending.current) return;
-    if (action === 'transfer' && !window.confirm(`Chuyển quyền chủ cộng đồng cho @${member.username}?`)) return;
     pending.current = true; setBusy(true);
     const store = useCommunityStore.getState();
     try {
@@ -65,7 +68,9 @@ export default function CommunityMembersPanel({ community }: { community: Commun
         notify(`Đã xóa @${member.username} khỏi cộng đồng.`, 'success');
       } else {
         await store.transferOwnership(community.name, member.username);
-        notify(`Đã chuyển quyền chủ cộng đồng cho @${member.username}.`, 'success');
+        setTransferTarget(null);
+        notify(`Đã chuyển quyền chủ cộng đồng cho @${member.username}. Bạn hiện là moderator.`, 'success');
+        navigate(`/c/${community.name}`, { replace: true });
       }
     } catch (error) {
       notify(error instanceof Error ? error.message : 'Không thể cập nhật thành viên. Hãy thử lại.', 'error');
@@ -95,9 +100,19 @@ export default function CommunityMembersPanel({ community }: { community: Commun
             <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={() => void act(member, member.role === 'MEMBER' ? 'promote' : 'demote')}
               leftIcon={member.role === 'MEMBER' ? <ShieldPlus size={14} /> : <ShieldMinus size={14} />}>{member.role === 'MEMBER' ? 'Bổ nhiệm Mod' : 'Gỡ Mod'}</Button>
             <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => void act(member, 'kick')} aria-label={`Xóa @${member.username} khỏi cộng đồng`} title="Xóa khỏi cộng đồng" className="community-members-kick"><UserX size={16} /></Button>
-            <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => void act(member, 'transfer')} aria-label={`Chuyển quyền chủ cho @${member.username}`} title="Chuyển quyền chủ"><Crown size={16} /></Button>
+            <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => setTransferTarget(member)} aria-label={`Chuyển quyền chủ cho @${member.username}`} title="Chuyển quyền chủ"><Crown size={16} /></Button>
           </div>}
         </div>)}
     </div>
+    {createPortal(<ConfirmDialog
+      isOpen={transferTarget !== null}
+      onClose={() => { if (!pending.current) setTransferTarget(null); }}
+      onConfirm={() => { if (transferTarget) void act(transferTarget, 'transfer'); }}
+      title="Chuyển quyền chủ cộng đồng?"
+      message={`Bạn sẽ chuyển quyền chủ cộng đồng cho @${transferTarget?.username ?? ''} và trở thành kiểm duyệt viên. Sau khi chuyển thành công, bạn sẽ trở về trang cộng đồng.`}
+      confirmLabel="Xác nhận chuyển quyền"
+      variant="primary"
+      isLoading={busy}
+    />, document.body)}
   </div>;
 }

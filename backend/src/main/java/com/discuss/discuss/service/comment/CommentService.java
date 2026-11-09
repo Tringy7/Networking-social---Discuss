@@ -47,7 +47,7 @@ public class CommentService {
         Post post = postRepository.lockById(request.postId())
                 .orElseThrow(() -> commentSupport.notFound(CommentErrorCode.POST_NOT_FOUND));
         commentSupport.requireAvailablePost(post);
-        authorization.requireMembership(post.getCommunity(), user);
+        authorization.requireCommentPermission(post.getCommunity(), user);
 
         Comment parent = null;
         if (request.parentId() != null) {
@@ -75,7 +75,7 @@ public class CommentService {
             throw new CommentException(CommentErrorCode.COMMENT_EDIT_FORBIDDEN);
         }
 
-        authorization.requireMembership(comment.getPost().getCommunity(), user);
+        authorization.requireCommentPermission(comment.getPost().getCommunity(), user);
 
         comment.setContent(request.content().strip());
         commentRepository.flush();

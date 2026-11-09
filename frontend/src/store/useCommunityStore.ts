@@ -227,7 +227,21 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
 
   transferOwnership: async (communityName, username) => {
     await communityService.transferOwnership(communityName, username);
-    await Promise.all([get().hydrateMembers(communityName), get().hydrateCommunity(communityName)]);
+    set((state) => ({
+      communities: state.communities.map((community) => community.name === communityName
+        ? { ...community, currentUserRole: 'MODERATOR' as const } : community),
+      myCommunities: state.myCommunities.map((community) => community.name === communityName
+        ? { ...community, currentUserRole: 'MODERATOR' as const } : community),
+      members: {
+        ...state.members,
+        [communityName]: (state.members[communityName] || []).map((member) => member.username === username
+          ? { ...member, role: 'OWNER' as const }
+          : member.role === 'OWNER' ? { ...member, role: 'MODERATOR' as const } : member),
+      },
+    }));
+    // A refresh failure must not report an already completed transfer as failed.
+    void Promise.all([get().hydrateMembers(communityName), get().hydrateCommunity(communityName), get().hydrateMine()])
+      .catch(() => undefined);
   },
 
   banCommunity: async () => {

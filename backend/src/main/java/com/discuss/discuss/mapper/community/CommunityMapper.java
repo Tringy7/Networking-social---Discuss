@@ -62,6 +62,7 @@ public class CommunityMapper {
      * Maps the community owner to a response DTO.
      */
     public CommunityOwnerResponseDTO toOwnerDTO(User user) {
+        if (user == null) return null;
         UserProfile profile = userProfileRepository
                 .findByUser(user)
                 .orElse(null);
