@@ -32,6 +32,26 @@ public enum CommunityErrorCode {
             "You do not have permission to perform this action"
     ),
 
+    ACTIVE_MEMBERSHIP_REQUIRED(
+            HttpStatus.FORBIDDEN,
+            "You are not an active member"
+    ),
+
+    COMMENT_PERMISSION_DENIED(
+            HttpStatus.FORBIDDEN,
+            "Commenting is not allowed"
+    ),
+
+    MODERATOR_OR_OWNER_REQUIRED(
+            HttpStatus.FORBIDDEN,
+            "Moderator or Owner permission required"
+    ),
+
+    OWNER_REQUIRED(
+            HttpStatus.FORBIDDEN,
+            "Owner permission required"
+    ),
+
     COMMUNITY_PRIVATE(
             HttpStatus.FORBIDDEN,
             "This community is private"

@@ -38,7 +38,6 @@ public class CommunityService {
     private final CommunityMapper communityMapper;
     private final PageMapper pageMapper;
     private final CommunitySpecifications communitySpecifications;
-    private final CommunityNameNormalizer nameNormalizer;
     private final CommunityMemberMapper communityMemberMapper;
 
     /*
@@ -48,7 +47,7 @@ public class CommunityService {
     public CommunityDetailResponseDTO createCommunity(CreateCommunityRequestDTO req) {
         User user = userService.getCurrentUser();
 
-        String name = this.nameNormalizer.normalize(req.getName());
+        String name = communitySupport.normalize(req.getName());
 
         communitySupport.checkNameCommunityReserved(name);
         if (communitySupport.checkExistsCommunityByName(name)) {

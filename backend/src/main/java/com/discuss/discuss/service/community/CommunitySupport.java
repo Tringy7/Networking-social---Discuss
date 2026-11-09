@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
+import java.util.Locale;
 
 @Component
 @RequiredArgsConstructor
@@ -24,7 +25,13 @@ public class CommunitySupport {
 
     private final CommunityRepository communityRepository;
     private final CommunityMemberRepository communityMemberRepository;
-    private final CommunityNameNormalizer nameNormalizer;
+
+    public String normalize(String name) {
+        if (name == null) {
+            return null;
+        }
+        return name.trim().toLowerCase(Locale.ROOT);
+    }
 
     public Community getCommunityById(Long id) {
         return communityRepository.findById(id)
@@ -32,7 +39,7 @@ public class CommunitySupport {
     }
 
     public Community getCommunityByName(String name) {
-        String normalizedName = nameNormalizer.normalize(name);
+        String normalizedName = normalize(name);
         return communityRepository.findByName(normalizedName)
                 .orElseThrow(() -> new CommunityException(CommunityErrorCode.COMMUNITY_NOT_FOUND));
     }
