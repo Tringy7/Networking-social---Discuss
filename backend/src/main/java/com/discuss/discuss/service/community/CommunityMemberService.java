@@ -4,11 +4,13 @@ import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.entity.CommunityMember;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.CommunityRole;
+import com.discuss.discuss.enums.CommunityStatus;
 import com.discuss.discuss.enums.CommunityVisibility;
 import com.discuss.discuss.enums.MembershipStatus;
 import com.discuss.discuss.exception.community.CommunityErrorCode;
 import com.discuss.discuss.exception.community.CommunityException;
 import com.discuss.discuss.repository.CommunityMemberRepository;
+import com.discuss.discuss.repository.CommunityRepository;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,6 +27,8 @@ public class CommunityMemberService {
     private final CommunityMemberRepository memberRepository;
     private final CommunitySupport communitySupport;
     private final UserService userService;
+
+    private final CommunityRepository communityRepository;
 
     // Creates the initial Owner membership when a community is created.
     @Transactional
@@ -328,22 +332,22 @@ public class CommunityMemberService {
         return memberRepository.findByCommunityAndUser(community, user).orElse(null);
     }
 
-    // Finds a community by its normalized name and requires it to be ACTIVE.
-    private Community getCommunityByNameAndStatusActive(String name) {
-        String normalizedName = nameNormalizer.normalize(name);
-
-        Community community = communityRepository.findByNameForUpdate(normalizedName)
-                .orElseThrow(() -> new CommunityException(
-                        CommunityErrorCode.COMMUNITY_NOT_FOUND
-                ));
-
-        if (community.getStatus() != CommunityStatus.ACTIVE) {
-            throw new CommunityException(
-                    CommunityErrorCode.FORBIDDEN,
-                    "This community is not active"
-            );
-        }
-
-        return community;
-    }
+//    // Finds a community by its normalized name and requires it to be ACTIVE.
+//    private Community getCommunityByNameAndStatusActive(String name) {
+//        String normalizedName = nameNormalizer.normalize(name);
+//
+//        Community community = communityRepository.findByNameForUpdate(normalizedName)
+//                .orElseThrow(() -> new CommunityException(
+//                        CommunityErrorCode.COMMUNITY_NOT_FOUND
+//                ));
+//
+//        if (community.getStatus() != CommunityStatus.ACTIVE) {
+//            throw new CommunityException(
+//                    CommunityErrorCode.FORBIDDEN,
+//                    "This community is not active"
+//            );
+//        }
+//
+//        return community;
+//    }
 }
