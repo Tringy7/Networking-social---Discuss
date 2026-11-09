@@ -5,6 +5,7 @@ import ThemeToggle from '../ui/ThemeToggle';
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import NotificationBadge from '../ui/NotificationBadge';
+import NotificationPanel from './NotificationPanel';
 import Logo from '../common/Logo';
 import Avatar from '../ui/Avatar';
 import Button from '../ui/Button';
@@ -35,7 +36,7 @@ export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout, activeRole } = useAuthStore();
   const { communities } = useCommunityStore();
   const { posts, openCreateModal } = usePostStore();
-  const { notifications, hydrate: hydrateNotifications, markRead } = useNotificationStore();
+  const { notifications, hydrate: hydrateNotifications } = useNotificationStore();
   const addToast = useToastStore((state) => state.addToast);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -325,62 +326,13 @@ export const Navbar: React.FC = () => {
                   title="Thông báo"
                   aria-label={`Thông báo${unreadNotifs > 0 ? `, ${unreadNotifs} chưa đọc` : ''}`}
                   aria-expanded={isNotifOpen}
+                  aria-controls={isNotifOpen ? "navbar-notifications" : undefined}
                 >
                   <Bell className="w-5 h-5" />
                   <NotificationBadge count={unreadNotifs} />
                 </button>
 
-                {isNotifOpen && (
-                  <div data-ui="popover" className="absolute right-0 top-11 z-50 w-[min(20rem,calc(100vw-2rem))] space-y-3 border p-4 text-left sm:w-96">
-                    <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
-                      <h4 className="text-sm font-semibold text-[var(--text-primary)]">Thông báo</h4>
-                      {unreadNotifs > 0 && (
-                        <span className="rounded-full bg-[var(--color-orange-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--color-orange)]">
-                          {unreadNotifs > 99 ? '99+' : unreadNotifs} mới
-                        </span>
-                      )}
-                      <Link
-                        to="/notifications"
-                        onClick={() => setIsNotifOpen(false)}
-                        className="text-xs text-[var(--color-orange)] hover:underline"
-                      >
-                        Xem tất cả
-                      </Link>
-                    </div>
-
-                    <div className="space-y-2 max-h-72 overflow-y-auto">
-                      {notifications.length === 0 ? (
-                        <p className="py-4 text-center text-xs text-[var(--text-secondary)]">
-                      Chưa có thông báo mới.
-                        </p>
-                      ) : notifications.slice(0, 5).map((n) => (
-                        <Link
-                          key={n.id}
-                          to={n.targetUrl}
-                          onClick={() => {
-                            setIsNotifOpen(false);
-                            if (!n.isRead) {
-                              markRead(n.id).catch((error: unknown) => {
-                                addToast(error instanceof Error ? error.message : 'Không thể cập nhật thông báo.', 'error');
-                              });
-                            }
-                          }}
-                          className={`flex items-start gap-3 rounded-xl p-2.5 transition-colors hover:bg-[var(--bg-hover)] ${
-                            !n.isRead ? 'notification-unread' : ''
-                          }`}
-                        >
-                          <Avatar src={n.actor?.avatarUrl} alt={n.actor?.displayName || 'Discuss'} size="xs" />
-                          <div className="min-w-0 flex-1 text-xs">
-                            <span className="font-semibold text-[var(--text-primary)]">
-                              {n.actor?.displayName || 'DISCUSS'}{' '}
-                            </span>
-                            <span className="text-[var(--text-secondary)]">{n.message}</span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {isNotifOpen && <NotificationPanel onClose={() => setIsNotifOpen(false)} />}
               </div>
 
               {/* User Dropdown */}
