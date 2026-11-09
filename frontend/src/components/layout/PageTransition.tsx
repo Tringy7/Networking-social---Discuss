@@ -8,9 +8,10 @@ export default function PageTransition({ children }: { children: React.ReactNode
   const { pathname } = useLocation();
   const reduced = useReducedMotion();
   const intensity = useSettingsStore((state) => state.settings.animationIntensity);
-  const quiet = reduced || intensity !== 'full';
+  const settingsRoute = pathname === '/settings' || pathname.startsWith('/settings/');
+  const quiet = settingsRoute || reduced || intensity !== 'full';
   return (
-    <motion.div key={pathname} className="route-content"
+    <motion.div key={settingsRoute ? "/settings" : pathname} className="route-content"
       initial={quiet ? false : { opacity: 0.85, y: 3 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: quiet ? 0 : 0.18, ease: 'easeOut' }}>
       {children}

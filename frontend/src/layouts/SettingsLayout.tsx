@@ -1,13 +1,8 @@
 import React from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
-import { useSettingsStore } from '../store/useSettingsStore';
 import { NavLink, Outlet } from 'react-router-dom';
-import PageTransition from '../components/layout/PageTransition';
 import { User, Lock, Palette, Bell, KeyRound, Trash2, SlidersHorizontal } from 'lucide-react';
 
 export const SettingsLayout: React.FC = () => {
-  const reduced = useReducedMotion();
-  const intensity = useSettingsStore((state) => state.settings.animationIntensity);
   const tabs = [
     { to: '/settings', label: 'Tổng quan cài đặt', icon: <SlidersHorizontal className="w-4 h-4" /> },
     { to: '/settings/profile', label: 'Hồ sơ cá nhân', icon: <User className="w-4 h-4" /> },
@@ -43,14 +38,14 @@ export const SettingsLayout: React.FC = () => {
                 }`
               }
             >
-              {({ isActive }) => <><span className="shrink-0">{tab.icon}</span><span>{tab.label}</span>{isActive && <motion.span className="tab-indicator" layoutId="settings-tab" transition={reduced || intensity !== 'full' ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 35 }} />}</>}
+              <span className="shrink-0">{tab.icon}</span><span>{tab.label}</span>
             </NavLink>
           ))}
         </nav>
 
         {/* Settings Content Area */}
         <div className="settings-content">
-          <PageTransition><Outlet /></PageTransition>
+          <div className="route-content"><Outlet /></div>
         </div>
       </div>
     </div>
