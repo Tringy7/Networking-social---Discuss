@@ -3,6 +3,9 @@ package com.discuss.discuss.exception.report;
 import org.springframework.http.HttpStatus;
 
 public enum ReportErrorCode {
+    INVALID_COMMUNITY_REPORT_TYPE(HttpStatus.BAD_REQUEST,
+            "Community moderation only supports POST and COMMENT reports"),
+
     // 403 - Forbidden
     ADMIN_REQUIRED(HttpStatus.FORBIDDEN, "Only admins can view all reports"),
 

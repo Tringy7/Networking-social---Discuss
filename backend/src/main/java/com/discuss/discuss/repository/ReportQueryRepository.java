@@ -21,6 +21,16 @@ public class ReportQueryRepository {
 
     public Page<ReportResponseDTO> findAll(ReportStatus status, ReportTargetType targetType,
             String communityName, Pageable pageable) {
+        return findReports(status, targetType, communityName, pageable, true);
+    }
+
+    public Page<ReportResponseDTO> findForCommunity(ReportStatus status, ReportTargetType targetType,
+            String communityName, Pageable pageable) {
+        return findReports(status, targetType, communityName, pageable, false);
+    }
+
+    private Page<ReportResponseDTO> findReports(ReportStatus status, ReportTargetType targetType,
+            String communityName, Pageable pageable, boolean includeCommunityReports) {
         List<String> sources = new ArrayList<>();
         if (targetType == null || targetType == ReportTargetType.POST) {
             sources.add(source("post_reports", "POST", "r.post_id", "r.user_id",
@@ -31,9 +41,12 @@ public class ReportQueryRepository {
                     "join comments cm on cm.id = r.comment_id join posts p on p.id = cm.post_id "
                             + "join communities c on c.id = p.community_id"));
         }
-        if (targetType == null || targetType == ReportTargetType.COMMUNITY) {
+        if (includeCommunityReports && (targetType == null || targetType == ReportTargetType.COMMUNITY)) {
             sources.add(source("community_reports", "COMMUNITY", "r.community_id", "r.user_id",
                     "join communities c on c.id = r.community_id"));
+        }
+        if (sources.isEmpty()) {
+            return Page.empty(pageable);
         }
         String from = " from (" + String.join(" union all ", sources) + ") reports where 1=1";
         MapSqlParameterSource params = new MapSqlParameterSource();

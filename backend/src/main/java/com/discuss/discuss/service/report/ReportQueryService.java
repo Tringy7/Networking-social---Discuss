@@ -6,6 +6,9 @@ import com.discuss.discuss.enums.*;
 import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.repository.ReportQueryRepository;
 import com.discuss.discuss.service.community.CommunitySupport;
+import com.discuss.discuss.service.community.CommunityAuthorizationService;
+import com.discuss.discuss.entity.Community;
+import com.discuss.discuss.entity.User;
 import com.discuss.discuss.service.user.UserAuthorizationService;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ReportQueryService {
     private final UserAuthorizationService userAuthorizationService;
+    private final UserService userService;
+    private final CommunityAuthorizationService communityAuthorizationService;
 
     private final ReportQueryRepository reportQueryRepository;
     private final CommunitySupport communitySupport;
@@ -37,5 +42,19 @@ public class ReportQueryService {
                         targetType,
                         communitySupport.normalize(communityName),
                         pageable));
+    }
+
+    public PageResponseDTO<ReportResponseDTO> getCommunityReports(String name, ReportStatus status,
+            ReportTargetType targetType, Pageable pageable) {
+        Community community = communitySupport.getCommunityByName(name);
+
+        userAuthorizationService.requireAdmin();
+
+        if (targetType == ReportTargetType.COMMUNITY) {
+            throw new ReportException(ReportErrorCode.INVALID_COMMUNITY_REPORT_TYPE);
+        }
+
+        return pageMapper.toResponse(
+                reportQueryRepository.findForCommunity(status, targetType, community.getName(), pageable));
     }
 }
