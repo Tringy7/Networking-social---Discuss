@@ -2,9 +2,8 @@ package com.discuss.discuss.service.report;
 
 import com.discuss.discuss.dto.report.*;
 import com.discuss.discuss.entity.*;
-import com.discuss.discuss.enums.*;
-import com.discuss.discuss.exception.report.ReportException;
-import com.discuss.discuss.exception.report.ReportErrorCode;
+import com.discuss.discuss.enums.ReportStatus;
+import com.discuss.discuss.mapper.report.ReportMapper;
 import com.discuss.discuss.repository.*;
 import com.discuss.discuss.service.comment.CommentSupport;
 import com.discuss.discuss.service.community.CommunitySupport;
@@ -16,19 +15,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-
 @Service
 @RequiredArgsConstructor
 public class ReportService {
-
     private final UserService userService;
     private final EntityManager entityManager;
     private final ReportSupport reportSupport;
+    private final ReportMapper reportMapper;
     private final PostSupport postSupport;
     private final CommunitySupport communitySupport;
     private final CommentSupport commentSupport;
-
     private final PostReportRepository postReports;
     private final CommentReportRepository commentReports;
     private final CommunityReportRepository communityReports;
@@ -36,9 +32,7 @@ public class ReportService {
     @Transactional
     public ReportResponseDTO create(CreateReportRequestDTO request) {
         User reporter = userService.getCurrentUser();
-
         entityManager.lock(reporter, LockModeType.PESSIMISTIC_WRITE);
-
         String description = reportSupport.normalizeDescription(request.getDescription());
 
         return switch (request.getTargetType()) {
@@ -48,23 +42,11 @@ public class ReportService {
         };
     }
 
-    private ReportResponseDTO createPostReport(
-            CreateReportRequestDTO request,
-            User reporter,
-            String description
-    ) {
+    private ReportResponseDTO createPostReport(CreateReportRequestDTO request, User reporter, String description) {
         Post post = postSupport.findPublished(request.getTargetId());
-
-        Community community = post.getCommunity();
-        communitySupport.checkCommunity(community, reporter);
-
-        boolean duplicate = postReports.existsByPostIdAndUserIdAndStatus(
-                post.getId(),
-                reporter.getId(),
-                ReportStatus.PENDING
-        );
-
-        checkDuplicate(duplicate);
+        communitySupport.checkCommunity(post.getCommunity(), reporter);
+        reportSupport.checkDuplicate(postReports.existsByPostIdAndUserIdAndStatus(
+                post.getId(), reporter.getId(), ReportStatus.PENDING));
 
         PostReport report = PostReport.builder()
                 .post(post)
@@ -73,37 +55,15 @@ public class ReportService {
                 .description(description)
                 .status(ReportStatus.PENDING)
                 .build();
-
-        report = postReports.saveAndFlush(report);
-
-        return reportSupport.response(
-                report.getId(),
-                request,
-                community,
-                reporter,
-                description,
-                report.getCreatedAt()
-        );
+        return reportMapper.toResponse(postReports.saveAndFlush(report));
     }
 
-    private ReportResponseDTO createCommentReport(
-            CreateReportRequestDTO request,
-            User reporter,
-            String description
-    ) {
+    private ReportResponseDTO createCommentReport(CreateReportRequestDTO request, User reporter, String description) {
         Comment comment = commentSupport.findComment(request.getTargetId());
         commentSupport.requireAvailablePost(comment.getPost());
-
-        Community community = comment.getPost().getCommunity();
-        communitySupport.checkCommunity(community, reporter);
-
-        boolean duplicate = commentReports.existsByCommentIdAndReporterIdAndStatus(
-                comment.getId(),
-                reporter.getId(),
-                ReportStatus.PENDING
-        );
-
-        checkDuplicate(duplicate);
+        communitySupport.checkCommunity(comment.getPost().getCommunity(), reporter);
+        reportSupport.checkDuplicate(commentReports.existsByCommentIdAndReporterIdAndStatus(
+                comment.getId(), reporter.getId(), ReportStatus.PENDING));
 
         CommentReport report = CommentReport.builder()
                 .comment(comment)
@@ -112,34 +72,14 @@ public class ReportService {
                 .description(description)
                 .status(ReportStatus.PENDING)
                 .build();
-
-        report = commentReports.saveAndFlush(report);
-
-        return reportSupport.response(
-                report.getId(),
-                request,
-                community,
-                reporter,
-                description,
-                report.getCreatedAt()
-        );
+        return reportMapper.toResponse(commentReports.saveAndFlush(report));
     }
 
-    private ReportResponseDTO createCommunityReport(
-            CreateReportRequestDTO request,
-            User reporter,
-            String description
-    ) {
+    private ReportResponseDTO createCommunityReport(CreateReportRequestDTO request, User reporter, String description) {
         Community community = communitySupport.getCommunityById(request.getTargetId());
         communitySupport.checkCommunity(community, reporter);
-
-        boolean duplicate = communityReports.existsByCommunityIdAndUserIdAndStatus(
-                community.getId(),
-                reporter.getId(),
-                ReportStatus.PENDING
-        );
-
-        checkDuplicate(duplicate);
+        reportSupport.checkDuplicate(communityReports.existsByCommunityIdAndUserIdAndStatus(
+                community.getId(), reporter.getId(), ReportStatus.PENDING));
 
         CommunityReport report = CommunityReport.builder()
                 .community(community)
@@ -148,22 +88,7 @@ public class ReportService {
                 .description(description)
                 .status(ReportStatus.PENDING)
                 .build();
-
-        report = communityReports.saveAndFlush(report);
-
-        return reportSupport.response(
-                report.getId(),
-                request,
-                community,
-                reporter,
-                description,
-                report.getCreatedAt()
-        );
+        return reportMapper.toResponse(communityReports.saveAndFlush(report));
     }
 
-    private void checkDuplicate(boolean exists) {
-        if (exists) {
-            throw new ReportException(ReportErrorCode.DUPLICATE_PENDING_REPORT);
-        }
-    }
 }
