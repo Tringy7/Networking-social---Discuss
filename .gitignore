@@ -71,3 +71,7 @@ tools/
 
 # Local Taste Skill installation
 /.agents/skills/design-taste-frontend/
+
+# Local documentation and test directories
+docs/
+test/
