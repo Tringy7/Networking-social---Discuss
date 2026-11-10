@@ -2,20 +2,24 @@ package com.discuss.discuss.repository;
 
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.UserStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.Optional;
-import java.util.OptionalInt;
 
-public interface UserRepository extends JpaRepository<User, Long> {
-    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = "profile")
-    @org.springframework.data.jpa.repository.Query("select u from User u left join u.profile p where u.status = com.discuss.discuss.enums.UserStatus.ACTIVE and (locate(lower(:q), lower(u.username)) > 0 or locate(lower(:q), lower(p.displayName)) > 0)")
-    org.springframework.data.domain.Page<User> searchActive(@org.springframework.data.repository.query.Param("q") String q,
-            org.springframework.data.domain.Pageable pageable);
+public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
+    long countByStatus(UserStatus status);
+
+    @Override
+    @EntityGraph(attributePaths = "profile")
+    Page<User> findAll(Specification<User> specification, Pageable pageable);
 
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
-    boolean existsByEmail(String email);
     boolean existsByUsername(String username);
     boolean existsByUsernameAndStatus(
             String username,

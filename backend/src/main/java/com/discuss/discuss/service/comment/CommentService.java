@@ -111,4 +111,9 @@ public class CommentService {
         comment.setDeletedAt(LocalDateTime.now());
     }
 
+
+    @Transactional(readOnly = true)
+    public long countAll() {
+        return commentRepository.count();
+    }
 }

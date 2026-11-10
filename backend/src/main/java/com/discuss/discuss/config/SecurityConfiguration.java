@@ -71,6 +71,7 @@ public class SecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(
                         authz -> authz
+                                .requestMatchers("/admin/**").hasRole("ADMIN")
                                 .requestMatchers("/auth/sessions", "/auth/sessions/**").authenticated()
                                 .requestMatchers("/auth/change-password", "/auth/change-password/**").authenticated()
                                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()

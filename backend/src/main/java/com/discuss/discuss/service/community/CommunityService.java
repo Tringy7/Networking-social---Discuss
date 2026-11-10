@@ -252,4 +252,14 @@ public class CommunityService {
         return pageMapper.toResponse(communities);
     }
 
+
+    @Transactional(readOnly = true)
+    public long countAll() {
+        return communityRepository.count();
+    }
+
+    @Transactional(readOnly = true)
+    public long countByStatus(com.discuss.discuss.enums.CommunityStatus status) {
+        return communityRepository.countByStatus(status);
+    }
 }

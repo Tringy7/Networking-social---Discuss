@@ -164,4 +164,9 @@ public class PostService {
         return postSupport.toResponse(post, user);
     }
 
+
+    @Transactional(readOnly = true)
+    public long countAll() {
+        return postRepository.count();
+    }
 }
