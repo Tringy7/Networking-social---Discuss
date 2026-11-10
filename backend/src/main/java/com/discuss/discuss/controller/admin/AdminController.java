@@ -4,6 +4,7 @@ import com.discuss.discuss.dto.admin.AdminResponse.*;
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.admin.AdminUserSearchRequestDTO;
 import com.discuss.discuss.service.admin.AdminService;
+import com.discuss.discuss.utils.annotation.auth.HasRole;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/admin")
 @RequiredArgsConstructor
 @Validated
+@HasRole("ADMIN")
 public class AdminController {
     private final AdminService adminService;
 

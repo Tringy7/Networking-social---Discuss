@@ -3,6 +3,7 @@ package com.discuss.discuss.controller.report;
 import com.discuss.discuss.dto.report.*;
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.service.report.*;
+import com.discuss.discuss.utils.annotation.auth.HasRole;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class ReportController {
     private final CommunityReportQueryService communityReportQueries;
 
     @GetMapping("/posts")
+    @HasRole("ADMIN")
     public ResponseEntity<PageResponseDTO<ReportResponseDTO>> getPostReports(
             @Valid @ModelAttribute ReportQueryRequestDTO request,
             @RequestParam(required = false) @Size(max = 255) String communityName) {
@@ -35,6 +37,7 @@ public class ReportController {
     }
 
     @GetMapping("/comments")
+    @HasRole("ADMIN")
     public ResponseEntity<PageResponseDTO<ReportResponseDTO>> getCommentReports(
             @Valid @ModelAttribute ReportQueryRequestDTO request,
             @RequestParam(required = false) @Size(max = 255) String communityName) {
@@ -49,6 +52,7 @@ public class ReportController {
     }
 
     @GetMapping("/communities")
+    @HasRole("ADMIN")
     public ResponseEntity<PageResponseDTO<ReportResponseDTO>> getCommunityReports(
             @Valid @ModelAttribute ReportQueryRequestDTO request,
             @RequestParam(required = false) @Size(max = 255) String communityName) {

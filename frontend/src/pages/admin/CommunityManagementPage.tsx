@@ -1,184 +1,39 @@
-import React, { useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useToastStore } from '../../store/useToastStore';
-import { Community } from '../../types';
-import { adminService } from '../../services';
-import Avatar from '../../components/ui/Avatar';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
-import ConfirmDialog from '../../components/ui/ConfirmDialog';
-import { FolderKanban, Search, Globe, Lock, ShieldAlert, ShieldCheck } from 'lucide-react';
+import useAdminQuery from '../../hooks/useAdminQuery';
+import useAdminResource from '../../hooks/useAdminResource';
+import { adminModeration, adminMutations, adminCapabilities, paginate, type AdminCommunity } from '../../services/adminModeration';
+import { CommunityPreview } from '../../components/admin/AdminPreviews';
+import { AdminPageHeader, AdminSearchInput, AdminFilter, AdminNotice, AdminDataTable, AdminEmptyState, AdminPagination, AdminStatusBadge, AdminAvatar, AdminRowMenu, AdminDetailDrawer, AdminConfirmDialog, adminDate, adminNumber, type AdminAction, type AdminColumn } from '../../components/admin/AdminUI';
 
-export const CommunityManagementPage: React.FC = () => {
-  const [communities, setCommunities] = useState<Community[]>([]);
-  const addToast = useToastStore((state) => state.addToast);
-
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('ALL');
-  const [commToToggle, setCommToToggle] = useState<Community | null>(null);
-
-  useEffect(() => {
-    adminService.listCommunities().then(setCommunities).catch((error: unknown) => {
-      addToast(error instanceof Error ? error.message : 'Không thể tải danh sách cộng đồng.', 'error');
-    });
-  }, [addToast]);
-
-  const filteredCommunities = communities.filter((c) => {
-    const matchesSearch =
-      c.displayName.toLowerCase().includes(search.toLowerCase()) ||
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.ownerUsername.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = categoryFilter === 'ALL' || c.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
-
-  const handleToggleCommunityStatus = async (comm: Community) => {
-    const nextStatus = comm.status === 'BANNED' ? 'ACTIVE' : 'BANNED';
-    try {
-      await adminService.setCommunityStatus(comm.name, nextStatus);
-      setCommunities((current) => current.map((item) =>
-        item.id === comm.id ? { ...item, status: nextStatus } : item
-      ));
-      addToast(
-        nextStatus === 'ACTIVE'
-          ? `Đã mở khóa cộng đồng c/${comm.name}`
-          : `Đã tạm khóa cộng đồng c/${comm.name}. Tên định danh vẫn được bảo lưu.`,
-        nextStatus === 'ACTIVE' ? 'success' : 'warning'
-      );
-      setCommToToggle(null);
-    } catch (error) {
-      addToast(error instanceof Error ? error.message : 'Không thể thay đổi trạng thái cộng đồng.', 'error');
-    }
+export default function CommunityManagementPage() {
+  const query = useAdminQuery();
+  const search = query.params.get('search') || '';
+  const status = query.params.get('status') === 'BANED' ? 'BANED' : 'ACTIVE';
+  const result = useAdminResource(useCallback(() => status === 'ACTIVE' ? adminModeration.activeCommunities() : Promise.resolve([]), [status]));
+  const [selected, setSelected] = useState<AdminCommunity | null>(null);
+  const [action, setAction] = useState<AdminAction | null>(null);
+  const page = useMemo(() => paginate((result.data || []).filter(community => community.name.toLocaleLowerCase().includes(search.toLocaleLowerCase())), query.page, query.size), [result.data, search, query.page, query.size]);
+  const toggle = (community: AdminCommunity) => {
+    const banned = ['BANED', 'BANNED'].includes(community.status || community.communityStatus || '');
+    setAction({ title: banned ? 'Mở lại cộng đồng' : 'Cấm cộng đồng', description: `${banned ? 'Cho phép hoạt động lại' : 'Tạm dừng hoạt động'} đối với cộng đồng c/${community.name}. Tên cộng đồng và nội dung không tự động bị xóa.`, label: banned ? 'Mở lại cộng đồng' : 'Xác nhận cấm', available: adminCapabilities.communityStatus, danger: !banned, execute: () => adminMutations.setCommunityStatus(community.name, banned ? 'ACTIVE' : 'BANED'), success: 'Đã cập nhật trạng thái cộng đồng.' });
   };
-
-  return (
-    <div className="space-y-6 text-left pb-16">
-      <div>
-        <h1 className="text-2xl font-semibold text-[var(--text-primary)] flex items-center gap-2">
-          <FolderKanban className="w-6 h-6 text-[var(--color-info)]" />
-          <span>Quản lý cộng đồng toàn hệ thống</span>
-        </h1>
-        <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-          Giám sát số lượng thành viên, tình trạng tuân thủ tiêu chuẩn và đình chỉ các nhóm vi phạm
-        </p>
-      </div>
-
-      {/* Search and filters */}
-      <div className="flex flex-col sm:flex-row items-center gap-3">
-        <div className="flex-1 w-full">
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            leftIcon={<Search className="w-4 h-4" />}
-            placeholder="Tìm theo tên cộng đồng hoặc chủ nhóm..."
-            className="bg-[var(--bg-surface)]"
-          />
-        </div>
-
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] outline-none cursor-pointer"
-        >
-          <option value="ALL">Mọi danh mục</option>
-          <option value="Lập trình">Lập trình</option>
-          <option value="Frontend">Frontend</option>
-          <option value="Backend">Backend</option>
-          <option value="Công nghệ">Công nghệ</option>
-          <option value="Thiết kế">Thiết kế</option>
-        </select>
-      </div>
-
-      {/* Communities Table */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-panel)] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[var(--bg-surface)] border-b border-[var(--border-color)] text-xs text-[var(--text-muted)] font-semibold">
-              <tr>
-                <th className="p-4">Cộng đồng</th>
-                <th className="p-4">Chuyên mục</th>
-                <th className="p-4">Trưởng nhóm</th>
-                <th className="p-4">Thành viên</th>
-                <th className="p-4">Trạng thái</th>
-                <th className="p-4 text-right">Hành động</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#303235]/60">
-              {filteredCommunities.map((c) => (
-                <tr key={c.id} className="hover:bg-[var(--bg-hover)] transition-colors">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar src={c.avatarUrl} alt={c.displayName} size="sm" shape="rounded" />
-                      <div>
-                        <Link
-                          to={`/c/${c.name}`}
-                          className="font-semibold text-[var(--text-primary)] hover:text-[var(--color-orange)] transition-colors"
-                        >
-                          {c.displayName}
-                        </Link>
-                        <div className="text-xs text-[var(--text-muted)] tabular-nums">c/{c.name}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <span className="text-xs font-semibold text-[var(--color-orange)] bg-[var(--color-orange)]/10 px-2 py-0.5 rounded">
-                      {c.category}
-                    </span>
-                  </td>
-                  <td className="p-4 text-[var(--text-secondary)]">@{c.ownerUsername}</td>
-                  <td className="p-4 font-semibold text-[var(--text-primary)] tabular-nums">
-                    {c.memberCount.toLocaleString('vi-VN')}
-                  </td>
-                  <td className="p-4">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
-                        c.status === 'ACTIVE'
-                          ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
-                          : 'bg-[var(--color-danger)]/15 text-[var(--color-danger)]'
-                      }`}
-                    >
-                      {c.status === 'ACTIVE' ? 'HOẠT ĐỘNG' : 'ĐÃ ĐÌNH CHỈ'}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link to={`/c/${c.name}`}>
-                        <Button variant="ghost" size="sm">
-                          Xem
-                        </Button>
-                      </Link>
-                      <Button
-                        variant={c.status === 'ACTIVE' ? 'danger' : 'secondary'}
-                        size="sm"
-                        onClick={() => setCommToToggle(c)}
-                      >
-                        {c.status === 'ACTIVE' ? 'Đình chỉ' : 'Khôi phục'}
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Confirm Ban Community Dialog */}
-      {commToToggle && (
-        <ConfirmDialog
-          isOpen={true}
-          onClose={() => setCommToToggle(null)}
-          onConfirm={() => handleToggleCommunityStatus(commToToggle)}
-          title={commToToggle.status === 'ACTIVE' ? 'Đình chỉ hoạt động cộng đồng' : 'Khôi phục hoạt động'}
-          message={`Bạn có chắc chắn muốn ${
-            commToToggle.status === 'ACTIVE' ? 'đình chỉ' : 'khôi phục'
-          } cộng đồng "${commToToggle.displayName}"? Tên định danh c/${commToToggle.name} vẫn được giữ nguyên để chống chiếm quyền.`}
-          confirmLabel={commToToggle.status === 'ACTIVE' ? 'Xác nhận đình chỉ' : 'Khôi phục'}
-          variant={commToToggle.status === 'ACTIVE' ? 'danger' : 'primary'}
-        />
-      )}
-    </div>
-  );
-};
-
-export default CommunityManagementPage;
+  const columns: AdminColumn<AdminCommunity>[] = [
+    { key: 'name', label: 'Cộng đồng', render: row => <button className="admin-name-button" onClick={() => setSelected(row)}><div className="admin-identity"><AdminAvatar name={row.name} src={row.avatarUrl} square /><span><strong>c/{row.name}</strong><small>{row.visibility === 'PRIVATE' ? 'Riêng tư' : 'Công khai'}</small></span></div></button> },
+    { key: 'owner', label: 'Chủ sở hữu', render: row => row.owner?.username || <button className="admin-text-action" onClick={() => setSelected(row)}>Xem chi tiết</button> },
+    { key: 'category', label: 'Danh mục', render: row => row.categoryName || '—' },
+    { key: 'members', label: 'Thành viên', numeric: true, render: row => adminNumber(row.memberCount) },
+    { key: 'status', label: 'Trạng thái', render: row => <AdminStatusBadge status={row.communityStatus || row.status} /> },
+    { key: 'date', label: 'Ngày tạo', numeric: true, render: row => adminDate(row.createdAt) },
+    { key: 'actions', label: '', className: 'admin-actions-cell', render: row => <AdminRowMenu label={row.name}><button onClick={() => setSelected(row)}>Xem chi tiết</button><Link to={`/c/${encodeURIComponent(row.name)}`}>Mở cộng đồng</Link><button onClick={() => toggle(row)}>Cấm / mở lại cộng đồng</button></AdminRowMenu> },
+  ];
+  return <div className="admin-page"><AdminPageHeader title="Quản lý cộng đồng" description="Giám sát và quản lý các cộng đồng trên DISCUSS." loading={result.loading} onRefresh={result.reload} />
+    <AdminNotice>Danh sách hiện cung cấp các cộng đồng đang hoạt động. Danh sách đầy đủ mọi trạng thái và thao tác cấm / mở lại chưa khả dụng.</AdminNotice>
+    <div className="admin-table-toolbar"><AdminSearchInput value={search} onChange={value => query.update({ search: value }, true)} label="Tìm cộng đồng" placeholder="Tìm theo tên cộng đồng…" /><AdminFilter label="Trạng thái" value={status} options={[[ 'ACTIVE', 'Đang hoạt động'], ['BANED', 'Đã cấm · chưa hỗ trợ danh sách']]} onChange={value => query.update({ status: value })} /></div>
+    <div className="admin-list-meta"><span role="status">{status === 'BANED' ? 'Danh sách cộng đồng bị cấm chưa khả dụng' : result.loading ? 'Đang tải cộng đồng…' : result.error ? 'Chưa tải được danh sách' : `${adminNumber(page.totalElements)} cộng đồng đang hoạt động`}</span>{search && <button onClick={query.reset}>Đặt lại bộ lọc</button>}</div>
+    {status === 'BANED' ? <AdminEmptyState title="Chưa thể xem danh sách cộng đồng bị cấm" description="Bạn vẫn có thể xem tổng số cộng đồng bị cấm trong trang Tổng quan." onReset={query.reset} /> : <AdminDataTable rows={page.content} columns={columns} rowKey={row => row.id} loading={result.loading} error={result.error} retry={result.reload} caption="Danh sách cộng đồng đang hoạt động" empty={<AdminEmptyState title="Không tìm thấy cộng đồng" onReset={query.reset} />} />}
+    <AdminPagination result={status === 'BANED' || result.loading || result.error ? null : page} page={query.page} size={query.size} disabled={status === 'BANED' || result.loading || !!result.error} onChange={query.update} />
+    {selected && !action && <AdminDetailDrawer title="Chi tiết cộng đồng" onClose={() => setSelected(null)}><CommunityPreview name={selected.name} /><div className="admin-drawer-section"><h2>Kiểm duyệt cộng đồng</h2><AdminNotice>Thao tác cấm / mở lại cộng đồng chưa được hỗ trợ.</AdminNotice><button className="admin-button admin-button-danger-outline" onClick={() => toggle(selected)}>Cấm / mở lại cộng đồng</button></div></AdminDetailDrawer>}
+    {action && <AdminConfirmDialog action={action} onClose={() => setAction(null)} onSuccess={() => { setSelected(null); result.reload(); }} />}
+  </div>;
+}

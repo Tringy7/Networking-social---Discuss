@@ -1,247 +1,59 @@
-import React, { useEffect, useState } from 'react';
-import { useToastStore } from '../../store/useToastStore';
-import { User } from '../../types';
-import { adminService } from '../../services';
-import Avatar from '../../components/ui/Avatar';
-import Badge from '../../components/ui/Badge';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
-import Modal from '../../components/ui/Modal';
-import ConfirmDialog from '../../components/ui/ConfirmDialog';
-import { Users, Search, Eye } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowUpRight } from 'lucide-react';
+import { adminService, userService, type AdminUserApiResponse } from '../../services';
+import { adminCapabilities, adminMutations } from '../../services/adminModeration';
+import { useAuthStore } from '../../store/useAuthStore';
+import useAdminQuery from '../../hooks/useAdminQuery';
+import useAdminResource from '../../hooks/useAdminResource';
+import { useAdminData } from '../../components/admin/AdminDataContext';
+import { AdminPageHeader, AdminDataTable, AdminSearchInput, AdminFilter, AdminStatusBadge, AdminPagination, AdminRowMenu, AdminDetailDrawer, AdminFields, AdminAvatar, AdminConfirmDialog, AdminNotice, AdminEmptyState, AdminLoadingSkeleton, AdminErrorState, adminDate, adminNumber, roleLabels, type AdminAction, type AdminColumn } from '../../components/admin/AdminUI';
 
-export const UserManagementPage: React.FC = () => {
-  const { addToast } = useToastStore();
-
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('ALL');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
-
-  const [userList, setUserList] = useState<User[]>([]);
-
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [userToBan, setUserToBan] = useState<User | null>(null);
-
-  useEffect(() => {
-    adminService.listUsers().then(setUserList).catch((error: unknown) => {
-      addToast(error instanceof Error ? error.message : 'Không thể tải danh sách người dùng.', 'error');
-    });
-  }, [addToast]);
-
-  const filteredUsers = userList.filter((u) => {
-    const matchesSearch =
-      u.displayName.toLowerCase().includes(search.toLowerCase()) ||
-      u.username.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase());
-    const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
-    const matchesStatus = statusFilter === 'ALL' || u.status === statusFilter;
-    return matchesSearch && matchesRole && matchesStatus;
-  });
-
-  const handleToggleBan = async (u: User) => {
-    const isCurrentlyBanned = u.status === 'BANNED' || u.status === 'SUSPENDED';
-    try {
-      const updatedUser = await adminService.updateUserStatus(
-        u.id,
-        isCurrentlyBanned ? 'ACTIVE' : 'BANNED'
-      );
-      setUserList((prev) => prev.map((item) => item.id === u.id ? updatedUser : item));
-      setUserToBan(null);
-      addToast(
-        isCurrentlyBanned
-          ? `Đã mở khóa tài khoản @${u.username}`
-          : `Đã khóa tài khoản @${u.username} thành công!`,
-        isCurrentlyBanned ? 'success' : 'warning'
-      );
-    } catch (error) {
-      addToast(error instanceof Error ? error.message : 'Không thể thay đổi trạng thái tài khoản.', 'error');
-    }
+function Identity({ user }: { user: AdminUserApiResponse }) {
+  return <div className="admin-identity"><AdminAvatar name={user.displayName || user.username} src={user.avatarUrl} /><span><strong>{user.displayName || user.username}</strong><small>@{user.username}</small></span></div>;
+}
+function Profile({ username }: { username: string }) {
+  const result = useAdminResource(useCallback(() => userService.getPublicProfile(username), [username]));
+  if (result.loading) return <AdminLoadingSkeleton />;
+  if (result.error) return <AdminErrorState error={result.error} retry={result.reload} />;
+  return <AdminFields items={[['Giới thiệu', result.data?.bio || '—'], ['Địa điểm', result.data?.location || '—']]} />;
+}
+export default function UserManagementPage() {
+  const query = useAdminQuery();
+  const search = (query.params.get('search') || '').slice(0, 200);
+  const status = ['ACTIVE', 'SUSPENDED'].includes(query.params.get('status') || '') ? query.params.get('status')! : '';
+  const sort = query.params.get('sort') === 'createdAt,asc' ? 'createdAt,asc' : 'createdAt,desc';
+  const { page, size } = query;
+  const result = useAdminResource(useCallback(() => adminService.listUsers({ page, size, search, status, sort }), [page, size, search, status, sort]));
+  const [selected, setSelected] = useState<AdminUserApiResponse | null>(null);
+  const [action, setAction] = useState<AdminAction | null>(null);
+  const current = useAuthStore(state => state.user);
+  const summary = useAdminData();
+  const openStatus = (user: AdminUserApiResponse) => {
+    const locked = ['LOCKED', 'SUSPENDED'].includes(user.status);
+    setAction({ title: locked ? 'Mở khóa tài khoản' : 'Khóa tài khoản', label: locked ? 'Mở khóa' : 'Xác nhận khóa', danger: !locked, available: adminCapabilities.userStatus,
+      description: `${locked ? 'Cho phép đăng nhập lại' : 'Tạm ngừng quyền truy cập'} đối với tài khoản @${user.username}.`,
+      preview: <Identity user={user} />, execute: () => adminMutations.setUserStatus(user.id, locked ? 'ACTIVE' : 'LOCKED'), success: 'Đã cập nhật trạng thái tài khoản.' });
   };
-
-  return (
-    <div className="space-y-6 text-left pb-16">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <Users className="w-6 h-6 text-[var(--color-orange)]" />
-            <span>Quản lý người dùng hệ thống</span>
-          </h1>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Xem danh sách tài khoản, phân quyền quản trị và thực hiện khóa tài khoản vi phạm
-          </p>
-        </div>
-      </div>
-
-      {/* Filter and search controls */}
-      <div className="flex flex-col sm:flex-row items-center gap-3">
-        <div className="flex-1 w-full">
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            leftIcon={<Search className="w-4 h-4" />}
-            placeholder="Tìm theo username, tên hiển thị hoặc email..."
-            className="bg-[var(--bg-surface)]"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] outline-none cursor-pointer"
-          >
-            <option value="ALL">Mọi vai trò</option>
-            <option value="USER">Thành viên (User)</option>
-            <option value="ADMIN">Quản trị viên (Admin)</option>
-          </select>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] outline-none cursor-pointer"
-          >
-            <option value="ALL">Mọi trạng thái</option>
-            <option value="ACTIVE">Đang hoạt động</option>
-            <option value="SUSPENDED">Tạm đình chỉ</option>
-            <option value="PENDING">Chờ xác thực</option>
-          </select>
-        </div>
-      </div>
-
-      {/* User Table */}
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-[var(--radius-panel)] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[var(--bg-surface)] border-b border-[var(--border-color)] text-xs text-[var(--text-muted)] font-semibold">
-              <tr>
-                <th className="p-4">Người dùng</th>
-                <th className="p-4">Email</th>
-                <th className="p-4">Vai trò</th>
-                <th className="p-4">Trạng thái</th>
-                <th className="p-4">Ngày tạo</th>
-                <th className="p-4 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#303235]/60">
-              {filteredUsers.map((u) => (
-                <tr key={u.id} className="hover:bg-[var(--bg-hover)] transition-colors">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar src={u.avatarUrl} alt={u.displayName} size="sm" />
-                      <div>
-                        <div className="font-semibold text-[var(--text-primary)]">{u.displayName}</div>
-                        <div className="text-xs text-[var(--text-muted)]">@{u.username}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4 text-[var(--text-secondary)]">{u.email}</td>
-                  <td className="p-4">
-                    <Badge role={u.role} size="sm" />
-                  </td>
-                  <td className="p-4">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
-                        u.status === 'ACTIVE'
-                          ? 'bg-[var(--color-success)]/15 text-[var(--color-success)]'
-                          : 'bg-[var(--color-danger)]/15 text-[var(--color-danger)]'
-                      }`}
-                    >
-                      {u.status === 'ACTIVE'
-                        ? 'HOẠT ĐỘNG'
-                        : u.status === 'PENDING'
-                          ? 'CHỜ XÁC THỰC'
-                          : 'ĐÃ KHÓA'}
-                    </span>
-                  </td>
-                  <td className="p-4 text-[var(--text-secondary)] tabular-nums">
-                    {new Date(u.createdAt).toLocaleDateString('vi-VN')}
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedUser(u)}
-                        leftIcon={<Eye className="w-3.5 h-3.5" />}
-                      >
-                        Chi tiết
-                      </Button>
-                      <Button
-                        variant={u.status === 'ACTIVE' ? 'danger' : 'secondary'}
-                        size="sm"
-                        onClick={() => setUserToBan(u)}
-                      >
-                        {u.status === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* User Details Modal */}
-      {selectedUser && (
-        <Modal
-          isOpen={true}
-          onClose={() => setSelectedUser(null)}
-          title={`Hồ sơ chi tiết: @${selectedUser.username}`}
-          maxWidth="md"
-        >
-          <div className="space-y-4 text-left text-xs">
-            <div className="flex items-center gap-3.5 p-3 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
-              <Avatar src={selectedUser.avatarUrl} alt={selectedUser.displayName} size="lg" />
-              <div>
-                <h4 className="text-sm font-semibold text-[var(--text-primary)]">{selectedUser.displayName}</h4>
-                <div className="text-[var(--text-muted)]">@{selectedUser.username}</div>
-                <div className="mt-1 flex gap-2">
-                  <Badge role={selectedUser.role} size="sm" />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2 p-3 rounded-[var(--radius-card)] bg-[var(--bg-surface)] border border-[var(--border-color)]">
-              <div className="flex justify-between py-1 border-b border-[var(--border-color)]/60">
-                <span className="text-[var(--text-muted)]">Email:</span>
-                <span className="text-[var(--text-primary)] font-semibold">{selectedUser.email}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-[var(--border-color)]/60">
-                <span className="text-[var(--text-muted)]">Trạng thái:</span>
-                <span className="text-[var(--text-primary)] font-semibold">{selectedUser.status}</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-[var(--text-muted)]">Ngày đăng ký:</span>
-                <span className="text-[var(--text-primary)] font-semibold">{selectedUser.createdAt}</span>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <Button variant="secondary" size="sm" onClick={() => setSelectedUser(null)}>
-                Đóng
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* Confirm Ban Dialog */}
-      {userToBan && (
-        <ConfirmDialog
-          isOpen={true}
-          onClose={() => setUserToBan(null)}
-          onConfirm={() => handleToggleBan(userToBan)}
-          title={userToBan.status === 'ACTIVE' ? 'Khóa tài khoản người dùng' : 'Mở khóa tài khoản'}
-          message={`Bạn có chắc chắn muốn ${
-            userToBan.status === 'ACTIVE' ? 'khóa' : 'mở khóa'
-          } tài khoản @${userToBan.username}?`}
-          confirmLabel={userToBan.status === 'ACTIVE' ? 'Xác nhận khóa' : 'Mở khóa'}
-          variant={userToBan.status === 'ACTIVE' ? 'danger' : 'primary'}
-        />
-      )}
-    </div>
-  );
-};
-
-export default UserManagementPage;
+  const openRole = (user: AdminUserApiResponse) => setAction({ title: 'Thay đổi vai trò', label: 'Xác nhận đổi quyền', available: adminCapabilities.userRole,
+    description: `Thay đổi quyền truy cập của @${user.username}. Quyền quản trị cho phép truy cập dữ liệu và công cụ kiểm duyệt toàn hệ thống.`,
+    preview: <AdminFilter label="Vai trò mới" value={user.role === 'ADMIN' ? 'USER' : 'ADMIN'} options={[[user.role === 'ADMIN' ? 'USER' : 'ADMIN', user.role === 'ADMIN' ? 'Người dùng' : 'Quản trị viên']]} disabled />,
+    execute: () => adminMutations.setUserRole(user.id, user.role === 'ADMIN' ? 'USER' : 'ADMIN'), success: 'Đã cập nhật vai trò.' });
+  const columns: AdminColumn<AdminUserApiResponse>[] = [
+    { key: 'user', label: 'Người dùng', render: user => <button className="admin-name-button" onClick={() => setSelected(user)}><Identity user={user} /></button> },
+    { key: 'email', label: 'Email', render: user => user.email || '—', className: 'admin-wrap-cell' },
+    { key: 'role', label: 'Vai trò', render: user => roleLabels[user.role] || user.role },
+    { key: 'status', label: 'Trạng thái', render: user => <AdminStatusBadge status={user.status} label={user.status === 'PENDING' ? 'Chờ xác thực' : undefined} /> },
+    { key: 'date', label: 'Ngày tham gia', numeric: true, render: user => adminDate(user.createdAt) },
+    { key: 'actions', label: '', className: 'admin-actions-cell', render: user => <AdminRowMenu label={user.username}><button onClick={() => setSelected(user)}>Xem chi tiết</button><button disabled={current?.username === user.username} title={current?.username === user.username ? 'Không tự thay đổi trạng thái tài khoản đang dùng.' : undefined} onClick={() => openStatus(user)}>{['LOCKED', 'SUSPENDED'].includes(user.status) ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}</button><button disabled={current?.username === user.username} title={current?.username === user.username ? 'Không tự thay đổi quyền tài khoản đang dùng.' : undefined} onClick={() => openRole(user)}>Thay đổi vai trò</button></AdminRowMenu> },
+  ];
+  return <div className="admin-page"><AdminPageHeader title="Quản lý người dùng" description="Theo dõi tài khoản, trạng thái hoạt động và quyền truy cập." loading={result.loading} onRefresh={result.reload} />
+    <div className="admin-table-toolbar"><AdminSearchInput value={search} onChange={value => query.update({ search: value }, true)} placeholder="Tìm username hoặc email…" label="Tìm người dùng" /><div className="admin-filter-bar"><AdminFilter label="Trạng thái" value={status} onChange={value => query.update({ status: value })} options={[[ '', 'Tất cả trạng thái'], ['ACTIVE', 'Đang hoạt động'], ['SUSPENDED', 'Đã khóa']]} /><AdminFilter label="Vai trò" value="" options={[[ '', 'Tất cả vai trò'], ['USER', 'Người dùng'], ['ADMIN', 'Quản trị viên']]} disabled reason="Chưa hỗ trợ lọc vai trò" /><AdminFilter label="Sắp xếp" value={sort} onChange={value => query.update({ sort: value })} options={[[ 'createdAt,desc', 'Mới nhất'], ['createdAt,asc', 'Cũ nhất']]} /></div></div>
+    <div className="admin-list-meta"><span role="status">{result.loading ? 'Đang tải người dùng…' : result.error ? 'Chưa tải được danh sách' : `${adminNumber(result.data?.totalElements)} người dùng`}</span>{(search || status) && <button onClick={query.reset}>Đặt lại bộ lọc</button>}</div>
+    <AdminDataTable rows={result.data?.content || []} columns={columns} rowKey={user => user.id} loading={result.loading} error={result.error} retry={result.reload} caption="Danh sách người dùng" empty={<AdminEmptyState title="Không tìm thấy người dùng" onReset={query.reset} />} />
+    <AdminPagination result={result.data} page={page} size={size} disabled={result.loading || !!result.error} onChange={query.update} />
+    <AdminNotice>Tra cứu và xem hồ sơ đã khả dụng. Khóa / mở khóa và thay đổi vai trò chưa được hỗ trợ.</AdminNotice>
+    {selected && !action && <AdminDetailDrawer title="Chi tiết người dùng" onClose={() => setSelected(null)}><Identity user={selected} /><AdminFields items={[[ 'ID tài khoản', selected.id], ['Email', selected.email], ['Trạng thái', <AdminStatusBadge status={selected.status} label={selected.status === 'PENDING' ? 'Chờ xác thực' : undefined} />], ['Vai trò', roleLabels[selected.role] || selected.role], ['Ngày tham gia', adminDate(selected.createdAt)]]} /><h2>Hồ sơ công khai</h2><Profile username={selected.username} /><Link className="admin-button" to={`/u/${encodeURIComponent(selected.username)}`}>Xem hồ sơ <ArrowUpRight size={15} /></Link><div className="admin-drawer-section"><h2>Quản lý tài khoản</h2><AdminNotice>{current?.username === selected.username ? 'Không tự thay đổi quyền hoặc khóa tài khoản đang đăng nhập.' : 'Những thao tác này chưa được hệ thống hỗ trợ.'}</AdminNotice><div className="admin-inline-actions"><button className="admin-button" disabled={current?.username === selected.username} onClick={() => openStatus(selected)}>Khóa / mở khóa</button><button className="admin-button" disabled={current?.username === selected.username} onClick={() => openRole(selected)}>Đổi vai trò</button></div></div></AdminDetailDrawer>}
+    {action && <AdminConfirmDialog action={action} onClose={() => setAction(null)} onSuccess={() => { setSelected(null); result.reload(); summary.reload(); }} />}
+  </div>;
+}

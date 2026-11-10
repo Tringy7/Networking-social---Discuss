@@ -49,6 +49,9 @@ const AdminDashboardPage = React.lazy(() => import('../pages/admin/AdminDashboar
 const UserManagementPage = React.lazy(() => import('../pages/admin/UserManagementPage'));
 const CommunityManagementPage = React.lazy(() => import('../pages/admin/CommunityManagementPage'));
 const ReportManagementPage = React.lazy(() => import('../pages/admin/ReportManagementPage'));
+const PostManagementPage = React.lazy(() => import('../pages/admin/PostManagementPage'));
+const CommentManagementPage = React.lazy(() => import('../pages/admin/CommentManagementPage'));
+const CategoryManagementPage = React.lazy(() => import('../pages/admin/CategoryManagementPage'));
 
 // Error Pages
 const AccessDeniedPage = React.lazy(() => import('../pages/error/AccessDeniedPage'));
@@ -136,6 +139,9 @@ export const AppRoutes: React.FC = () => {
         <Route path="users" element={<React.Suspense fallback={routeLoading}><UserManagementPage /></React.Suspense>} />
         <Route path="communities" element={<React.Suspense fallback={routeLoading}><CommunityManagementPage /></React.Suspense>} />
         <Route path="reports" element={<React.Suspense fallback={routeLoading}><ReportManagementPage /></React.Suspense>} />
+        <Route path="posts" element={<React.Suspense fallback={routeLoading}><PostManagementPage /></React.Suspense>} />
+        <Route path="comments" element={<React.Suspense fallback={routeLoading}><CommentManagementPage /></React.Suspense>} />
+        <Route path="categories" element={<React.Suspense fallback={routeLoading}><CategoryManagementPage /></React.Suspense>} />
       </Route>
 
       {/* 4. WILDCARD FALLBACK */}

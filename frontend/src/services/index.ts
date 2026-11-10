@@ -67,7 +67,8 @@ export const POST_INTERACTIONS_AVAILABLE = true;
 export const COMMENTS_AVAILABLE = true;
 export const REPORTS_AVAILABLE = false;
 export const REPORT_CREATION_AVAILABLE = true;
-export const ADMIN_AVAILABLE = false;
+export const ADMIN_AVAILABLE = true;
+const ADMIN_MODERATION_AVAILABLE = false;
 export const USER_SEARCH_AVAILABLE = true;
 
 function requireFeature(available: boolean, name: string): void {
@@ -559,17 +560,16 @@ export const reportService = {
 };
 
 export interface AdminStats {
-  totalUsers: number;
-  totalPosts: number;
-  activeCommunities: number;
-  pendingReports: number;
-  userGrowth: { month: string; users: number }[];
+  users: { total: number; active: number; suspended: number };
+  communities: { total: number; active: number; suspended: number };
+  posts: { total: number };
+  comments: { total: number };
 }
 
-interface AdminUserApiResponse {
-  id: string;
+export interface AdminUserApiResponse {
+  id: string | number;
   username: string;
-  displayName: string;
+  displayName: string | null;
   email: string;
   avatarUrl?: string | null;
   role: User['role'];
@@ -577,36 +577,41 @@ interface AdminUserApiResponse {
   createdAt: string;
 }
 
+export interface AdminUserPage {
+  content: AdminUserApiResponse[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
+
 export const adminService = {
   getStats: async (): Promise<AdminStats> => {
     requireFeature(ADMIN_AVAILABLE, 'Quản trị');
-    return apiClient.get<AdminStats>('/admin/stats');
+    const response = await apiClient.get<{ data: AdminStats }>('/admin/stats');
+    return response.data;
   },
-  listUsers: async (): Promise<User[]> => {
+  listUsers: async (options: { page?: number; size?: number; status?: string; search?: string; sort?: string } = {}): Promise<AdminUserPage> => {
     requireFeature(ADMIN_AVAILABLE, 'Quản trị');
-    const users = await apiClient.get<AdminUserApiResponse[]>('/admin/users');
-    return users.map((user) => ({
-      id: user.id,
-      username: user.username,
-      displayName: user.displayName,
-      email: user.email,
-      avatarUrl: user.avatarUrl || '',
-      bannerUrl: '',
-      bio: '',
-      privacy: { showDateOfBirth: false, showLocation: false, showPostsOnProfile: true },
-      role: user.role,
-      status: user.status === 'LOCKED' ? 'SUSPENDED' : user.status as User['status'],
-      createdAt: user.createdAt,
-      karma: 0,
-    }));
+    const params = new URLSearchParams({
+      page: String(options.page ?? 0), size: String(options.size ?? 10),
+      sort: options.sort ?? 'createdAt,desc',
+    });
+    if (options.status) params.set('status', options.status);
+    const search = options.search?.trim();
+    if (search) params.set('search', search);
+    return apiClient.get<AdminUserPage>(`/admin/users${search ? '/search' : ''}?${params}`);
   },
   updateUserStatus: async (id: string, status: string): Promise<User> => {
-    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
+    requireFeature(ADMIN_MODERATION_AVAILABLE, 'Thay đổi trạng thái tài khoản');
     const updated = await apiClient.patch<AdminUserApiResponse>(`/admin/users/${id}/status`, { status });
     return {
-      id: updated.id,
+      id: String(updated.id),
       username: updated.username,
-      displayName: updated.displayName,
+      displayName: updated.displayName || updated.username,
       email: updated.email,
       avatarUrl: updated.avatarUrl || '',
       bannerUrl: '',
@@ -619,12 +624,12 @@ export const adminService = {
     };
   },
   listCommunities: async (): Promise<Community[]> => {
-    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
+    requireFeature(ADMIN_MODERATION_AVAILABLE, 'Quản lý cộng đồng');
     const communities = await apiClient.get<CommunityApiResponse[]>('/admin/communities');
     return communities.map(mapCommunity);
   },
   setCommunityStatus: async (name: string, status: Community['status']) => {
-    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
+    requireFeature(ADMIN_MODERATION_AVAILABLE, 'Thay đổi trạng thái cộng đồng');
     return apiClient.patch<void>(`/communities/${encodeURIComponent(name)}/status`, { status });
   },
 };
