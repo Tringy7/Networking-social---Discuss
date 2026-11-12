@@ -1,6 +1,6 @@
 # Admin read APIs
 
-Both endpoints require an authenticated ADMIN. Authentication uses the existing
+All endpoints require an authenticated ADMIN. Authentication uses the existing
 access_token cookie or Authorization: Bearer header. Missing/invalid credentials
 return 401; authenticated users without ADMIN return 403.
 
@@ -51,6 +51,25 @@ returns the same PageResponseDTO as the list endpoint.
 
 Example: `GET /admin/users/search?page=0&size=10&search=an&status=ACTIVE`.
 
+## GET /admin/users/{userId}
+
+Returns the existing `UserInfoResponseDTO` directly, without a `data` wrapper:
+username, email, role, status, createdAt, updatedAt, profile and privacySettings.
+Profile includes displayName, bio, avatar, banner, dateOfBirth, gender and location;
+avatar/banner use the existing UserMapper to resolve MinIO URLs. Privacy settings
+include showDateOfBirth and showLocation. Missing profile/privacy records are null.
+Passwords and tokens are never included.
+
+The ID must be a positive Long; invalid IDs return 400, unknown users return 404
+(`USER_NOT_FOUND`). Admins can inspect users in any status, including LOCKED,
+PENDING and DELETED. Status uses the existing DTO enum (`LOCKED` rather than the
+list endpoint's `SUSPENDED` label).
+
+Example: `GET /admin/users/123`.
+
+User list, search and detail logic live in `ManageUserService`, exposed through
+`ManageUserController`. `AdminService` and `AdminController` handle statistics.
+
 ## Manual verification
 
 With the backend and database running:
@@ -63,4 +82,7 @@ With the backend and database running:
 6. Filter SUSPENDED; verify only LOCKED users appear and passwords/tokens are absent.
 7. Try status=LOCKED: expect 400. Verify page=0 selects the first page and size=101 is capped at 50.
 8. Use /admin/users/search to search a nonexistent value or request a page beyond the last: expect an empty array.
+9. Fetch an existing user's ID, including a LOCKED user: expect UserInfoResponseDTO
+   for that user, with no password/token fields. Check null profile/privacy handling.
+10. Fetch an unknown positive ID: expect 404; use 0, -1 or a nonnumeric ID: expect 400.
 

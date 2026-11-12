@@ -86,9 +86,18 @@ public class UserProfileService {
         return userMapper.toUserInfoResponse(user, profile, privacySettings);
     }
 
+    public PublicUserProfileResponseDTO getPublicUserProfileById(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+        return toPublicUserProfile(user);
+    }
+
     public PublicUserProfileResponseDTO getPublicUserProfileWithName(String username) {
         User user = this.getUserByUsername(username);
+        return toPublicUserProfile(user);
+    }
 
+    private PublicUserProfileResponseDTO toPublicUserProfile(User user) {
         UserProfile profile = userProfileRepository.findByUser(user)
                 .orElse(null);
 
