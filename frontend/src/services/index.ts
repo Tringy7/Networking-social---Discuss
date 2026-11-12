@@ -605,24 +605,10 @@ export const adminService = {
     if (search) params.set('search', search);
     return apiClient.get<AdminUserPage>(`/admin/users${search ? '/search' : ''}?${params}`);
   },
-  updateUserStatus: async (id: string, status: string): Promise<User> => {
-    requireFeature(ADMIN_MODERATION_AVAILABLE, 'Thay đổi trạng thái tài khoản');
-    const updated = await apiClient.patch<AdminUserApiResponse>(`/admin/users/${id}/status`, { status });
-    return {
-      id: String(updated.id),
-      username: updated.username,
-      displayName: updated.displayName || updated.username,
-      email: updated.email,
-      avatarUrl: updated.avatarUrl || '',
-      bannerUrl: '',
-      bio: '',
-      privacy: { showDateOfBirth: false, showLocation: false, showPostsOnProfile: true },
-      role: updated.role,
-      status: updated.status === 'LOCKED' ? 'SUSPENDED' : updated.status as User['status'],
-      createdAt: updated.createdAt,
-      karma: 0,
-    };
-  },
+  lockUser: (id: string | number): Promise<void> =>
+    apiClient.patch<void>(`/admin/users/${id}/lock`),
+  unlockUser: (id: string | number): Promise<void> =>
+    apiClient.patch<void>(`/admin/users/${id}/unlock`),
   listCommunities: async (): Promise<Community[]> => {
     requireFeature(ADMIN_MODERATION_AVAILABLE, 'Quản lý cộng đồng');
     const communities = await apiClient.get<CommunityApiResponse[]>('/admin/communities');

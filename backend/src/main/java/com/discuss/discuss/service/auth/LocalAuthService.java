@@ -17,6 +17,7 @@ import com.discuss.discuss.repository.UserRepository;
 import com.discuss.discuss.service.auth.email.EmailVerificationService;
 import com.discuss.discuss.service.auth.email.PasswordResetTokenService;
 import com.discuss.discuss.service.user.UserProfileService;
+import com.discuss.discuss.service.user.UserPrivacyService;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -41,6 +42,7 @@ public class LocalAuthService {
 
     private final UserService userService;
     private final UserProfileService userProfileService;
+    private final UserPrivacyService userPrivacyService;
     private final TokenService tokenService;
     private final PasswordResetTokenService passwordResetTokenService;
     private final com.discuss.discuss.service.auth.email.OtpService otpService;
@@ -57,7 +59,7 @@ public class LocalAuthService {
                 .map(existingUser -> handleExistingUser(existingUser, request))
                 .orElseGet(() -> createPendingUser(request, normalizedEmail));
 
-        userProfileService.saveUserProfile(user, normalizeDisplayName(
+        userProfileService.upsertDisplayName(user, normalizeDisplayName(
                 request.getDisplayName(),
                 user.getUsername()
         ));
@@ -95,8 +97,8 @@ public class LocalAuthService {
 
         user.setStatus(UserStatus.ACTIVE);
 
-        userProfileService.createUserProfileIfAbsent(user, user.getUsername());
-        userProfileService.createUserPrivacy(user);
+        userProfileService.createProfileIfAbsent(user, user.getUsername());
+        userPrivacyService.createDefaultPrivacy(user);
     }
 
     @Transactional

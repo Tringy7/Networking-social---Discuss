@@ -47,9 +47,9 @@ export interface AdminCategory { id: number; name: string; slug: string }
 export type AdminPost = Post & { status: string };
 export type AdminComment = CommentMutationResponse;
 
-// Missing mutations are deliberately isolated here. No guessed endpoint is called.
+// Mutations without a matching backend endpoint remain unavailable here.
 export const adminCapabilities = {
-  userStatus: false, userRole: false, userRoleFilter: false,
+  userStatus: true, userRole: false, userRoleFilter: false,
   communityStatus: false, allCommunityStates: false,
   reportResolution: false, reportDateFilter: false,
   categoryCreate: false, categoryEdit: false, categoryDelete: false,
@@ -59,7 +59,9 @@ export const adminCapabilities = {
 const unavailable = (action: string): Promise<never> =>
   Promise.reject(new Error(`${action} chưa được hệ thống hỗ trợ.`));
 export const adminMutations = {
-  setUserStatus: (_id: string | number, _status: string) => unavailable('Khóa / mở khóa tài khoản'),
+  setUserStatus: (id: string | number, status: string) => status === 'ACTIVE'
+    ? adminService.unlockUser(id)
+    : adminService.lockUser(id),
   setUserRole: (_id: string | number, _role: string) => unavailable('Thay đổi quyền tài khoản'),
   setCommunityStatus: (_name: string, _status: string) => unavailable('Cấm / mở lại cộng đồng'),
   resolveReport: (_report: AdminReport, _status: ReportStatus) => unavailable('Cập nhật trạng thái báo cáo'),

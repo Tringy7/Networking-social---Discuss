@@ -148,7 +148,7 @@ export function AuthProvider({ children }) {
         setPendingEmail(err.email);
       }
       if (err?.message) {
-        toastError(err.message);
+        toastError(getFriendlyErrorMessage(err));
       }
       throw err;
     }

@@ -1,3 +1,5 @@
+import { translateApiErrorMessage } from './errorTranslation';
+
 /**
  * Quy ước xử lý lỗi cho FE theo HTTP status code
  * 
@@ -43,38 +45,6 @@ export function getFriendlyErrorMessage(err, fallback = null) {
   if (!err) return fallback || 'Đã có lỗi xảy ra';
 
   const status = err.status || err.response?.status;
-
-  // Nếu backend trả message cụ thể và hợp lệ (không phải chuỗi lỗi chung chung của server)
-  // Nhưng đối với các mã chuẩn như 409, 413, 403, 404, 401, ưu tiên đúng thông điệp quy ước
-  if (status === 409) {
-    return 'Tên người dùng (username) đã tồn tại';
-  }
-
-  if (status === 413) {
-    return 'File tải lên vượt quá dung lượng cho phép';
-  }
-
-  if (status === 404) {
-    return err.message && !err.message.includes('API_ERROR') 
-      ? err.message 
-      : 'Không tìm thấy người dùng hoặc tài nguyên';
-  }
-
-  if (status === 403) {
-    return 'Bạn không có quyền thực hiện hành động này';
-  }
-
-  if (status === 401) {
-    return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại';
-  }
-
-  if (status === 500) {
-    return 'Lỗi máy chủ (500). Vui lòng thử lại sau';
-  }
-
-  if (status === 400) {
-    return err.message || 'Dữ liệu không hợp lệ hoặc file không đúng định dạng';
-  }
-
-  return err.message || getErrorMessageByStatus(status, fallback);
+  return translateApiErrorMessage(err.message, err.code, status, fallback);
 }
+import { translateApiErrorMessage } from './errorTranslation';

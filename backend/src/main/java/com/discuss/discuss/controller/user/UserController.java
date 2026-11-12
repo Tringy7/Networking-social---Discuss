@@ -7,6 +7,7 @@ import com.discuss.discuss.dto.user.UpdateProfileRequestDTO;
 import com.discuss.discuss.dto.user.UserInfoResponseDTO;
 import com.discuss.discuss.service.community.CommunityService;
 import com.discuss.discuss.service.media.ImageService;
+import com.discuss.discuss.service.user.PublicUserProfileService;
 import com.discuss.discuss.service.user.UserProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,20 +24,21 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class UserController {
     private final UserProfileService userProfileService;
+    private final PublicUserProfileService publicUserProfileService;
 
     private final ImageService imageService;
     private final CommunityService communityService;
 
     @GetMapping("/me")
     public ResponseEntity<UserInfoResponseDTO> getUserInfo() {
-        return ResponseEntity.ok().body(this.userProfileService.getUserProfile());
+        return ResponseEntity.ok().body(this.userProfileService.getMyProfile());
     }
 
     @PutMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserInfoResponseDTO> setAvatar(
             @RequestParam("file") MultipartFile file) {
         imageService.setAvatarForUser(file);
-        return ResponseEntity.ok().body(this.userProfileService.getUserProfile());
+        return ResponseEntity.ok().body(this.userProfileService.getMyProfile());
     }
 
     // New banner, edit banner
@@ -44,12 +46,12 @@ public class UserController {
     public ResponseEntity<UserInfoResponseDTO> setBanner(
             @RequestParam("file") MultipartFile file) {
         imageService.setBannerForUser(file);
-        return ResponseEntity.ok().body(this.userProfileService.getUserProfile());
+        return ResponseEntity.ok().body(this.userProfileService.getMyProfile());
     }
 
     @GetMapping("/{name}")
     public ResponseEntity<PublicUserProfileResponseDTO> getPublicUserProfile(@PathVariable String name ) {
-        return ResponseEntity.ok( userProfileService.getPublicUserProfileWithName(name) );
+        return ResponseEntity.ok(publicUserProfileService.getByUsername(name));
     }
 
     /*
@@ -81,6 +83,6 @@ public class UserController {
     public ResponseEntity<UserInfoResponseDTO> editUserInfo(
             @Valid @RequestBody UpdateProfileRequestDTO request
     ) {
-        return ResponseEntity.ok(userProfileService.updateProfile(request));
+        return ResponseEntity.ok(userProfileService.updateMyProfile(request));
     }
 }

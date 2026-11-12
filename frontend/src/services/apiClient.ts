@@ -1,3 +1,5 @@
+import { translateApiErrorMessage, translateApiFieldErrors } from '../utils/errorTranslation';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export class ApiError extends Error {
@@ -149,6 +151,7 @@ async function rawRequest<T>(method: string, path: string, body?: unknown): Prom
   if (!response.ok) {
     const status = typeof payload?.status === 'number' ? payload.status : response.status;
     let message = typeof payload?.message === 'string' ? payload.message : '';
+    const code = typeof payload?.code === 'string' ? payload.code : '';
 
     if (status === 409) {
       message = message || 'Dữ liệu bị trùng hoặc đã được sử dụng. Vui lòng kiểm tra lại.';
@@ -168,15 +171,17 @@ async function rawRequest<T>(method: string, path: string, body?: unknown): Prom
       message = 'Đã có lỗi xảy ra';
     }
 
+    message = translateApiErrorMessage(message, code, status);
+
     throw new ApiError(
-      typeof payload?.code === 'string'
-        ? payload.code
+      code
+        ? code
         : payload?.errors
           ? 'VALIDATION_ERROR'
           : 'API_ERROR',
       status,
       message,
-      payload?.errors ?? null
+      translateApiFieldErrors(payload?.errors) ?? null
     );
   }
 

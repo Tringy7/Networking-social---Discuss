@@ -1,4 +1,5 @@
 import { storage } from '../utils/storage';
+import { translateApiErrorMessage, translateApiFieldErrors } from '../utils/errorTranslation';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -58,17 +59,18 @@ async function rawRequest(method, path, body) {
   if (!res.ok) {
     const status = payload?.status || res.status;
     let message = payload?.message;
+    const code = payload?.code || (payload?.errors ? 'VALIDATION_ERROR' : 'API_ERROR');
 
     // Quy ước xử lý lỗi theo HTTP status code
     if (status === 409) {
       message = 'Tên người dùng đã tồn tại';
     } else if (status === 413) {
       message = 'File vượt giới hạn dung lượng';
-    } else if (status === 403) {
+    } else if (status === 403 && payload?.code !== 'ACCOUNT_LOCKED') {
       message = 'Bạn không có quyền thực hiện hành động này';
     } else if (status === 404) {
       message = message || 'Không tìm thấy người dùng';
-    } else if (status === 401) {
+    } else if (status === 401 && payload?.code !== 'INVALID_CREDENTIALS') {
       message = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại';
     } else if (status === 400) {
       message = message || 'Lỗi nhập liệu hoặc file không hợp lệ';
@@ -78,11 +80,13 @@ async function rawRequest(method, path, body) {
       message = 'Đã có lỗi xảy ra';
     }
 
+    message = translateApiErrorMessage(message, code, status);
+
     throw new ApiError(
-      payload?.code || (payload?.errors ? 'VALIDATION_ERROR' : 'API_ERROR'),
+      code,
       status,
       message,
-      payload?.errors || null
+      translateApiFieldErrors(payload?.errors) || null
     );
   }
   return payload;

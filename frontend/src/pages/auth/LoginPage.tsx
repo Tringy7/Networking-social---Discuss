@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
+import { ApiError } from '../../services/apiClient';
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton.tsx';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
@@ -42,6 +43,10 @@ export const LoginPage: React.FC = () => {
       addToast('Chào mừng bạn quay trở lại DISCUSS!', 'success');
       navigate('/', { replace: true });
     } catch (err: unknown) {
+      if (err instanceof ApiError && err.code === 'ACCOUNT_LOCKED') {
+        navigate('/account-locked', { state: { accountIdentifier: emailOrUsername.trim() } });
+        return;
+      }
       setFieldErrors(getApiFieldErrors(err));
       setError(err instanceof Error ? err.message : 'Đăng nhập không thành công.');
     } finally {
@@ -61,6 +66,10 @@ export const LoginPage: React.FC = () => {
       addToast('Đăng nhập với Google thành công!', 'success');
       navigate('/', { replace: true });
     } catch (error: unknown) {
+      if (error instanceof ApiError && error.code === 'ACCOUNT_LOCKED') {
+        navigate('/account-locked', { replace: true });
+        return;
+      }
       setFieldErrors(getApiFieldErrors(error));
       setError(error instanceof Error ? error.message : 'Đăng nhập Google không thành công.');
     } finally {

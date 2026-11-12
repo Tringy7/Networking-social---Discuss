@@ -55,7 +55,7 @@ public class CommunityMemberService {
         validateActiveMembership(currentMembership);
         validateOwner(currentMembership, "Only the community owner can appoint moderators");
 
-        User targetUser = userService.getUserActive(username);
+        User targetUser = userService.getActiveByUsername(username);
         CommunityMember targetMembership =
                 getExistingMembership(community, targetUser);
         validateActiveMembership(targetMembership);
@@ -89,7 +89,7 @@ public class CommunityMemberService {
         validateActiveMembership(currentMembership);
         validateOwner(currentMembership, "Only the community owner can remove moderators");
 
-        User targetUser = userService.getUserActive(username);
+        User targetUser = userService.getActiveByUsername(username);
         CommunityMember targetMembership =
                 getExistingMembership(community, targetUser);
         validateActiveMembership(targetMembership);
@@ -188,7 +188,7 @@ public class CommunityMemberService {
     // Kicks a member out of the community; the Owner cannot be kicked.
     @Transactional
     public void kickMember(String communityName, String username) {
-        User targetUser = userService.getUserActive(username);
+        User targetUser = userService.getActiveByUsername(username);
         Community community = communitySupport.getActiveCommunityForMembership(communityName);
 
         CommunityMember member = getExistingMembership(community, targetUser);
@@ -212,7 +212,7 @@ public class CommunityMemberService {
         validateActiveMembership(currentMembership);
         validateOwner(currentMembership, "Only the community owner can transfer ownership");
 
-        User targetUser = userService.getUserActive(newOwnerUsername);
+        User targetUser = userService.getActiveByUsername(newOwnerUsername);
 
         if (targetUser.getId().equals(currentUser.getId())) {
             throw new CommunityException(

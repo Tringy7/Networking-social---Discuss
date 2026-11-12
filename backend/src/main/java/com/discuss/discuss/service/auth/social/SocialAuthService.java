@@ -53,7 +53,7 @@ public class SocialAuthService {
         user.setProvider(Provider.GOOGLE);
 
         userRepository.save(user);
-        userProfileService.saveUserProfile(user, displayName);
+        userProfileService.upsertDisplayName(user, displayName);
         return user;
     }
 
@@ -68,7 +68,7 @@ public class SocialAuthService {
                 .build();
 
         User savedUser = userRepository.save(newUser);
-        userProfileService.saveUserProfile(savedUser, displayName);
+        userProfileService.upsertDisplayName(savedUser, displayName);
         return savedUser;
     }
 }

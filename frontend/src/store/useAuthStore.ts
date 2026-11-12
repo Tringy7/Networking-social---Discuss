@@ -213,7 +213,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         pendingEmail: null,
       });
     } catch (error) {
-      if (!(error instanceof ApiError && error.status === 401)) {
+      if (error instanceof ApiError && error.code === 'ACCOUNT_LOCKED') {
+        get().clearSession();
+      } else if (!(error instanceof ApiError && error.status === 401)) {
         set({ authStatus: 'ERROR' });
       }
       throw error;
@@ -237,7 +239,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         pendingEmail: null,
       });
     } catch (error) {
-      if (!(error instanceof ApiError && error.status === 401)) {
+      if (error instanceof ApiError && error.code === 'ACCOUNT_LOCKED') {
+        get().clearSession();
+      } else if (!(error instanceof ApiError && error.status === 401)) {
         set({ authStatus: 'ERROR' });
       }
       throw error;

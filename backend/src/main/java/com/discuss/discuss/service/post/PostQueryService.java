@@ -39,7 +39,7 @@ public class PostQueryService {
                                                  int page, int size, String searchKeyword) {
         User currentUser = userService.getCurrentUser();
         Community community = resolveListCommunity(communityName, currentUser);
-        if (username != null) userService.getUserActive(username);
+        if (username != null) userService.getActiveByUsername(username);
 
         Specification<Post> postSpecification = visibleTo(currentUser);
         if (community != null) postSpecification = postSpecification.and(inCommunity(community));

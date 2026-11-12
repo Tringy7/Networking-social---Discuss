@@ -18,6 +18,7 @@ const UserProfilePage = React.lazy(() => import('../pages/profile/UserProfilePag
 
 // Auth Pages
 const LoginPage = React.lazy(() => import('../pages/auth/LoginPage'));
+const AccountLockedPage = React.lazy(() => import('../pages/auth/AccountLockedPage'));
 const RegisterPage = React.lazy(() => import('../pages/auth/RegisterPage'));
 const VerifyEmailPage = React.lazy(() => import('../pages/auth/VerifyEmailPage'));
 const ForgotPasswordPage = React.lazy(() => import('../pages/auth/ForgotPasswordPage'));
@@ -126,6 +127,7 @@ export const AppRoutes: React.FC = () => {
       {/* 2. AUTHENTICATION PAGES (SPLIT-SCREEN, NO APP SIDEBAR) */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<React.Suspense fallback={routeLoading}><LoginPage /></React.Suspense>} />
+        <Route path="/account-locked" element={<React.Suspense fallback={routeLoading}><AccountLockedPage /></React.Suspense>} />
         <Route path="/register" element={<React.Suspense fallback={routeLoading}><RegisterPage /></React.Suspense>} />
         <Route path="/verify-email" element={<React.Suspense fallback={routeLoading}><VerifyEmailPage /></React.Suspense>} />
         <Route path="/forgot-password" element={<React.Suspense fallback={routeLoading}><ForgotPasswordPage /></React.Suspense>} />
