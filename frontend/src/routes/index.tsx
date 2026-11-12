@@ -5,7 +5,7 @@ import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-do
 import AppLayout from '../layouts/AppLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import SettingsLayout from '../layouts/SettingsLayout';
-import AdminLayout from '../layouts/AdminLayout';
+import { adminRoutes } from './adminRoutes';
 import ProtectedRoute from '../components/common/StoreProtectedRoute';
 
 // Public & Feed Pages
@@ -44,15 +44,6 @@ const CreateCommunityPage = React.lazy(() => import('../pages/community/CreateCo
 const MyCommunitiesPage = React.lazy(() => import('../pages/community/MyCommunitiesPage'));
 const EditCommunityPage = React.lazy(() => import('../pages/community/EditCommunityPage'));
 const CommunityModerationPage = React.lazy(() => import('../pages/community/CommunityModerationPage'));
-
-// Admin Pages
-const AdminDashboardPage = React.lazy(() => import('../pages/admin/AdminDashboardPage'));
-const UserManagementPage = React.lazy(() => import('../pages/admin/UserManagementPage'));
-const CommunityManagementPage = React.lazy(() => import('../pages/admin/CommunityManagementPage'));
-const ReportManagementPage = React.lazy(() => import('../pages/admin/ReportManagementPage'));
-const PostManagementPage = React.lazy(() => import('../pages/admin/PostManagementPage'));
-const CommentManagementPage = React.lazy(() => import('../pages/admin/CommentManagementPage'));
-const CategoryManagementPage = React.lazy(() => import('../pages/admin/CategoryManagementPage'));
 
 // Error Pages
 const AccessDeniedPage = React.lazy(() => import('../pages/error/AccessDeniedPage'));
@@ -135,16 +126,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/terms" element={<React.Suspense fallback={routeLoading}><TermsOfUsePage /></React.Suspense>} />
       </Route>
 
-      {/* 3. ADMIN PORTAL (ADMIN SIDEBAR & RESTRICTED ACCESS) */}
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<React.Suspense fallback={routeLoading}><AdminDashboardPage /></React.Suspense>} />
-        <Route path="users" element={<React.Suspense fallback={routeLoading}><UserManagementPage /></React.Suspense>} />
-        <Route path="communities" element={<React.Suspense fallback={routeLoading}><CommunityManagementPage /></React.Suspense>} />
-        <Route path="reports" element={<React.Suspense fallback={routeLoading}><ReportManagementPage /></React.Suspense>} />
-        <Route path="posts" element={<React.Suspense fallback={routeLoading}><PostManagementPage /></React.Suspense>} />
-        <Route path="comments" element={<React.Suspense fallback={routeLoading}><CommentManagementPage /></React.Suspense>} />
-        <Route path="categories" element={<React.Suspense fallback={routeLoading}><CategoryManagementPage /></React.Suspense>} />
-      </Route>
+      {adminRoutes}
 
       {/* 4. WILDCARD FALLBACK */}
       <Route path="*" element={<Navigate to="/404" replace />} />

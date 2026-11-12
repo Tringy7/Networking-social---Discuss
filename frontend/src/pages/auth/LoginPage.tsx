@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import { ApiError } from '../../services/apiClient';
@@ -10,8 +10,11 @@ import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { getApiFieldErrors } from '../../utils/apiFieldErrors';
 import { AuthDivider, AuthError, AuthHeading, AuthSwitch } from '../../components/auth/AuthFormParts';
 
-export const LoginPage: React.FC = () => {
+export const LoginPage: React.FC<{ admin?: boolean }> = ({ admin = false }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const authenticated = useAuthStore(state => state.isAuthenticated);
+  const role = useAuthStore(state => state.activeRole);
   const { login, loginSocial } = useAuthStore();
   const { addToast } = useToastStore();
 
@@ -40,8 +43,16 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
     try {
       await login(emailOrUsername, password);
-      addToast('Chào mừng bạn quay trở lại DISCUSS!', 'success');
-      navigate('/', { replace: true });
+      if (admin && useAuthStore.getState().activeRole !== 'ADMIN') {
+        await useAuthStore.getState().logout().catch(() => undefined);
+        setError('Tài khoản này không có quyền truy cập khu vực quản trị.');
+        return;
+      }
+      addToast(admin ? 'Đăng nhập quản trị thành công!' : 'Chào mừng bạn quay trở lại DISCUSS!', 'success');
+      const from = location.state?.from;
+      const destination = from?.pathname?.startsWith('/admin/') && from.pathname !== '/admin/login'
+        ? `${from.pathname}${from.search || ''}` : '/admin';
+      navigate(useAuthStore.getState().activeRole === 'ADMIN' ? destination : '/', { replace: true });
     } catch (err: unknown) {
       if (err instanceof ApiError && err.code === 'ACCOUNT_LOCKED') {
         navigate('/account-locked', { state: { accountIdentifier: emailOrUsername.trim() } });
@@ -64,7 +75,7 @@ export const LoginPage: React.FC = () => {
     try {
       await loginSocial('google', credential);
       addToast('Đăng nhập với Google thành công!', 'success');
-      navigate('/', { replace: true });
+      navigate(useAuthStore.getState().activeRole === 'ADMIN' ? '/admin' : '/', { replace: true });
     } catch (error: unknown) {
       if (error instanceof ApiError && error.code === 'ACCOUNT_LOCKED') {
         navigate('/account-locked', { replace: true });
@@ -78,9 +89,11 @@ export const LoginPage: React.FC = () => {
     }
   }, [addToast, loginSocial, navigate]);
 
+  if (authenticated && (!admin || role === 'ADMIN')) return <Navigate to={role === 'ADMIN' ? '/admin' : '/'} replace />;
+
   return (
     <div className="auth-page">
-      <AuthHeading title="Chào mừng trở lại">Đăng nhập để tiếp tục câu chuyện của bạn.</AuthHeading>
+      <AuthHeading title={admin ? 'Đăng nhập quản trị' : 'Chào mừng trở lại'}>{admin ? 'Dành cho tài khoản có quyền quản trị hệ thống Discuss.' : 'Đăng nhập để tiếp tục câu chuyện của bạn.'}</AuthHeading>
       <AuthError message={error} />
 
       <form onSubmit={handleSubmit} className="auth-fields" noValidate aria-busy={isLoading}>
@@ -158,9 +171,10 @@ export const LoginPage: React.FC = () => {
         </Button>
       </form>
 
-      <AuthDivider />
+      {!admin && <><AuthDivider />
       <GoogleSignInButton disabled={isLoading} onCredential={handleGoogleSignIn} />
-      <AuthSwitch prompt="Chưa có tài khoản?" to="/register">Đăng ký</AuthSwitch>
+      <AuthSwitch prompt="Chưa có tài khoản?" to="/register">Đăng ký</AuthSwitch></>}
+      {admin && <AuthSwitch prompt="Dành cho thành viên" to="/login">Đăng nhập người dùng</AuthSwitch>}
     </div>
   );
 };

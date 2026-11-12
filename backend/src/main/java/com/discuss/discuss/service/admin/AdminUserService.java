@@ -4,6 +4,7 @@ import com.discuss.discuss.dto.admin.AdminResponse;
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.UserStatus;
+import com.discuss.discuss.enums.UserRole;
 import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.repository.UserRepository;
 import com.discuss.discuss.service.user.UserService;
@@ -22,9 +23,10 @@ public class AdminUserService {
     private final PageMapper pageMapper;
     private final UserService userService;
 
-    public PageResponseDTO<AdminResponse.UserItem> getUsers(Pageable pageable, String status) {
+    public PageResponseDTO<AdminResponse.UserItem> getUsers(Pageable pageable, String status, UserRole role) {
         var result = userRepository.findAll(
-                userSpecifications.hasStatus(toUserStatus(status)),
+                userSpecifications.hasStatus(toUserStatus(status))
+                        .and(userSpecifications.hasRole(role)),
                 pageable
         );
         return pageMapper.toResponse(result.map(this::toItem));
@@ -33,9 +35,11 @@ public class AdminUserService {
     public PageResponseDTO<AdminResponse.UserItem> searchUsers(
             Pageable pageable,
             String search,
-            String status
+            String status,
+            UserRole role
     ) {
         var specification = userSpecifications.hasStatus(toUserStatus(status))
+                .and(userSpecifications.hasRole(role))
                 .and(userSpecifications.matchesUsernameOrEmail(search));
         var result = userRepository.findAll(specification, pageable);
         return pageMapper.toResponse(result.map(this::toItem));

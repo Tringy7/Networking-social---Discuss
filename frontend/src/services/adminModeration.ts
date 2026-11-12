@@ -49,7 +49,7 @@ export type AdminComment = CommentMutationResponse;
 
 // Mutations without a matching backend endpoint remain unavailable here.
 export const adminCapabilities = {
-  userStatus: true, userRole: false, userRoleFilter: false,
+  userStatus: true, userRole: false, userRoleFilter: true,
   communityStatus: false, allCommunityStates: false,
   reportResolution: false, reportDateFilter: false,
   categoryCreate: false, categoryEdit: false, categoryDelete: false,

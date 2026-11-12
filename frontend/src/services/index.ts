@@ -594,13 +594,14 @@ export const adminService = {
     const response = await apiClient.get<{ data: AdminStats }>('/admin/stats');
     return response.data;
   },
-  listUsers: async (options: { page?: number; size?: number; status?: string; search?: string; sort?: string } = {}): Promise<AdminUserPage> => {
+  listUsers: async (options: { page?: number; size?: number; status?: string; role?: string; search?: string; sort?: string } = {}): Promise<AdminUserPage> => {
     requireFeature(ADMIN_AVAILABLE, 'Quản trị');
     const params = new URLSearchParams({
       page: String(options.page ?? 0), size: String(options.size ?? 10),
       sort: options.sort ?? 'createdAt,desc',
     });
     if (options.status) params.set('status', options.status);
+    if (options.role) params.set('role', options.role);
     const search = options.search?.trim();
     if (search) params.set('search', search);
     return apiClient.get<AdminUserPage>(`/admin/users${search ? '/search' : ''}?${params}`);

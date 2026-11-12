@@ -8,6 +8,9 @@ export const adminNumber = (value: number | undefined | null) => value == null ?
 export const adminDate = (value?: string | null) => !value || Number.isNaN(new Date(value).getTime()) ? '—' : new Date(value).toLocaleDateString('vi-VN');
 export const statusLabels: Record<string, string> = { ACTIVE: 'Đang hoạt động', LOCKED: 'Đã khóa', SUSPENDED: 'Đã khóa', PENDING: 'Chờ xử lý', RESOLVED: 'Đã giải quyết', REJECTED: 'Đã bác bỏ', BANED: 'Đã cấm', BANNED: 'Đã cấm', DELETED: 'Đã xóa', PUBLISHED: 'Đã đăng', VISIBLE: 'Hiển thị', HIDDEN: 'Đã ẩn' };
 export const roleLabels: Record<string, string> = { USER: 'Người dùng', ADMIN: 'Quản trị viên' };
+export function AdminRoleBadge({ role }: { role: string }) {
+  return <span className={`admin-role-badge${role === 'ADMIN' ? ' is-admin' : ''}`}>{roleLabels[role] || role}</span>;
+}
 export function AdminStatusBadge({ status, label }: { status?: string; label?: string }) {
   return <span className={`admin-status status-${(status || 'unknown').toLowerCase()}`}>{label || statusLabels[status || ''] || status || '—'}</span>;
 }
@@ -49,11 +52,11 @@ export function AdminDataTable<T>({ rows, columns, rowKey, loading, error, retry
   if (!rows.length) return <>{empty || <AdminEmptyState />}</>;
   return <div className="admin-data-scroll"><table className="admin-data-table"><caption className="sr-only">{caption}</caption><thead><tr>{columns.map(column => <th key={column.key} className={`${column.numeric ? 'admin-numeric' : ''} ${column.className || ''}`}>{column.label || <span className="sr-only">Thao tác</span>}</th>)}</tr></thead><tbody>{rows.map(row => <tr key={rowKey(row)}>{columns.map(column => <td key={column.key} data-label={column.label} className={`${column.numeric ? 'admin-numeric' : ''} ${column.className || ''}`}>{column.render(row)}</td>)}</tr>)}</tbody></table></div>;
 }
-export function AdminPagination({ result, page, size, disabled, onChange }: { result: Pick<AdminPage<unknown>, 'totalElements' | 'totalPages' | 'content'> | null; page: number; size: number; disabled: boolean; onChange: (values: Record<string, string>) => void }) {
+export function AdminPagination({ result, page, size, disabled, onChange, hidePageSize = false }: { result: Pick<AdminPage<unknown>, 'totalElements' | 'totalPages' | 'content'> | null; page: number; size: number; disabled: boolean; onChange: (values: Record<string, string>) => void; hidePageSize?: boolean }) {
   const total = result?.totalElements;
   const start = result?.content.length ? page * size + 1 : 0;
   const end = result?.content.length ? start + result.content.length - 1 : 0;
-  return <div className="admin-pagination"><label>Hiển thị <select aria-label="Số dòng mỗi trang" value={size} onChange={event => onChange({ size: event.target.value })}>{[10, 20, 50].map(value => <option key={value} value={value}>{value}</option>)}</select> / trang</label><span>{total == null || disabled ? '—' : `${adminNumber(start)}–${adminNumber(end)} / ${adminNumber(total)}`}</span><div><button className="admin-button" aria-label="Trang trước" disabled={disabled || page === 0} onClick={() => onChange({ page: String(page - 1) })}><ChevronLeft size={16} /></button><span>Trang {page + 1}{result?.totalPages ? ` / ${result.totalPages}` : ''}</span><button className="admin-button" aria-label="Trang sau" disabled={disabled || !result || page + 1 >= result.totalPages} onClick={() => onChange({ page: String(page + 1) })}><ChevronRight size={16} /></button></div></div>;
+  return <div className="admin-pagination">{!hidePageSize && <label>Hiển thị <select aria-label="Số dòng mỗi trang" value={size} onChange={event => onChange({ size: event.target.value })}>{[10, 20, 50].map(value => <option key={value} value={value}>{value}</option>)}</select> / trang</label>}<span>{total == null || disabled ? '—' : `${adminNumber(start)}–${adminNumber(end)} / ${adminNumber(total)}`}</span><div><button className="admin-button" aria-label="Trang trước" disabled={disabled || page === 0} onClick={() => onChange({ page: String(page - 1) })}><ChevronLeft size={16} /></button><span>Trang {page + 1}{result?.totalPages ? ` / ${result.totalPages}` : ''}</span><button className="admin-button" aria-label="Trang sau" disabled={disabled || !result || page + 1 >= result.totalPages} onClick={() => onChange({ page: String(page + 1) })}><ChevronRight size={16} /></button></div></div>;
 }
 export function AdminRowMenu({ label, children }: { label: string; children: ReactNode }) {
   const ref = useRef<HTMLDetailsElement>(null);

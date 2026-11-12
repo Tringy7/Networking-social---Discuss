@@ -4,6 +4,7 @@ import com.discuss.discuss.dto.admin.AdminResponse;
 import com.discuss.discuss.dto.admin.AdminUserSearchRequestDTO;
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.user.PublicUserProfileResponseDTO;
+import com.discuss.discuss.enums.UserRole;
 import com.discuss.discuss.service.admin.AdminUserService;
 import com.discuss.discuss.service.user.PublicUserProfileService;
 import com.discuss.discuss.utils.annotation.auth.HasRole;
@@ -30,16 +31,18 @@ public class ManageUserController {
     @GetMapping
     public ResponseEntity<PageResponseDTO<AdminResponse.UserItem>> getUsers(
             @RequestParam(required = false) @Pattern(regexp = "ACTIVE|SUSPENDED") String status,
+            @RequestParam(required = false) UserRole role,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(adminUserService.getUsers(pageable, status));
+        return ResponseEntity.ok(adminUserService.getUsers(pageable, status, role));
     }
 
     @GetMapping("/search")
     public ResponseEntity<PageResponseDTO<AdminResponse.UserItem>> searchUsers(
             @Valid @ModelAttribute AdminUserSearchRequestDTO request,
             @RequestParam(required = false) @Pattern(regexp = "ACTIVE|SUSPENDED") String status,
+            @RequestParam(required = false) UserRole role,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(adminUserService.searchUsers(pageable, request.getSearch(), status));
+        return ResponseEntity.ok(adminUserService.searchUsers(pageable, request.getSearch(), status, role));
     }
 
     @GetMapping("/{userId}")

@@ -385,3 +385,21 @@ a.admin-breakdown-row:hover { text-decoration:underline; }
 }
 @media (prefers-reduced-motion:reduce) { .admin-frame { transition:none; } }
 .admin-subtle { font-size:12px; color:var(--text-secondary); }
+
+.admin-role-badge { display:inline-flex; align-items:center; padding:4px 10px; min-height:26px; border-radius:6px; font-size:12px; font-weight:600; white-space:nowrap; color:var(--text-primary); background:var(--bg-hover); border:1px solid var(--admin-line); }
+.admin-role-badge.is-admin { color:#6d28d9; background:#f3e8ff; border-color:#d8b4fe; }
+.admin-role-filter .admin-filter > span { font-weight:700; color:var(--text-primary); }
+.admin-role-filter.is-active select { border-color:#a78bfa; background:#f3e8ff; color:#6d28d9; font-weight:600; }
+[data-theme="dark"] .admin-role-badge.is-admin, [data-theme="dark"] .admin-role-filter.is-active select { color:#ddd6fe; background:#3b2460; border-color:#7c3aed; }
+
+.admin-auth-workspace { display:flex; flex-direction:column; }
+.admin-auth-frame { width:min(1080px,calc(100% - 48px)); flex:1; margin:40px auto; display:grid; grid-template-columns:1fr minmax(340px,460px); align-items:center; gap:clamp(40px,8vw,112px); }
+.admin-auth-intro { max-width:480px; }
+.admin-auth-eyebrow { color:var(--text-muted); letter-spacing:.12em; font-size:12px; font-weight:700; }
+.admin-auth-intro h1 { margin:20px 0 16px; font-size:clamp(34px,5vw,54px); line-height:1.1; letter-spacing:-.04em; font-weight:650; }
+.admin-auth-intro h1 span { color:var(--text-secondary); }
+.admin-auth-intro p { max-width:390px; color:var(--text-secondary); line-height:1.7; }
+.admin-auth-card { padding:36px; background:var(--bg-main); border:1px solid var(--admin-line); border-radius:16px; box-shadow:0 18px 60px #14233a0d; }
+.admin-auth-card .auth-page { width:100%; max-width:none; padding:0; }
+.admin-auth-card .auth-switch { margin-bottom:0; }
+@media(max-width:760px) { .admin-auth-frame { grid-template-columns:1fr; gap:28px; margin:24px auto; align-content:center; } .admin-auth-intro h1 { font-size:36px; margin:12px 0; } .admin-auth-intro p { margin:0; } .admin-auth-card { padding:24px; } }
