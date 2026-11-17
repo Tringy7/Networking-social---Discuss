@@ -11,7 +11,7 @@ public class ReportMapper {
         return new ReportResponseDTO(report.getId(), ReportTargetType.POST, report.getPost().getId(),
                 report.getPost().getCommunity().getName(), report.getUser().getUsername(),
                 ReportReason.valueOf(report.getReason()), report.getDescription(), report.getStatus(),
-                null, null, report.getHandledBy() == null ? null : report.getHandledBy().getUsername(),
+                report.getAction(), report.getResolutionNote(), report.getHandledBy() == null ? null : report.getHandledBy().getUsername(),
                 report.getHandledAt(), report.getCreatedAt());
     }
 
@@ -19,7 +19,7 @@ public class ReportMapper {
         return new ReportResponseDTO(report.getId(), ReportTargetType.COMMENT, report.getComment().getId(),
                 report.getComment().getPost().getCommunity().getName(), report.getReporter().getUsername(),
                 ReportReason.valueOf(report.getReason()), report.getDescription(), report.getStatus(),
-                null, null, report.getHandledBy() == null ? null : report.getHandledBy().getUsername(),
+                report.getAction(), report.getResolutionNote(), report.getHandledBy() == null ? null : report.getHandledBy().getUsername(),
                 report.getHandledAt(), report.getCreatedAt());
     }
 
@@ -27,7 +27,7 @@ public class ReportMapper {
         return new ReportResponseDTO(report.getId(), ReportTargetType.COMMUNITY, report.getCommunity().getId(),
                 report.getCommunity().getName(), report.getUser().getUsername(),
                 ReportReason.valueOf(report.getReason()), report.getDescription(), report.getStatus(),
-                null, null, report.getHandledBy() == null ? null : report.getHandledBy().getUsername(),
+                report.getAction(), report.getResolutionNote(), report.getHandledBy() == null ? null : report.getHandledBy().getUsername(),
                 report.getHandledAt(), report.getCreatedAt());
     }
 

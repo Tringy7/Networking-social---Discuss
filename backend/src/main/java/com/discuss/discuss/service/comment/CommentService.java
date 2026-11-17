@@ -1,20 +1,22 @@
 package com.discuss.discuss.service.comment;
+
 import com.discuss.discuss.dto.comment.*;
 import com.discuss.discuss.entity.*;
 import com.discuss.discuss.enums.*;
-import com.discuss.discuss.exception.comment.CommentException;
 import com.discuss.discuss.exception.comment.CommentErrorCode;
+import com.discuss.discuss.exception.comment.CommentException;
 import com.discuss.discuss.repository.*;
 import com.discuss.discuss.service.community.CommunityAuthorizationService;
+import com.discuss.discuss.service.post.PostSupport;
 import com.discuss.discuss.service.user.UserService;
+import com.discuss.discuss.utils.annotation.auth.HasRole;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -22,7 +24,7 @@ public class CommentService {
     private final CommentSupport commentSupport;
     private final CommentRepository commentRepository;
     private final CommentVoteRepository voteRepository;
-    private final com.discuss.discuss.service.post.PostSupport postSupport;
+    private final PostSupport postSupport;
     private final PostRepository postRepository;
 
     private final CommentAttachmentService attachmentService;
@@ -115,5 +117,15 @@ public class CommentService {
     @Transactional(readOnly = true)
     public long countAll() {
         return commentRepository.count();
+    }
+    @HasRole("ADMIN")
+    @Transactional
+    public void deleteForAdmin(Long id) {
+        Comment comment = commentRepository.lockById(id)
+                .orElseThrow(() -> commentSupport.notFound(CommentErrorCode.COMMENT_NOT_FOUND));
+        if (comment.getStatus() == CommentStatus.DELETED) return;
+        comment.setStatus(CommentStatus.DELETED);
+        comment.setContent("[deleted]");
+        comment.setDeletedAt(LocalDateTime.now());
     }
 }

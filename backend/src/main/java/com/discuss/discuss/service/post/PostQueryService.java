@@ -13,8 +13,10 @@ import com.discuss.discuss.repository.PostRepository;
 import com.discuss.discuss.service.community.CommunityAuthorizationService;
 import com.discuss.discuss.service.community.CommunitySupport;
 import com.discuss.discuss.service.user.UserService;
+import com.discuss.discuss.utils.annotation.auth.HasRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -74,6 +76,27 @@ public class PostQueryService {
                 postSupport.toResponse(post, user),
                 post.getDeletedAt(),
                 PostService.canRestoreDeletedPost(post, user))));
+    }
+
+    @HasRole("ADMIN")
+    @Transactional(readOnly = true)
+    public PageResponseDTO<PostResponseDTO> listForAdmin(Pageable pageable,
+            PostStatus status, String communityName, String search) {
+        User actor = userService.getCurrentUser();
+        Specification<Post> filter = (root, query, cb) -> cb.and(
+                status == null ? cb.conjunction() : cb.equal(root.get("status"), status),
+                communityName == null || communityName.isBlank() ? cb.conjunction()
+                        : cb.equal(root.get("community").get("name"), communitySupport.normalize(communityName)));
+        if (search != null && !search.isBlank()) filter = filter.and(matchesText(search.trim()));
+        return pageMapper.toResponse(postRepository.findAll(filter, pageable)
+                .map(post -> postSupport.toResponse(post, actor)));
+    }
+
+    @HasRole("ADMIN")
+    @Transactional(readOnly = true)
+    public PostResponseDTO getForAdmin(Long id) {
+        Post post = postRepository.findById(id).orElseThrow(postSupport::notFound);
+        return postSupport.toResponse(post, userService.getCurrentUser());
     }
 
     private Community resolveListCommunity(String communityName, User currentUser) {

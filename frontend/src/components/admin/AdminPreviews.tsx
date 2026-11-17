@@ -8,8 +8,8 @@ import PostMarkdown from '../post/PostMarkdown';
 import { httpUrl } from '../post/postUrls';
 import { AdminAvatar, AdminFields, AdminLoadingSkeleton, AdminErrorState, AdminStatusBadge, adminDate } from './AdminUI';
 
-export function CommunityPreview({ name }: { name: string }) {
-  const result = useAdminResource(useCallback(() => adminModeration.community(name), [name]));
+export function CommunityPreview({ name, id }: { name: string; id?: number }) {
+  const result = useAdminResource(useCallback(() => id == null ? adminModeration.community(name) : adminModeration.communityDetail(id), [name, id]));
   if (result.loading) return <AdminLoadingSkeleton />;
   if (result.error) return <AdminErrorState error={result.error} retry={result.reload} />;
   const community = result.data!;

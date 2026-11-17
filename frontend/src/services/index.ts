@@ -606,10 +606,10 @@ export const adminService = {
     if (search) params.set('search', search);
     return apiClient.get<AdminUserPage>(`/admin/users${search ? '/search' : ''}?${params}`);
   },
-  lockUser: (id: string | number): Promise<void> =>
-    apiClient.patch<void>(`/admin/users/${id}/lock`),
-  unlockUser: (id: string | number): Promise<void> =>
-    apiClient.patch<void>(`/admin/users/${id}/unlock`),
+  lockUser: (id: string | number): Promise<{ message: string }> =>
+    apiClient.patch<{ message: string }>(`/admin/users/${id}/lock`),
+  unlockUser: (id: string | number): Promise<{ message: string }> =>
+    apiClient.patch<{ message: string }>(`/admin/users/${id}/unlock`),
   listCommunities: async (): Promise<Community[]> => {
     requireFeature(ADMIN_MODERATION_AVAILABLE, 'Quản lý cộng đồng');
     const communities = await apiClient.get<CommunityApiResponse[]>('/admin/communities');

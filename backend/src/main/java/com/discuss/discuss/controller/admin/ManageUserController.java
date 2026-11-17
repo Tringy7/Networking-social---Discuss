@@ -2,6 +2,7 @@ package com.discuss.discuss.controller.admin;
 
 import com.discuss.discuss.dto.admin.AdminResponse;
 import com.discuss.discuss.dto.admin.AdminUserSearchRequestDTO;
+import com.discuss.discuss.dto.common.ApiResponse;
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.user.PublicUserProfileResponseDTO;
 import com.discuss.discuss.enums.UserRole;
@@ -51,14 +52,16 @@ public class ManageUserController {
     }
 
     @PatchMapping("/{userId}/lock")
-    public ResponseEntity<Void> lockUser(@PathVariable @Positive Long userId) {
+    public ResponseEntity<ApiResponse> lockUser(@PathVariable @Positive Long userId) {
         adminUserService.lockUser(userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(
+                new ApiResponse("User account id " + userId + " locked successfully"));
     }
 
     @PatchMapping("/{userId}/unlock")
-    public ResponseEntity<Void> unlockUser(@PathVariable @Positive Long userId) {
+    public ResponseEntity<ApiResponse> unlockUser(@PathVariable @Positive Long userId) {
         adminUserService.unlockUser(userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(
+                new ApiResponse("User account id " + userId + " unlocked successfully"));
     }
 }

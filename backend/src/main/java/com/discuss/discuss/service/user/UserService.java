@@ -1,6 +1,7 @@
 package com.discuss.discuss.service.user;
 
 import com.discuss.discuss.entity.User;
+import com.discuss.discuss.enums.UserRole;
 import com.discuss.discuss.enums.UserStatus;
 import com.discuss.discuss.exception.auth.AuthErrorCode;
 import com.discuss.discuss.exception.auth.AuthException;
@@ -8,7 +9,10 @@ import com.discuss.discuss.exception.user.UserErrorCode;
 import com.discuss.discuss.exception.user.UserException;
 import com.discuss.discuss.repository.UserRepository;
 import com.discuss.discuss.service.auth.JwtService;
+import com.discuss.discuss.utils.annotation.auth.HasRole;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +22,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final UserSpecifications userSpecifications;
 
     @Transactional(readOnly = true)
     public User getCurrentUser() {
@@ -70,4 +75,14 @@ public class UserService {
         user.setStatus(status);
         userRepository.save(user);
     }
+    @HasRole("ADMIN")
+    @Transactional(readOnly = true)
+    public Page<User> findForManagement(
+            Pageable pageable, UserStatus status,
+            UserRole role, String search) {
+        var filter = userSpecifications.hasStatus(status).and(userSpecifications.hasRole(role));
+        if (search != null && !search.isBlank()) filter = filter.and(userSpecifications.matchesUsernameOrEmail(search));
+        return userRepository.findAll(filter, pageable);
+    }
+
 }

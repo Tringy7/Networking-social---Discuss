@@ -16,18 +16,18 @@ import com.discuss.discuss.repository.PostSaveRepository;
 import com.discuss.discuss.service.community.CommunityAuthorizationService;
 import com.discuss.discuss.service.community.CommunitySupport;
 import com.discuss.discuss.service.user.UserService;
+import com.discuss.discuss.utils.annotation.auth.HasRole;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.HashSet;
-
-import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -168,5 +168,15 @@ public class PostService {
     @Transactional(readOnly = true)
     public long countAll() {
         return postRepository.count();
+    }
+    @HasRole("ADMIN")
+    @Transactional
+    public void deleteForAdmin(Long id) {
+        User actor = userService.getCurrentUser();
+        Post post = postRepository.lockById(id).orElseThrow(postSupport::notFound);
+        if (post.getStatus() == PostStatus.DELETED) return;
+        post.setStatus(PostStatus.DELETED);
+        post.setDeletedAt(LocalDateTime.now());
+        post.setDeletedByUserId(actor.getId());
     }
 }

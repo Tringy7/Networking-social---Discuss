@@ -3,6 +3,8 @@ package com.discuss.discuss.exception.community;
 import org.springframework.http.HttpStatus;
 
 public enum CommunityErrorCode {
+    CATEGORY_ALREADY_EXISTS(HttpStatus.CONFLICT, "Category name or slug already exists"),
+    CATEGORY_IN_USE(HttpStatus.CONFLICT, "Category is still used by a community"),
 
     // =========================
     // 400 - Bad Request

@@ -2,10 +2,9 @@ package com.discuss.discuss.entity;
 
 import com.discuss.discuss.enums.ReportStatus;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "post_reports")
@@ -42,6 +41,12 @@ public class PostReport {
     private User handledBy;
 
     private LocalDateTime handledAt;
+
+    @Column(length = 2000)
+    private String resolutionNote;
+
+    @Column(length = 40)
+    private String action;
 
     @CreationTimestamp
     @Column(updatable = false)

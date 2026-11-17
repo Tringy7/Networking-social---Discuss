@@ -1,88 +1,174 @@
-# Admin read APIs
+# Admin APIs
 
-All endpoints require an authenticated ADMIN. Authentication uses the existing
-access_token cookie or Authorization: Bearer header. Missing/invalid credentials
-return 401; authenticated users without ADMIN return 403.
+All routes below require an authenticated ADMIN. The existing access-token cookie
+or Bearer header is used. Missing/invalid credentials return 401; a regular USER
+receives 403. Errors use the existing `{status, message}` response format.
 
-## GET /admin/stats
+## Structure
 
-Returns `{ "data": { "users": { "total": 0, "active": 0, "suspended": 0 },
-"communities": { "total": 0, "active": 0, "suspended": 0 },
-"posts": { "total": 0 }, "comments": { "total": 0 } } }`.
+| Group | Controller | Admin service | Domain services |
+| --- | --- | --- | --- |
+| Statistics | AdminController | AdminService | UserService, CommunityService, PostService, CommentService |
+| Users | ManageUserController | AdminUserService | UserService, PublicUserProfileService |
+| Communities | ManageCommunityController | AdminCommunityService | CommunityService |
+| Posts | ManagePostController | AdminPostService | PostQueryService, PostService |
+| Comments | ManageCommentController | AdminCommentService | CommentQueryService, CommentService |
+| Reports | ManageReportController | AdminReportService | PostReportQueryService, CommentReportQueryService, CommunityReportQueryService, ReportReviewService |
+| Categories | ManageCategoryController | AdminCategoryService | CategoryService |
+| Activity | ManageActivityLogController | AdminActivityLogService | ActivityLogService |
 
-Counts include all stored records, including soft-deleted posts/comments/users.
-User total can exceed active + suspended because PENDING and DELETED also exist.
-Suspended counts map to existing user LOCKED and community BANED states.
+Admin services call domain services. Repositories and query specifications remain
+in their domain modules. Successful mutations and their audit record commit in
+one transaction; failed operations do not create success records.
 
-## GET /admin/users
+## Pagination and validation
 
-Query parameters:
+User, community, post, comment, report and activity lists return `PageResponseDTO`:
+`content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`, `empty`.
+Defaults: `page=0&size=10&sort=createdAt,desc`; the shared resolver caps size at 50.
+The category list returns an array ordered by name. IDs must be positive.
+Search endpoints require nonblank `search` of at most 200 characters. Matching is
+a trimmed, case-insensitive literal substring (special wildcard characters do not
+act as wildcards). Invalid enum values, bodies and parameters return 400.
+An omitted list filter includes all values. Unknown records return 404.
 
-| Parameter | Default | Validation |
+## Statistics
+
+`GET /admin/stats` returns `{data: {users, communities, posts, comments}}`.
+User/community counts contain `total`, `active`, `suspended`; post/comment counts
+contain `total`. Counts include all stored records. User totals can exceed
+active + suspended because pending/deleted users also exist.
+
+## Users
+
+| Method | Route | Result |
 | --- | --- | --- |
-| page | 0 | Zero-based page index |
-| size | 10 | Page size, capped at 50 by the shared pagination configuration |
-| sort | createdAt,desc | Spring Pageable sort parameter |
-| status | omitted | ACTIVE or SUSPENDED; omitted includes all states |
+| GET | /admin/users | PageResponseDTO<AdminResponse.UserItem> |
+| GET | /admin/users/search | Same list, filtered by username/email |
+| GET | /admin/users/{userId} | PublicUserProfileResponseDTO from existing profile service |
+| PATCH | /admin/users/{userId}/lock | 200 + ApiResponse |
+| PATCH | /admin/users/{userId}/unlock | 200 + ApiResponse |
 
-Invalid status values return 400 using the existing backend error format.
-Pagination follows the shared Spring Pageable resolver behavior, including
-fallbacks for invalid page/size values. Results default to createdAt descending.
+Lock returns `{"message":"User account id 2 locked successfully"}`; unlock returns
+`{"message":"User account id 2 unlocked successfully"}`. Both return HTTP 200,
+including repeated requests when the account is already in the requested state.
 
-Response uses the shared `PageResponseDTO`: `content` (array), `page`, `size`,
-`totalElements`, `totalPages`, `first`, `last`, `empty`. The response page remains
-zero-based to match this endpoint's request; `size` reflects the resolved page size.
-Each item exposes only id, username, email, displayName, avatarUrl,
-role, status, createdAt. Missing profile fields are null. LOCKED is returned as
-SUSPENDED; PENDING and DELETED are preserved when no status filter is supplied.
-Timestamps retain the application's existing LocalDateTime format.
-Empty results return 200 with an empty array and totalPages 0.
+List/search accept `status=ACTIVE|SUSPENDED` and `role=USER|ADMIN`.
+LOCKED is represented as SUSPENDED in the list. Without a status filter,
+PENDING and DELETED values are preserved. Passwords/tokens are never returned.
+Role is available for display and filtering only. Updating user roles is currently
+unavailable. An administrator cannot lock their own account. Repeated lock/unlock
+calls are idempotent.
 
-Example: `GET /admin/users?page=0&size=10&status=ACTIVE`.
-The list endpoint does not perform keyword searches.
+## Communities
 
-## GET /admin/users/search
+| Method | Route | Result |
+| --- | --- | --- |
+| GET | /admin/communities | PageResponseDTO<CommunityDetailResponseDTO> |
+| GET | /admin/communities/search | Same list, filtered by name |
+| GET | /admin/communities/{communityId} | CommunityDetailResponseDTO |
+| PATCH | /admin/communities/{communityId}/lock | 204; sets BANED |
+| PATCH | /admin/communities/{communityId}/unlock | 204; sets ACTIVE |
 
-Search users by username/email using a trimmed, case-insensitive literal substring.
-Uses a separate search request DTO and service method. The required `search`
-parameter must be nonblank and at most 200 characters; missing, empty or whitespace
-keywords return 400. Supports the same optional page, size, sort and status parameters and
-returns the same PageResponseDTO as the list endpoint.
+List/search accept `status=ACTIVE|BANED` and `visibility=PUBLIC|PRIVATE`.
+`BANED` retains the spelling of the current database enum. Lists and details
+include private and banned communities for inspection. Detail includes owner,
+resolved images, category, rules and active member count. Locking preserves
+community content and memberships.
 
-Example: `GET /admin/users/search?page=0&size=10&search=an&status=ACTIVE`.
+## Posts
 
-## GET /admin/users/{userId}
+| Method | Route | Result |
+| --- | --- | --- |
+| GET | /admin/posts | PageResponseDTO<PostResponseDTO> |
+| GET | /admin/posts/search | Same list, filtered by title/content |
+| GET | /admin/posts/{id} | PostResponseDTO |
+| DELETE | /admin/posts/{id} | 204; soft delete |
 
-Returns the existing `UserInfoResponseDTO` directly, without a `data` wrapper:
-username, email, role, status, createdAt, updatedAt, profile and privacySettings.
-Profile includes displayName, bio, avatar, banner, dateOfBirth, gender and location;
-avatar/banner use the existing UserMapper to resolve MinIO URLs. Privacy settings
-include showDateOfBirth and showLocation. Missing profile/privacy records are null.
-Passwords and tokens are never included.
+List/search accept `status=PUBLISHED|HIDDEN|DELETED` and `communityName`.
+Unlike the public feed, management queries include private/banned communities
+and hidden/deleted posts. Admin deletion supports hidden posts and records
+`deletedAt` and `deletedByUserId`; an author cannot restore a post deleted by admin.
+Deleting an already deleted post returns 204 without changing deletion metadata.
 
-The ID must be a positive Long; invalid IDs return 400, unknown users return 404
-(`USER_NOT_FOUND`). Admins can inspect users in any status, including LOCKED,
-PENDING and DELETED. Status uses the existing DTO enum (`LOCKED` rather than the
-list endpoint's `SUSPENDED` label).
+## Comments
 
-Example: `GET /admin/users/123`.
+| Method | Route | Result |
+| --- | --- | --- |
+| GET | /admin/comments | PageResponseDTO<CommentResponseDTO> |
+| GET | /admin/comments/search | Same list, filtered by content |
+| GET | /admin/comments/{id} | CommentResponseDTO |
+| DELETE | /admin/comments/{id} | 204; soft delete |
 
-User list, search and detail logic live in `ManageUserService`, exposed through
-`ManageUserController`. `AdminService` and `AdminController` handle statistics.
+List/search accept `status=VISIBLE|HIDDEN|DELETED`, `communityName` and `postId`.
+Management queries include comments in private/banned communities and on
+hidden/deleted posts. Deletion supports hidden comments, sets `deletedAt`, and
+replaces content with `[deleted]`, preserving the existing comment deletion rule.
+Original deleted comment text is therefore unavailable. Repeated deletion returns
+204 without changing the deletion timestamp.
 
-## Manual verification
+## Reports
 
-With the backend and database running:
+| Method | Route | Result |
+| --- | --- | --- |
+| GET | /admin/reports?type=POST | PageResponseDTO<ReportResponseDTO> |
+| GET | /admin/reports/{type}/{reportId} | ReportResponseDTO |
+| PATCH | /admin/reports/{type}/{reportId}/resolve | Updated ReportResponseDTO |
+| PATCH | /admin/reports/{type}/{reportId}/reject | Updated ReportResponseDTO |
 
-1. Call all admin endpoints without credentials: expect 401.
-2. Call all admin endpoints with a USER token: expect 403.
-3. Call all admin endpoints with an ADMIN token: expect 200 and the response fields above.
-4. Compare statistics against database counts, including LOCKED users and BANED communities.
-5. Search a known username/email with mixed case; verify only matching users appear.
-6. Filter SUSPENDED; verify only LOCKED users appear and passwords/tokens are absent.
-7. Try status=LOCKED: expect 400. Verify page=0 selects the first page and size=101 is capped at 50.
-8. Use /admin/users/search to search a nonexistent value or request a page beyond the last: expect an empty array.
-9. Fetch an existing user's ID, including a LOCKED user: expect UserInfoResponseDTO
-   for that user, with no password/token fields. Check null profile/privacy handling.
-10. Fetch an unknown positive ID: expect 404; use 0, -1 or a nonnumeric ID: expect 400.
+`type` is required and must be POST, COMMENT or COMMUNITY. The ID is local to that
+report type. Lists support `status=PENDING|RESOLVED|REJECTED` and `communityName`.
+The existing GET /reports/posts, /reports/comments and /reports/communities remain
+available for compatibility, including community-staff report lists.
 
+Review body: `{"resolutionNote":"Reviewed and removed the violating content."}`.
+The note is required, nonblank and at most 2000 characters. Review sets status,
+reviewer, timestamp, note and `action` (REVIEWED or REJECTED). A pessimistic row
+lock permits only one transition from PENDING. Reviewing a handled report returns
+409; missing reports return 404. Resolve records the decision; it does not
+automatically delete content or ban a community. Use the corresponding moderation
+API for that action before resolving, if needed.
+
+## Categories
+
+| Method | Route | Result |
+| --- | --- | --- |
+| GET | /admin/categories | CategoryResponseDTO[] |
+| POST | /admin/categories | 201 + CategoryResponseDTO |
+| PATCH | /admin/categories/{id} | CategoryResponseDTO |
+| DELETE | /admin/categories/{id} | 204 |
+
+Create/update body: `{"name":"Programming","slug":"programming"}`. Both fields
+are required for create and update, max 100 characters each. Slugs use lowercase
+letters, digits and single hyphens between segments. Duplicate names/slugs return
+409. Deleting a category still used by any community returns 409. No automatic
+reassignment is performed. Public GET /categories keeps its existing JSON shape.
+
+## Activity logs
+
+`GET /admin/activity-logs` returns `PageResponseDTO<AdminActivityLogResponseDTO>`.
+Optional filters: `actorUserId`, `action`, `targetType`. Each record contains id,
+actorUserId, actorUsername, action, targetType, targetId, note, createdAt. Records
+have no update/delete API. Only mutations through the admin facades are logged;
+old historical actions and public user/staff actions are not backfilled.
+
+Actions: LOCK_USER, UNLOCK_USER, LOCK_COMMUNITY,
+UNLOCK_COMMUNITY, DELETE_POST, DELETE_COMMENT, RESOLVE_REPORT, REJECT_REPORT,
+CREATE_CATEGORY, UPDATE_CATEGORY, DELETE_CATEGORY. Report target types are
+POST_REPORT, COMMENT_REPORT, COMMUNITY_REPORT; other target types are USER,
+COMMUNITY, POST, COMMENT, CATEGORY.
+
+## Schema and verification
+
+New schema: `admin_activity_logs`; nullable `resolution_note` and `action` columns
+on post_reports, comment_reports and community_reports. The project's existing
+`spring.jpa.hibernate.ddl-auto=update` applies these additions on startup. Existing
+report rows retain null notes/actions. No existing data is deleted by setup.
+
+Run `mvn test` for report transitions, category constraints,
+method-security enforcement and request validation/pagination tests. Tests do not
+require running MySQL, Redis or MinIO. Request examples are in `admin.http`.
+For live verification, use an ADMIN session and also confirm 401/403 with missing
+credentials/USER credentials; check combined filters, hidden content, repeated
+mutations and audit rows. Backend APIs are ready for frontend integration; this
+change does not enable the new controls in the UI.

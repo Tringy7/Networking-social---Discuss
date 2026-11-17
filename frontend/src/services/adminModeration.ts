@@ -49,8 +49,8 @@ export type AdminComment = CommentMutationResponse;
 
 // Mutations without a matching backend endpoint remain unavailable here.
 export const adminCapabilities = {
-  userStatus: true, userRole: false, userRoleFilter: true,
-  communityStatus: false, allCommunityStates: false,
+  userStatus: true, userRoleFilter: true,
+  communityStatus: true, allCommunityStates: true,
   reportResolution: false, reportDateFilter: false,
   categoryCreate: false, categoryEdit: false, categoryDelete: false,
   activityLog: false, allCommentList: false, allPostStates: false,
@@ -62,8 +62,7 @@ export const adminMutations = {
   setUserStatus: (id: string | number, status: string) => status === 'ACTIVE'
     ? adminService.unlockUser(id)
     : adminService.lockUser(id),
-  setUserRole: (_id: string | number, _role: string) => unavailable('Thay đổi quyền tài khoản'),
-  setCommunityStatus: (_name: string, _status: string) => unavailable('Cấm / mở lại cộng đồng'),
+  setCommunityStatus: (id: number, status: string) => apiClient.patch<void>(`/admin/communities/${id}/${status === 'ACTIVE' ? 'unlock' : 'lock'}`),
   resolveReport: (_report: AdminReport, _status: ReportStatus) => unavailable('Cập nhật trạng thái báo cáo'),
   saveCategory: (_value: Partial<AdminCategory>) => unavailable('Lưu danh mục'),
   deleteCategory: (_id: number) => unavailable('Xóa danh mục'),
@@ -99,6 +98,15 @@ function reportPage(type: ReportType, page: number, size: number, status = '', c
 export const adminModeration = {
   stats: adminService.getStats,
   users: adminService.listUsers,
+  communities: (options: { page: number; size: number; search?: string; status?: string; visibility?: string }) => {
+    const query = new URLSearchParams({ page: String(options.page), size: String(options.size), sort: 'createdAt,desc' });
+    if (options.status) query.set('status', options.status);
+    if (options.visibility) query.set('visibility', options.visibility);
+    const search = options.search?.trim();
+    if (search) query.set('search', search);
+    return apiClient.get<AdminPage<AdminCommunity>>(`/admin/communities${search ? '/search' : ''}?${query}`);
+  },
+  communityDetail: (id: number) => apiClient.get<AdminCommunity>(`/admin/communities/${id}`),
   categories: () => apiClient.get<AdminCategory[]>('/categories'),
   community: (name: string) => apiClient.get<AdminCommunity>(`/communities/${encodeURIComponent(name)}`),
   activeCommunities: () => readAll<AdminCommunity>(page => apiClient.get(`/explore?page=${page}&size=50&sort=createdAt,desc`)),
