@@ -284,9 +284,18 @@ public class CommunityService {
 
     @HasRole("ADMIN")
     @Transactional
-    public void updateStatus(Long communityId, CommunityStatus status) {
+    public boolean updateStatus(Long communityId, CommunityStatus status) {
+        if (status == null) {
+            throw new CommunityException(CommunityErrorCode.INVALID_STATUS);
+        }
+
         Community community = communitySupport.getCommunityById(communityId);
-        community.setStatus(Objects.requireNonNull(status, "Community status is required"));
+        if (community.getStatus() == status) {
+            return false;
+        }
+
+        community.setStatus(status);
+        return true;
     }
 
     private PageResponseDTO<CommunityDetailResponseDTO> findCommunityDetails(
@@ -301,11 +310,13 @@ public class CommunityService {
     }
 
     @Transactional(readOnly = true)
+    @HasRole("ADMIN")
     public long countAll() {
         return communityRepository.count();
     }
 
     @Transactional(readOnly = true)
+    @HasRole("ADMIN")
     public long countByStatus(CommunityStatus status) {
         return communityRepository.countByStatus(status);
     }

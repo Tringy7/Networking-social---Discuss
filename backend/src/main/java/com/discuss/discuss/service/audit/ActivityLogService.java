@@ -2,6 +2,7 @@ package com.discuss.discuss.service.audit;
 import com.discuss.discuss.dto.admin.AdminActivityLogResponseDTO;
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.entity.AdminActivityLog;
+import com.discuss.discuss.entity.User;
 import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.repository.AdminActivityLogRepository;
 import com.discuss.discuss.service.user.UserService;
@@ -12,7 +13,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-@Service @RequiredArgsConstructor @HasRole("ADMIN")
+
+@Service
+@RequiredArgsConstructor
+@HasRole("ADMIN")
 public class ActivityLogService {
     private final AdminActivityLogRepository repository;
     private final UserService userService;
@@ -20,10 +24,15 @@ public class ActivityLogService {
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void record(String action, String targetType, Long targetId, String note) {
-        var actor = userService.getCurrentUser();
-        repository.save(AdminActivityLog.builder().actorUserId(actor.getId())
-                .actorUsername(actor.getUsername()).action(action).targetType(targetType)
-                .targetId(targetId).note(note).build());
+        User actor = userService.getCurrentUser();
+        repository.save(
+                AdminActivityLog.builder()
+                        .actorUserId(actor.getId())
+                        .actorUsername(actor.getUsername())
+                        .action(action)
+                        .targetType(targetType)
+                        .targetId(targetId)
+                        .note(note).build());
     }
 
     @Transactional(readOnly = true)

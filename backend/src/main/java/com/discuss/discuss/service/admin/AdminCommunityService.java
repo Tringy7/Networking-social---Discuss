@@ -35,13 +35,15 @@ public class AdminCommunityService {
 
     @Transactional
     public void lockCommunity(Long communityId) {
-        communityService.updateStatus(communityId, CommunityStatus.BANED);
-        activityLogService.record("LOCK_COMMUNITY", "COMMUNITY", communityId, null);
+        if (communityService.updateStatus(communityId, CommunityStatus.BANED)) {
+            activityLogService.record("LOCK_COMMUNITY", "COMMUNITY", communityId, null);
+        }
     }
 
     @Transactional
     public void unlockCommunity(Long communityId) {
-        communityService.updateStatus(communityId, CommunityStatus.ACTIVE);
-        activityLogService.record("UNLOCK_COMMUNITY", "COMMUNITY", communityId, null);
+        if (communityService.updateStatus(communityId, CommunityStatus.ACTIVE)) {
+            activityLogService.record("UNLOCK_COMMUNITY", "COMMUNITY", communityId, null);
+        }
     }
 }

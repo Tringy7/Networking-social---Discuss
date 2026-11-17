@@ -43,28 +43,34 @@ public class AdminUserService {
 
     @Transactional
     public void lockUser(Long userId) {
-        User user = userService.getById(userId);
-        if (user.getStatus() == UserStatus.LOCKED) {
-            return;
-        }
-        if (user.getId().equals(userService.getCurrentUser().getId())) {
-            throw new UserException(
-                    UserErrorCode.INVALID_USER_STATUS, "You cannot lock your own account");
-        }
-        userService.requireStatus(user, UserStatus.ACTIVE);
-        userService.updateStatus(user, UserStatus.LOCKED);
-        activityLogService.record("LOCK_USER", "USER", userId, null);
+        updateUserStatus(userId, UserStatus.LOCKED);
     }
 
     @Transactional
     public void unlockUser(Long userId) {
+        updateUserStatus(userId, UserStatus.ACTIVE);
+    }
+
+    private void updateUserStatus(Long userId, UserStatus status) {
         User user = userService.getById(userId);
-        if (user.getStatus() == UserStatus.ACTIVE) {
+        if (user.getStatus() == status) {
             return;
         }
-        userService.requireStatus(user, UserStatus.LOCKED);
-        userService.updateStatus(user, UserStatus.ACTIVE);
-        activityLogService.record("UNLOCK_USER", "USER", userId, null);
+
+        if (status == UserStatus.LOCKED) {
+            if (user.getId().equals(userService.getCurrentUser().getId())) {
+                throw new UserException(
+                        UserErrorCode.INVALID_USER_STATUS, "You cannot lock your own account");
+            }
+            userService.requireStatus(user, UserStatus.ACTIVE);
+        } else {
+            userService.requireStatus(user, UserStatus.LOCKED);
+        }
+
+        userService.updateStatus(user, status);
+        activityLogService.record(
+                status == UserStatus.LOCKED ? "LOCK_USER" : "UNLOCK_USER",
+                "USER", userId, null);
     }
 
     private UserStatus toUserStatus(String status) {

@@ -11,6 +11,7 @@ import com.discuss.discuss.service.community.CommunitySupport;
 import com.discuss.discuss.service.community.CommunityAuthorizationService;
 import com.discuss.discuss.service.user.UserService;
 import com.discuss.discuss.service.user.UserAuthorizationService;
+import com.discuss.discuss.utils.annotation.auth.HasRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@HasRole("ADMIN")
 @Transactional(readOnly = true)
 public class CommunityReportQueryService {
     private final CommunityReportRepository repository;

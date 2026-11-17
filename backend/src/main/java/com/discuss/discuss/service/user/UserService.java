@@ -53,10 +53,12 @@ public class UserService {
         return user;
     }
 
+    @HasRole("ADMIN")
     public long countAll() {
         return userRepository.count();
     }
 
+    @HasRole("ADMIN")
     public long countByStatus(UserStatus status) {
         return userRepository.countByStatus(status);
     }
@@ -70,6 +72,7 @@ public class UserService {
         }
     }
 
+    @HasRole("ADMIN")
     @Transactional
     public void updateStatus(User user, UserStatus status) {
         user.setStatus(status);

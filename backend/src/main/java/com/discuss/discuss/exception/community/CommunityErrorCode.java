@@ -10,6 +10,11 @@ public enum CommunityErrorCode {
     // 400 - Bad Request
     // =========================
 
+    INVALID_STATUS(
+            HttpStatus.BAD_REQUEST,
+            "Invalid community status"
+    ),
+
     COMMUNITY_NAME_RESERVED(
             HttpStatus.BAD_REQUEST,
             "This community name is reserved"

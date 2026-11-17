@@ -7,12 +7,14 @@ import com.discuss.discuss.service.user.UserService;
 import com.discuss.discuss.service.community.CommunityService;
 import com.discuss.discuss.service.post.PostService;
 import com.discuss.discuss.service.comment.CommentService;
+import com.discuss.discuss.utils.annotation.auth.HasRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@HasRole("ADMIN")
 public class AdminService {
     private final UserService userService;
     private final CommunityService communityService;

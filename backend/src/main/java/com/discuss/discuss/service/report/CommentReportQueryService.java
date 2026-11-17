@@ -11,6 +11,7 @@ import com.discuss.discuss.service.community.CommunitySupport;
 import com.discuss.discuss.service.community.CommunityAuthorizationService;
 import com.discuss.discuss.service.user.UserService;
 import com.discuss.discuss.service.user.UserAuthorizationService;
+import com.discuss.discuss.utils.annotation.auth.HasRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class CommentReportQueryService {
     private final UserService userService;
     private final CommunityAuthorizationService communityAuthorization;
 
+    @HasRole("ADMIN")
     public PageResponseDTO<ReportResponseDTO> list(ReportStatus status, String communityName, Pageable pageable) {
         userAuthorization.requireAdmin();
         String name = communitySupport.normalize(communityName);

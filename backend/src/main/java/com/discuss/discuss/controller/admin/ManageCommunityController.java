@@ -47,16 +47,19 @@ public class ManageCommunityController {
     public ResponseEntity<CommunityDetailResponseDTO> getCommunityDetail(@PathVariable @Positive Long communityId) {
         return ResponseEntity.ok(adminCommunityService.getCommunityDetail(communityId));
     }
-
     @PatchMapping("/{communityId}/lock")
-    public ResponseEntity<ApiResponse> lockCommunity(@PathVariable @Positive Long communityId) {
+    public ResponseEntity<ApiResponse> lockCommunity(
+            @PathVariable @Positive Long communityId) {
         adminCommunityService.lockCommunity(communityId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(
+                new ApiResponse("Community id " + communityId + " locked successfully"));
     }
 
     @PatchMapping("/{communityId}/unlock")
-    public ResponseEntity<Void> unlockCommunity(@PathVariable @Positive Long communityId) {
+    public ResponseEntity<ApiResponse> unlockCommunity(
+            @PathVariable @Positive Long communityId) {
         adminCommunityService.unlockCommunity(communityId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(
+                new ApiResponse("Community id " + communityId + " unlocked successfully"));
     }
 }

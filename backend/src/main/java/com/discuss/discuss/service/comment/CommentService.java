@@ -115,6 +115,7 @@ public class CommentService {
 
 
     @Transactional(readOnly = true)
+    @HasRole("ADMIN")
     public long countAll() {
         return commentRepository.count();
     }

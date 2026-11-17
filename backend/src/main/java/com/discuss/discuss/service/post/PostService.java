@@ -166,6 +166,7 @@ public class PostService {
 
 
     @Transactional(readOnly = true)
+    @HasRole("ADMIN")
     public long countAll() {
         return postRepository.count();
     }
