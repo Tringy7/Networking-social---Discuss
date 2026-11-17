@@ -8,7 +8,7 @@ interface AuthResponse {
 }
 
 interface UserResponse {
-  id?: string;
+  id?: string | number;
   username: string;
   email: string;
   role: User['role'];
@@ -449,8 +449,9 @@ export const communityService = {
   transferOwnership: async (name: string, username: string) =>
     apiClient.put(`/communities/${encodeURIComponent(name)}/owner`, { username }),
   join: async (name: string) => {
-    await apiClient.post(`/communities/${encodeURIComponent(name)}/members`);
-    return true;
+    return apiClient.post<{ message: string; currentUserRole: Community['currentUserRole'] }>(
+      `/communities/${encodeURIComponent(name)}/members`
+    );
   },
   leave: async (name: string) => {
     await apiClient.delete(`/communities/${encodeURIComponent(name)}/members/me`);

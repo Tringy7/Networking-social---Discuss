@@ -1,6 +1,7 @@
 package com.discuss.discuss.controller.community;
 
 import com.discuss.discuss.dto.common.ApiResponse;
+import com.discuss.discuss.enums.CommunityRole;
 import com.discuss.discuss.service.community.CommunityMemberService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -22,15 +23,17 @@ public class CommunityMemberController {
     ) {
     }
 
+    public record JoinCommunityResponse(String message, CommunityRole currentUserRole) {}
+
     @PostMapping("/{name}/members")
-    public ResponseEntity<ApiResponse> joinCommunity(
+    public ResponseEntity<JoinCommunityResponse> joinCommunity(
             @PathVariable String name
     ) {
-        communityMemberService.joinCommunity(name);
+        var membership = communityMemberService.joinCommunity(name);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(new ApiResponse("Joined community successfully"));
+                .body(new JoinCommunityResponse("Joined community successfully", membership.getRole()));
     }
 
     @PutMapping("/{communitiesName}/moderators/{username}")

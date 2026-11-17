@@ -76,7 +76,7 @@ function mapUser(
     : currentUser?.gender;
 
   return {
-    id: response.id || currentUser?.id || response.username,
+    id: String(response.id ?? currentUser?.id ?? response.username),
     username: response.username,
     displayName: profile?.displayName || currentUser?.displayName || response.username,
     email: response.email,
