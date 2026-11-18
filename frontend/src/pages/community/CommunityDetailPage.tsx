@@ -37,7 +37,7 @@ export const CommunityDetailPage: React.FC = () => {
 
   const { communities, joinCommunity, leaveCommunity, hydrateCommunity } = useCommunityStore();
   const { posts, loadCommunityPosts, openCreateModal } = usePostStore();
-  const { isAuthenticated, activeRole, user } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const { addToast } = useToastStore();
 
   const [postPage, setPostPage] = useState(0);
@@ -126,15 +126,13 @@ export const CommunityDetailPage: React.FC = () => {
     );
   }
 
-  const isJoined =
+  const isOwner = isCommunityOwner(community, user, isAuthenticated);
+  const isJoined = isAuthenticated && (isOwner ||
     community.currentUserRole === 'MEMBER' ||
     community.currentUserRole === 'MODERATOR' ||
-    community.currentUserRole === 'OWNER';
+    community.currentUserRole === 'OWNER');
 
-  const isManager =
-    community.currentUserRole === 'OWNER' ||
-    community.currentUserRole === 'MODERATOR' ||
-    activeRole === 'ADMIN';
+  const isManager = isAuthenticated && (isOwner || community.currentUserRole === 'MODERATOR');
   const canEditMedia = !isCommunityLoading && canEditCommunityMedia(community, user, isAuthenticated);
   const isOwner = !isCommunityLoading && isCommunityOwner(community, user, isAuthenticated);
 
@@ -187,7 +185,7 @@ export const CommunityDetailPage: React.FC = () => {
           <div className="community-actions">
             <Button variant={isJoined ? 'secondary' : 'primary'} size="sm" isLoading={isMembershipUpdating} onClick={handleJoinToggle} aria-pressed={isJoined} leftIcon={isJoined ? <Check size={15} /> : <Plus size={15} />}>{isJoined ? 'Đã tham gia' : 'Tham gia cộng đồng'}</Button>
             <Button variant="outline" size="sm" onClick={() => openCreateModal(community.name)} leftIcon={<Plus size={15} />}>Đăng bài</Button>
-            {(isManager || canEditMedia) && <Link className="icon-button" aria-label="Cài đặt cộng đồng" to={`/c/${community.name}/settings`}><Settings size={18} /></Link>}
+            {isOwner && <Link className="icon-button" aria-label="Cài đặt cộng đồng" to={`/c/${community.name}/settings`}><Settings size={18} /></Link>}
           </div>
         </div>
         <div className="community-facts"><span><Users size={15} /> {community.memberCount.toLocaleString('vi-VN')} thành viên</span>{community.category && <span>{community.category}</span>}<span><Calendar size={15} /> {new Date(community.createdAt).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span><button onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); addToast('Đã sao chép liên kết cộng đồng!', 'success'); } catch { addToast('Không thể sao chép liên kết.', 'error'); } }}><Share2 size={15} /> Chia sẻ</button><button type="button" onClick={() => setIsReportOpen(true)}><Flag size={15} /> Báo cáo cộng đồng</button></div>
@@ -214,9 +212,9 @@ export const CommunityDetailPage: React.FC = () => {
           <section className="context-section"><div className="context-title"><h2>Nội quy cộng đồng</h2><BookOpen size={16} /></div>
             <CommunityRulesContent markdown={community.rules} />
           </section>
-          <section className="context-section"><div className="context-title"><h2>Ban quản trị</h2>{isManager && <Link to={`/c/${community.name}/settings?tab=members`}>Quản lý</Link>}</div>
-            <Link to={`/u/${community.ownerUsername}`} className="context-community"><Avatar alt={community.ownerUsername} size="sm" /><div className="community-info"><span className="text-sm font-semibold">@{community.ownerUsername}</span><p>Chủ cộng đồng</p></div></Link>
-            {(isOwner || isManager) && <Link to={`/c/${community.name}/${isOwner ? 'settings?tab=reports' : 'moderation'}`} className="side-link"><ShieldAlert size={16} />Báo cáo cộng đồng</Link>}
+          <section className="context-section"><div className="context-title"><h2>Ban quản trị</h2>{isOwner && <Link to={`/c/${community.name}/settings?tab=members`}>Quản lý</Link>}</div>
+            {community.ownerUsername && <Link to={`/u/${community.ownerUsername}`} className="context-community"><Avatar alt={community.ownerUsername} size="sm" /><div className="community-info"><span className="text-sm font-semibold">@{community.ownerUsername}</span><p>Chủ cộng đồng</p></div></Link>}
+            {isManager && <Link to={`/c/${community.name}/moderation`} className="side-link"><ShieldAlert size={16} />Hàng đợi kiểm duyệt</Link>}
           </section>
         </aside>
       </div>

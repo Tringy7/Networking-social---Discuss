@@ -10,6 +10,7 @@ import Avatar from '../ui/Avatar';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import { isCommunityOwner } from '../../utils/communityMedia';
 import ConfirmDialog from '../ui/ConfirmDialog';
 
 const roles = [
@@ -48,8 +49,7 @@ export default function CommunityMembersPanel({ community }: { community: Commun
     return () => { active = false; };
   }, [community.name, hydrateMembers, attempt]);
 
-  const ownMembership = memberList.find((member) => member.username === user?.username);
-  const isOwner = authenticated && ownMembership?.role === 'OWNER';
+  const isOwner = isCommunityOwner(community, user, authenticated);
   const search = query.trim().toLocaleLowerCase('vi-VN').replace(/^@/, '');
   const filtered = memberList.filter((member) => (roleFilter === 'ALL' || member.role === roleFilter)
     && `${member.displayName} ${member.username}`.toLocaleLowerCase('vi-VN').includes(search));
@@ -105,7 +105,7 @@ export default function CommunityMembersPanel({ community }: { community: Commun
         </div>)}
     </div>
     {createPortal(<ConfirmDialog
-      isOpen={transferTarget !== null}
+      isOpen={isOwner && transferTarget !== null}
       onClose={() => { if (!pending.current) setTransferTarget(null); }}
       onConfirm={() => { if (transferTarget) void act(transferTarget, 'transfer'); }}
       title="Chuyển quyền chủ cộng đồng?"

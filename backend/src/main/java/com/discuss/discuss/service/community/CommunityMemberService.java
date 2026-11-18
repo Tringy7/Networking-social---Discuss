@@ -141,7 +141,7 @@ public class CommunityMemberService {
 
     // Joins a community; if there is no ACTIVE Owner, the joining user becomes the Owner.
     @Transactional
-    public void joinCommunity(String communityName) {
+    public CommunityMember joinCommunity(String communityName) {
         User user = userService.getCurrentUser();
         Community community = communitySupport.getActiveCommunityForMembership(communityName);
 
@@ -150,8 +150,7 @@ public class CommunityMemberService {
         CommunityMember member = getExistingMembership(community, user);
 
         if (member == null) {
-            createMembership(community, user);
-            return;
+            return createMembership(community, user);
         }
 
         if (member.getStatus() == MembershipStatus.ACTIVE) {
@@ -164,6 +163,7 @@ public class CommunityMemberService {
 
         // LEFT or KICKED members can rejoin; the role is determined again.
         reactivateMembership(member);
+        return member;
     }
 
     // Leaves a community; if the leaving user is the Owner, ownership is transferred first when a successor exists.
@@ -269,7 +269,7 @@ public class CommunityMemberService {
     }
 
     // Creates a new membership with the Owner role if the community has no ACTIVE Owner.
-    private void createMembership(Community community, User user) {
+    private CommunityMember createMembership(Community community, User user) {
         CommunityMember member = CommunityMember.builder()
                 .community(community)
                 .user(user)
@@ -278,7 +278,7 @@ public class CommunityMemberService {
                 .joinedAt(LocalDateTime.now())
                 .build();
 
-        memberRepository.save(member);
+        return memberRepository.save(member);
     }
 
     // Reactivates a LEFT/KICKED membership and determines the role based on the current Owner.

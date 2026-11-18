@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ArrowUpRight, BookOpen, Camera, Check, Globe, Image as ImageIcon, Lock, Settings2, ShieldAlert, Users } from 'lucide-react';
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
+import { useAuthStore } from '../../store/useAuthStore';
+import { isCommunityOwner } from '../../utils/communityMedia';
+import { ArrowLeft, ArrowUpRight, BookOpen, Camera, Check, Globe, Image as ImageIcon, Lock, Settings2, Users } from 'lucide-react';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
@@ -216,6 +218,7 @@ export const EditCommunityPage: React.FC = () => {
   const { communityName } = useParams<{ communityName: string }>();
   const community = useCommunityStore((state) => state.communities.find((item) => item.name === communityName));
   const hydrate = useCommunityStore((state) => state.hydrateCommunity);
+  const { user, isAuthenticated } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -231,6 +234,9 @@ export const EditCommunityPage: React.FC = () => {
     <h1>{loading ? 'Đang tải cài đặt cộng đồng' : 'Chưa thể mở cài đặt cộng đồng'}</h1><p>{loading ? 'Đang tải thông tin, ảnh đại diện và ảnh bìa…' : 'Hãy thử tải lại hoặc trở về trang cộng đồng.'}</p>
     {!loading && <div><Button size="sm" variant="secondary" onClick={() => setAttempt((value) => value + 1)}>Thử lại</Button><Link to={communityName ? `/c/${communityName}` : '/explore'}>Quay lại cộng đồng</Link></div>}
   </section>;
+  if (!isCommunityOwner(community, user, isAuthenticated)) {
+    return <Navigate to={`/c/${community.name}`} replace />;
+  }
   return <CommunitySettings key={community.name} community={community} />;
 };
 export default EditCommunityPage;

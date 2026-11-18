@@ -54,7 +54,10 @@ public class CommunitySupport {
 
     // Membership operations retain their existing 403 response for inactive communities.
     public Community getActiveCommunityForMembership(String name) {
-        Community community = getCommunityByName(name);
+        // Serialize membership changes, including claiming an empty community.
+        // Callers must run inside a transaction.
+        Community community = communityRepository.findByNameForUpdate(nameNormalizer.normalize(name))
+                .orElseThrow(() -> new CommunityException(CommunityErrorCode.COMMUNITY_NOT_FOUND));
         if (community.getStatus() != CommunityStatus.ACTIVE) {
             throw new CommunityException(CommunityErrorCode.FORBIDDEN, "This community is not active");
         }

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { isCommunityOwner } from '../../utils/communityMedia';
 import { useToastStore } from '../../store/useToastStore';
 import CommunityCard from '../../components/community/CommunityCard.tsx';
 import PageHeader from '../../components/ui/PageHeader';
@@ -33,7 +34,7 @@ export default function MyCommunitiesPage() {
     return () => { active = false; };
   }, [addToast, hydrateMine, userId, retry]);
 
-  const owned = myCommunities.filter((c) => c.currentUserRole === 'OWNER' || c.ownerUsername === user?.username);
+  const owned = myCommunities.filter((c) => isCommunityOwner(c, user, Boolean(user)));
   const joined = myCommunities.filter((c) => !owned.some((item) => item.id === c.id) && ['MEMBER', 'MODERATOR'].includes(c.currentUserRole));
   const all = [...owned, ...joined];
   const displayed = tab === 'owned' ? owned : tab === 'joined' ? joined : all;
