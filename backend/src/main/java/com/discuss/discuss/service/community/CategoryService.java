@@ -36,13 +36,13 @@ public class CategoryService {
     @HasRole("ADMIN")
     @Transactional
     public CategoryResponseDTO create(CategoryRequestDTO request) {
-        return saveCategory(new Category(), request);
+        return this.saveCategory(new Category(), request);
     }
 
     @HasRole("ADMIN")
     @Transactional
     public CategoryResponseDTO update(Long id, CategoryRequestDTO request) {
-        return saveCategory(getCategoryById(id), request);
+        return this.saveCategory(this.getCategoryById(id), request);
     }
 
     private CategoryResponseDTO saveCategory(Category category, CategoryRequestDTO request) {
@@ -53,7 +53,8 @@ public class CategoryService {
                 || categoryRepository.existsBySlugIgnoreCaseAndIdNot(slug, excludedId)) {
             throw new CommunityException(CommunityErrorCode.CATEGORY_ALREADY_EXISTS);
         }
-        category.setName(name); category.setSlug(slug);
+        category.setName(name);
+        category.setSlug(slug);
         try {
             categoryRepository.saveAndFlush(category);
         } catch (DataIntegrityViolationException ex) {

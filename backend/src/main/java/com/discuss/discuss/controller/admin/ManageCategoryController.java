@@ -10,22 +10,31 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-@RestController @RequestMapping("/admin/categories")
-@RequiredArgsConstructor @Validated @HasRole("ADMIN")
+
+@RestController
+@RequestMapping("/admin/categories")
+@RequiredArgsConstructor
+@Validated
+@HasRole("ADMIN")
 public class ManageCategoryController {
-    private final AdminCategoryService service;
+    private final AdminCategoryService adminCategoryService;
+
     @GetMapping
-    public ResponseEntity<List<CategoryResponseDTO>> list() { return ResponseEntity.ok(service.list()); }
+    public ResponseEntity<List<CategoryResponseDTO>> list() {
+        return ResponseEntity.ok(adminCategoryService.list()); }
+
     @PostMapping
     public ResponseEntity<CategoryResponseDTO> create(@Valid @RequestBody CategoryRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(adminCategoryService.create(request));
     }
+
     @PatchMapping("/{id}")
     public ResponseEntity<CategoryResponseDTO> update(@PathVariable @Positive Long id, @Valid @RequestBody CategoryRequestDTO request) {
-        return ResponseEntity.ok(service.update(id, request));
+        return ResponseEntity.ok(adminCategoryService.update(id, request));
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable @Positive Long id) {
-        service.delete(id); return ResponseEntity.noContent().build();
+        adminCategoryService.delete(id); return ResponseEntity.noContent().build();
     }
 }
