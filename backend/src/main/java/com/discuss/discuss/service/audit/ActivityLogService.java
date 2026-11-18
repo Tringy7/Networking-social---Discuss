@@ -37,12 +37,17 @@ public class ActivityLogService {
 
     @Transactional(readOnly = true)
     public PageResponseDTO<AdminActivityLogResponseDTO> list(Long actorUserId, String action, String targetType, Pageable pageable) {
-        Specification<AdminActivityLog> filter = (root, query, cb) -> cb.and(
-                actorUserId == null ? cb.conjunction() : cb.equal(root.get("actorUserId"), actorUserId),
-                action == null || action.isBlank() ? cb.conjunction() : cb.equal(root.get("action"), action),
-                targetType == null || targetType.isBlank() ? cb.conjunction() : cb.equal(root.get("targetType"), targetType));
+        Specification<AdminActivityLog> filter = buildActivityLogSpecification(actorUserId, action, targetType);
         return pageMapper.toResponse(repository.findAll(filter, pageable).map(log -> new AdminActivityLogResponseDTO(
                 log.getId(), log.getActorUserId(), log.getActorUsername(), log.getAction(), log.getTargetType(),
                 log.getTargetId(), log.getNote(), log.getCreatedAt())));
+    }
+
+    private Specification<AdminActivityLog> buildActivityLogSpecification(
+            Long actorUserId, String action, String targetType) {
+        return (root, query, cb) -> cb.and(
+                actorUserId == null ? cb.conjunction() : cb.equal(root.get("actorUserId"), actorUserId),
+                action == null || action.isBlank() ? cb.conjunction() : cb.equal(root.get("action"), action),
+                targetType == null || targetType.isBlank() ? cb.conjunction() : cb.equal(root.get("targetType"), targetType));
     }
 }

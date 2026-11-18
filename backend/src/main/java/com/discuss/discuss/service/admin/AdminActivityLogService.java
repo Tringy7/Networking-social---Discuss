@@ -6,7 +6,9 @@ import com.discuss.discuss.utils.annotation.auth.HasRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-@Service @RequiredArgsConstructor @HasRole("ADMIN")
+@Service
+@RequiredArgsConstructor
+@HasRole("ADMIN")
 public class AdminActivityLogService {
     private final ActivityLogService activityLogService;
     public PageResponseDTO<AdminActivityLogResponseDTO> list(Long actorUserId, String action, String targetType, Pageable pageable) {

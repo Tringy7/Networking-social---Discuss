@@ -12,16 +12,20 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-@RestController @RequestMapping("/admin/activity-logs")
-@RequiredArgsConstructor @Validated @HasRole("ADMIN")
+@RestController
+@RequestMapping("/admin/activity-logs")
+@RequiredArgsConstructor
+@Validated
+@HasRole("ADMIN")
 public class ManageActivityLogController {
-    private final AdminActivityLogService service;
+    private final AdminActivityLogService adminActivityLogService;
+
     @GetMapping
     public ResponseEntity<PageResponseDTO<AdminActivityLogResponseDTO>> list(
             @RequestParam(required = false) @Positive Long actorUserId,
             @RequestParam(required = false) @Size(max = 80) String action,
             @RequestParam(required = false) @Size(max = 40) String targetType,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(service.list(actorUserId, action, targetType, pageable));
+        return ResponseEntity.ok(adminActivityLogService.list(actorUserId, action, targetType, pageable));
     }
 }
