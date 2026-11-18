@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, FolderKanban, FileText, MessageSquare, Tags, ShieldAlert, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, Users, FolderKanban, FileText, Tags, ShieldAlert, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAdminData } from './AdminDataContext';
 import { AdminAvatar, adminNumber } from './AdminUI';
@@ -10,7 +10,6 @@ const groups = [
     { to: '/admin/users', label: 'Người dùng', icon: Users },
     { to: '/admin/communities', label: 'Cộng đồng', icon: FolderKanban },
     { to: '/admin/posts', label: 'Bài viết', icon: FileText },
-    { to: '/admin/comments', label: 'Bình luận', icon: MessageSquare },
     { to: '/admin/categories', label: 'Danh mục', icon: Tags },
   ] },
   { label: 'Kiểm duyệt', items: [{ to: '/admin/reports', label: 'Báo cáo', icon: ShieldAlert }] },

@@ -53,7 +53,7 @@ export const adminCapabilities = {
   communityStatus: true, allCommunityStates: true,
   reportResolution: false, reportDateFilter: false,
   categoryCreate: false, categoryEdit: false, categoryDelete: false,
-  activityLog: false, allCommentList: false, allPostStates: false,
+  activityLog: false, allPostStates: false,
 } as const;
 
 const unavailable = (action: string): Promise<never> =>

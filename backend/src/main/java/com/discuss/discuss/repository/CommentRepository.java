@@ -5,9 +5,8 @@ import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.*;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface CommentRepository extends JpaRepository<Comment, Long>, JpaSpecificationExecutor<Comment> {
+public interface CommentRepository extends JpaRepository<Comment, Long> {
     @EntityGraph(attributePaths = {"user", "user.profile", "parentComment", "post", "post.user"})
     List<Comment> findByPostIdOrderByCreatedAtAscIdAsc(Long postId);
 

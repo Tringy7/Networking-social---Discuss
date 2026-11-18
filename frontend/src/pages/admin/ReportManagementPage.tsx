@@ -17,7 +17,7 @@ function ReportCommentContext({ report, onRemove }: { report: AdminReport; onRem
   const submit = (event: FormEvent) => { event.preventDefault(); if (/^\d+$/.test(draft.trim())) setPost(draft.trim()); };
   return <div className="admin-report-context"><AdminNotice>Báo cáo chưa kèm bài viết gốc. Nhập ID bài viết chứa bình luận #{report.targetId} để kiểm tra đúng nội dung trước khi xóa.</AdminNotice><form className="admin-context-form" onSubmit={submit}><label>ID bài viết<input value={draft} onChange={event => setDraft(event.target.value)} inputMode="numeric" pattern="[0-9]+" required placeholder="Ví dụ: 123" /></label><button className="admin-button" type="submit">Xem ngữ cảnh</button></form>
     {post && (result.loading ? <AdminLoadingSkeleton /> : result.error ? <AdminErrorState error={result.error} retry={result.reload} /> : comment ? <><CommentPreview comment={comment} /><button className="admin-button admin-button-danger-outline" disabled={comment.status === 'DELETED'} onClick={() => onRemove(comment)}>Xóa bình luận</button></> : <AdminNotice>Không tìm thấy bình luận #{report.targetId} trong bài viết #{post}.</AdminNotice>)}
-    <Link className="admin-text-action" to={`/admin/comments?comment=${report.targetId}${post ? `&post=${post}` : ''}`}>Mở trang tra cứu bình luận</Link></div>;
+    {post && <Link className="admin-text-action" to={`/post/${post}`}>Mở bài viết gốc</Link>}</div>;
 }
 export default function ReportManagementPage() {
   const query = useAdminQuery();

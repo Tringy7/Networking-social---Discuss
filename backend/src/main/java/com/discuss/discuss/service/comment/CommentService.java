@@ -119,14 +119,4 @@ public class CommentService {
     public long countAll() {
         return commentRepository.count();
     }
-    @HasRole("ADMIN")
-    @Transactional
-    public void deleteForAdmin(Long id) {
-        Comment comment = commentRepository.lockById(id)
-                .orElseThrow(() -> commentSupport.notFound(CommentErrorCode.COMMENT_NOT_FOUND));
-        if (comment.getStatus() == CommentStatus.DELETED) return;
-        comment.setStatus(CommentStatus.DELETED);
-        comment.setContent("[deleted]");
-        comment.setDeletedAt(LocalDateTime.now());
-    }
 }

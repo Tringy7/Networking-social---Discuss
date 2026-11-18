@@ -9,7 +9,6 @@ const UserManagementPage = React.lazy(() => import('../pages/admin/UserManagemen
 const CommunityManagementPage = React.lazy(() => import('../pages/admin/CommunityManagementPage'));
 const ReportManagementPage = React.lazy(() => import('../pages/admin/ReportManagementPage'));
 const PostManagementPage = React.lazy(() => import('../pages/admin/PostManagementPage'));
-const CommentManagementPage = React.lazy(() => import('../pages/admin/CommentManagementPage'));
 const CategoryManagementPage = React.lazy(() => import('../pages/admin/CategoryManagementPage'));
 
 
@@ -26,7 +25,6 @@ export const adminRoutes = <>
         <Route path="communities" element={<React.Suspense fallback={routeLoading}><CommunityManagementPage /></React.Suspense>} />
         <Route path="reports" element={<React.Suspense fallback={routeLoading}><ReportManagementPage /></React.Suspense>} />
         <Route path="posts" element={<React.Suspense fallback={routeLoading}><PostManagementPage /></React.Suspense>} />
-        <Route path="comments" element={<React.Suspense fallback={routeLoading}><CommentManagementPage /></React.Suspense>} />
         <Route path="categories" element={<React.Suspense fallback={routeLoading}><CategoryManagementPage /></React.Suspense>} />
         <Route path="*" element={<div className="admin-empty"><h1>Không tìm thấy trang quản trị</h1><a href="/admin">Về tổng quan quản trị</a></div>} />
       </Route>
