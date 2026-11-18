@@ -56,14 +56,13 @@ public class CommunitySupport {
     public Community getActiveCommunityForMembership(String name) {
         // Serialize membership changes, including claiming an empty community.
         // Callers must run inside a transaction.
-        Community community = communityRepository.findByNameForUpdate(nameNormalizer.normalize(name))
+        Community community = communityRepository.findByNameForUpdate(this.normalize(name))
                 .orElseThrow(() -> new CommunityException(CommunityErrorCode.COMMUNITY_NOT_FOUND));
         if (community.getStatus() != CommunityStatus.ACTIVE) {
             throw new CommunityException(CommunityErrorCode.FORBIDDEN, "This community is not active");
         }
         return community;
     }
-
     public boolean checkExistsCommunityByName(String name) {
         return communityRepository.existsByName(name);
     }
