@@ -5,12 +5,11 @@ import com.discuss.discuss.enums.CommunityStatus;
 import com.discuss.discuss.enums.UserStatus;
 import com.discuss.discuss.service.user.UserService;
 import com.discuss.discuss.service.community.CommunityService;
-import com.discuss.discuss.service.post.PostService;
+import com.discuss.discuss.service.post.PostQueryService;
 import com.discuss.discuss.service.comment.CommentService;
 import com.discuss.discuss.utils.annotation.auth.HasRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminService {
     private final UserService userService;
     private final CommunityService communityService;
-    private final PostService postService;
+    private final PostQueryService postQueryService;
     private final CommentService commentService;
 
     public Stats stats() {
@@ -27,7 +26,7 @@ public class AdminService {
                         userService.countByStatus(UserStatus.LOCKED)),
                 new StatusCounts(communityService.countAll(), communityService.countByStatus(CommunityStatus.ACTIVE),
                         communityService.countByStatus(CommunityStatus.BANED)),
-                new Total(postService.countAll()), new Total(commentService.countAll()));
+                new Total(postQueryService.countAll()), new Total(commentService.countAll()));
     }
 
 }

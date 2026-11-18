@@ -5,14 +5,20 @@ import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.entity.Post;
 import com.discuss.discuss.entity.PostContent;
 import com.discuss.discuss.entity.PostMedia;
+import com.discuss.discuss.entity.PostSave;
+import com.discuss.discuss.entity.PostVote;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.PostStatus;
 import com.discuss.discuss.enums.UserRole;
+import com.discuss.discuss.enums.PostType;
+import com.discuss.discuss.enums.VoteType;
 import com.discuss.discuss.exception.post.PostErrorCode;
 import com.discuss.discuss.exception.post.PostException;
 import com.discuss.discuss.mapper.post.PostMapper;
 import com.discuss.discuss.repository.PostRepository;
 import com.discuss.discuss.repository.PostSaveRepository;
+import com.discuss.discuss.repository.PostVoteRepository;
+import com.discuss.discuss.repository.PostContentRepository;
 import com.discuss.discuss.service.community.CommunityAuthorizationService;
 import com.discuss.discuss.service.community.CommunitySupport;
 import com.discuss.discuss.service.user.UserService;
@@ -36,8 +42,9 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostSaveRepository postSaveRepository;
-    private final PostContentService postContentService;
-    private final PostMediaService postMediaService;
+    private final PostVoteRepository postVoteRepository;
+    private final PostContentRepository postContentRepository;
+    private final PostAttachmentService postAttachmentService;
 
     private final UserService userService;
     private final CommunitySupport communitySupport;
@@ -46,27 +53,16 @@ public class PostService {
 
     private final PostMapper postMapper;
 
-    static boolean canRestoreDeletedPost(Post post, User user) {
-        return Objects.equals(post.getUser().getId(), user.getId())
-                && (post.getDeletedByUserId() == null
-                || Objects.equals(post.getDeletedByUserId(), user.getId()));
-    }
-
     // ==================== CREATE ====================
     @Transactional
-    public PostResponseDTO createPost(@Valid CreatePostRequestDTO request) {
-        return createPost(request, List.of());
-    }
-
-    @Transactional
     public PostResponseDTO createPost(@Valid CreatePostRequestDTO request, List<MultipartFile> files) {
-        postContentService.validateRequest(request);
+        validateRequest(request);
         User user = userService.getCurrentUser();
 
         Community community = communitySupport.getCommunityByNameAndStatusActive(request.getCommunityName());
         communityAuthorizationService.requireMembership(community, user);
 
-        postMediaService.validateMedia(request, files, Set.of());
+        postAttachmentService.validateMedia(request, files, Set.of());
 
         Post post = postRepository.saveAndFlush(Post.builder()
                 .user(user)
@@ -76,31 +72,19 @@ public class PostService {
                 .status(PostStatus.PUBLISHED)
                 .build());
 
-        postMediaService.storeNewImages(post, request, files);
-        PostContent postContent = postContentService.createContent(post, request);
+        postAttachmentService.storeNewImages(post, request, files);
+        PostContent postContent = PostContent.builder().post(post).build();
+        writeContent(postContent, request);
+        postContentRepository.save(postContent);
 
-        List<PostMedia> postAttachments =  postMediaService.saveAttachments(post, request);
+        List<PostMedia> postAttachments = postAttachmentService.saveAttachments(post, request);
         return postMapper.toResponse(post, postContent, postAttachments, 0, 0, null, false);
-    }
-
-    // ==================== READ ====================
-    @Transactional(readOnly = true)
-    public PostResponseDTO getPost(Long id) {
-        User currentUser = userService.getCurrentUser();
-        Post post = postSupport.findPublished(id);
-        postSupport.requireRead(post, currentUser);
-        return postSupport.toResponse(post, currentUser);
     }
 
     // ==================== UPDATE ====================
     @Transactional
-    public PostResponseDTO updatePost(Long id, @Valid CreatePostRequestDTO request) {
-        return updatePost(id, request, List.of());
-    }
-
-    @Transactional
     public PostResponseDTO updatePost(Long id, @Valid CreatePostRequestDTO request, List<MultipartFile> files) {
-        postContentService.validateRequest(request);
+        validateRequest(request);
         User user = userService.getCurrentUser();
 
         Post post = postSupport.findPublished(id);
@@ -112,22 +96,20 @@ public class PostService {
         }
         communityAuthorizationService.requireMembership(targetCommunity, user);
 
-        List<PostMedia> previousMedia = postMediaService.findAttachments(id);
+        List<PostMedia> previousMedia = postAttachmentService.findAttachments(id);
         Set<String> ownedKeys = new HashSet<>();
         previousMedia.forEach(item -> ownedKeys.add(item.getObjectKey()));
-        postMediaService.validateMedia(request, files, ownedKeys);
-        postMediaService.storeNewImages(post, request, files);
+        postAttachmentService.validateMedia(request, files, ownedKeys);
+        postAttachmentService.storeNewImages(post, request, files);
 
         PostContent postContent = postSupport.findContent(post);
         post.setType(request.getType());
         post.setUpdatedAt(LocalDateTime.now());
-        postContentService.writeContent(postContent, request);
+        writeContent(postContent, request);
 
-        List<PostMedia> postAttachments = postMediaService.replaceAttachments(post, request, previousMedia);
+        List<PostMedia> postAttachments = postAttachmentService.replaceAttachments(post, request, previousMedia);
 
-        return postMapper.toResponse(post, postContent, postAttachments,
-                postRepository.voteScore(id), postRepository.countComments(id),
-                postSupport.userVote(id, user), postSaveRepository.existsByPostIdAndUserId(id, user.getId()));
+        return postSupport.toResponse(post, postContent, postAttachments, user);
     }
 
     // ==================== DELETE ====================
@@ -141,9 +123,7 @@ public class PostService {
             communityAuthorizationService.requireModeratorOrOwner(post.getCommunity(), user);
         }
 
-        post.setStatus(PostStatus.DELETED);
-        post.setDeletedAt(LocalDateTime.now());
-        post.setDeletedByUserId(user.getId());
+        softDelete(post, user);
     }
 
     @Transactional
@@ -151,8 +131,7 @@ public class PostService {
         User user = userService.getCurrentUser();
         Post post = postRepository.lockById(id)
                 .filter(p -> p.getStatus() == PostStatus.DELETED)
-                .filter(p -> Objects.equals(p.getUser().getId(), user.getId()))
-                .filter(p -> canRestoreDeletedPost(p, user))
+                .filter(p -> postSupport.canRestore(p, user))
                 .orElseThrow(postSupport::notFound);
 
         postSupport.requireRead(post, user);
@@ -165,17 +144,66 @@ public class PostService {
     }
 
 
-    @Transactional(readOnly = true)
-    @HasRole("ADMIN")
-    public long countAll() {
-        return postRepository.count();
-    }
     @HasRole("ADMIN")
     @Transactional
     public void deleteForAdmin(Long id) {
         User actor = userService.getCurrentUser();
         Post post = postRepository.lockById(id).orElseThrow(postSupport::notFound);
         if (post.getStatus() == PostStatus.DELETED) return;
+        softDelete(post, actor);
+    }
+
+    /** Sets the current user's vote; null removes it. */
+    @Transactional
+    public PostResponseDTO vote(Long id, VoteType type) {
+        User user = userService.getCurrentUser();
+        Post post = postSupport.lockPublished(id);
+        postSupport.requireRead(post, user);
+        PostVote existingVote = postVoteRepository.findByPostIdAndUserId(id, user.getId()).orElse(null);
+
+        if (type == null) {
+            if (existingVote != null) postVoteRepository.delete(existingVote);
+        } else if (existingVote == null) {
+            postVoteRepository.save(PostVote.builder().post(post).user(user).voteType(type).build());
+        } else {
+            existingVote.setVoteType(type);
+        }
+        postVoteRepository.flush();
+        return postSupport.toResponse(post, user);
+    }
+
+    @Transactional
+    public PostResponseDTO savePost(Long id, boolean saved) {
+        User user = userService.getCurrentUser();
+        Post post = postSupport.lockPublished(id);
+        postSupport.requireRead(post, user);
+        var existing = postSaveRepository.findByPostIdAndUserId(id, user.getId());
+        if (saved && existing.isEmpty()) {
+            postSaveRepository.save(PostSave.builder().post(post).user(user).build());
+        } else if (!saved) {
+            existing.ifPresent(postSaveRepository::delete);
+        }
+        postSaveRepository.flush();
+        return postSupport.toResponse(post, user);
+    }
+
+    private void validateRequest(CreatePostRequestDTO request) {
+        if (request.getType() != PostType.TEXT) {
+            throw new PostException(PostErrorCode.UNSUPPORTED_POST_TYPE);
+        }
+        boolean hasNoContent = request.getContent() == null || request.getContent().isBlank();
+        boolean hasNoMedia = request.getMedia() == null || request.getMedia().isEmpty();
+        if (hasNoContent && hasNoMedia) {
+            throw new PostException(PostErrorCode.EMPTY_POST);
+        }
+    }
+
+    private void writeContent(PostContent content, CreatePostRequestDTO request) {
+        content.setTitle(request.getTitle().strip());
+        content.setContent(request.getContent() == null ? "" : request.getContent());
+    }
+
+    private void softDelete(Post post, User actor) {
         post.setStatus(PostStatus.DELETED);
         post.setDeletedAt(LocalDateTime.now());
         post.setDeletedByUserId(actor.getId());

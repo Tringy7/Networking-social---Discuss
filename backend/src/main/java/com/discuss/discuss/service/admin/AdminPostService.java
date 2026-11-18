@@ -10,15 +10,21 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-@Service @RequiredArgsConstructor @HasRole("ADMIN")
+
+@Service
+@RequiredArgsConstructor
+@HasRole("ADMIN")
 public class AdminPostService {
-    private final PostQueryService queryService;
+    private final PostQueryService postQueryService;
     private final PostService postService;
     private final ActivityLogService activityLogService;
-    public PageResponseDTO<PostResponseDTO> list(Pageable pageable, PostStatus status, String communityName, String search) {
-        return queryService.listForAdmin(pageable, status, communityName, search);
+
+    public PageResponseDTO<PostResponseDTO> getPosts(Pageable pageable, PostStatus status, String communityName, String search) {
+        return postQueryService.listForAdmin(pageable, status, communityName, search);
     }
-    public PostResponseDTO getDetail(Long id) { return queryService.getForAdmin(id); }
+
+    public PostResponseDTO getDetail(Long id) { return postQueryService.getForAdmin(id); }
+
     @Transactional
     public void delete(Long id) {
         postService.deleteForAdmin(id);
