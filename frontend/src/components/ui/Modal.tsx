@@ -11,6 +11,7 @@ interface ModalProps {
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl';
   closeDisabled?: boolean;
+  placement?: 'center' | 'right';
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -21,6 +22,7 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = 'md',
   closeDisabled = false,
+  placement = 'center',
 }) => {
   const modalId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -37,6 +39,9 @@ export const Modal: React.FC<ModalProps> = ({
     const focusFrame = window.requestAnimationFrame(() => dialogRef.current?.focus());
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // A native image viewer in the top layer owns keyboard interaction while open.
+      const nativeDialog = document.querySelector('dialog[open]');
+      if (nativeDialog && !dialogRef.current?.contains(nativeDialog)) return;
       if (e.key === 'Escape') {
         onCloseRef.current();
         return;
@@ -83,7 +88,7 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div className={`fixed inset-0 z-50 flex overflow-y-auto ${placement === 'right' ? 'items-stretch justify-end' : 'items-center justify-center p-4 sm:p-6'}`}>
           {/* Backdrop */}
           <motion.div
             initial={shouldReduceMotion ? false : { opacity: 0 }}
@@ -104,11 +109,11 @@ export const Modal: React.FC<ModalProps> = ({
             aria-label={title ? undefined : 'Hộp thoại'}
             aria-labelledby={title ? `${modalId}-title` : undefined}
             aria-describedby={description ? `${modalId}-description` : undefined}
-            initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: 6, transition: { duration: shouldReduceMotion ? 0 : 0.12 } }}
-            transition={shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 380, damping: 32 }}
-            className={`relative w-full ${maxWidths[maxWidth]} max-h-[min(90vh,48rem)] overflow-y-auto bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-[var(--radius-panel)] shadow-[var(--surface-shadow)] p-5 sm:p-6 text-left z-10`}
+            initial={shouldReduceMotion ? false : placement === 'right' ? { opacity: 0, x: 32 } : { opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0, ...(placement === 'right' ? { x: 32 } : { scale: 0.98, y: 6 }), transition: { duration: shouldReduceMotion ? 0 : 0.16 } }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
+            className={`relative w-full ${maxWidths[maxWidth]} ${placement === 'right' ? 'h-dvh' : 'max-h-[min(90vh,48rem)] rounded-[var(--radius-panel)]'} overflow-y-auto bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-primary)] shadow-[var(--surface-shadow)] p-5 sm:p-6 text-left z-10`}
           >
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>

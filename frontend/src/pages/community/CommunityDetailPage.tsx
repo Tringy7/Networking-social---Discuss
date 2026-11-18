@@ -134,6 +134,7 @@ export const CommunityDetailPage: React.FC = () => {
 
   const isManager = isAuthenticated && (isOwner || community.currentUserRole === 'MODERATOR');
   const canEditMedia = !isCommunityLoading && canEditCommunityMedia(community, user, isAuthenticated);
+  const isOwner = !isCommunityLoading && isCommunityOwner(community, user, isAuthenticated);
 
   const communityPosts = posts.filter((p) => p.communityName === community.name);
   const sortedPosts = [...communityPosts].sort((a, b) => {

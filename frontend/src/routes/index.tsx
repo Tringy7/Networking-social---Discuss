@@ -5,7 +5,7 @@ import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-do
 import AppLayout from '../layouts/AppLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import SettingsLayout from '../layouts/SettingsLayout';
-import AdminLayout from '../layouts/AdminLayout';
+import { adminRoutes } from './adminRoutes';
 import ProtectedRoute from '../components/common/StoreProtectedRoute';
 
 // Public & Feed Pages
@@ -18,6 +18,7 @@ const UserProfilePage = React.lazy(() => import('../pages/profile/UserProfilePag
 
 // Auth Pages
 const LoginPage = React.lazy(() => import('../pages/auth/LoginPage'));
+const AccountLockedPage = React.lazy(() => import('../pages/auth/AccountLockedPage'));
 const RegisterPage = React.lazy(() => import('../pages/auth/RegisterPage'));
 const VerifyEmailPage = React.lazy(() => import('../pages/auth/VerifyEmailPage'));
 const ForgotPasswordPage = React.lazy(() => import('../pages/auth/ForgotPasswordPage'));
@@ -43,12 +44,6 @@ const CreateCommunityPage = React.lazy(() => import('../pages/community/CreateCo
 const MyCommunitiesPage = React.lazy(() => import('../pages/community/MyCommunitiesPage'));
 const EditCommunityPage = React.lazy(() => import('../pages/community/EditCommunityPage'));
 const CommunityModerationPage = React.lazy(() => import('../pages/community/CommunityModerationPage'));
-
-// Admin Pages
-const AdminDashboardPage = React.lazy(() => import('../pages/admin/AdminDashboardPage'));
-const UserManagementPage = React.lazy(() => import('../pages/admin/UserManagementPage'));
-const CommunityManagementPage = React.lazy(() => import('../pages/admin/CommunityManagementPage'));
-const ReportManagementPage = React.lazy(() => import('../pages/admin/ReportManagementPage'));
 
 // Error Pages
 const AccessDeniedPage = React.lazy(() => import('../pages/error/AccessDeniedPage'));
@@ -123,6 +118,7 @@ export const AppRoutes: React.FC = () => {
       {/* 2. AUTHENTICATION PAGES (SPLIT-SCREEN, NO APP SIDEBAR) */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<React.Suspense fallback={routeLoading}><LoginPage /></React.Suspense>} />
+        <Route path="/account-locked" element={<React.Suspense fallback={routeLoading}><AccountLockedPage /></React.Suspense>} />
         <Route path="/register" element={<React.Suspense fallback={routeLoading}><RegisterPage /></React.Suspense>} />
         <Route path="/verify-email" element={<React.Suspense fallback={routeLoading}><VerifyEmailPage /></React.Suspense>} />
         <Route path="/forgot-password" element={<React.Suspense fallback={routeLoading}><ForgotPasswordPage /></React.Suspense>} />
@@ -130,13 +126,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/terms" element={<React.Suspense fallback={routeLoading}><TermsOfUsePage /></React.Suspense>} />
       </Route>
 
-      {/* 3. ADMIN PORTAL (ADMIN SIDEBAR & RESTRICTED ACCESS) */}
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<React.Suspense fallback={routeLoading}><AdminDashboardPage /></React.Suspense>} />
-        <Route path="users" element={<React.Suspense fallback={routeLoading}><UserManagementPage /></React.Suspense>} />
-        <Route path="communities" element={<React.Suspense fallback={routeLoading}><CommunityManagementPage /></React.Suspense>} />
-        <Route path="reports" element={<React.Suspense fallback={routeLoading}><ReportManagementPage /></React.Suspense>} />
-      </Route>
+      {adminRoutes}
 
       {/* 4. WILDCARD FALLBACK */}
       <Route path="*" element={<Navigate to="/404" replace />} />

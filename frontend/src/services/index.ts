@@ -65,9 +65,8 @@ const API_GENDERS: Record<string, string> = {
 export const POSTS_AVAILABLE = true;
 export const POST_INTERACTIONS_AVAILABLE = true;
 export const COMMENTS_AVAILABLE = true;
-export const REPORTS_AVAILABLE = false;
 export const REPORT_CREATION_AVAILABLE = true;
-export const ADMIN_AVAILABLE = false;
+export const ADMIN_AVAILABLE = true;
 export const USER_SEARCH_AVAILABLE = true;
 
 function requireFeature(available: boolean, name: string): void {
@@ -162,7 +161,7 @@ export const authService = {
 };
 
 export const userService = {
-  getMe: () => apiClient.get<UserResponse>('/user/me'),
+  getMe: () => apiClient.get<UserResponse>('/users/me'),
   search: async (query: string) => {
     requireFeature(USER_SEARCH_AVAILABLE, 'Tìm kiếm thành viên');
     const path = `/users/search?q=${encodeURIComponent(query.trim())}&size=100`;
@@ -173,7 +172,7 @@ export const userService = {
   },
   getPublicProfile: async (username: string): Promise<User> => {
     const response = await apiClient.get<PublicUserProfileResponse>(
-      `/user/${encodeURIComponent(username)}`
+      `/users/by-username/${encodeURIComponent(username)}`
     );
     const profile = response.profile;
     return {
@@ -200,7 +199,7 @@ export const userService = {
   },
 
   updateProfile: (data: Partial<User>) =>
-    apiClient.patch<UserResponse>('/user/me/profile', {
+    apiClient.patch<UserResponse>('/users/me/profile', {
       displayName: data.displayName,
       bio: data.bio,
       location: data.location,
@@ -214,13 +213,13 @@ export const userService = {
   uploadAvatar: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return apiClient.put<UserResponse>('/user/me/avatar', formData);
+    return apiClient.put<UserResponse>('/users/me/avatar', formData);
   },
 
   uploadBanner: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return apiClient.put<UserResponse>('/user/me/banner', formData);
+    return apiClient.put<UserResponse>('/users/me/banner', formData);
   },
 };
 
@@ -364,18 +363,18 @@ export const categoryService = {
 
 export const communityService = {
   list: async (): Promise<Community[]> =>
-    (await getAllCommunityPages('/explore')).map(mapCommunity),
+    (await getAllCommunityPages('/communities')).map(mapCommunity),
   listByCategory: async (slug: string): Promise<Community[]> =>
-    (await getAllCommunityPages(`/explore/${encodeURIComponent(slug)}`)).map(mapCommunity),
+    (await getAllCommunityPages(`/categories/${encodeURIComponent(slug)}/communities`)).map(mapCommunity),
   search: async (query: string): Promise<Community[]> => {
     const escapedQuery = query.trim().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     const filter = `name ~~ '%${escapedQuery}%' or info.description ~~ '%${escapedQuery}%'`;
-    return (await getAllCommunityPages(`/explore/search?filter=${encodeURIComponent(filter)}`)).map(mapCommunity);
+    return (await getAllCommunityPages(`/communities?filter=${encodeURIComponent(filter)}`)).map(mapCommunity);
   },
   mine: async (): Promise<Community[]> => {
     const [owned, joined] = await Promise.all([
-      getCommunitiesWithRole('/user/me/owned', 'OWNER'),
-      getCommunitiesWithRole('/user/me/joined', 'MEMBER'),
+      getCommunitiesWithRole('/users/me/communities/owned', 'OWNER'),
+      getCommunitiesWithRole('/users/me/communities/joined', 'MEMBER'),
     ]);
     return [...owned, ...joined];
   },
@@ -545,32 +544,19 @@ export const reportService = {
       resolutionNote: response.resolutionNote ?? undefined, createdAt: response.createdAt,
     };
   },
-  list: async (): Promise<Report[]> => {
-    requireFeature(REPORTS_AVAILABLE, 'Báo cáo');
-    return apiClient.get<Report[]>('/reports');
-  },
-  listForCommunity: async (communityName: string): Promise<Report[]> => {
-    requireFeature(REPORTS_AVAILABLE, 'Báo cáo');
-    return apiClient.get<Report[]>(`/reports/community/${encodeURIComponent(communityName)}`);
-  },
-  resolve: async (reportId: string, status: 'RESOLVED' | 'REJECTED', resolutionNote?: string) => {
-    requireFeature(REPORTS_AVAILABLE, 'Báo cáo');
-    return apiClient.patch<Report>(`/reports/${reportId}`, { status, resolutionNote });
-  },
 };
 
 export interface AdminStats {
-  totalUsers: number;
-  totalPosts: number;
-  activeCommunities: number;
-  pendingReports: number;
-  userGrowth: { month: string; users: number }[];
+  users: { total: number; active: number; suspended: number };
+  communities: { total: number; active: number; suspended: number };
+  posts: { total: number };
+  comments: { total: number };
 }
 
-interface AdminUserApiResponse {
-  id: string;
+export interface AdminUserApiResponse {
+  id: string | number;
   username: string;
-  displayName: string;
+  displayName: string | null;
   email: string;
   avatarUrl?: string | null;
   role: User['role'];
@@ -578,56 +564,39 @@ interface AdminUserApiResponse {
   createdAt: string;
 }
 
+export interface AdminUserPage {
+  content: AdminUserApiResponse[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
+
 export const adminService = {
   getStats: async (): Promise<AdminStats> => {
     requireFeature(ADMIN_AVAILABLE, 'Quản trị');
-    return apiClient.get<AdminStats>('/admin/stats');
+    const response = await apiClient.get<{ data: AdminStats }>('/admin/stats');
+    return response.data;
   },
-  listUsers: async (): Promise<User[]> => {
+  listUsers: async (options: { page?: number; size?: number; status?: string; role?: string; search?: string; sort?: string } = {}): Promise<AdminUserPage> => {
     requireFeature(ADMIN_AVAILABLE, 'Quản trị');
-    const users = await apiClient.get<AdminUserApiResponse[]>('/admin/users');
-    return users.map((user) => ({
-      id: user.id,
-      username: user.username,
-      displayName: user.displayName,
-      email: user.email,
-      avatarUrl: user.avatarUrl || '',
-      bannerUrl: '',
-      bio: '',
-      privacy: { showDateOfBirth: false, showLocation: false, showPostsOnProfile: true },
-      role: user.role,
-      status: user.status === 'LOCKED' ? 'SUSPENDED' : user.status as User['status'],
-      createdAt: user.createdAt,
-      karma: 0,
-    }));
+    const params = new URLSearchParams({
+      page: String(options.page ?? 0), size: String(options.size ?? 10),
+      sort: options.sort ?? 'createdAt,desc',
+    });
+    if (options.status) params.set('status', options.status);
+    if (options.role) params.set('role', options.role);
+    const search = options.search?.trim();
+    if (search) params.set('search', search);
+    return apiClient.get<AdminUserPage>(`/admin/users${search ? '/search' : ''}?${params}`);
   },
-  updateUserStatus: async (id: string, status: string): Promise<User> => {
-    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
-    const updated = await apiClient.patch<AdminUserApiResponse>(`/admin/users/${id}/status`, { status });
-    return {
-      id: updated.id,
-      username: updated.username,
-      displayName: updated.displayName,
-      email: updated.email,
-      avatarUrl: updated.avatarUrl || '',
-      bannerUrl: '',
-      bio: '',
-      privacy: { showDateOfBirth: false, showLocation: false, showPostsOnProfile: true },
-      role: updated.role,
-      status: updated.status === 'LOCKED' ? 'SUSPENDED' : updated.status as User['status'],
-      createdAt: updated.createdAt,
-      karma: 0,
-    };
-  },
-  listCommunities: async (): Promise<Community[]> => {
-    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
-    const communities = await apiClient.get<CommunityApiResponse[]>('/admin/communities');
-    return communities.map(mapCommunity);
-  },
-  setCommunityStatus: async (name: string, status: Community['status']) => {
-    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
-    return apiClient.patch<void>(`/communities/${encodeURIComponent(name)}/status`, { status });
-  },
+  lockUser: (id: string | number): Promise<{ message: string }> =>
+    apiClient.patch<{ message: string }>(`/admin/users/${id}/lock`),
+  unlockUser: (id: string | number): Promise<{ message: string }> =>
+    apiClient.patch<{ message: string }>(`/admin/users/${id}/unlock`),
 };
 
 export const notificationService = {

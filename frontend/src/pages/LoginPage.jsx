@@ -108,6 +108,9 @@ export default function LoginPage({ onOpenForgotPassword, onOpenVerifyEmail }) {
           <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
             {errorMessage && (
               <div className="p-3.5 text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded-xl space-y-2">
+                {errorInfo?.code === 'ACCOUNT_LOCKED' && (
+                  <p className="font-bold">Tài khoản đang bị khóa</p>
+                )}
                 <p>{errorMessage}</p>
 
                 {errorInfo?.code === 'AUTH_021' && (

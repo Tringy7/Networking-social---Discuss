@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import Logo from '../components/common/Logo';
@@ -10,6 +10,7 @@ import { useSettingsStore } from '../store/useSettingsStore';
 import '../auth.css';
 
 export default function AuthLayout() {
+  const admin = useLocation().pathname.startsWith('/admin');
   const reducedMotion = useReducedMotion();
   const intensity = useSettingsStore((state) => state.settings.animationIntensity);
   const quiet = reducedMotion || intensity !== 'full';
@@ -28,17 +29,17 @@ export default function AuthLayout() {
       <div className="auth-body">
         <motion.aside
           className="auth-editorial"
-          aria-label="Kết nối cùng cộng đồng DISCUSS"
+          aria-label={admin ? 'Khu vực quản trị DISCUSS' : 'Kết nối cùng cộng đồng DISCUSS'}
           initial={quiet ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: 'easeOut' }}
         >
-          <p className="auth-quote">Cùng sở thích.<br /><span>Cùng kết nối.</span></p>
-          <p className="auth-intro">Một góc dành cho điều bạn yêu thích.<br className="auth-desktop-break" /> Chia sẻ góc nhìn, tìm thấy những người đồng điệu.</p>
+          <p className="auth-quote">{admin ? <>Discuss.<br /><span>Quản trị hệ thống.</span></> : <>Cùng sở thích.<br /><span>Cùng kết nối.</span></>}</p>
+          <p className="auth-intro">{admin ? 'Quản lý người dùng, cộng đồng và nội dung tại một không gian riêng.' : <>Một góc dành cho điều bạn yêu thích.<br className="auth-desktop-break" /> Chia sẻ góc nhìn, tìm thấy những người đồng điệu.</>}</p>
           <CommunityIllustration />
-          <Link to="/explore" className="auth-explore">
+          {!admin && <Link to="/explore" className="auth-explore">
             Khám phá cộng đồng <ArrowUpRight size={17} aria-hidden="true" />
-          </Link>
+          </Link>}
         </motion.aside>
 
         <main className="auth-main" id="main-content" tabIndex={-1}>

@@ -4,7 +4,6 @@ import com.discuss.discuss.dto.common.ApiResponse;
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.post.*;
 import com.discuss.discuss.service.post.PostService;
-import com.discuss.discuss.service.post.PostInteractionService;
 import com.discuss.discuss.service.post.PostQueryService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -22,12 +21,11 @@ import org.springframework.web.bind.annotation.*;
 public class PostController {
 
     private final PostService postService;
-    private final PostInteractionService postInteractionService;
     private final PostQueryService postQueryService;
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponseDTO> createPost(@Valid @RequestBody CreatePostRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(postService.createPost(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(postService.createPost(request, List.of()));
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -39,22 +37,22 @@ public class PostController {
 
     @PutMapping("/{id}/vote")
     public ResponseEntity<PostResponseDTO> vote(@PathVariable Long id, @Valid @RequestBody VoteRequestDTO request) {
-        return ResponseEntity.ok(postInteractionService.vote(id, request.type()));
+        return ResponseEntity.ok(postService.vote(id, request.type()));
     }
 
     @DeleteMapping("/{id}/vote")
     public ResponseEntity<PostResponseDTO> removeVote(@PathVariable Long id) {
-        return ResponseEntity.ok(postInteractionService.vote(id, null));
+        return ResponseEntity.ok(postService.vote(id, null));
     }
 
     @PutMapping("/{id}/save")
     public ResponseEntity<PostResponseDTO> save(@PathVariable Long id) {
-        return ResponseEntity.ok(postInteractionService.savePost(id, true));
+        return ResponseEntity.ok(postService.savePost(id, true));
     }
 
     @DeleteMapping("/{id}/save")
     public ResponseEntity<PostResponseDTO> unsave(@PathVariable Long id) {
-        return ResponseEntity.ok(postInteractionService.savePost(id, false));
+        return ResponseEntity.ok(postService.savePost(id, false));
     }
 
     @GetMapping("/saved")
@@ -78,7 +76,7 @@ public class PostController {
 
     @GetMapping("/{id}")
     public ResponseEntity<PostResponseDTO> getPost(@PathVariable Long id) {
-        return ResponseEntity.ok(postService.getPost(id));
+        return ResponseEntity.ok(postQueryService.getPost(id));
     }
 
     /**
@@ -87,7 +85,7 @@ public class PostController {
      */
     @PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PostResponseDTO> updatePost(@PathVariable Long id, @Valid @RequestBody CreatePostRequestDTO request) {
-        return ResponseEntity.ok(postService.updatePost(id, request));
+        return ResponseEntity.ok(postService.updatePost(id, request, List.of()));
     }
 
     @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

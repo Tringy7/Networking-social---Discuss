@@ -4,6 +4,7 @@ import com.discuss.discuss.dto.post.PostResponseDTO;
 import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.entity.Post;
 import com.discuss.discuss.entity.PostContent;
+import com.discuss.discuss.entity.PostMedia;
 import com.discuss.discuss.entity.PostVote;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.*;
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -35,13 +37,18 @@ public class PostSupport {
 
     public PostResponseDTO toResponse(Post post, User currentUser) {
         Long id = post.getId();
-        return postMapper.toResponse(post, findContent(post),
-                postMediaRepository.findByPostIdOrderByDisplayOrderAsc(id),
+        return toResponse(post, findContent(post),
+                postMediaRepository.findByPostIdOrderByDisplayOrderAsc(id), currentUser);
+    }
+
+    public PostResponseDTO toResponse(Post post, PostContent content, List<PostMedia> media, User currentUser) {
+        Long id = post.getId();
+        return postMapper.toResponse(post, content, media,
                 postRepository.voteScore(id), postRepository.countComments(id),
                 userVote(id, currentUser), postSaveRepository.existsByPostIdAndUserId(id, currentUser.getId()));
     }
 
-    public VoteType userVote(Long id, User user) {
+    private VoteType userVote(Long id, User user) {
         return postVoteRepository.findByPostIdAndUserId(id, user.getId()).map(PostVote::getVoteType).orElse(null);
     }
 
@@ -69,7 +76,19 @@ public class PostSupport {
     public Post findPublished(Long id) {
         return postRepository.findById(id)
                 .filter(p -> p.getStatus() == PostStatus.PUBLISHED)
-                .orElseThrow(() -> new PostException(PostErrorCode.POST_NOT_FOUND));
+                .orElseThrow(this::notFound);
+    }
+
+    public Post lockPublished(Long id) {
+        return postRepository.lockById(id)
+                .filter(post -> post.getStatus() == PostStatus.PUBLISHED)
+                .orElseThrow(this::notFound);
+    }
+
+    public boolean canRestore(Post post, User user) {
+        return Objects.equals(post.getUser().getId(), user.getId())
+                && (post.getDeletedByUserId() == null
+                || Objects.equals(post.getDeletedByUserId(), user.getId()));
     }
 
     public void requireAuthor(Post post, User user) {

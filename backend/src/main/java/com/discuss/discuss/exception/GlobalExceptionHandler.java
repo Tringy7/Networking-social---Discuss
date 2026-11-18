@@ -26,6 +26,13 @@ import java.util.Map;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+    @ExceptionHandler({org.springframework.web.servlet.NoHandlerFoundException.class,
+            org.springframework.web.servlet.resource.NoResourceFoundException.class})
+    public ResponseEntity<Map<String, Object>> handleEndpointNotFound(Exception ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("status", 404, "message", "Endpoint not found"));
+    }
+
     @ExceptionHandler(CommentException.class)
     public ResponseEntity<Map<String, Object>> handleCommentException(
             CommentException ex) {
@@ -84,6 +91,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(ex.getError().getStatus())
                 .body(Map.of(
+                        "code", ex.getError().name(),
                         "status", ex.getError().getStatus().value(),
                         "message", ex.getMessage()
                 ));

@@ -1,0 +1,67 @@
+package com.discuss.discuss.controller.admin;
+
+import com.discuss.discuss.dto.admin.AdminResponse;
+import com.discuss.discuss.dto.admin.AdminUserSearchRequestDTO;
+import com.discuss.discuss.dto.common.ApiResponse;
+import com.discuss.discuss.dto.common.PageResponseDTO;
+import com.discuss.discuss.dto.user.PublicUserProfileResponseDTO;
+import com.discuss.discuss.enums.UserRole;
+import com.discuss.discuss.service.admin.AdminUserService;
+import com.discuss.discuss.service.user.PublicUserProfileService;
+import com.discuss.discuss.utils.annotation.auth.HasRole;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/admin/users")
+@RequiredArgsConstructor
+@Validated
+@HasRole("ADMIN")
+public class ManageUserController {
+    private final AdminUserService adminUserService;
+    private final PublicUserProfileService publicUserProfileService;
+
+    @GetMapping
+    public ResponseEntity<PageResponseDTO<AdminResponse.UserItem>> getUsers(
+            @RequestParam(required = false) @Pattern(regexp = "ACTIVE|SUSPENDED") String status,
+            @RequestParam(required = false) UserRole role,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(adminUserService.getUsers(pageable, status, role));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<PageResponseDTO<AdminResponse.UserItem>> searchUsers(
+            @Valid @ModelAttribute AdminUserSearchRequestDTO request,
+            @RequestParam(required = false) @Pattern(regexp = "ACTIVE|SUSPENDED") String status,
+            @RequestParam(required = false) UserRole role,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(adminUserService.searchUsers(pageable, request.getSearch(), status, role));
+    }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<PublicUserProfileResponseDTO> getUserDetail(@PathVariable @Positive Long userId) {
+        return ResponseEntity.ok(publicUserProfileService.getById(userId));
+    }
+
+    @PatchMapping("/{userId}/lock")
+    public ResponseEntity<ApiResponse> lockUser(@PathVariable @Positive Long userId) {
+        adminUserService.lockUser(userId);
+        return ResponseEntity.ok(
+                new ApiResponse("User account id " + userId + " locked successfully"));
+    }
+
+    @PatchMapping("/{userId}/unlock")
+    public ResponseEntity<ApiResponse> unlockUser(@PathVariable @Positive Long userId) {
+        adminUserService.unlockUser(userId);
+        return ResponseEntity.ok(
+                new ApiResponse("User account id " + userId + " unlocked successfully"));
+    }
+}

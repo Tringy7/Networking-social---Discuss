@@ -1,215 +1,46 @@
-import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useReportStore } from '../../store/useReportStore';
-import { useToastStore } from '../../store/useToastStore';
-import { AdminStats, adminService } from '../../services';
-import Button from '../../components/ui/Button';
-import {
-  Users,
-  FolderKanban,
-  FileText,
-  ShieldAlert,
-  TrendingUp,
-  Activity,
-  ArrowUpRight,
-  ShieldCheck,
-} from 'lucide-react';
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from 'recharts';
+import { ArrowRight, Users, FolderKanban, FileText, MessageSquare, ShieldAlert, CheckCheck } from 'lucide-react';
+import { useAdminData } from '../../components/admin/AdminDataContext';
+import { AdminNotice, AdminPageHeader, adminNumber } from '../../components/admin/AdminUI';
 
-export const AdminDashboardPage: React.FC = () => {
-  const { reports, hydrate: hydrateReports } = useReportStore();
-  const addToast = useToastStore((state) => state.addToast);
-  const [stats, setStats] = useState<AdminStats>({
-    totalUsers: 0,
-    totalPosts: 0,
-    activeCommunities: 0,
-    pendingReports: 0,
-    userGrowth: [],
-  });
-  const [isStatsLoading, setIsStatsLoading] = useState(true);
-  const [statsLoadFailed, setStatsLoadFailed] = useState(false);
-  const [statsRetry, setStatsRetry] = useState(0);
-
-  useEffect(() => {
-    let active = true;
-    adminService.getStats()
-      .then((nextStats) => { if (active) setStats(nextStats); })
-      .catch((error: unknown) => {
-        if (!active) return;
-        setStatsLoadFailed(true);
-        addToast(error instanceof Error ? error.message : 'Không thể tải thống kê quản trị.', 'error');
-      })
-      .finally(() => { if (active) setIsStatsLoading(false); });
-    hydrateReports().catch((error: unknown) => {
-      addToast(error instanceof Error ? error.message : 'Không thể tải báo cáo.', 'error');
-    });
-    return () => { active = false; };
-  }, [addToast, hydrateReports, statsRetry]);
-
-  const pendingReportsCount = stats.pendingReports;
-
-  const statCards = [
-    {
-      label: 'Tổng người dùng',
-      value: isStatsLoading || statsLoadFailed ? '—' : stats.totalUsers.toLocaleString('vi-VN'),
-      change: 'Tổng số tài khoản',
-      icon: <Users className="w-5 h-5 text-[var(--color-orange)]" />,
-    },
-    {
-      label: 'Cộng đồng hoạt động',
-      value: isStatsLoading || statsLoadFailed ? '—' : stats.activeCommunities.toString(),
-      change: 'Đang hoạt động',
-      icon: <FolderKanban className="w-5 h-5 text-[var(--color-info)]" />,
-    },
-    {
-      label: 'Tổng bài viết & thảo luận',
-      value: isStatsLoading || statsLoadFailed ? '—' : stats.totalPosts.toLocaleString('vi-VN'),
-      change: 'Đang hiển thị',
-      icon: <FileText className="w-5 h-5 text-[var(--color-success)]" />,
-    },
-    {
-      label: 'Báo cáo vi phạm chờ xử lý',
-      value: isStatsLoading || statsLoadFailed ? '—' : pendingReportsCount.toString(),
-      change: pendingReportsCount > 0 ? 'Cần duyệt sớm' : 'Đã giải quyết hết',
-      icon: <ShieldAlert className="w-5 h-5 text-[var(--color-danger)]" />,
-    },
+export default function AdminDashboardPage() {
+  const { stats, reports, reload } = useAdminData();
+  const data = stats.data;
+  const metric = (value?: number) => stats.loading || stats.error ? '—' : adminNumber(value);
+  const reportCount = (value?: number) => reports.loading || reports.error ? '—' : adminNumber(value);
+  const metrics = [
+    { label: 'Tổng người dùng', value: data?.users.total, icon: Users },
+    { label: 'Tổng cộng đồng', value: data?.communities.total, icon: FolderKanban },
+    { label: 'Tổng bài viết', value: data?.posts.total, icon: FileText },
+    { label: 'Tổng bình luận', value: data?.comments.total, icon: MessageSquare },
   ];
-
-  return (
-    <div className="space-y-6 text-left pb-16">
-      {/* Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-normal tracking-tight text-[var(--text-primary)] flex items-center gap-2.5">
-
-            <span>Tổng quan hệ thống</span>
-          </h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Giám sát số liệu tăng trưởng, kiểm duyệt vi phạm và quản lý toàn bộ hệ thống DISCUSS
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Link to="/admin/reports">
-            <Button variant="danger" size="sm" leftIcon={<ShieldAlert className="w-4 h-4" />}>
-              Xử lý báo cáo ({pendingReportsCount})
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      {isStatsLoading && <p role="status" className="text-sm text-[var(--text-secondary)]">Đang tải thống kê quản trị…</p>}
-      {statsLoadFailed && (
-        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
-          <span className="text-sm text-[var(--text-secondary)]">Không thể tải thống kê quản trị.</span>
-          <Button variant="secondary" size="sm" onClick={() => { setIsStatsLoading(true); setStatsLoadFailed(false); setStatsRetry((count) => count + 1); }}>Thử lại</Button>
-        </div>
-      )}
-
-      {/* 4 Stat Overview Cards */}
-      <div className="admin-stat-strip">
-        {statCards.map((card, idx) => (
-          <div
-            key={idx}
-            className="admin-stat"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[var(--text-secondary)]">{card.label}</span>
-
-            </div>
-            <div>
-              <div className="text-2xl font-normal tracking-tight text-[var(--text-primary)] tabular-nums">
-                {card.value}
-              </div>
-              <div className="text-xs text-[var(--text-secondary)] flex items-center gap-1 mt-1 font-medium">
-                <span>{card.change}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Chart & Activity Row */}
-      <div className="admin-insights grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* User Growth Chart (2 Cols) */}
-        <div className="lg:col-span-2 bg-[var(--bg-main)] p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-[var(--color-orange-ink)]" />
-                <span>Tăng trưởng người dùng (6 tháng qua)</span>
-              </h3>
-              <p className="text-sm text-[var(--text-secondary)]">Số tài khoản đăng ký mới theo tháng</p>
-            </div>
-          </div>
-
-          <div className={`${stats.userGrowth.length ? 'h-56' : 'h-24'} w-full pt-2`}>
-            {isStatsLoading ? (
-              <div role="status" className="flex h-full items-center justify-center text-sm text-[var(--text-secondary)]">Đang tải dữ liệu tăng trưởng…</div>
-            ) : statsLoadFailed ? null : stats.userGrowth.length === 0 ? (
-              <div role="status" className="flex h-full items-center justify-center text-sm text-[var(--text-secondary)]">Chưa có dữ liệu tăng trưởng.</div>
-            ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.userGrowth} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-                <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={11} tickLine={false} />
-                <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--bg-surface)',
-                    borderColor: 'var(--border-color)',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    color: 'var(--text-primary)',
-                  }}
-                />
-                <Area
-                  type="linear"
-                  dataKey="users"
-                  name="Người dùng"
-                  stroke="var(--color-orange)"
-                  strokeWidth={2.5}
-                  fillOpacity={1}
-                  fill="var(--color-orange-soft)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-
-        {/* Recent Activity Log (1 Col) */}
-        <div className="bg-[var(--bg-main)] p-5 space-y-4 text-left">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <Activity className="w-4 h-4 text-[var(--color-info)]" />
-            <span>Nhật ký hoạt động hệ thống</span>
-          </h3>
-
-          <div className="space-y-3">
-            {reports.slice(0, 4).map((report) => (
-              <div key={report.id} className="rounded-lg bg-[var(--bg-main)] p-3 text-sm space-y-1">
-                <div className="text-xs text-[var(--text-muted)]">
-                  {new Date(report.createdAt).toLocaleString('vi-VN')}
-                </div>
-                <div className="text-[var(--text-secondary)] leading-snug">
-                  Báo cáo {report.contentType.toLowerCase()} bởi @{report.reporterUsername} · {report.status}
-                </div>
-              </div>
-            ))}
-            {reports.length === 0 && <p className="text-sm text-[var(--text-secondary)]">Chưa có hoạt động báo cáo.</p>}
-          </div>
-        </div>
-      </div>
+  const moderation = [
+    { title: 'Báo cáo chờ xử lý', value: reportCount(reports.data?.pending), to: '/admin/reports?status=PENDING', icon: ShieldAlert, pending: !!reports.data?.pending },
+    { title: 'Báo cáo đã giải quyết', value: reportCount(reports.data?.resolved), to: '/admin/reports?status=RESOLVED', icon: CheckCheck },
+    { title: 'Tài khoản bị khóa', value: metric(data?.users.suspended), to: '/admin/users?status=SUSPENDED', icon: Users },
+    { title: 'Cộng đồng bị cấm', value: metric(data?.communities.suspended), to: '/admin/communities?status=BANED', icon: FolderKanban },
+  ];
+  return <div className="admin-page">
+    <AdminPageHeader title="Tổng quan hệ thống" description="Nắm bắt hoạt động và những nội dung cần kiểm duyệt trên DISCUSS." loading={stats.loading || reports.loading} onRefresh={reload} />
+    {stats.error && <div className="admin-notice" role="alert"><span>Chưa tải được thống kê. {stats.error}</span><button onClick={stats.reload}>Thử lại</button></div>}
+    <section className="admin-metrics" aria-label="Thống kê hệ thống" aria-busy={stats.loading}>{metrics.map(({ label, value, icon: Icon }) => <div className="admin-metric" key={label}><span className="admin-metric-label">{label}<Icon size={15} strokeWidth={1.7} /></span><strong>{metric(value)}</strong><small>Tổng số trên hệ thống</small></div>)}</section>
+    <section className="admin-section"><div className="admin-section-heading"><h2>Kiểm duyệt</h2><Link to="/admin/reports">Mở trung tâm báo cáo <ArrowRight size={14} /></Link></div>
+      {reports.error && <div className="admin-notice" role="alert"><span>Chưa tải được số báo cáo. {reports.error}</span><button onClick={reports.reload}>Thử lại</button></div>}
+      <div className="admin-moderation-strip">{moderation.map(({ title, value, to, icon: Icon, pending }) => <Link key={title} to={to} className={pending ? 'needs-attention' : ''}><span><Icon size={16} />{title}</span><strong>{value}<ArrowRight size={15} /></strong></Link>)}</div>
+    </section>
+    <div className="admin-overview-grid">
+      <section className="admin-panel"><div className="admin-panel-heading"><h2>Trạng thái người dùng</h2><Link to="/admin/users">Xem tất cả <ArrowRight size={14} /></Link></div><dl className="admin-breakdown">
+        <div className="admin-breakdown-row"><dt><i className="admin-state-dot active" />Đang hoạt động</dt><dd>{metric(data?.users.active)}</dd></div>
+        <div className="admin-breakdown-row"><dt><i className="admin-state-dot suspended" />Đã khóa</dt><dd>{metric(data?.users.suspended)}</dd></div>
+        <div className="admin-breakdown-row"><dt><i className="admin-state-dot" />Chờ xác thực / trạng thái khác</dt><dd>{metric(data ? Math.max(0, data.users.total - data.users.active - data.users.suspended) : undefined)}</dd></div>
+      </dl></section>
+      <section className="admin-panel"><div className="admin-panel-heading"><h2>Trạng thái cộng đồng</h2><Link to="/admin/communities">Xem danh sách <ArrowRight size={14} /></Link></div><dl className="admin-breakdown">
+        <div className="admin-breakdown-row"><dt><i className="admin-state-dot active" />Đang hoạt động</dt><dd>{metric(data?.communities.active)}</dd></div>
+        <div className="admin-breakdown-row"><dt><i className="admin-state-dot suspended" />Đã cấm</dt><dd>{metric(data?.communities.suspended)}</dd></div>
+        <div className="admin-breakdown-row"><dt><i className="admin-state-dot" />Trạng thái khác</dt><dd>{metric(data ? Math.max(0, data.communities.total - data.communities.active - data.communities.suspended) : undefined)}</dd></div>
+      </dl></section>
     </div>
-  );
-};
-
-export default AdminDashboardPage;
+    <section className="admin-section"><div className="admin-section-heading"><h2>Truy cập nhanh</h2></div><div className="admin-quick-links">{[['/admin/users', 'Quản lý người dùng'], ['/admin/reports?status=PENDING', 'Xử lý báo cáo'], ['/admin/communities', 'Quản lý cộng đồng'], ['/admin/posts', 'Quản lý bài viết']].map(([to, label]) => <Link to={to} key={to}>{label}<ArrowRight size={15} /></Link>)}</div></section>
+    <section className="admin-activity"><h2>Hoạt động kiểm duyệt gần đây</h2><AdminNotice>Nhật ký kiểm duyệt chưa khả dụng. Các sự kiện khóa tài khoản, cấm cộng đồng và xử lý báo cáo sẽ xuất hiện khi tính năng được hỗ trợ.</AdminNotice></section>
+  </div>;
+}

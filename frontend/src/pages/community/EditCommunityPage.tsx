@@ -4,6 +4,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { isCommunityOwner } from '../../utils/communityMedia';
 import { ArrowLeft, ArrowUpRight, BookOpen, Camera, Check, Globe, Image as ImageIcon, Lock, Settings2, Users } from 'lucide-react';
 import { useCommunityStore } from '../../store/useCommunityStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import { categoryService } from '../../services';
 import type { Community } from '../../types';
@@ -14,6 +15,8 @@ import ImageCropEditor from '../../components/profile/ImageCropEditor';
 import type { ProfileImageKind } from '../../components/profile/ImageCropEditor';
 import CommunityRulesEditor from '../../components/community/CommunityRulesEditor';
 import CommunityMembersPanel from '../../components/community/CommunityMembersPanel';
+import CommunityReportsPanel from '../../components/community/CommunityReportsPanel';
+import { isCommunityOwner } from '../../utils/communityMedia';
 import '../../components/community/communitySettings.css';
 
 const tabs = [
@@ -21,6 +24,7 @@ const tabs = [
   { id: 'appearance', label: 'Ảnh cộng đồng', icon: ImageIcon, description: 'Thay ảnh đại diện và ảnh bìa để mọi người nhận ra cộng đồng.' },
   { id: 'rules', label: 'Nội quy', icon: BookOpen, description: 'Đặt những nguyên tắc chung cho các cuộc thảo luận.' },
   { id: 'members', label: 'Thành viên', icon: Users, description: 'Quản lý thành viên, kiểm duyệt viên và quyền sở hữu cộng đồng.' },
+  { id: 'reports', label: 'Báo cáo', icon: ShieldAlert, description: 'Xem và xử lý báo cáo bài viết, bình luận trong cộng đồng.' },
   { id: 'privacy', label: 'Quyền riêng tư', icon: Lock, description: 'Chọn cách mọi người tìm thấy và tham gia cộng đồng.' },
 ] as const;
 type SettingsTab = typeof tabs[number]['id'];
@@ -40,7 +44,10 @@ function useImagePreview(file?: File) {
 function CommunitySettings({ community }: { community: Community }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = searchParams.get('tab');
-  const activeTab = tabs.find((tab) => tab.id === requestedTab) || tabs[0];
+  const { user, isAuthenticated } = useAuthStore();
+  const canReview = isCommunityOwner(community, user, isAuthenticated);
+  const visibleTabs = tabs.filter(tab => tab.id !== 'reports' || canReview);
+  const activeTab = visibleTabs.find((tab) => tab.id === requestedTab) || tabs[0];
   const [description, setDescription] = useState(community.description);
   const [category, setCategory] = useState(community.category as string);
   const [rules, setRules] = useState(community.rules);
@@ -62,6 +69,7 @@ function CommunitySettings({ community }: { community: Community }) {
     general: description !== community.description || category !== community.category,
     appearance: Boolean(avatarFile || bannerFile),
     members: false,
+    reports: false,
     rules: rules !== community.rules,
     privacy: visibility !== community.visibility,
   };
@@ -162,14 +170,17 @@ function CommunitySettings({ community }: { community: Community }) {
 
     <div className="settings-workspace community-settings-workspace">
       <nav ref={navigationRef} className="settings-navigation community-settings-navigation" aria-label="Các mục cài đặt cộng đồng">
-        {tabs.map(({ id, label, icon: Icon }) => <Link key={id} to={`?tab=${id}`} onClick={(event) => chooseTab(event, id)}
+        {visibleTabs.map(({ id, label, icon: Icon }) => <Link key={id} to={`?tab=${id}`} onClick={(event) => chooseTab(event, id)}
           aria-current={activeTab.id === id ? 'page' : undefined} aria-disabled={saving || undefined}
           className={`settings-tab community-settings-tab ${activeTab.id === id ? 'is-selected' : ''}`}>
           <Icon size={17} /><span>{label}</span>{dirty[id] && <span className="community-settings-dirty" aria-label="Có thay đổi chưa lưu" />}
         </Link>)}
       </nav>
 
-      {activeTab.id === 'members' ? <section className="settings-content community-settings-panel" aria-labelledby="community-members-section-title">
+      {activeTab.id === 'reports' ? <section className="settings-content community-settings-panel" aria-labelledby="community-reports-section-title">
+        <header className="community-settings-section-heading"><h2 id="community-reports-section-title">{activeTab.label}</h2><p>{activeTab.description}</p></header>
+        <CommunityReportsPanel name={community.name} canReview={canReview} />
+      </section> : activeTab.id === 'members' ? <section className="settings-content community-settings-panel" aria-labelledby="community-members-section-title">
         <header className="community-settings-section-heading"><h2 id="community-members-section-title">{activeTab.label}</h2><p>{activeTab.description}</p></header>
         <CommunityMembersPanel community={community} />
       </section> : <form onSubmit={save} className="settings-content community-settings-panel" aria-labelledby="community-settings-section-title">

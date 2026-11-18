@@ -21,6 +21,7 @@ public interface CommunityRepository extends
         JpaSpecificationExecutor<Community> {
 
     boolean existsByName(String name);
+    long countByStatus(CommunityStatus status);
 
     Optional<Community> findByName(String name);
 

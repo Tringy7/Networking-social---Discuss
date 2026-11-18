@@ -14,6 +14,8 @@ import com.discuss.discuss.mapper.community.CommunityMemberMapper;
 import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.repository.CommunityRepository;
 import com.discuss.discuss.service.user.UserService;
+import com.discuss.discuss.utils.annotation.auth.HasRole;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -38,7 +40,6 @@ public class CommunityService {
     private final CommunityMapper communityMapper;
     private final PageMapper pageMapper;
     private final CommunitySpecifications communitySpecifications;
-    private final CommunityNameNormalizer nameNormalizer;
     private final CommunityMemberMapper communityMemberMapper;
 
     /*
@@ -48,7 +49,7 @@ public class CommunityService {
     public CommunityDetailResponseDTO createCommunity(CreateCommunityRequestDTO req) {
         User user = userService.getCurrentUser();
 
-        String name = this.nameNormalizer.normalize(req.getName());
+        String name = communitySupport.normalize(req.getName());
 
         communitySupport.checkNameCommunityReserved(name);
         if (communitySupport.checkExistsCommunityByName(name)) {
@@ -253,4 +254,70 @@ public class CommunityService {
         return pageMapper.toResponse(communities);
     }
 
+
+    /** Internal management query; includes inactive and private communities when filters are omitted. */
+    @HasRole("ADMIN")
+    @Transactional(readOnly = true)
+    public PageResponseDTO<CommunityDetailResponseDTO> getCommunities(
+            Pageable pageable, CommunityStatus status, CommunityVisibility visibility) {
+        Specification<Community> specification = communitySpecifications.hasStatus(status)
+                .and(communitySpecifications.hasVisibility(visibility));
+        return findCommunityDetails(specification, pageable);
+    }
+
+    @HasRole("ADMIN")
+    @Transactional(readOnly = true)
+    public PageResponseDTO<CommunityDetailResponseDTO> searchCommunities(
+            Pageable pageable, String search, CommunityStatus status, CommunityVisibility visibility) {
+        Specification<Community> specification = communitySpecifications.hasStatus(status)
+                .and(communitySpecifications.hasVisibility(visibility))
+                .and(communitySpecifications.matchesName(search));
+        return findCommunityDetails(specification, pageable);
+    }
+
+    /** Internal detail lookup that also supports inactive communities. */
+    @HasRole("ADMIN")
+    @Transactional(readOnly = true)
+    public CommunityDetailResponseDTO getCommunityDetailById(Long communityId) {
+        return toDetail(communitySupport.getCommunityById(communityId));
+    }
+
+    @HasRole("ADMIN")
+    @Transactional
+    public boolean updateStatus(Long communityId, CommunityStatus status) {
+        if (status == null) {
+            throw new CommunityException(CommunityErrorCode.INVALID_STATUS);
+        }
+
+        Community community = communitySupport.getCommunityById(communityId);
+        if (community.getStatus() == status) {
+            return false;
+        }
+
+        community.setStatus(status);
+        return true;
+    }
+
+    private PageResponseDTO<CommunityDetailResponseDTO> findCommunityDetails(
+            Specification<Community> specification, Pageable pageable) {
+        return pageMapper.toResponse(communityRepository.findAll(specification, pageable)
+                .map(this::toDetail));
+    }
+
+    private CommunityDetailResponseDTO toDetail(Community community) {
+        return communityMapper.toDetail(community, community.getInfo(),
+                communityMemberService.countActiveMembers(community));
+    }
+
+    @Transactional(readOnly = true)
+    @HasRole("ADMIN")
+    public long countAll() {
+        return communityRepository.count();
+    }
+
+    @Transactional(readOnly = true)
+    @HasRole("ADMIN")
+    public long countByStatus(CommunityStatus status) {
+        return communityRepository.countByStatus(status);
+    }
 }

@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 /** Post attachment references and Markdown tokens; ImageService owns image storage. */
 @Service
 @RequiredArgsConstructor
-public class PostMediaService {
+public class PostAttachmentService {
     private final PostMediaRepository postMediaRepository;
     private final ImageService imageService;
 

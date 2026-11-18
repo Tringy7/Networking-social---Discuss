@@ -17,13 +17,51 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Component;
 
-public final class PostSpecifications {
+@Component
+public class PostSpecifications {
 
-    private PostSpecifications() {}
+    public Specification<Post> buildFeedSpecification(
+            User currentUser, Community community, String username, String tab, String search) {
+        return visibleTo(currentUser)
+                .and(inCommunity(community))
+                .and(writtenBy(username))
+                .and(matchesText(search))
+                .and(ordered(community != null, "popular".equals(tab)));
+    }
+
+    public Specification<Post> buildSavedSpecification(User user) {
+        return visibleTo(user).and(savedBy(user));
+    }
+
+    public Specification<Post> buildTrashSpecification(User user) {
+        return writtenByUserId(user.getId()).and(hasStatus(PostStatus.DELETED));
+    }
+
+    public Specification<Post> buildManagementSpecification(
+            PostStatus status, String communityName, String search) {
+        return hasStatus(status)
+                .and(hasCommunityName(communityName))
+                .and(matchesText(search == null ? null : search.trim()));
+    }
+
+    private Specification<Post> hasStatus(PostStatus status) {
+        return (root, query, cb) -> status == null
+                ? cb.conjunction() : cb.equal(root.get("status"), status);
+    }
+
+    private Specification<Post> hasCommunityName(String communityName) {
+        return (root, query, cb) -> communityName == null || communityName.isBlank()
+                ? cb.conjunction() : cb.equal(root.get("community").get("name"), communityName);
+    }
+
+    private Specification<Post> writtenByUserId(Long userId) {
+        return (root, query, cb) -> cb.equal(root.get("user").get("id"), userId);
+    }
 
     /** Post đã đăng, community còn hoạt động, và (community public hoặc currentUser là memberRoot active). */
-    public static Specification<Post> visibleTo(User currentUser) {
+    private Specification<Post> visibleTo(User currentUser) {
         return (postRoot, criteriaQuery, criteriaBuilder) -> {
             var membershipQuery = criteriaQuery.subquery(Long.class);
             var memberRoot = membershipQuery.from(CommunityMember.class);
@@ -40,16 +78,21 @@ public final class PostSpecifications {
         };
     }
 
-    public static Specification<Post> inCommunity(Community community) {
-        return (postRoot, criteriaQuery, criteriaBuilder) -> criteriaBuilder.equal(postRoot.get("community"), community);
+    private Specification<Post> inCommunity(Community community) {
+        return (postRoot, criteriaQuery, criteriaBuilder) -> community == null
+                ? criteriaBuilder.conjunction() : criteriaBuilder.equal(postRoot.get("community"), community);
     }
 
-    public static Specification<Post> writtenBy(String username) {
-        return (postRoot, criteriaQuery, criteriaBuilder) -> criteriaBuilder.equal(postRoot.get("user").get("username"), username);
+    private Specification<Post> writtenBy(String username) {
+        return (postRoot, criteriaQuery, criteriaBuilder) -> username == null
+                ? criteriaBuilder.conjunction() : criteriaBuilder.equal(postRoot.get("user").get("username"), username);
     }
 
     /** Tìm trong title và nội dung Markdown. */
-    public static Specification<Post> matchesText(String searchKeyword) {
+    private Specification<Post> matchesText(String searchKeyword) {
+        if (searchKeyword == null || searchKeyword.isBlank()) {
+            return (root, query, cb) -> cb.conjunction();
+        }
         String searchPattern = likePattern(searchKeyword);
         return (postRoot, criteriaQuery, criteriaBuilder) -> {
             var contentQuery = criteriaQuery.subquery(Long.class);
@@ -64,7 +107,7 @@ public final class PostSpecifications {
     }
 
     /** Chỉ áp dụng ORDER BY cho criteriaQuery lấy dữ liệu, bỏ qua criteriaQuery count. */
-    public static Specification<Post> ordered(boolean sortPinnedFirst, boolean sortByPopularity) {
+    private Specification<Post> ordered(boolean sortPinnedFirst, boolean sortByPopularity) {
         return (postRoot, criteriaQuery, criteriaBuilder) -> {
             if (criteriaQuery.getResultType() == Long.class) return null;
 
@@ -94,7 +137,7 @@ public final class PostSpecifications {
         return "%" + escapedKeyword + "%";
     }
 
-    public static Specification<Post> savedBy(User user) {
+    private Specification<Post> savedBy(User user) {
         return (root, query, cb) -> {
             var saves = query.subquery(Long.class);
             var saved = saves.from(PostSave.class);

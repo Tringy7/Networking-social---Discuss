@@ -165,9 +165,11 @@ h1,h2,h3,h4,h5,h6 { overflow-wrap:anywhere; }
 .utility-heading,.utility-page > div:first-child,.utility-page > header,.admin-canvas .route-content > div > div:first-child { padding-bottom:18px; }
 .utility-heading h1,.utility-page h1,.admin-canvas h1 { font-size:26px; line-height:1.35; font-weight:600; letter-spacing:-.02em; }
 .utility-page h1 > svg,.admin-canvas h1 > svg { width:22px; height:22px; }
+html:has(.settings-page) { scrollbar-gutter:stable; }
 .settings-navigation { display:flex; flex-wrap:nowrap; gap:6px; overflow-x:auto; margin:4px 0 20px; padding:5px; background:var(--bg-elevated); border-radius:12px; }
 .settings-tab { position:relative; isolation:isolate; padding:10px 12px; border-radius:9px; white-space:nowrap; font-size:14px; }
-.settings-tab.is-selected { color:var(--text-primary); font-weight:600; }
+.settings-navigation .settings-tab { font-weight:500; }
+.settings-tab.is-selected { color:var(--text-primary); background:var(--bg-elevated); }
 .settings-content { min-width:0; max-width:1200px; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-card); padding:24px; }
 .settings-content .route-content > div > div:first-child,.settings-content .route-content > form > div:first-child { padding-bottom:18px; margin-bottom:18px; border-bottom:1px solid var(--border-color); }
 .settings-content h2 { font-size:22px; font-weight:600; line-height:1.4; }
