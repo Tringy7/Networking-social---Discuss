@@ -15,14 +15,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/explore")
 @RequiredArgsConstructor
 public class ExploreCommunityController {
 
     private final CommunityService communityService;
 
     /** Retrieves communities for the explore page. */
-    @GetMapping
+    @GetMapping("/explore")
     public ResponseEntity<PageResponseDTO<CommunityPreviewResponseDTO>>
     getAllCommunities(
             @PageableDefault(
@@ -37,7 +36,7 @@ public class ExploreCommunityController {
     }
 
     /** Retrieves communities by category slug. */
-    @GetMapping("/{slug}")
+    @GetMapping({"/categories/{slug}/communities", "/explore/{slug}"})
     public ResponseEntity<PageResponseDTO<CommunityPreviewResponseDTO>>
     getCommunitiesByCategory(
             @PathVariable String slug,
@@ -55,7 +54,7 @@ public class ExploreCommunityController {
     }
 
     /** Searches and filters communities with pagination and sorting. */
-    @GetMapping("/search")
+    @GetMapping("/explore/search")
     public ResponseEntity<PageResponseDTO<CommunityPreviewResponseDTO>>
     searchCommunities(
             @Filter Specification<Community> filterSpec,
@@ -70,5 +69,15 @@ public class ExploreCommunityController {
                         filterSpec, pageable
                 )
         );
+    }
+
+    @GetMapping("/communities")
+    public ResponseEntity<PageResponseDTO<CommunityPreviewResponseDTO>> listCommunities(
+            @Filter Specification<Community> filterSpec,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        if (filterSpec == null) {
+            return getAllCommunities(pageable);
+        }
+        return searchCommunities(filterSpec, pageable);
     }
 }

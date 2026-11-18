@@ -14,7 +14,7 @@ import EntityBanner from '../../components/ui/EntityBanner';
 import EntityImageActions from '../../components/ui/EntityImageActions';
 import CommunityMediaEditor from '../../components/community/CommunityMediaEditor';
 import type { ProfileImageKind } from '../../components/profile/ImageCropEditor';
-import { canEditCommunityMedia } from '../../utils/communityMedia';
+import { canEditCommunityMedia, isCommunityOwner } from '../../utils/communityMedia';
 import Button from '../../components/ui/Button';
 import {
   Users,
@@ -136,6 +136,7 @@ export const CommunityDetailPage: React.FC = () => {
     community.currentUserRole === 'MODERATOR' ||
     activeRole === 'ADMIN';
   const canEditMedia = !isCommunityLoading && canEditCommunityMedia(community, user, isAuthenticated);
+  const isOwner = !isCommunityLoading && isCommunityOwner(community, user, isAuthenticated);
 
   const communityPosts = posts.filter((p) => p.communityName === community.name);
   const sortedPosts = [...communityPosts].sort((a, b) => {
@@ -215,7 +216,7 @@ export const CommunityDetailPage: React.FC = () => {
           </section>
           <section className="context-section"><div className="context-title"><h2>Ban quản trị</h2>{isManager && <Link to={`/c/${community.name}/settings?tab=members`}>Quản lý</Link>}</div>
             <Link to={`/u/${community.ownerUsername}`} className="context-community"><Avatar alt={community.ownerUsername} size="sm" /><div className="community-info"><span className="text-sm font-semibold">@{community.ownerUsername}</span><p>Chủ cộng đồng</p></div></Link>
-            {isManager && <Link to={`/c/${community.name}/moderation`} className="side-link"><ShieldAlert size={16} />Hàng đợi kiểm duyệt</Link>}
+            {(isOwner || isManager) && <Link to={`/c/${community.name}/${isOwner ? 'settings?tab=reports' : 'moderation'}`} className="side-link"><ShieldAlert size={16} />Báo cáo cộng đồng</Link>}
           </section>
         </aside>
       </div>

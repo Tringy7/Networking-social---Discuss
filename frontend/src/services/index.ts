@@ -65,10 +65,8 @@ const API_GENDERS: Record<string, string> = {
 export const POSTS_AVAILABLE = true;
 export const POST_INTERACTIONS_AVAILABLE = true;
 export const COMMENTS_AVAILABLE = true;
-export const REPORTS_AVAILABLE = false;
 export const REPORT_CREATION_AVAILABLE = true;
 export const ADMIN_AVAILABLE = true;
-const ADMIN_MODERATION_AVAILABLE = false;
 export const USER_SEARCH_AVAILABLE = true;
 
 function requireFeature(available: boolean, name: string): void {
@@ -163,7 +161,7 @@ export const authService = {
 };
 
 export const userService = {
-  getMe: () => apiClient.get<UserResponse>('/user/me'),
+  getMe: () => apiClient.get<UserResponse>('/users/me'),
   search: async (query: string) => {
     requireFeature(USER_SEARCH_AVAILABLE, 'Tìm kiếm thành viên');
     const path = `/users/search?q=${encodeURIComponent(query.trim())}&size=100`;
@@ -174,7 +172,7 @@ export const userService = {
   },
   getPublicProfile: async (username: string): Promise<User> => {
     const response = await apiClient.get<PublicUserProfileResponse>(
-      `/user/${encodeURIComponent(username)}`
+      `/users/by-username/${encodeURIComponent(username)}`
     );
     const profile = response.profile;
     return {
@@ -201,7 +199,7 @@ export const userService = {
   },
 
   updateProfile: (data: Partial<User>) =>
-    apiClient.patch<UserResponse>('/user/me/profile', {
+    apiClient.patch<UserResponse>('/users/me/profile', {
       displayName: data.displayName,
       bio: data.bio,
       location: data.location,
@@ -215,13 +213,13 @@ export const userService = {
   uploadAvatar: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return apiClient.put<UserResponse>('/user/me/avatar', formData);
+    return apiClient.put<UserResponse>('/users/me/avatar', formData);
   },
 
   uploadBanner: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return apiClient.put<UserResponse>('/user/me/banner', formData);
+    return apiClient.put<UserResponse>('/users/me/banner', formData);
   },
 };
 
@@ -365,18 +363,18 @@ export const categoryService = {
 
 export const communityService = {
   list: async (): Promise<Community[]> =>
-    (await getAllCommunityPages('/explore')).map(mapCommunity),
+    (await getAllCommunityPages('/communities')).map(mapCommunity),
   listByCategory: async (slug: string): Promise<Community[]> =>
-    (await getAllCommunityPages(`/explore/${encodeURIComponent(slug)}`)).map(mapCommunity),
+    (await getAllCommunityPages(`/categories/${encodeURIComponent(slug)}/communities`)).map(mapCommunity),
   search: async (query: string): Promise<Community[]> => {
     const escapedQuery = query.trim().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     const filter = `name ~~ '%${escapedQuery}%' or info.description ~~ '%${escapedQuery}%'`;
-    return (await getAllCommunityPages(`/explore/search?filter=${encodeURIComponent(filter)}`)).map(mapCommunity);
+    return (await getAllCommunityPages(`/communities?filter=${encodeURIComponent(filter)}`)).map(mapCommunity);
   },
   mine: async (): Promise<Community[]> => {
     const [owned, joined] = await Promise.all([
-      getCommunitiesWithRole('/user/me/owned', 'OWNER'),
-      getCommunitiesWithRole('/user/me/joined', 'MEMBER'),
+      getCommunitiesWithRole('/users/me/communities/owned', 'OWNER'),
+      getCommunitiesWithRole('/users/me/communities/joined', 'MEMBER'),
     ]);
     return [...owned, ...joined];
   },
@@ -545,18 +543,6 @@ export const reportService = {
       resolutionNote: response.resolutionNote ?? undefined, createdAt: response.createdAt,
     };
   },
-  list: async (): Promise<Report[]> => {
-    requireFeature(REPORTS_AVAILABLE, 'Báo cáo');
-    return apiClient.get<Report[]>('/reports');
-  },
-  listForCommunity: async (communityName: string): Promise<Report[]> => {
-    requireFeature(REPORTS_AVAILABLE, 'Báo cáo');
-    return apiClient.get<Report[]>(`/reports/community/${encodeURIComponent(communityName)}`);
-  },
-  resolve: async (reportId: string, status: 'RESOLVED' | 'REJECTED', resolutionNote?: string) => {
-    requireFeature(REPORTS_AVAILABLE, 'Báo cáo');
-    return apiClient.patch<Report>(`/reports/${reportId}`, { status, resolutionNote });
-  },
 };
 
 export interface AdminStats {
@@ -610,15 +596,6 @@ export const adminService = {
     apiClient.patch<{ message: string }>(`/admin/users/${id}/lock`),
   unlockUser: (id: string | number): Promise<{ message: string }> =>
     apiClient.patch<{ message: string }>(`/admin/users/${id}/unlock`),
-  listCommunities: async (): Promise<Community[]> => {
-    requireFeature(ADMIN_MODERATION_AVAILABLE, 'Quản lý cộng đồng');
-    const communities = await apiClient.get<CommunityApiResponse[]>('/admin/communities');
-    return communities.map(mapCommunity);
-  },
-  setCommunityStatus: async (name: string, status: Community['status']) => {
-    requireFeature(ADMIN_MODERATION_AVAILABLE, 'Thay đổi trạng thái cộng đồng');
-    return apiClient.patch<void>(`/communities/${encodeURIComponent(name)}/status`, { status });
-  },
 };
 
 export const notificationService = {

@@ -3,6 +3,8 @@ import com.discuss.discuss.entity.*;
 import com.discuss.discuss.enums.*;
 import com.discuss.discuss.exception.report.*;
 import com.discuss.discuss.mapper.report.ReportMapper;
+import com.discuss.discuss.service.community.CommunityAuthorizationService;
+import com.discuss.discuss.service.community.CommunitySupport;
 import com.discuss.discuss.service.user.UserService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -18,7 +20,8 @@ class ReportReviewServiceTest {
         entities = mock(EntityManager.class); users = mock(UserService.class);
         admin = User.builder().id(1L).username("admin").role(UserRole.ADMIN).build();
         when(users.getCurrentUser()).thenReturn(admin);
-        service = new ReportReviewService(entities, new ReportMapper(), users);
+        service = new ReportReviewService(entities, new ReportMapper(), users,
+                mock(CommunitySupport.class), mock(CommunityAuthorizationService.class));
     }
     @Test void resolutionPersistsReviewerAndNoteWithRowLock() {
         var community = Community.builder().id(10L).name("java").build();

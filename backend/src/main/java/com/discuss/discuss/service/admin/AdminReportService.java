@@ -9,13 +9,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-@Service @RequiredArgsConstructor @HasRole("ADMIN")
+@Service
+@RequiredArgsConstructor
+@HasRole("ADMIN")
 public class AdminReportService {
     private final PostReportQueryService postReports;
     private final CommentReportQueryService commentReports;
     private final CommunityReportQueryService communityReports;
     private final ReportReviewService reviewService;
     private final ActivityLogService activityLogService;
+
     public PageResponseDTO<ReportResponseDTO> list(ReportTargetType type, ReportStatus status, String communityName, Pageable pageable) {
         return switch (type) {
             case POST -> postReports.list(status, communityName, pageable);
@@ -23,7 +26,9 @@ public class AdminReportService {
             case COMMUNITY -> communityReports.list(status, communityName, pageable);
         };
     }
+
     public ReportResponseDTO getDetail(ReportTargetType type, Long id) { return reviewService.getDetail(type, id); }
+
     @Transactional
     public ReportResponseDTO review(ReportTargetType type, Long id, ReportStatus status, String note) {
         var result = reviewService.review(type, id, status, note);

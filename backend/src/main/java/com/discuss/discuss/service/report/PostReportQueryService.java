@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PostReportQueryService {
-    private final PostReportRepository repository;
+    private final PostReportRepository postReportRepository;
     private final UserAuthorizationService userAuthorization;
     private final CommunitySupport communitySupport;
     private final ReportMapper reportMapper;
@@ -34,7 +34,8 @@ public class PostReportQueryService {
         userAuthorization.requireAdmin();
         String name = communitySupport.normalize(communityName);
         if (name != null && name.isBlank()) name = null;
-        return pageMapper.toResponse(repository.findReports(status, name, pageable).map(reportMapper::toResponse));
+        return pageMapper.toResponse(
+                postReportRepository.findReports(status, name, pageable).map(reportMapper::toResponse));
     }
 
     public PageResponseDTO<ReportResponseDTO> listForCommunity(String name, ReportStatus status, Pageable pageable) {
@@ -43,7 +44,7 @@ public class PostReportQueryService {
         if (user.getRole() != UserRole.ADMIN) {
             communityAuthorization.requireModeratorOrOwner(community, user);
         }
-        return pageMapper.toResponse(repository.findReports(status, community.getName(), pageable)
-                .map(reportMapper::toResponse));
+        return pageMapper.toResponse(
+                postReportRepository.findReports(status, community.getName(), pageable).map(reportMapper::toResponse));
     }
 }

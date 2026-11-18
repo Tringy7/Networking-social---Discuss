@@ -20,7 +20,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 @RestController
-@RequestMapping("/user")
 @RequiredArgsConstructor
 public class UserController {
     private final UserProfileService userProfileService;
@@ -29,12 +28,12 @@ public class UserController {
     private final ImageService imageService;
     private final CommunityService communityService;
 
-    @GetMapping("/me")
+    @GetMapping({"/users/me", "/user/me"})
     public ResponseEntity<UserInfoResponseDTO> getUserInfo() {
         return ResponseEntity.ok().body(this.userProfileService.getMyProfile());
     }
 
-    @PutMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = {"/users/me/avatar", "/user/me/avatar"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserInfoResponseDTO> setAvatar(
             @RequestParam("file") MultipartFile file) {
         imageService.setAvatarForUser(file);
@@ -42,22 +41,22 @@ public class UserController {
     }
 
     // New banner, edit banner
-    @PutMapping(value = "/me/banner", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = {"/users/me/banner", "/user/me/banner"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserInfoResponseDTO> setBanner(
             @RequestParam("file") MultipartFile file) {
         imageService.setBannerForUser(file);
         return ResponseEntity.ok().body(this.userProfileService.getMyProfile());
     }
 
-    @GetMapping("/{name}")
-    public ResponseEntity<PublicUserProfileResponseDTO> getPublicUserProfile(@PathVariable String name ) {
-        return ResponseEntity.ok(publicUserProfileService.getByUsername(name));
+    @GetMapping({"/users/by-username/{username}", "/user/{username}"})
+    public ResponseEntity<PublicUserProfileResponseDTO> getPublicUserProfile(@PathVariable String username) {
+        return ResponseEntity.ok(publicUserProfileService.getByUsername(username));
     }
 
     /*
      * Get all communities owned by current user
      */
-    @GetMapping("/me/owned")
+    @GetMapping({"/users/me/communities/owned", "/user/me/owned"})
     public ResponseEntity<PageResponseDTO<CommunityPreviewResponseDTO>> getAllCommunitiesOfOwner(
             @PageableDefault(size = 10) Pageable pageable
     ) {
@@ -69,7 +68,7 @@ public class UserController {
     /*
      * Get all communities joined by current user
      */
-    @GetMapping("/me/joined")
+    @GetMapping({"/users/me/communities/joined", "/user/me/joined"})
     public ResponseEntity<PageResponseDTO<CommunityPreviewResponseDTO>> getAllCommunitiesOfJoin(
             @PageableDefault(size = 10) Pageable pageable
     ) {
@@ -79,7 +78,7 @@ public class UserController {
     }
 
 
-    @PatchMapping("/me/profile")
+    @PatchMapping({"/users/me/profile", "/user/me/profile"})
     public ResponseEntity<UserInfoResponseDTO> editUserInfo(
             @Valid @RequestBody UpdateProfileRequestDTO request
     ) {

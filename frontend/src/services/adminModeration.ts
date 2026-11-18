@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { adminService, commentService, postService, type CommentMutationResponse } from './index';
+import { adminService, commentService, type CommentMutationResponse } from './index';
 import type { Post } from '../types';
 
 export interface AdminPage<T> {
@@ -62,11 +62,16 @@ export const adminMutations = {
   setUserStatus: (id: string | number, status: string) => status === 'ACTIVE'
     ? adminService.unlockUser(id)
     : adminService.lockUser(id),
-  setCommunityStatus: (id: number, status: string) => apiClient.patch<void>(`/admin/communities/${id}/${status === 'ACTIVE' ? 'unlock' : 'lock'}`),
-  resolveReport: (_report: AdminReport, _status: ReportStatus) => unavailable('Cập nhật trạng thái báo cáo'),
+  setCommunityStatus: (id: number, status: string) => apiClient.patch<{ message: string }>(`/admin/communities/${id}/${status === 'ACTIVE' ? 'unlock' : 'lock'}`),
+  resolveReport: (report: AdminReport, status: 'RESOLVED' | 'REJECTED', resolutionNote = '') => {
+    const note = resolutionNote.trim();
+    if (!note || note.length > 2000) return Promise.reject(new Error('Ghi chú xử lý phải có từ 1 đến 2000 ký tự.'));
+    const action = status === 'RESOLVED' ? 'resolve' : 'reject';
+    return apiClient.patch<AdminReport>(`/admin/reports/${report.targetType}/${report.id}/${action}`, { resolutionNote: note });
+  },
   saveCategory: (_value: Partial<AdminCategory>) => unavailable('Lưu danh mục'),
   deleteCategory: (_id: number) => unavailable('Xóa danh mục'),
-  deletePost: postService.delete,
+  deletePost: (id: string) => apiClient.delete<{ message: string }>(`/admin/posts/${encodeURIComponent(id)}`),
   deleteComment: commentService.delete,
 };
 
@@ -87,12 +92,12 @@ async function readAll<T>(load: (page: number) => Promise<AdminPage<T>>): Promis
   return rows;
 }
 
-const reportPaths: Record<ReportType, string> = { POST: 'posts', COMMENT: 'comments', COMMUNITY: 'communities' };
+const reportTypes: ReportType[] = ['POST', 'COMMENT', 'COMMUNITY'];
 function reportPage(type: ReportType, page: number, size: number, status = '', communityName = '') {
-  const query = new URLSearchParams({ page: String(page), size: String(size) });
+  const query = new URLSearchParams({ type, page: String(page), size: String(size) });
   if (status) query.set('status', status);
   if (communityName) query.set('communityName', communityName);
-  return apiClient.get<AdminPage<AdminReport>>(`/reports/${reportPaths[type]}?${query}`);
+  return apiClient.get<AdminPage<AdminReport>>(`/admin/reports?${query}`);
 }
 
 export const adminModeration = {
@@ -109,29 +114,29 @@ export const adminModeration = {
   communityDetail: (id: number) => apiClient.get<AdminCommunity>(`/admin/communities/${id}`),
   categories: () => apiClient.get<AdminCategory[]>('/categories'),
   community: (name: string) => apiClient.get<AdminCommunity>(`/communities/${encodeURIComponent(name)}`),
-  activeCommunities: () => readAll<AdminCommunity>(page => apiClient.get(`/explore?page=${page}&size=50&sort=createdAt,desc`)),
-  posts: async (options: { page: number; size: number; search?: string; community?: string }): Promise<AdminPage<AdminPost>> => {
-    const query = new URLSearchParams({ page: String(options.page), size: String(options.size), tab: 'latest' });
-    if (options.search) query.set('q', options.search);
-    if (!options.community) return apiClient.get(`/posts?${query}`);
-    const path = `/communities/${encodeURIComponent(options.community)}/posts`;
-    if (!options.search) return apiClient.get(`${path}?page=${options.page}&size=${options.size}`);
-    const rows = await readAll<AdminPost>(page => apiClient.get(`${path}?page=${page}&size=100`));
-    const keyword = options.search.toLocaleLowerCase();
-    return paginate(rows.filter(post => `${post.title} ${post.content}`.toLocaleLowerCase().includes(keyword)), options.page, options.size);
+  activeCommunities: () => readAll<AdminCommunity>(page => apiClient.get(`/admin/communities?status=ACTIVE&page=${page}&size=50&sort=createdAt,desc`)),
+  posts: (options: { page: number; size: number; search?: string; community?: string; status?: string }) => {
+    const query = new URLSearchParams({ page: String(options.page), size: String(options.size) });
+    const search = options.search?.trim();
+    if (search) query.set('search', search);
+    if (options.community) query.set('communityName', options.community);
+    if (options.status) query.set('status', options.status);
+    return apiClient.get<AdminPage<AdminPost>>(`/admin/posts${search ? '/search' : ''}?${query}`);
   },
-  post: (id: string) => apiClient.get<AdminPost>(`/posts/${encodeURIComponent(id)}`),
+  post: (id: string) => apiClient.get<AdminPost>(`/admin/posts/${encodeURIComponent(id)}`),
+  report: (type: ReportType, id: number) => apiClient.get<AdminReport>(`/admin/reports/${type}/${id}`),
   comments: commentService.list,
   reports: async (options: { type?: ReportType | ''; status?: string; community?: string; page: number; size: number }): Promise<AdminPage<AdminReport>> => {
     if (options.type) return reportPage(options.type, options.page, options.size, options.status, options.community);
     // Each source is ordered newest first. Its first K rows suffice to merge the
     // first K rows globally, without downloading the complete report history.
     const needed = (options.page + 1) * options.size;
-    const sources = await Promise.all((Object.keys(reportPaths) as ReportType[]).map(async type => {
-      const first = await reportPage(type, 0, 100, options.status, options.community);
+    const batchSize = 50;
+    const sources = await Promise.all(reportTypes.map(async type => {
+      const first = await reportPage(type, 0, batchSize, options.status, options.community);
       const rows = [...first.content];
-      const pages = Math.min(first.totalPages, Math.ceil(needed / 100));
-      for (let page = 1; page < pages; page++) rows.push(...(await reportPage(type, page, 100, options.status, options.community)).content);
+      const pages = Math.min(first.totalPages, Math.ceil(needed / batchSize));
+      for (let page = 1; page < pages; page++) rows.push(...(await reportPage(type, page, batchSize, options.status, options.community)).content);
       return { rows, total: first.totalElements };
     }));
     const rows = sources.flatMap(source => source.rows).sort((a, b) =>
@@ -142,7 +147,7 @@ export const adminModeration = {
   },
   reportCounts: async () => {
     const totals = await Promise.all((['PENDING', 'RESOLVED'] as const).map(async status => {
-      const pages = await Promise.all((Object.keys(reportPaths) as ReportType[]).map(type => reportPage(type, 0, 1, status)));
+      const pages = await Promise.all(reportTypes.map(type => reportPage(type, 0, 1, status)));
       return pages.reduce((sum, page) => sum + page.totalElements, 0);
     }));
     return { pending: totals[0], resolved: totals[1] };
