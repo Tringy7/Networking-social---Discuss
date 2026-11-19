@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
-import { Eye, Image as ImageIcon, LockKeyhole, UserRound } from 'lucide-react';
+import { Eye, Image as ImageIcon, LockKeyhole, Unlock, UserRound } from 'lucide-react';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { getAdminCommunityDetail, listAdminCommunities, lockAdminCommunity, searchAdminCommunities } from '../../services/adminCommunityService.js';
+import { getAdminCommunityDetail, listAdminCommunities, lockAdminCommunity, searchAdminCommunities, unlockAdminCommunity } from '../../services/adminCommunityService.js';
 import {
   AdminAvatar,
   AdminConfirmDialog,
@@ -99,6 +99,13 @@ export default function CommunityManagementPage() {
     execute: () => lockAdminCommunity(community.id),
     success: `Community c/${community.name} locked successfully.`,
   });
+  const requestUnlock = community => setAction({
+    title: 'Unlock community',
+    label: 'Unlock community',
+    description: `The community c/${community.name} will be unlocked and its status changed to ACTIVE. Continue?`,
+    execute: () => unlockAdminCommunity(community.id),
+    success: `Community c/${community.name} unlocked successfully.`,
+  });
 
   const columns = [
     {
@@ -158,6 +165,7 @@ export default function CommunityManagementPage() {
       render: community => <div className="admin-community-actions">
         <button className="admin-community-view" type="button" onClick={() => setSelectedId(community.id)} aria-label={`View c/${community.name}`} title="View details"><Eye size={17} /></button>
         {community.status === 'ACTIVE' && <button className="admin-community-lock" type="button" onClick={() => requestLock(community)} title="Lock community"><LockKeyhole size={14} /><span>Lock</span></button>}
+        {community.status === 'BANED' && <button className="admin-community-unlock" type="button" onClick={() => requestUnlock(community)} title="Unlock community"><Unlock size={14} /><span>Unlock</span></button>}
       </div>,
     },
   ];

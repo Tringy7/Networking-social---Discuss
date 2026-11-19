@@ -36,3 +36,7 @@ export function getAdminCommunityDetail(id) {
 export function lockAdminCommunity(id) {
   return apiClient.patch(`/admin/communities/${encodeURIComponent(String(id))}/lock`);
 }
+
+export function unlockAdminCommunity(id) {
+  return apiClient.patch(`/admin/communities/${encodeURIComponent(String(id))}/unlock`);
+}
