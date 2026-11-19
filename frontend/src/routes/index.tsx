@@ -5,7 +5,7 @@ import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-do
 import AppLayout from '../layouts/AppLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import SettingsLayout from '../layouts/SettingsLayout';
-import { adminRoutes } from './adminRoutes';
+import { adminRoutes } from './adminRoutes.jsx';
 import ProtectedRoute from '../components/common/StoreProtectedRoute';
 
 // Public & Feed Pages

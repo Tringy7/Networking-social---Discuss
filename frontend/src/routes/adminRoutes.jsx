@@ -1,19 +1,16 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
-import AdminLayout from '../layouts/AdminLayout';
-import AdminAuthLayout from '../layouts/AdminAuthLayout';
+import AdminLayout from '../layouts/AdminLayout.jsx';
+import AdminAuthLayout from '../layouts/AdminAuthLayout.jsx';
 const LoginPage = React.lazy(() => import('../pages/auth/LoginPage'));
 // Admin Pages
-const AdminDashboardPage = React.lazy(() => import('../pages/admin/AdminDashboardPage'));
-const UserManagementPage = React.lazy(() => import('../pages/admin/UserManagementPage'));
-const CommunityManagementPage = React.lazy(() => import('../pages/admin/CommunityManagementPage'));
-const ReportManagementPage = React.lazy(() => import('../pages/admin/ReportManagementPage'));
-const PostManagementPage = React.lazy(() => import('../pages/admin/PostManagementPage'));
-const CategoryManagementPage = React.lazy(() => import('../pages/admin/CategoryManagementPage'));
-
-
+const AdminDashboardPage = React.lazy(() => import('../pages/admin/AdminDashboardPage.jsx'));
+const UserManagementPage = React.lazy(() => import('../pages/admin/UserManagementPage.jsx'));
+const CommunityManagementPage = React.lazy(() => import('../pages/admin/CommunityManagementPage.jsx'));
+const ReportManagementPage = React.lazy(() => import('../pages/admin/ReportManagementPage.jsx'));
+const PostManagementPage = React.lazy(() => import('../pages/admin/PostManagementPage.jsx'));
+const CategoryManagementPage = React.lazy(() => import('../pages/admin/CategoryManagementPage.jsx'));
 const routeLoading = <div className="route-loading" role="status">Đang mở trang quản trị…</div>;
-
 export const adminRoutes = <>
   <Route element={<AdminAuthLayout />}>
     <Route path="/admin/login" element={<React.Suspense fallback={routeLoading}><LoginPage admin /></React.Suspense>} />
