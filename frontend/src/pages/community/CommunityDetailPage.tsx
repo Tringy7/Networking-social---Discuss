@@ -13,6 +13,7 @@ import Avatar from '../../components/ui/Avatar';
 import EntityBanner from '../../components/ui/EntityBanner';
 import EntityImageActions from '../../components/ui/EntityImageActions';
 import CommunityMediaEditor from '../../components/community/CommunityMediaEditor';
+import CommunityNotificationToggle from '../../components/community/CommunityNotificationToggle';
 import type { ProfileImageKind } from '../../components/profile/ImageCropEditor';
 import { canEditCommunityMedia, isCommunityOwner } from '../../utils/communityMedia';
 import Button from '../../components/ui/Button';
@@ -126,7 +127,7 @@ export const CommunityDetailPage: React.FC = () => {
     );
   }
 
-  const isOwner = isCommunityOwner(community, user, isAuthenticated);
+  const isOwner = !isCommunityLoading && isCommunityOwner(community, user, isAuthenticated);
   const isJoined = isAuthenticated && (isOwner ||
     community.currentUserRole === 'MEMBER' ||
     community.currentUserRole === 'MODERATOR' ||
@@ -134,7 +135,6 @@ export const CommunityDetailPage: React.FC = () => {
 
   const isManager = isAuthenticated && (isOwner || community.currentUserRole === 'MODERATOR');
   const canEditMedia = !isCommunityLoading && canEditCommunityMedia(community, user, isAuthenticated);
-  const isOwner = !isCommunityLoading && isCommunityOwner(community, user, isAuthenticated);
 
   const communityPosts = posts.filter((p) => p.communityName === community.name);
   const sortedPosts = [...communityPosts].sort((a, b) => {
@@ -185,6 +185,7 @@ export const CommunityDetailPage: React.FC = () => {
           <div className="community-actions">
             <Button variant={isJoined ? 'secondary' : 'primary'} size="sm" isLoading={isMembershipUpdating} onClick={handleJoinToggle} aria-pressed={isJoined} leftIcon={isJoined ? <Check size={15} /> : <Plus size={15} />}>{isJoined ? 'Đã tham gia' : 'Tham gia cộng đồng'}</Button>
             <Button variant="outline" size="sm" onClick={() => openCreateModal(community.name)} leftIcon={<Plus size={15} />}>Đăng bài</Button>
+            {isJoined && !isCommunityLoading && <CommunityNotificationToggle key={`${user?.id}:${community.name}`} name={community.name} />}
             {isOwner && <Link className="icon-button" aria-label="Cài đặt cộng đồng" to={`/c/${community.name}/settings`}><Settings size={18} /></Link>}
           </div>
         </div>

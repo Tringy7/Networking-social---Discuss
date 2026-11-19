@@ -1,7 +1,7 @@
 import apiClient from './apiClient';
 import { assertImageRequestSize } from '../utils/imageUploadLimits';
 import { Community, CommunityMember, Post, User, Report, CreateReportRequest, NotificationItem, Conversation, ChatMessage } from '../types';
-import { demoConversations, demoNotifications } from '../mocks/demoContent';
+import { demoConversations } from '../mocks/demoContent';
 interface AuthResponse {
   message?: string;
   data?: Partial<User>;
@@ -72,14 +72,11 @@ export const USER_SEARCH_AVAILABLE = true;
 function requireFeature(available: boolean, name: string): void {
   if (!available) throw new Error(`${name} hiện chưa khả dụng.`);
 }
-export const NOTIFICATIONS_AVAILABLE = false;
 export const MESSAGES_AVAILABLE = false;
 
 export const POSTS_UNAVAILABLE_MESSAGE = 'Tính năng bài viết hiện chưa khả dụng vì backend chưa có API.';
-export const NOTIFICATIONS_UNAVAILABLE_MESSAGE = 'Tính năng thông báo hiện chưa khả dụng vì backend chưa có API.';
 
 const postsUnavailableError = () => new Error(POSTS_UNAVAILABLE_MESSAGE);
-const notificationsUnavailableError = () => new Error(NOTIFICATIONS_UNAVAILABLE_MESSAGE);
 let localConversations = demoConversations.map((conversation) => ({
   ...conversation,
   participant: { ...conversation.participant },
@@ -634,36 +631,62 @@ export const adminService = {
     apiClient.patch<{ message: string }>(`/admin/users/${id}/unlock`),
 };
 
-export const notificationService = {
-  list: async (): Promise<NotificationItem[]> =>
-    NOTIFICATIONS_AVAILABLE
-      ? apiClient.get<NotificationItem[]>('/notifications')
-      : demoNotifications.map((notification) => ({ ...notification })),
-  markRead: async (id: string): Promise<void> => {
-    if (!NOTIFICATIONS_AVAILABLE) throw notificationsUnavailableError();
-    return apiClient.put<void>(`/notifications/${id}/read`);
-  },
-  markAllRead: async (): Promise<void> => {
-    if (!NOTIFICATIONS_AVAILABLE) throw notificationsUnavailableError();
-    return apiClient.put<void>('/notifications/read-all');
-  },
-  getPreferences: async (): Promise<NotificationPreferences> => {
-    if (!NOTIFICATIONS_AVAILABLE) throw notificationsUnavailableError();
-    return apiClient.get<NotificationPreferences>('/notifications/preferences');
-  },
-  savePreferences: async (preferences: NotificationPreferences): Promise<NotificationPreferences> => {
-    if (!NOTIFICATIONS_AVAILABLE) throw notificationsUnavailableError();
-    return apiClient.put<NotificationPreferences>('/notifications/preferences', preferences);
-  },
+type NotificationResponse = {
+  id: number;
+  type: NotificationItem['type'];
+  actor: NotificationItem['actor'];
+  postId: number | null;
+  commentId: number | null;
+  communityName: string | null;
+  reportId: number | null;
+  reportTargetType: 'POST' | 'COMMENT' | 'COMMUNITY' | null;
+  reportStatus: 'RESOLVED' | 'REJECTED' | null;
+  read: boolean;
+  createdAt: string;
 };
 
-export interface NotificationPreferences {
-  inAppReplies: boolean;
-  inAppMentions: boolean;
-  inAppCommunityActivity: boolean;
-  emailDigest: boolean;
-  emailAnnouncements: boolean;
+function mapNotification(item: NotificationResponse): NotificationItem {
+  let targetUrl = item.postId ? `/post/${item.postId}${item.commentId ? `#comment-${item.commentId}` : ''}` : '/notifications';
+  const messages = {
+    COMMUNITY_POST_CREATED: item.communityName ? `đã đăng bài mới trong c/${item.communityName}.` : 'đã đăng bài mới trong cộng đồng.',
+    POST_COMMENTED: 'đã bình luận về bài viết của bạn.',
+    COMMENT_REPLIED: 'đã trả lời bình luận của bạn.',
+    REPORT_SUBMITTED: 'Có báo cáo mới cần xem xét.',
+    REPORT_REVIEWED: item.reportStatus === 'RESOLVED' ? 'Báo cáo của bạn đã được giải quyết.' : 'Báo cáo của bạn đã bị bác bỏ.',
+    REPORT_WARNING: item.reportTargetType === 'COMMUNITY'
+      ? `Cảnh cáo từ quản trị viên hệ thống: cộng đồng ${item.communityName ? `c/${item.communityName}` : 'của bạn'} được xác định có vi phạm.`
+      : 'Cảnh cáo từ quản trị viên hệ thống: bài viết của bạn được xác định có vi phạm.',
+  };
+  if (item.type === 'REPORT_SUBMITTED') {
+    targetUrl = item.reportTargetType === 'COMMUNITY'
+      ? `/admin/reports?type=COMMUNITY${item.reportId ? `&reportId=${item.reportId}` : ''}`
+      : item.communityName ? `/c/${encodeURIComponent(item.communityName)}/moderation?type=${item.reportTargetType || 'POST'}` : '/notifications';
+  }
+  if (item.type === 'REPORT_WARNING' && item.reportTargetType === 'COMMUNITY' && item.communityName) {
+    targetUrl = `/c/${encodeURIComponent(item.communityName)}`;
+  }
+  return {
+    id: String(item.id), type: item.type,
+    actor: item.type.startsWith('REPORT_') ? null : item.actor,
+    message: messages[item.type], targetUrl, isRead: item.read, createdAt: item.createdAt,
+  };
 }
+
+export const notificationService = {
+  list: async (page = 0, unreadOnly = false) => {
+    const response = await apiClient.get<{ content: NotificationResponse[]; last: boolean; totalElements: number }>(
+      `/notifications?page=${page}&size=20&unreadOnly=${unreadOnly}`);
+    return { ...response, content: response.content.map(mapNotification) };
+  },
+  unreadCount: () => apiClient.get<{ unreadCount: number }>('/notifications/unread-count'),
+  markRead: (id: string) => apiClient.put<void>(`/notifications/${encodeURIComponent(id)}/read`),
+  markAllRead: () => apiClient.put<void>('/notifications/read-all'),
+  deleteReadNotifications: () => apiClient.delete<void>('/notifications/read'),
+  communityPreference: (name: string) => apiClient.get<{ newPostEnabled: boolean }>(
+    `/communities/${encodeURIComponent(name)}/notification-preferences`),
+  updateCommunityPreference: (name: string, newPostEnabled: boolean) => apiClient.put<{ newPostEnabled: boolean }>(
+    `/communities/${encodeURIComponent(name)}/notification-preferences`, { newPostEnabled }),
+};
 
 export const messageService = {
   list: async (): Promise<Conversation[]> => MESSAGES_AVAILABLE

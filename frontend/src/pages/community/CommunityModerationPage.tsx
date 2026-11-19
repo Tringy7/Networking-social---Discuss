@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { communityService } from '../../services';
 import useAdminResource from '../../hooks/useAdminResource';
 import CommunityReportsPanel from '../../components/community/CommunityReportsPanel';
@@ -9,13 +9,15 @@ import { isCommunityOwner } from '../../utils/communityMedia';
 
 export default function CommunityModerationPage() {
   const { communityName = '' } = useParams();
+  const [params] = useSearchParams();
+  const reportType = params.get('type') === 'COMMENT' ? 'COMMENT' : 'POST';
   const { user, isAuthenticated } = useAuthStore();
   const community = useAdminResource(useCallback(() => communityService.getByName(communityName), [communityName]));
   const path = `/c/${encodeURIComponent(communityName)}`;
 
   if (community.loading) return <p className="utility-page py-8" role="status">Đang tải cộng đồng…</p>;
   if (community.data?.name === communityName && isCommunityOwner(community.data, user, isAuthenticated)) {
-    return <Navigate to={`${path}/settings?tab=reports`} replace />;
+    return <Navigate to={`${path}/settings?tab=reports&type=${reportType}`} replace />;
   }
 
   return <section className="utility-page space-y-4 py-8">
@@ -24,6 +26,6 @@ export default function CommunityModerationPage() {
     {community.error || !community.data ? <div role="alert" className="space-y-2">
       <p>{community.error || 'Không tìm thấy cộng đồng.'}</p>
       <Button size="sm" variant="secondary" onClick={community.reload}>Thử lại</Button>
-    </div> : <CommunityReportsPanel key={communityName} name={communityName} canReview={false} />}
+    </div> : <CommunityReportsPanel key={`${communityName}:${reportType}`} name={communityName} canReview={false} />}
   </section>;
 }

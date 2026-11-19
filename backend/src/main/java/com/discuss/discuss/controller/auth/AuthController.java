@@ -169,8 +169,8 @@ public class AuthController {
     }
 
     @GetMapping("/sessions")
-    public List<AuthSessionResponse> sessions() {
-        return tokenService.listSessions();
+    public ResponseEntity<List<AuthSessionResponse>> sessions() {
+        return ResponseEntity.ok(tokenService.listSessions());
     }
 
     @DeleteMapping("/sessions/{id}")

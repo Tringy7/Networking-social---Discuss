@@ -31,6 +31,12 @@
 .notification-panel-copy time { display:block; margin-top:5px; font-size:11px; line-height:17px; color:var(--text-muted); }
 .notification-panel-item.is-unread time { color:var(--color-orange-ink); }
 .notification-panel-system { display:grid; place-items:center; width:32px; height:32px; border-radius:50%; background:var(--bg-elevated); color:var(--text-secondary); }
+.notification-panel-system { flex-shrink:0; }
+.notification-report-label { display:block; margin-bottom:2px; color:var(--text-primary); font-size:12px; font-weight:700; }
+[data-notification-type='REPORT_WARNING'] .notification-panel-system {
+  background:var(--color-orange-soft); color:var(--color-orange-ink);
+}
+[data-notification-type='REPORT_WARNING'] .notification-report-label { color:var(--color-orange-ink); }
 .notification-panel-dot { flex-shrink:0; width:7px; height:7px; margin-top:7px; border-radius:50%; background:var(--color-orange-ink); }
 .notification-panel-empty { display:grid; justify-items:center; padding:36px 16px 40px; color:var(--text-muted); text-align:center; }
 .notification-panel-empty h3 { margin:16px 0 6px; color:var(--text-primary); font-size:14px; font-weight:600; }

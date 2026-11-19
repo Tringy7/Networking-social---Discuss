@@ -4,7 +4,6 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { isCommunityOwner } from '../../utils/communityMedia';
 import { ArrowLeft, ArrowUpRight, BookOpen, Camera, Check, Globe, Image as ImageIcon, Lock, Settings2, Users } from 'lucide-react';
 import { useCommunityStore } from '../../store/useCommunityStore';
-import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import { categoryService } from '../../services';
 import type { Community } from '../../types';
@@ -16,7 +15,6 @@ import type { ProfileImageKind } from '../../components/profile/ImageCropEditor'
 import CommunityRulesEditor from '../../components/community/CommunityRulesEditor';
 import CommunityMembersPanel from '../../components/community/CommunityMembersPanel';
 import CommunityReportsPanel from '../../components/community/CommunityReportsPanel';
-import { isCommunityOwner } from '../../utils/communityMedia';
 import '../../components/community/communitySettings.css';
 
 const tabs = [

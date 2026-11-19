@@ -3,10 +3,12 @@ package com.discuss.discuss.service.report;
 import com.discuss.discuss.dto.report.*;
 import com.discuss.discuss.entity.*;
 import com.discuss.discuss.enums.ReportStatus;
+import com.discuss.discuss.enums.ReportTargetType;
 import com.discuss.discuss.mapper.report.ReportMapper;
 import com.discuss.discuss.repository.*;
 import com.discuss.discuss.service.comment.CommentSupport;
 import com.discuss.discuss.service.community.CommunitySupport;
+import com.discuss.discuss.service.notification.NotificationEvents;
 import com.discuss.discuss.service.post.PostSupport;
 import com.discuss.discuss.service.user.UserService;
 import jakarta.persistence.EntityManager;
@@ -28,6 +30,7 @@ public class ReportService {
     private final PostReportRepository postReports;
     private final CommentReportRepository commentReports;
     private final CommunityReportRepository communityReports;
+    private final NotificationEvents notificationEvents;
 
     @Transactional
     public ReportResponseDTO create(CreateReportRequestDTO request) {
@@ -55,7 +58,9 @@ public class ReportService {
                 .description(description)
                 .status(ReportStatus.PENDING)
                 .build();
-        return reportMapper.toResponse(postReports.saveAndFlush(report));
+        var saved = postReports.saveAndFlush(report);
+        notificationEvents.reportSubmitted(reporter.getId(), saved.getId(), ReportTargetType.POST, post.getCommunity().getId());
+        return reportMapper.toResponse(saved);
     }
 
     private ReportResponseDTO createCommentReport(CreateReportRequestDTO request, User reporter, String description) {
@@ -72,7 +77,10 @@ public class ReportService {
                 .description(description)
                 .status(ReportStatus.PENDING)
                 .build();
-        return reportMapper.toResponse(commentReports.saveAndFlush(report));
+        var saved = commentReports.saveAndFlush(report);
+        notificationEvents.reportSubmitted(reporter.getId(), saved.getId(), ReportTargetType.COMMENT,
+                comment.getPost().getCommunity().getId());
+        return reportMapper.toResponse(saved);
     }
 
     private ReportResponseDTO createCommunityReport(CreateReportRequestDTO request, User reporter, String description) {
@@ -88,7 +96,9 @@ public class ReportService {
                 .description(description)
                 .status(ReportStatus.PENDING)
                 .build();
-        return reportMapper.toResponse(communityReports.saveAndFlush(report));
+        var saved = communityReports.saveAndFlush(report);
+        notificationEvents.reportSubmitted(reporter.getId(), saved.getId(), ReportTargetType.COMMUNITY, community.getId());
+        return reportMapper.toResponse(saved);
     }
 
 }

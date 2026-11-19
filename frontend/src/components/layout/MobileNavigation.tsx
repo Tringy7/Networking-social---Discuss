@@ -18,7 +18,7 @@ export const MobileNavigation: React.FC = () => {
   const { user, isAuthenticated, activeRole } = useAuthStore();
   const { communities } = useCommunityStore();
   const openCreateModal = usePostStore((state) => state.openCreateModal);
-  const unreadCount = useNotificationStore((state) => state.notifications.filter((item) => !item.isRead).length);
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
   const navigate = useNavigate();
   const reduced = useReducedMotion();
   const intensity = useSettingsStore((state) => state.settings.animationIntensity);

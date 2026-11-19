@@ -1,4 +1,4 @@
-import { Comment, Conversation, NotificationItem, Post } from '../types';
+import { Comment, Conversation, Post } from '../types';
 
 const now = Date.now();
 
@@ -157,44 +157,6 @@ export const demoComments: Comment[] = [
     voteScore: 3,
     userVote: null,
     createdAt: new Date(now - 1000 * 60 * 5).toISOString(),
-  },
-];
-
-export const demoNotifications: NotificationItem[] = [
-  {
-    id: 'demo-notification-reply',
-    type: 'REPLY',
-    actor: {
-      username: 'khoale',
-      displayName: 'Khoa Lê',
-      avatarUrl: '',
-    },
-    message: 'đã trả lời trong cuộc thảo luận React của bạn.',
-    targetUrl: '/post/demo-post-react-query',
-    isRead: false,
-    createdAt: new Date(now - 1000 * 60 * 6).toISOString(),
-  },
-  {
-    id: 'demo-notification-mention',
-    type: 'MENTION',
-    actor: {
-      username: 'maivo',
-      displayName: 'Mai Võ',
-      avatarUrl: '',
-    },
-    message: 'đã nhắc đến bạn trong một bình luận.',
-    targetUrl: '/post/demo-post-react-query',
-    isRead: false,
-    createdAt: new Date(now - 1000 * 60 * 45).toISOString(),
-  },
-  {
-    id: 'demo-notification-system',
-    type: 'SYSTEM',
-    actor: null,
-    message: 'Chào mừng bạn đến với cộng đồng DISCUSS!',
-    targetUrl: '/explore',
-    isRead: true,
-    createdAt: new Date(now - 1000 * 60 * 60 * 24).toISOString(),
   },
 ];
 
