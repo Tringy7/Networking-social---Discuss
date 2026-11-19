@@ -13,6 +13,7 @@ import {
   AdminPageHeader,
   AdminPagination,
   AdminRoleBadge,
+  AdminSearchInput,
   AdminStatusBadge,
   adminDate,
   adminNumber,
@@ -33,10 +34,13 @@ export default function UserManagementPage() {
   const roleValue = query.params.get('role') || '';
   const status = ['ACTIVE', 'SUSPENDED'].includes(statusValue) ? statusValue : '';
   const role = ['USER', 'ADMIN'].includes(roleValue) ? roleValue : '';
+  const search = (query.params.get('search') || '').trim().slice(0, 200);
   const { page, size } = query;
   const result = useAdminResource(useCallback(
-    () => adminService.listUsers({ page, size, status, role }),
-    [page, size, status, role],
+    () => search
+      ? adminService.searchUsers({ search, page, size, status, role })
+      : adminService.listUsers({ page, size, status, role }),
+    [page, size, search, status, role],
   ));
   const users = result.data?.empty ? [] : result.data?.content || [];
   const [selected, setSelected] = useState(null);
@@ -97,6 +101,13 @@ export default function UserManagementPage() {
       />
 
       <div className="admin-table-toolbar admin-user-filters">
+        <AdminSearchInput
+          value={search}
+          onChange={value => query.update({ search: value }, true)}
+          placeholder="Search username or email…"
+          label="Search users"
+          maxLength={200}
+        />
         <div className="admin-filter-bar">
           <AdminFilter
             label="Status"
@@ -127,9 +138,9 @@ export default function UserManagementPage() {
             ? 'Loading users…'
             : result.error
               ? 'Could not load users'
-              : `${adminNumber(result.data?.totalElements)} users`}
+              : `${adminNumber(result.data?.totalElements)} ${search ? 'matching users' : 'users'}`}
         </span>
-        {(status || role) && <button type="button" onClick={query.reset}>Clear filters</button>}
+        {(status || role || search) && <button type="button" onClick={query.reset}>Clear filters</button>}
       </div>
 
       <AdminDataTable
@@ -140,7 +151,7 @@ export default function UserManagementPage() {
         error={result.error}
         retry={result.reload}
         caption="Admin user list"
-        empty={<AdminEmptyState title="No users found" description="Try changing the status or role filters." onReset={query.reset} />}
+        empty={<AdminEmptyState title="No users found" description={search ? 'No accounts match this search and the selected filters.' : 'Try changing the status or role filters.'} onReset={query.reset} />}
       />
 
       <AdminPagination
