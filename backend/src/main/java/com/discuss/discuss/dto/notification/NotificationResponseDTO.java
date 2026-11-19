@@ -1,6 +1,8 @@
 package com.discuss.discuss.dto.notification;
 
 import com.discuss.discuss.enums.NotificationType;
+import com.discuss.discuss.enums.ReportStatus;
+import com.discuss.discuss.enums.ReportTargetType;
 import java.time.LocalDateTime;
 
 public record NotificationResponseDTO(
@@ -10,7 +12,11 @@ public record NotificationResponseDTO(
         Long postId,
         Long commentId,
         boolean read,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String communityName,
+        Long reportId,
+        ReportTargetType reportTargetType,
+        ReportStatus reportStatus
 ) {
     public record Actor(String username, String displayName, String avatarUrl) {}
 }

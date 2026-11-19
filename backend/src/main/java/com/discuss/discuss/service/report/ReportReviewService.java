@@ -8,6 +8,7 @@ import com.discuss.discuss.exception.report.ReportException;
 import com.discuss.discuss.mapper.report.ReportMapper;
 import com.discuss.discuss.service.community.CommunityAuthorizationService;
 import com.discuss.discuss.service.community.CommunitySupport;
+import com.discuss.discuss.service.notification.NotificationEvents;
 import com.discuss.discuss.service.user.UserService;
 import com.discuss.discuss.utils.annotation.auth.HasRole;
 import jakarta.persistence.EntityManager;
@@ -26,6 +27,7 @@ public class ReportReviewService {
     private final UserService userService;
     private final CommunitySupport communitySupport;
     private final CommunityAuthorizationService communityAuthorization;
+    private final NotificationEvents notificationEvents;
 
     @HasRole("ADMIN")
     @Transactional(readOnly = true)
@@ -78,6 +80,12 @@ public class ReportReviewService {
                 report.setHandledAt(now);
                 report.setResolutionNote(resolutionNote);
                 report.setAction(action);
+                notificationEvents.reportReviewed(actor.getId(), id, type, report.getUser().getId(), status);
+                if (community == null && status == ReportStatus.RESOLVED) {
+                    Post post = report.getPost();
+                    notificationEvents.reportWarning(actor.getId(), id, type, post.getUser().getId(),
+                            post.getId(), post.getCommunity().getId());
+                }
                 yield mapper.toResponse(report);
             }
             case COMMENT -> {
@@ -91,6 +99,7 @@ public class ReportReviewService {
                 report.setHandledAt(now);
                 report.setResolutionNote(resolutionNote);
                 report.setAction(action);
+                notificationEvents.reportReviewed(actor.getId(), id, type, report.getReporter().getId(), status);
                 yield mapper.toResponse(report);
             }
             case COMMUNITY -> {
@@ -101,6 +110,12 @@ public class ReportReviewService {
                 report.setHandledAt(now);
                 report.setResolutionNote(resolutionNote);
                 report.setAction(action);
+                notificationEvents.reportReviewed(actor.getId(), id, type, report.getUser().getId(), status);
+                Community reportedCommunity = report.getCommunity();
+                if (status == ReportStatus.RESOLVED && reportedCommunity.getOwner() != null) {
+                    notificationEvents.reportWarning(actor.getId(), id, type, reportedCommunity.getOwner().getId(),
+                            null, reportedCommunity.getId());
+                }
                 yield mapper.toResponse(report);
             }
         };

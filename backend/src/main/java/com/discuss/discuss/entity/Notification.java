@@ -1,6 +1,8 @@
 package com.discuss.discuss.entity;
 
 import com.discuss.discuss.enums.NotificationType;
+import com.discuss.discuss.enums.ReportStatus;
+import com.discuss.discuss.enums.ReportTargetType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
@@ -12,8 +14,10 @@ import org.hibernate.annotations.CreationTimestamp;
             @Index(name = "idx_notifications_recipient_created", columnList = "recipient_id, created_at, id"),
             @Index(name = "idx_notifications_recipient_read", columnList = "recipient_id, read_at")
         },
-        uniqueConstraints = @UniqueConstraint(name = "uk_notifications_recipient_comment",
-                columnNames = {"recipient_id", "comment_id"}))
+        uniqueConstraints = {
+            @UniqueConstraint(name = "uk_notifications_recipient_comment", columnNames = {"recipient_id", "comment_id"}),
+            @UniqueConstraint(name = "uk_notifications_event_recipient", columnNames = {"event_id", "recipient_id"})
+        })
 @Getter
 @Setter
 @NoArgsConstructor
@@ -35,8 +39,19 @@ public class Notification {
     @Column(nullable = false, length = 40)
     private NotificationType type;
 
-    @Column(nullable = false)
     private Long postId;
+
+    @Column(name = "event_id")
+    private Long eventId;
+
+    private String communityName;
+    private Long reportId;
+
+    @Enumerated(EnumType.STRING)
+    private ReportTargetType reportTargetType;
+
+    @Enumerated(EnumType.STRING)
+    private ReportStatus reportStatus;
 
     @Column(name = "comment_id")
     private Long commentId;

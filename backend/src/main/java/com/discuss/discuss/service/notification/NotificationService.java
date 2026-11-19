@@ -2,14 +2,8 @@ package com.discuss.discuss.service.notification;
 
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.notification.NotificationResponseDTO;
-import com.discuss.discuss.entity.Comment;
 import com.discuss.discuss.entity.Notification;
-import com.discuss.discuss.entity.Post;
-import com.discuss.discuss.entity.User;
-import com.discuss.discuss.enums.MembershipStatus;
-import com.discuss.discuss.enums.NotificationType;
 import com.discuss.discuss.mapper.page.PageMapper;
-import com.discuss.discuss.repository.CommunityMemberRepository;
 import com.discuss.discuss.repository.NotificationRepository;
 import com.discuss.discuss.service.media.MinioService;
 import com.discuss.discuss.service.user.UserService;
@@ -19,22 +13,22 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
     private final NotificationRepository repository;
-    private final CommunityMemberRepository communityMemberRepository;
     private final UserService userService;
     private final PageMapper pageMapper;
     private final MinioService minioService;
 
     @Transactional(readOnly = true)
-    public PageResponseDTO<NotificationResponseDTO> list(boolean unreadOnly, Pageable pageable) {
+    public PageResponseDTO<NotificationResponseDTO> getCurrentUserNotifications(boolean unreadOnly, Pageable pageable) {
         Long recipientId = userService.getCurrentUser().getId();
-        Pageable newestFirst = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+        Pageable newestFirst = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
                 Sort.by(Sort.Direction.DESC, "createdAt", "id"));
         var page = unreadOnly
                 ? repository.findByRecipientIdAndReadAtIsNull(recipientId, newestFirst)
@@ -43,60 +37,25 @@ public class NotificationService {
     }
 
     @Transactional(readOnly = true)
-    public long unreadCount() {
+    public long countCurrentUserUnreadNotifications() {
         return repository.countByRecipientIdAndReadAtIsNull(userService.getCurrentUser().getId());
     }
 
     @Transactional
-    public boolean markRead(Long id) {
+    public boolean markNotificationAsRead(Long id) {
         Long recipientId = userService.getCurrentUser().getId();
         return repository.markRead(id, recipientId, LocalDateTime.now()) > 0
                 || repository.existsByIdAndRecipientId(id, recipientId);
     }
 
     @Transactional
-    public void markAllRead() {
+    public void markAllNotificationsAsRead() {
         repository.markAllRead(userService.getCurrentUser().getId(), LocalDateTime.now());
     }
 
-    @Transactional(propagation = Propagation.MANDATORY)
-    public void notifyPostCreated(Post post) {
-        var author = post.getUser();
-        var recipientIds = communityMemberRepository.findNotificationRecipientIds(
-                post.getCommunity().getId(), MembershipStatus.ACTIVE, author.getId());
-        repository.saveAll(recipientIds.stream()
-                .map(recipientId -> createNotification(recipientId, author,
-                        NotificationType.COMMUNITY_POST_CREATED, post.getId(), null))
-                .toList());
-    }
-
-    @Transactional(propagation = Propagation.MANDATORY)
-    public void notifyCommentCreated(Comment comment) {
-        var actor = comment.getUser();
-        var post = comment.getPost();
-        var parent = comment.getParentComment();
-        Long postAuthorId = post.getUser().getId();
-        Long parentAuthorId = parent == null ? null : parent.getUser().getId();
-
-        if (parentAuthorId != null && !parentAuthorId.equals(actor.getId())) {
-            repository.save(createNotification(parentAuthorId, actor,
-                    NotificationType.COMMENT_REPLIED, post.getId(), comment.getId()));
-        }
-        if (!postAuthorId.equals(actor.getId()) && !postAuthorId.equals(parentAuthorId)) {
-            repository.save(createNotification(postAuthorId, actor,
-                    NotificationType.POST_COMMENTED, post.getId(), comment.getId()));
-        }
-    }
-
-    private Notification createNotification(
-            Long recipientId, User actor, NotificationType type, Long postId, Long commentId) {
-        return Notification.builder()
-                .recipientId(recipientId)
-                .actor(actor)
-                .type(type)
-                .postId(postId)
-                .commentId(commentId)
-                .build();
+    @Transactional
+    public void deleteCurrentUserReadNotifications() {
+        repository.deleteReadNotifications(userService.getCurrentUser().getId());
     }
 
     private NotificationResponseDTO toResponse(Notification notification) {
@@ -109,6 +68,7 @@ public class NotificationService {
                 avatar == null ? null : minioService.buildFileUrl(avatar));
         return new NotificationResponseDTO(notification.getId(), notification.getType(), actorResponse,
                 notification.getPostId(), notification.getCommentId(), notification.getReadAt() != null,
-                notification.getCreatedAt());
+                notification.getCreatedAt(), notification.getCommunityName(), notification.getReportId(),
+                notification.getReportTargetType(), notification.getReportStatus());
     }
 }

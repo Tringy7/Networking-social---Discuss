@@ -198,7 +198,8 @@ export interface CommunityMember {
   status: 'ACTIVE' | 'MUTED' | 'BANNED';
 }
 
-export type NotificationType = 'REPLY' | 'MENTION' | 'INVITE' | 'MOD_ACTION' | 'SYSTEM';
+export type NotificationType = 'COMMUNITY_POST_CREATED' | 'POST_COMMENTED' | 'COMMENT_REPLIED'
+  | 'REPORT_SUBMITTED' | 'REPORT_REVIEWED' | 'REPORT_WARNING';
 
 export interface NotificationItem {
   id: string;

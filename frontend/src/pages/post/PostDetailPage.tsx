@@ -79,6 +79,12 @@ export const PostDetailPage: React.FC = () => {
 
   const post = posts.find((p) => p.id === postId);
 
+  useEffect(() => {
+    if (isPostLoading || !location.hash.startsWith('#comment-')) return;
+    const target = document.getElementById(location.hash.slice(1));
+    target?.scrollIntoView({ block: 'center' });
+  }, [comments, isPostLoading, location.hash, location.pathname]);
+
   if (!post) {
     if (isPostLoading) {
       return <div role="status" className="py-12 text-center text-sm text-[var(--text-secondary)]">Đang tải bài viết...</div>;
@@ -188,6 +194,7 @@ export const PostDetailPage: React.FC = () => {
     return (
       <div
         key={cmt.id}
+        id={`comment-${cmt.id}`}
         className={`text-left space-y-2.5 ${
           isNested ? 'ml-6 sm:ml-8 pl-3' : 'pt-4'
         }`}

@@ -13,7 +13,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { usePostStore } from '../../store/usePostStore';
 import { useToastStore } from '../../store/useToastStore';
-import { useNotificationStore } from '../../store/useNotificationStore';
+import { notificationSyncKey, useNotificationStore } from '../../store/useNotificationStore';
 import {
   Search,
   Plus,
@@ -36,7 +36,7 @@ export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout, activeRole } = useAuthStore();
   const { communities } = useCommunityStore();
   const { posts, openCreateModal } = usePostStore();
-  const { notifications, hydrate: hydrateNotifications } = useNotificationStore();
+  const { unreadCount: unreadNotifs, hydrate: hydrateNotifications, clear } = useNotificationStore();
   const addToast = useToastStore((state) => state.addToast);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,15 +62,40 @@ export const Navbar: React.FC = () => {
   const searchRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
-
-  const unreadNotifs = notifications.filter((notification) => !notification.isRead).length;
+  const notificationButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    clear();
+    if (!isAuthenticated || !user?.id) return;
     hydrateNotifications().catch((error: unknown) => {
       addToast(error instanceof Error ? error.message : 'Không thể tải thông báo.', 'error');
     });
-  }, [addToast, hydrateNotifications, isAuthenticated]);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') void hydrateNotifications().catch(() => {});
+    };
+    const syncFromOtherTab = (event: StorageEvent) => {
+      if (event.key !== notificationSyncKey || !event.newValue) return;
+      try {
+        if (JSON.parse(event.newValue)?.userId === user.id) {
+          void hydrateNotifications().catch(() => {});
+        }
+      } catch {
+        // Ignore malformed browser storage events.
+      }
+    };
+    const timer = window.setInterval(refreshWhenVisible, 10000);
+    window.addEventListener('focus', refreshWhenVisible);
+    window.addEventListener('online', refreshWhenVisible);
+    window.addEventListener('storage', syncFromOtherTab);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refreshWhenVisible);
+      window.removeEventListener('online', refreshWhenVisible);
+      window.removeEventListener('storage', syncFromOtherTab);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, [addToast, clear, hydrateNotifications, isAuthenticated, user?.id]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -92,7 +117,10 @@ export const Navbar: React.FC = () => {
   useEffect(() => {
     if (!isMobileSearchOpen && !isSearchOpen && !isUserMenuOpen && !isNotifOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && !event.isComposing) {
+        if (isNotifOpen && notifRef.current?.contains(document.activeElement)) {
+          notificationButtonRef.current?.focus();
+        }
         setIsMobileSearchOpen(false);
         setIsSearchOpen(false);
         setIsUserMenuOpen(false);
@@ -314,6 +342,8 @@ export const Navbar: React.FC = () => {
               {/* Notifications Dropdown */}
               <div ref={notifRef} className="relative hidden sm:block">
                 <button
+                  ref={notificationButtonRef}
+                  type="button"
                   onClick={() => {
                     setIsNotifOpen(!isNotifOpen);
                     if (!isNotifOpen && isAuthenticated) {
@@ -332,7 +362,13 @@ export const Navbar: React.FC = () => {
                   <NotificationBadge count={unreadNotifs} />
                 </button>
 
-                {isNotifOpen && <NotificationPanel onClose={() => setIsNotifOpen(false)} />}
+                {isNotifOpen && <NotificationPanel
+                  onClose={() => setIsNotifOpen(false)}
+                  onDismiss={() => {
+                    setIsNotifOpen(false);
+                    notificationButtonRef.current?.focus();
+                  }}
+                />}
               </div>
 
               {/* User Dropdown */}

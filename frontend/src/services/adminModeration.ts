@@ -51,7 +51,7 @@ export type AdminComment = CommentMutationResponse;
 export const adminCapabilities = {
   userStatus: true, userRoleFilter: true,
   communityStatus: true, allCommunityStates: true,
-  reportResolution: false, reportDateFilter: false,
+  reportResolution: true, reportDateFilter: false,
   categoryCreate: false, categoryEdit: false, categoryDelete: false,
   activityLog: false, allPostStates: false,
 } as const;

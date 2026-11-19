@@ -1,81 +1,135 @@
 import { create } from 'zustand';
 import { NotificationItem } from '../types';
-import { NOTIFICATIONS_AVAILABLE, NotificationPreferences, notificationService } from '../services';
-import { demoNotifications } from '../mocks/demoContent';
-
-export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
-  inAppReplies: true,
-  inAppMentions: true,
-  inAppCommunityActivity: true,
-  emailDigest: false,
-  emailAnnouncements: true,
-};
+import { notificationService } from '../services';
+import { useAuthStore } from './useAuthStore';
 
 interface NotificationState {
   notifications: NotificationItem[];
-  preferences: NotificationPreferences;
+  unreadCount: number;
+  page: number;
+  hasMore: boolean;
   hydrate: () => Promise<void>;
+  loadMore: () => Promise<void>;
+  clear: () => void;
   markRead: (id: string) => Promise<void>;
   markAllRead: () => Promise<void>;
-  updatePreferences: (preferences: Partial<NotificationPreferences>) => void;
-  savePreferences: () => void;
-  resetPreferences: () => void;
+  deleteReadNotifications: () => Promise<void>;
 }
 
-function getInitialPreferences(): NotificationPreferences {
-  if (typeof localStorage === 'undefined') return DEFAULT_NOTIFICATION_PREFERENCES;
+let sessionRevision = 0;
+let queue: Promise<void> = Promise.resolve();
+let syncing: Promise<void> | undefined;
+const currentUserId = () => useAuthStore.getState().user?.id;
+export const notificationSyncKey = 'discuss:notifications-changed';
+
+function enqueue(task: (isCurrent: () => boolean) => Promise<void>) {
+  const userId = currentUserId();
+  const revision = sessionRevision;
+  const isCurrent = () => !!userId && userId === currentUserId() && revision === sessionRevision;
+  const result = queue.then(async () => {
+    if (isCurrent()) await task(isCurrent);
+  });
+  queue = result.catch(() => {});
+  return result;
+}
+
+function notifyOtherTabs() {
   try {
-    const saved = localStorage.getItem('discuss_notification_preferences');
-    return saved
-      ? { ...DEFAULT_NOTIFICATION_PREFERENCES, ...JSON.parse(saved) as Partial<NotificationPreferences> }
-      : DEFAULT_NOTIFICATION_PREFERENCES;
-  } catch (error) {
-    console.error('Unable to load notification preferences.', error);
-    return DEFAULT_NOTIFICATION_PREFERENCES;
+    localStorage.setItem(notificationSyncKey, JSON.stringify({
+      userId: currentUserId(), change: window.crypto?.randomUUID?.() ?? Math.random(),
+    }));
+  } catch {
+    // Polling also reconciles tabs when browser storage is unavailable.
   }
 }
 
-export const useNotificationStore = create<NotificationState>((set) => ({
-  notifications: NOTIFICATIONS_AVAILABLE ? [] : demoNotifications.map((item) => ({ ...item })),
-  preferences: getInitialPreferences(),
+export const useNotificationStore = create<NotificationState>((set, get) => ({
+  notifications: [],
+  unreadCount: 0,
+  page: 0,
+  hasMore: false,
 
-  hydrate: async () => {
-    if (NOTIFICATIONS_AVAILABLE) set({ notifications: await notificationService.list() });
+  hydrate: () => {
+    if (syncing) return syncing;
+    const refresh = enqueue(async (isCurrent) => {
+      const [pages, count] = await Promise.all([
+        Promise.all(Array.from({ length: get().page + 1 }, (_, page) => notificationService.list(page))),
+        notificationService.unreadCount(),
+      ]);
+      if (!isCurrent()) return;
+      const lastPage = pages.findIndex(page => page.last);
+      const page = lastPage === -1 ? pages.length - 1 : lastPage;
+      const items = pages.slice(0, page + 1).flatMap(result => result.content);
+      set({
+        notifications: [...new Map(items.map(item => [item.id, item])).values()],
+        unreadCount: count.unreadCount,
+        page,
+        hasMore: !pages[page].last,
+      });
+    });
+    syncing = refresh.finally(() => {
+      if (syncing === pending) syncing = undefined;
+    });
+    const pending = syncing;
+    return pending;
+  },
+
+  loadMore: () => enqueue(async (isCurrent) => {
+    if (!get().hasMore) return;
+    const page = get().page + 1;
+    const result = await notificationService.list(page);
+    if (isCurrent()) {
+      set(state => ({
+        notifications: [...new Map([...state.notifications, ...result.content].map(item => [item.id, item])).values()],
+        page, hasMore: !result.last,
+      }));
+    }
+  }),
+
+  clear: () => {
+    sessionRevision++;
+    syncing = undefined;
+    queue = Promise.resolve();
+    set({ notifications: [], unreadCount: 0, page: 0, hasMore: false });
   },
 
   markRead: async (id) => {
-    if (NOTIFICATIONS_AVAILABLE) await notificationService.markRead(id);
-    set((state) => ({
-      notifications: state.notifications.map((item) =>
-        item.id === id ? { ...item, isRead: true } : item
-      ),
-    }));
+    await enqueue(async (isCurrent) => {
+      await notificationService.markRead(id);
+      if (!isCurrent()) return;
+      set(state => ({
+        notifications: state.notifications.map(item => item.id === id ? { ...item, isRead: true } : item),
+        unreadCount: Math.max(0, state.unreadCount - Number(state.notifications.some(item => item.id === id && !item.isRead))),
+      }));
+      notifyOtherTabs();
+    });
+    void get().hydrate().catch(() => {});
   },
 
   markAllRead: async () => {
-    if (NOTIFICATIONS_AVAILABLE) await notificationService.markAllRead();
-    set((state) => ({
-      notifications: state.notifications.map((item) => ({ ...item, isRead: true })),
-    }));
+    await enqueue(async (isCurrent) => {
+      await notificationService.markAllRead();
+      if (!isCurrent()) return;
+      set(state => ({
+        notifications: state.notifications.map(item => ({ ...item, isRead: true })),
+        unreadCount: 0,
+      }));
+      notifyOtherTabs();
+    });
+    void get().hydrate().catch(() => {});
   },
 
-  updatePreferences: (preferences) =>
-    set((state) => ({ preferences: { ...state.preferences, ...preferences } })),
-
-  savePreferences: () => {
-    const preferences = useNotificationStore.getState().preferences;
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('discuss_notification_preferences', JSON.stringify(preferences));
-    }
-  },
-
-  resetPreferences: () => {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(
-        'discuss_notification_preferences',
-        JSON.stringify(DEFAULT_NOTIFICATION_PREFERENCES)
-      );
-    }
-    set({ preferences: DEFAULT_NOTIFICATION_PREFERENCES });
+  deleteReadNotifications: async () => {
+    await enqueue(async (isCurrent) => {
+      await notificationService.deleteReadNotifications();
+      if (!isCurrent()) return;
+      set(state => ({
+        notifications: state.notifications.filter(item => !item.isRead),
+        page: 0,
+        hasMore: false,
+      }));
+      notifyOtherTabs();
+    });
+    void get().hydrate().catch(() => {});
   },
 }));

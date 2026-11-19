@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Button from '../ui/Button';
 import apiClient from '../../services/apiClient';
 import { useToastStore } from '../../store/useToastStore';
@@ -27,7 +27,8 @@ type ReportPage = { content: CommunityReport[]; totalPages: number };
 const control = 'rounded-lg border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2';
 
 export default function CommunityReportsPanel({ name, canReview }: { name: string; canReview: boolean }) {
-  const [type, setType] = useState<ReportType>('POST');
+  const [params] = useSearchParams();
+  const [type, setType] = useState<ReportType>(() => params.get('type') === 'COMMENT' ? 'COMMENT' : 'POST');
   const [status, setStatus] = useState<ReportStatus | ''>('PENDING');
   const [page, setPage] = useState(0);
   const [revision, setRevision] = useState(0);
@@ -120,7 +121,13 @@ export default function CommunityReportsPanel({ name, canReview }: { name: strin
           <form className="space-y-2" onSubmit={review}>
             <label className="grid gap-1 text-sm">Ghi chú xử lý
               <textarea className={control} rows={3} value={note} onChange={event => setNote(event.target.value)}
-                required maxLength={2000} disabled={saving} />
+                required maxLength={2000} disabled={saving} aria-keyshortcuts="Control+Enter Meta+Enter"
+                onKeyDown={event => {
+                  if (event.key !== 'Enter' || !(event.ctrlKey || event.metaKey) || event.nativeEvent.isComposing) return;
+                  event.preventDefault();
+                  if (!event.repeat) event.currentTarget.form?.requestSubmit();
+                }} />
+              <small>Ctrl + Enter hoặc ⌘ + Enter để xác nhận</small>
             </label>
             {reviewError && <p role="alert" className="text-sm text-[var(--color-danger)]">{reviewError}</p>}
             <div className="flex flex-wrap gap-2">

@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Bell, CheckCheck, X } from 'lucide-react';
 import { useNotificationStore } from '../../store/useNotificationStore';
 import { useToastStore } from '../../store/useToastStore';
-import Avatar from '../ui/Avatar';
-import './notificationPanel.css';
+import { NotificationIcon, NotificationMessage } from './NotificationIdentity';
 
 function notificationTime(value: string) {
   const date = new Date(value);
@@ -17,13 +16,15 @@ function notificationTime(value: string) {
   return date.toLocaleDateString('vi-VN');
 }
 
-export default function NotificationPanel({ onClose }: { onClose: () => void }) {
-  const { notifications, markRead, markAllRead } = useNotificationStore();
+export default function NotificationPanel({ onClose, onDismiss }: {
+  onClose: () => void;
+  onDismiss: () => void;
+}) {
+  const { notifications, unreadCount: unread, markRead, markAllRead } = useNotificationStore();
   const notify = useToastStore((state) => state.addToast);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [saving, setSaving] = useState(false);
   const pending = useRef(false);
-  const unread = notifications.filter((item) => !item.isRead).length;
   const visible = notifications.filter((item) => filter === 'all' || !item.isRead);
   const readAll = async () => {
     if (pending.current) return;
@@ -37,7 +38,7 @@ export default function NotificationPanel({ onClose }: { onClose: () => void }) 
   return <section id="navbar-notifications" className="notification-panel" aria-labelledby="notification-panel-title">
     <header className="notification-panel-heading">
       <div><h2 id="notification-panel-title">Thông báo</h2><p aria-live="polite">{unread ? `Bạn có ${unread} thông báo chưa đọc` : 'Bạn đã xem hết thông báo'}</p></div>
-      <button type="button" className="notification-panel-close" aria-label="Đóng bảng thông báo" onClick={onClose}><X size={18} /></button>
+      <button type="button" className="notification-panel-close" aria-label="Đóng bảng thông báo" onClick={onDismiss}><X size={18} /></button>
     </header>
     <div className="notification-panel-toolbar">
       <div className="notification-panel-filters" role="group" aria-label="Lọc thông báo">
@@ -49,26 +50,33 @@ export default function NotificationPanel({ onClose }: { onClose: () => void }) 
       </button>
     </div>
     <div className="notification-panel-list">
-      {visible.length ? <ul>{visible.slice(0, 8).map((item) => <li key={item.id}>
-        <Link to={item.targetUrl} className={`notification-panel-item ${item.isRead ? '' : 'is-unread'}`}
+      {visible.length ? <ul onKeyDown={event => {
+        if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+        const links = Array.from(event.currentTarget.querySelectorAll('a'));
+        const index = links.findIndex(link => link === document.activeElement);
+        if (index === -1) return;
+        event.preventDefault();
+        links[index + (event.key === 'ArrowDown' ? 1 : -1)]?.focus();
+      }}>{visible.slice(0, 8).map((item) => <li key={item.id}>
+        <Link to={item.targetUrl} data-notification-type={item.type} className={`notification-panel-item ${item.isRead ? '' : 'is-unread'}`}
           onClick={() => {
             onClose();
             if (!item.isRead) void markRead(item.id).catch((error: unknown) => {
               notify(error instanceof Error ? error.message : 'Không thể cập nhật thông báo.', 'error');
             });
           }}>
-          {item.actor ? <Avatar src={item.actor.avatarUrl} alt={item.actor.displayName} size="sm" />
-            : <span className="notification-panel-system" aria-hidden="true"><Bell size={19} /></span>}
+          <NotificationIcon item={item} />
           <div className="notification-panel-copy">
-            <p>{item.actor && <strong>{item.actor.displayName} </strong>}{item.message}</p>
+            <NotificationMessage item={item} />
             <time dateTime={item.createdAt}>{notificationTime(item.createdAt)}</time>
           </div>
           {!item.isRead && <><span className="notification-panel-dot" aria-hidden="true" /><span className="sr-only">Chưa đọc</span></>}
         </Link>
       </li>)}</ul> : <div className="notification-panel-empty" role="status">
         <Bell size={28} strokeWidth={1.5} aria-hidden="true" />
-        <h3>{filter === 'unread' ? 'Không còn thông báo chưa đọc' : 'Chưa có thông báo'}</h3>
-        <p>Phản hồi và hoạt động mới sẽ xuất hiện ở đây.</p>
+        <h3>{filter === 'unread'
+          ? unread ? 'Thông báo chưa đọc nằm ở các trang sau' : 'Bạn đã đọc hết thông báo'
+          : 'Chưa có thông báo'}</h3>
       </div>}
     </div>
     <Link to="/notifications" className="notification-panel-footer" onClick={onClose}>Xem tất cả thông báo<ArrowRight size={16} /></Link>

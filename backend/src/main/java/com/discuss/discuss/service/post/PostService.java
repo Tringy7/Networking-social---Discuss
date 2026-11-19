@@ -21,7 +21,7 @@ import com.discuss.discuss.repository.PostVoteRepository;
 import com.discuss.discuss.repository.PostContentRepository;
 import com.discuss.discuss.service.community.CommunityAuthorizationService;
 import com.discuss.discuss.service.community.CommunitySupport;
-import com.discuss.discuss.service.notification.NotificationService;
+import com.discuss.discuss.service.notification.NotificationEvents;
 import com.discuss.discuss.service.user.UserService;
 import com.discuss.discuss.utils.annotation.auth.HasRole;
 import jakarta.validation.Valid;
@@ -51,7 +51,7 @@ public class PostService {
     private final CommunitySupport communitySupport;
     private final CommunityAuthorizationService communityAuthorizationService;
     private final PostSupport postSupport;
-    private final NotificationService notificationService;
+    private final NotificationEvents notificationEvents;
 
     private final PostMapper postMapper;
 
@@ -80,7 +80,7 @@ public class PostService {
         postContentRepository.save(postContent);
 
         List<PostMedia> postAttachments = postAttachmentService.saveAttachments(post, request);
-        notificationService.notifyPostCreated(post);
+        notificationEvents.postCreated(post);
         return postMapper.toResponse(post, postContent, postAttachments, 0, 0, null, false);
     }
 

@@ -86,18 +86,47 @@ export function AdminAvatar({ name, src, square }: { name: string; src?: string 
   const tone = [...name].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 4;
   return <span className={`admin-person-avatar tone-${tone} ${square ? 'is-square' : ''}`}>{src && !failed ? <img src={src} alt="" onError={() => setFailed(true)} /> : name.slice(0, 1).toUpperCase()}</span>;
 }
-export interface AdminAction { title: string; description: string; label: string; execute: () => Promise<unknown>; available?: boolean; success: string; danger?: boolean; preview?: ReactNode }
+export interface AdminAction { title: string; description: string; label: string; execute: (note: string) => Promise<unknown>; available?: boolean; requiresNote?: boolean; success: string; danger?: boolean; preview?: ReactNode }
 export function AdminConfirmDialog({ action, onClose, onSuccess }: { action: AdminAction; onClose: () => void; onSuccess: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [note, setNote] = useState('');
   const locked = useRef(false);
   const addToast = useToastStore(state => state.addToast);
+  const blocked = action.available === false || (action.requiresNote && !note.trim());
   const confirm = async () => {
-    if (locked.current || action.available === false) return;
+    if (locked.current || blocked) return;
     locked.current = true; setBusy(true); setError('');
-    try { await action.execute(); addToast(action.success, 'success'); onSuccess(); onClose(); }
+    try { await action.execute(note.trim()); addToast(action.success, 'success'); onSuccess(); onClose(); }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Thao tác chưa hoàn tất.'); }
     finally { locked.current = false; setBusy(false); }
   };
-  return <Modal isOpen onClose={() => { if (!locked.current) onClose(); }} closeDisabled={busy} title={action.title} maxWidth="md"><div className="admin-confirm"><p>{action.description}</p>{action.preview && <div className="admin-confirm-preview">{action.preview}</div>}{action.available === false && <AdminNotice>Thao tác này chưa được hệ thống hỗ trợ. Chưa có thay đổi nào được thực hiện.</AdminNotice>}{error && <p className="admin-inline-error" role="alert">{error}</p>}<div className="admin-dialog-actions"><button className="admin-button" onClick={onClose} disabled={busy}>Hủy</button><button className={`admin-button ${action.danger ? 'admin-button-danger' : 'admin-button-primary'}`} onClick={confirm} disabled={busy || action.available === false}>{busy ? 'Đang xử lý…' : action.label}</button></div></div></Modal>;
+  return <Modal isOpen onClose={() => { if (!locked.current) onClose(); }} closeDisabled={busy} title={action.title} maxWidth="md">
+    <form className="admin-confirm" onSubmit={event => {
+      event.preventDefault();
+      void confirm();
+    }}>
+      <p>{action.description}</p>
+      {action.preview && <div className="admin-confirm-preview">{action.preview}</div>}
+      {action.available === false && <AdminNotice>Thao tác này chưa được hệ thống hỗ trợ.</AdminNotice>}
+      {action.requiresNote && <label className="admin-confirm-note">
+        Ghi chú xử lý
+        <textarea rows={4} maxLength={2000} required value={note} disabled={busy}
+          aria-keyshortcuts="Control+Enter Meta+Enter"
+          onChange={event => setNote(event.target.value)}
+          onKeyDown={event => {
+            if (event.key !== 'Enter' || !(event.ctrlKey || event.metaKey) || event.nativeEvent.isComposing) return;
+            event.preventDefault();
+            if (!event.repeat) event.currentTarget.form?.requestSubmit();
+          }} />
+        <small>Ctrl + Enter hoặc ⌘ + Enter để xác nhận</small>
+      </label>}
+      {error && <p className="admin-inline-error" role="alert">{error}</p>}
+      <div className="admin-dialog-actions">
+        <button type="button" className="admin-button" onClick={onClose} disabled={busy}>Hủy</button>
+        <button className={`admin-button ${action.danger ? 'admin-button-danger' : 'admin-button-primary'}`}
+          type="submit" disabled={busy || blocked}>{busy ? 'Đang xử lý…' : action.label}</button>
+      </div>
+    </form>
+  </Modal>;
 }
