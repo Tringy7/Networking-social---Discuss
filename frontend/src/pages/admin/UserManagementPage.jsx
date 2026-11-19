@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Eye } from 'lucide-react';
+import { Eye, Image as ImageIcon, UserRound } from 'lucide-react';
 import { adminService } from '../../services';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
@@ -10,6 +10,8 @@ import {
   AdminEmptyState,
   AdminFields,
   AdminFilter,
+  AdminErrorState,
+  AdminLoadingSkeleton,
   AdminPageHeader,
   AdminPagination,
   AdminRoleBadge,
@@ -24,6 +26,58 @@ function UserIdentity({ user }) {
     <div className="admin-identity">
       <AdminAvatar name={user.displayName || user.username} src={user.avatarUrl} />
       <span><strong>@{user.username}</strong></span>
+    </div>
+  );
+}
+
+function UserDetailContent({ userId }) {
+  const detail = useAdminResource(useCallback(() => adminService.getUserDetail(userId), [userId]));
+
+  if (detail.loading) return <AdminLoadingSkeleton />;
+  if (detail.error) return <AdminErrorState error={detail.error} retry={detail.reload} />;
+
+  const user = detail.data;
+  const profile = user.profile || {};
+  const statistics = user.statistics || {};
+
+  return (
+    <div className="admin-user-detail">
+      <section className="admin-user-detail-section" aria-labelledby="admin-user-basic-title">
+        <h2 id="admin-user-basic-title">Basic information</h2>
+        <AdminFields items={[
+          ['User ID', user.userId],
+          ['Username', `@${user.username}`],
+          ['Joined At', adminDate(user.joinedAt)],
+        ]} />
+      </section>
+
+      <section className="admin-user-detail-section" aria-labelledby="admin-user-profile-title">
+        <h2 id="admin-user-profile-title">Profile</h2>
+        <div className="admin-user-profile-media">
+          {profile.avatar
+            ? <img className="admin-user-avatar-image" src={profile.avatar} alt={`${profile.displayName || user.username} avatar`} />
+            : <div className="admin-user-avatar-placeholder"><UserRound size={24} aria-hidden="true" /><span>No avatar</span></div>}
+          {profile.banner
+            ? <img className="admin-user-banner-image" src={profile.banner} alt={`${profile.displayName || user.username} banner`} />
+            : <div className="admin-user-banner-placeholder"><ImageIcon size={20} aria-hidden="true" /><span>No banner</span></div>}
+        </div>
+        <AdminFields items={[
+          ['Display Name', profile.displayName],
+          ['Bio', profile.bio || '—'],
+          ['Date Of Birth', profile.dateOfBirth ? adminDate(profile.dateOfBirth) : '—'],
+          ['Gender', profile.gender],
+          ['Location', profile.location],
+        ]} />
+      </section>
+
+      <section className="admin-user-detail-section" aria-labelledby="admin-user-statistics-title">
+        <h2 id="admin-user-statistics-title">Statistics</h2>
+        <div className="admin-user-stat-grid">
+          <div><span>Post Count</span><strong>{adminNumber(statistics.postCount)}</strong></div>
+          <div><span>Comment Count</span><strong>{adminNumber(statistics.commentCount)}</strong></div>
+          <div><span>Community Count</span><strong>{adminNumber(statistics.communityCount)}</strong></div>
+        </div>
+      </section>
     </div>
   );
 }
@@ -54,7 +108,7 @@ export default function UserManagementPage() {
     {
       key: 'username',
       label: 'Username',
-      render: user => <strong className="admin-user-username">@{user.username}</strong>,
+      render: user => <button className="admin-name-button" type="button" onClick={() => setSelected(user)}><strong>@{user.username}</strong></button>,
     },
     {
       key: 'displayName',
@@ -165,15 +219,7 @@ export default function UserManagementPage() {
       {selected && (
         <AdminDetailDrawer title="User details" onClose={() => setSelected(null)}>
           <UserIdentity user={selected} />
-          <AdminFields items={[
-            ['Username', `@${selected.username}`],
-            ['Display Name', selected.displayName],
-            ['Email', selected.email],
-            ['Role', <AdminRoleBadge role={selected.role} />],
-            ['Status', <AdminStatusBadge status={selected.status} />],
-            ['Created At', adminDate(selected.createdAt)],
-            ['User ID', selected.id],
-          ]} />
+          <UserDetailContent userId={selected.id} />
         </AdminDetailDrawer>
       )}
     </div>

@@ -575,6 +575,26 @@ export interface AdminUserPage {
   empty: boolean;
 }
 
+export interface AdminUserDetail {
+  userId: number | string;
+  username: string;
+  joinedAt: string;
+  profile: {
+    displayName: string | null;
+    bio: string | null;
+    avatar: string | null;
+    banner: string | null;
+    dateOfBirth: string | null;
+    gender: string | null;
+    location: string | null;
+  };
+  statistics: {
+    postCount: number;
+    commentCount: number;
+    communityCount: number;
+  };
+}
+
 export const adminService = {
   getStats: async (): Promise<AdminStats> => {
     requireFeature(ADMIN_AVAILABLE, 'Quản trị');
@@ -603,6 +623,10 @@ export const adminService = {
     if (options.status) params.set('status', options.status);
     if (options.role) params.set('role', options.role);
     return apiClient.get<AdminUserPage>(`/admin/users/search?${params}`);
+  },
+  getUserDetail: (id: string | number): Promise<AdminUserDetail> => {
+    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
+    return apiClient.get<AdminUserDetail>(`/admin/users/${encodeURIComponent(String(id))}`);
   },
   lockUser: (id: string | number): Promise<{ message: string }> =>
     apiClient.patch<{ message: string }>(`/admin/users/${id}/lock`),
