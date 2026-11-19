@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { getAdminReportDetail, listAdminReports, resolveAdminReport } from '../../services/adminReportService.js';
+import { getAdminReportDetail, listAdminReports, rejectAdminReport, resolveAdminReport } from '../../services/adminReportService.js';
 import Modal from '../../components/ui/Modal';
 import { useToastStore } from '../../store/useToastStore';
 import {
@@ -42,7 +42,7 @@ const REASONS = {
   OTHER: 'Other',
 };
 
-function ResolveReportDialog({ type, reportId, onClose, onSuccess }) {
+function ReportDecisionDialog({ type, reportId, decision, onClose, onSuccess }) {
   const [resolutionNote, setResolutionNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -63,21 +63,22 @@ function ResolveReportDialog({ type, reportId, onClose, onSuccess }) {
     setBusy(true);
     setError('');
     try {
-      await resolveAdminReport(type, reportId, note);
-      addToast(`Report #${reportId} resolved successfully.`, 'success');
+      const submitDecision = decision === 'reject' ? rejectAdminReport : resolveAdminReport;
+      await submitDecision(type, reportId, note);
+      addToast(`Report #${reportId} ${decision === 'reject' ? 'rejected' : 'resolved'} successfully.`, 'success');
       onSuccess();
       onClose();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Không thể xử lý báo cáo.');
+      setError(cause instanceof Error ? cause.message : 'Không thể cập nhật báo cáo.');
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <Modal isOpen onClose={() => !busy && onClose()} closeDisabled={busy} title="Resolve report" maxWidth="md">
+    <Modal isOpen onClose={() => !busy && onClose()} closeDisabled={busy} title={decision === 'reject' ? 'Reject report' : 'Resolve report'} maxWidth="md">
       <form className="admin-resolve-form" onSubmit={submit}>
-        <p>Nhập Resolution Note để xác nhận báo cáo này đã được xử lý.</p>
+        <p>{decision === 'reject' ? 'Nhập Resolution Note để từ chối báo cáo này.' : 'Nhập Resolution Note để xác nhận báo cáo này đã được xử lý.'}</p>
         <label htmlFor="admin-report-resolution-note">Resolution Note</label>
         <textarea
           id="admin-report-resolution-note"
@@ -94,8 +95,8 @@ function ResolveReportDialog({ type, reportId, onClose, onSuccess }) {
         {error && <p className="admin-inline-error" role="alert">{error}</p>}
         <div className="admin-dialog-actions">
           <button className="admin-button" type="button" onClick={onClose} disabled={busy}>Cancel</button>
-          <button className="admin-button admin-button-primary" type="submit" disabled={busy || !resolutionNote.trim() || resolutionNote.length > 2000}>
-            {busy ? 'Resolving…' : 'Resolve'}
+          <button className={`admin-button ${decision === 'reject' ? 'admin-button-danger' : 'admin-button-primary'}`} type="submit" disabled={busy || !resolutionNote.trim() || resolutionNote.length > 2000}>
+            {busy ? 'Saving…' : decision === 'reject' ? 'Reject' : 'Resolve'}
           </button>
         </div>
       </form>
@@ -105,7 +106,7 @@ function ResolveReportDialog({ type, reportId, onClose, onSuccess }) {
 
 function ReportDetailContent({ type, reportId, onListRefresh }) {
   const detail = useAdminResource(useCallback(() => getAdminReportDetail(type, reportId), [type, reportId]));
-  const [resolveOpen, setResolveOpen] = useState(false);
+  const [decision, setDecision] = useState(null);
 
   if (detail.loading) return <AdminLoadingSkeleton />;
   if (detail.error) return <AdminErrorState error={detail.error} retry={detail.reload} />;
@@ -130,14 +131,16 @@ function ReportDetailContent({ type, reportId, onListRefresh }) {
       ]} />
       {report.status === 'PENDING' && (
         <div className="admin-inline-actions">
-          <button className="admin-button admin-button-primary" type="button" onClick={() => setResolveOpen(true)}>Resolve</button>
+          <button className="admin-button admin-button-primary" type="button" onClick={() => setDecision('resolve')}>Resolve</button>
+          <button className="admin-button admin-button-danger-outline" type="button" onClick={() => setDecision('reject')}>Reject</button>
         </div>
       )}
-      {resolveOpen && report.status === 'PENDING' && (
-        <ResolveReportDialog
+      {decision && report.status === 'PENDING' && (
+        <ReportDecisionDialog
           type={type}
           reportId={reportId}
-          onClose={() => setResolveOpen(false)}
+          decision={decision}
+          onClose={() => setDecision(null)}
           onSuccess={() => {
             detail.reload();
             onListRefresh();
