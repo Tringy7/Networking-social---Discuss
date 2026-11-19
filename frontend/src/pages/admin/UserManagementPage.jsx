@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Eye, Image as ImageIcon, LockKeyhole, UserRound } from 'lucide-react';
+import { Eye, Image as ImageIcon, LockKeyhole, Unlock, UserRound } from 'lucide-react';
 import { adminService } from '../../services';
 import { useAuthStore } from '../../store/useAuthStore';
 import useAdminQuery from '../../hooks/useAdminQuery';
@@ -112,6 +112,14 @@ export default function UserManagementPage() {
     execute: () => adminService.lockUser(user.id),
     success: `Account @${user.username} locked successfully.`,
   });
+  const requestUnlock = user => setAction({
+    title: 'Unlock user account',
+    label: 'Unlock account',
+    description: `The account @${user.username} will be unlocked and access restored. Continue?`,
+    preview: <UserIdentity user={user} />,
+    execute: () => adminService.unlockUser(user.id),
+    success: `Account @${user.username} unlocked successfully.`,
+  });
 
   const columns = [
     {
@@ -158,6 +166,7 @@ export default function UserManagementPage() {
       render: user => <div className="admin-user-actions">
         <button className="admin-user-view" type="button" onClick={() => setSelected(user)} aria-label={`Xem ${user.username}`} title="View details"><Eye size={17} /></button>
         {user.status === 'ACTIVE' && <button className="admin-user-lock" type="button" disabled={user.username === currentUsername} onClick={() => requestLock(user)} title={user.username === currentUsername ? 'You cannot lock your own account.' : 'Lock account'}><LockKeyhole size={14} /><span>Lock</span></button>}
+        {user.status === 'SUSPENDED' && <button className="admin-user-unlock" type="button" onClick={() => requestUnlock(user)} title="Unlock account"><Unlock size={14} /><span>Unlock</span></button>}
       </div>,
     },
   ];
