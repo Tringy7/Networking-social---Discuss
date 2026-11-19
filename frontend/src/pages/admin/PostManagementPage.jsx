@@ -2,11 +2,18 @@ import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { listAdminPosts, searchAdminPosts } from '../../services/adminPostService.js';
+import { getAdminPostDetail, listAdminPosts, searchAdminPosts } from '../../services/adminPostService.js';
+import PostMarkdown from '../../components/post/PostMarkdown';
+import { httpUrl } from '../../components/post/postUrls';
 import {
+  AdminAvatar,
   AdminDataTable,
+  AdminDetailDrawer,
+  AdminErrorState,
   AdminEmptyState,
+  AdminFields,
   AdminFilter,
+  AdminLoadingSkeleton,
   AdminPageHeader,
   AdminPagination,
   AdminSearchInput,
@@ -22,6 +29,100 @@ const POST_STATUSES = [
   ['DELETED', 'Đã xóa'],
 ];
 
+function PostDetailContent({ postId }) {
+  const detail = useAdminResource(useCallback(() => getAdminPostDetail(postId), [postId]));
+
+  if (detail.loading) return <AdminLoadingSkeleton />;
+  if (detail.error) return <AdminErrorState error={detail.error} retry={detail.reload} />;
+
+  const post = detail.data;
+  const author = post.author || {};
+  const media = Array.isArray(post.media) ? post.media : [];
+  const linkUrl = httpUrl(post.linkUrl);
+
+  return (
+    <div className="admin-post-detail">
+      <section className="admin-post-detail-section">
+        <h2>Post information</h2>
+        <AdminFields items={[
+          ['Post ID', post.id],
+          ['Title', post.title],
+          ['Community Name', post.communityName],
+          ['Community Display Name', post.communityDisplayName],
+          ['Type', post.type],
+          ['Link URL', linkUrl ? <a href={linkUrl} target="_blank" rel="noopener noreferrer">{post.linkUrl}</a> : post.linkUrl],
+          ['Vote Score', adminNumber(post.voteScore)],
+          ['Comment Count', adminNumber(post.commentCount)],
+          ['User Vote', post.userVote],
+          ['Is Saved', post.isSaved == null ? '—' : post.isSaved ? 'Yes' : 'No'],
+          ['Pinned', post.pinned == null ? '—' : post.pinned ? 'Yes' : 'No'],
+          ['Status', <AdminStatusBadge status={post.status} />],
+          ['Created At', adminDate(post.createdAt)],
+          ['Updated At', adminDate(post.updatedAt)],
+        ]} />
+      </section>
+
+      <section className="admin-post-detail-section">
+        <h2>Community</h2>
+        <div className="admin-post-detail-identity">
+          <AdminAvatar name={post.communityName || 'Community'} src={post.communityAvatar} square />
+          <AdminFields items={[
+            ['Community Name', post.communityName],
+            ['Community Display Name', post.communityDisplayName],
+            ['Community Avatar', post.communityAvatar],
+          ]} />
+        </div>
+      </section>
+
+      <section className="admin-post-detail-section">
+        <h2>Author</h2>
+        <div className="admin-post-detail-identity">
+          <AdminAvatar name={author.displayName || author.username || 'Author'} src={author.avatarUrl} />
+          <AdminFields items={[
+            ['ID', author.id],
+            ['Username', author.username ? `@${author.username}` : '—'],
+            ['Display Name', author.displayName],
+            ['Avatar URL', author.avatarUrl],
+          ]} />
+        </div>
+      </section>
+
+      <section className="admin-post-detail-section">
+        <h2>Content</h2>
+        {post.content
+          ? <div className="admin-post-detail-content"><PostMarkdown content={post.content} images={media.filter(item => item.type === 'IMAGE')} /></div>
+          : <p className="admin-post-detail-muted">—</p>}
+      </section>
+
+      {media.length > 0 && (
+        <section className="admin-post-detail-section">
+          <h2>Media</h2>
+          <div className="admin-post-detail-media-list">
+            {media.map(item => {
+              const mediaUrl = httpUrl(item.url);
+              const key = item.objectKey || item.url || `${item.type}-${item.position}`;
+              return (
+                <article className="admin-post-detail-media" key={key}>
+                  {mediaUrl && item.type === 'IMAGE' && <img src={mediaUrl} alt={item.caption || post.title || 'Post media'} loading="lazy" />}
+                  {mediaUrl && item.type === 'VIDEO' && <video src={mediaUrl} controls preload="metadata" />}
+                  <AdminFields items={[
+                    ['Type', item.type],
+                    ['Object Key', item.objectKey],
+                    ['Caption', item.caption],
+                    ['URL', mediaUrl ? <a href={mediaUrl} target="_blank" rel="noopener noreferrer">{item.url}</a> : item.url],
+                    ['Position', item.position],
+                    ['Inline Image', item.inlineImage == null ? '—' : item.inlineImage ? 'Yes' : 'No'],
+                  ]} />
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
 export default function PostManagementPage() {
   const query = useAdminQuery();
   const search = (query.params.get('search') || '').trim().slice(0, 200);
@@ -36,6 +137,7 @@ export default function PostManagementPage() {
     [page, size, search, status, communityName],
   ));
   const [communityDraftState, setCommunityDraftState] = useState({ source: communityName, value: communityName });
+  const [selectedPostId, setSelectedPostId] = useState(null);
   const communityDraft = communityDraftState.source === communityName ? communityDraftState.value : communityName;
   const posts = result.data?.empty ? [] : result.data?.content || [];
 
@@ -49,7 +151,7 @@ export default function PostManagementPage() {
       key: 'title',
       label: 'Title',
       className: 'admin-title-cell',
-      render: post => <strong className="admin-cell-title">{post.title || '—'}</strong>,
+      render: post => <button className="admin-name-button" type="button" onClick={() => setSelectedPostId(post.id)}><strong className="admin-cell-title">{post.title || '—'}</strong></button>,
     },
     {
       key: 'author',
@@ -75,7 +177,7 @@ export default function PostManagementPage() {
       key: 'actions',
       label: 'Actions',
       className: 'admin-actions-cell',
-      render: post => <Link className="admin-text-action" to={`/post/${encodeURIComponent(post.id)}`}>Mở bài viết</Link>,
+      render: post => <button className="admin-text-action" type="button" onClick={() => setSelectedPostId(post.id)}>View Details</button>,
     },
   ];
 
@@ -156,6 +258,7 @@ export default function PostManagementPage() {
         disabled={result.loading || !!result.error}
         onChange={query.update}
       />
+      {selectedPostId !== null && <AdminDetailDrawer title="Post Details" onClose={() => setSelectedPostId(null)}><PostDetailContent postId={selectedPostId} /></AdminDetailDrawer>}
     </div>
   );
 }

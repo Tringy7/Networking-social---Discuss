@@ -18,3 +18,7 @@ export function searchAdminPosts({ search, page = 0, size = 10, status = '', com
 
   return apiClient.get(`/admin/posts/search?${params}`);
 }
+
+export function getAdminPostDetail(id) {
+  return apiClient.get(`/admin/posts/${encodeURIComponent(String(id))}`);
+}
