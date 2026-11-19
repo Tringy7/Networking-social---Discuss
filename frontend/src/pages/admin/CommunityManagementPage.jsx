@@ -1,85 +1,183 @@
 import { useCallback, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Eye } from 'lucide-react';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { adminModeration, adminMutations, adminCapabilities } from '../../services/adminModeration';
-import { CommunityPreview } from '../../components/admin/AdminPreviews.jsx';
-import { AdminPageHeader, AdminSearchInput, AdminFilter, AdminDataTable, AdminEmptyState, AdminPagination, AdminStatusBadge, AdminAvatar, AdminRowMenu, AdminDetailDrawer, AdminConfirmDialog, adminDate, adminNumber } from '../../components/admin/AdminUI.jsx';
+import { listAdminCommunities } from '../../services/adminCommunityService.js';
+import {
+  AdminAvatar,
+  AdminDataTable,
+  AdminDetailDrawer,
+  AdminEmptyState,
+  AdminFields,
+  AdminFilter,
+  AdminPageHeader,
+  AdminPagination,
+  AdminStatusBadge,
+  adminDate,
+  adminNumber,
+} from '../../components/admin/AdminUI.jsx';
+
+function CommunityIdentity({ community }) {
+  return (
+    <div className="admin-identity">
+      <AdminAvatar name={community.name || 'Community'} src={community.avatarUrl} square />
+      <span><strong>c/{community.name}</strong></span>
+    </div>
+  );
+}
+
 export default function CommunityManagementPage() {
   const query = useAdminQuery();
-  const search = query.params.get('search') || '';
-  const status = query.params.get('status') || '';
-  const visibility = query.params.get('visibility') || '';
-  const size = 10;
-  const result = useAdminResource(useCallback(() => adminModeration.communities({
-    page: query.page,
-    size,
-    search,
-    status,
-    visibility
-  }), [query.page, search, status, visibility]));
+  const statusValue = query.params.get('status') || '';
+  const visibilityValue = query.params.get('visibility') || '';
+  const status = ['ACTIVE', 'BANED'].includes(statusValue) ? statusValue : '';
+  const visibility = ['PUBLIC', 'PRIVATE'].includes(visibilityValue) ? visibilityValue : '';
+  const { page, size } = query;
+  const result = useAdminResource(useCallback(
+    () => listAdminCommunities({ page, size, status, visibility }),
+    [page, size, status, visibility],
+  ));
+  const communities = result.data?.empty ? [] : result.data?.content || [];
   const [selected, setSelected] = useState(null);
-  const [action, setAction] = useState(null);
-  const page = result.data;
-  const toggle = community => {
-    const banned = ['BANED', 'BANNED'].includes(community.status || community.communityStatus || '');
-    setAction({
-      title: banned ? 'Mở lại cộng đồng' : 'Cấm cộng đồng',
-      description: `${banned ? 'Cho phép hoạt động lại' : 'Tạm dừng hoạt động'} đối với cộng đồng c/${community.name}. Tên cộng đồng và nội dung không tự động bị xóa.`,
-      label: banned ? 'Mở lại cộng đồng' : 'Xác nhận cấm',
-      available: adminCapabilities.communityStatus,
-      danger: !banned,
-      execute: () => adminMutations.setCommunityStatus(community.id, banned ? 'ACTIVE' : 'BANED'),
-      success: 'Đã cập nhật trạng thái cộng đồng.'
-    });
-  };
-  const columns = [{
-    key: 'name',
-    label: 'Cộng đồng',
-    render: row => <button className="admin-name-button" onClick={() => setSelected(row)}><div className="admin-identity"><AdminAvatar name={row.name} src={row.avatarUrl} square /><span><strong>c/{row.name}</strong><small>{row.visibility === 'PRIVATE' ? 'Riêng tư' : 'Công khai'}</small></span></div></button>
-  }, {
-    key: 'owner',
-    label: 'Chủ sở hữu',
-    render: row => row.owner?.username || <button className="admin-text-action" onClick={() => setSelected(row)}>Xem chi tiết</button>
-  }, {
-    key: 'category',
-    label: 'Danh mục',
-    render: row => row.categoryName || '—'
-  }, {
-    key: 'members',
-    label: 'Thành viên',
-    numeric: true,
-    render: row => adminNumber(row.memberCount)
-  }, {
-    key: 'status',
-    label: 'Trạng thái',
-    render: row => <AdminStatusBadge status={row.communityStatus || row.status} />
-  }, {
-    key: 'date',
-    label: 'Ngày tạo',
-    numeric: true,
-    render: row => adminDate(row.createdAt)
-  }, {
-    key: 'actions',
-    label: '',
-    className: 'admin-actions-cell',
-    render: row => <AdminRowMenu label={row.name}><button onClick={() => setSelected(row)}>Xem chi tiết</button><Link to={`/c/${encodeURIComponent(row.name)}`}>Mở cộng đồng</Link><button onClick={() => toggle(row)}>Cấm / mở lại cộng đồng</button></AdminRowMenu>
-  }];
-  return <div className="admin-page"><AdminPageHeader title="Quản lý cộng đồng" description="Giám sát và quản lý các cộng đồng trên DISCUSS." loading={result.loading} onRefresh={result.reload} />
-    <div className="admin-table-toolbar"><AdminSearchInput value={search} onChange={value => query.update({
-        search: value
-      }, true)} label="Tìm cộng đồng" placeholder="Tìm theo tên cộng đồng…" /><AdminFilter label="Trạng thái" value={status} options={[['', 'Tất cả trạng thái'], ['ACTIVE', 'Đang hoạt động'], ['BANED', 'Đã cấm']]} onChange={value => query.update({
-        status: value
-      })} /><AdminFilter label="Quyền riêng tư" value={visibility} options={[['', 'Tất cả quyền riêng tư'], ['PUBLIC', 'Công khai'], ['PRIVATE', 'Riêng tư']]} onChange={value => query.update({
-        visibility: value
-      })} /></div>
-    <div className="admin-list-meta"><span role="status">{result.loading ? 'Đang tải cộng đồng…' : result.error ? 'Chưa tải được danh sách' : `${adminNumber(page?.totalElements || 0)} cộng đồng`}</span>{(search || status || visibility) && <button onClick={query.reset}>Đặt lại bộ lọc</button>}</div>
-    <AdminDataTable rows={page?.content || []} columns={columns} rowKey={row => row.id} loading={result.loading} error={result.error} retry={result.reload} caption="Danh sách cộng đồng" empty={<AdminEmptyState title="Không tìm thấy cộng đồng" onReset={query.reset} />} />
-    <AdminPagination hidePageSize result={result.loading || result.error ? null : page || null} page={query.page} size={size} disabled={result.loading || !!result.error} onChange={query.update} />
-    {selected && !action && <AdminDetailDrawer title="Chi tiết cộng đồng" onClose={() => setSelected(null)}><CommunityPreview name={selected.name} id={selected.id} /><div className="admin-drawer-section"><h2>Kiểm duyệt cộng đồng</h2><button className="admin-button admin-button-danger-outline" onClick={() => toggle(selected)}>Cấm / mở lại cộng đồng</button></div></AdminDetailDrawer>}
-    {action && <AdminConfirmDialog action={action} onClose={() => setAction(null)} onSuccess={() => {
-      setSelected(null);
-      result.reload();
-    }} />}
-  </div>;
+
+  const columns = [
+    {
+      key: 'avatar',
+      label: 'Community Avatar',
+      render: community => <AdminAvatar name={community.name || 'Community'} src={community.avatarUrl} square />,
+    },
+    {
+      key: 'name',
+      label: 'Community Name',
+      render: community => <button className="admin-name-button" type="button" onClick={() => setSelected(community)}><strong>c/{community.name}</strong></button>,
+      className: 'admin-title-cell',
+    },
+    {
+      key: 'description',
+      label: 'Description',
+      render: community => <span className="admin-community-description">{community.description || '—'}</span>,
+      className: 'admin-wrap-cell',
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      render: community => community.categoryName || '—',
+    },
+    {
+      key: 'visibility',
+      label: 'Visibility',
+      render: community => community.visibility === 'PRIVATE' ? 'Private' : community.visibility === 'PUBLIC' ? 'Public' : '—',
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: community => <AdminStatusBadge status={community.status} />,
+    },
+    {
+      key: 'members',
+      label: 'Member Count',
+      numeric: true,
+      render: community => adminNumber(community.memberCount),
+    },
+    {
+      key: 'owner',
+      label: 'Owner',
+      render: community => community.owner?.displayName || community.owner?.username || '—',
+      className: 'admin-wrap-cell',
+    },
+    {
+      key: 'createdAt',
+      label: 'Created At',
+      numeric: true,
+      render: community => adminDate(community.createdAt),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      className: 'admin-actions-cell',
+      render: community => <button className="admin-community-view" type="button" onClick={() => setSelected(community)} aria-label={`View c/${community.name}`} title="View details"><Eye size={17} /></button>,
+    },
+  ];
+
+  return (
+    <div className="admin-page admin-community-management">
+      <AdminPageHeader
+        title="Community Management"
+        description="Review community profiles, visibility, and activity."
+        loading={result.loading}
+        onRefresh={result.reload}
+      />
+
+      <div className="admin-table-toolbar admin-community-filters">
+        <div className="admin-filter-bar">
+          <AdminFilter
+            label="Status"
+            value={status}
+            onChange={value => query.update({ status: value })}
+            options={[
+              ['', 'All statuses'],
+              ['ACTIVE', 'Active'],
+              ['BANED', 'Baned'],
+            ]}
+          />
+          <AdminFilter
+            label="Visibility"
+            value={visibility}
+            onChange={value => query.update({ visibility: value })}
+            options={[
+              ['', 'All visibility'],
+              ['PUBLIC', 'Public'],
+              ['PRIVATE', 'Private'],
+            ]}
+          />
+        </div>
+      </div>
+
+      <div className="admin-list-meta">
+        <span role="status">
+          {result.loading
+            ? 'Loading communities…'
+            : result.error
+              ? 'Could not load communities'
+              : `${adminNumber(result.data?.totalElements)} communities`}
+        </span>
+        {(status || visibility) && <button type="button" onClick={query.reset}>Clear filters</button>}
+      </div>
+
+      <AdminDataTable
+        rows={communities}
+        columns={columns}
+        rowKey={community => community.id}
+        loading={result.loading}
+        error={result.error}
+        retry={result.reload}
+        caption="Admin community list"
+        empty={<AdminEmptyState title="No communities found" description="Try changing the status or visibility filters." onReset={query.reset} />}
+      />
+
+      <AdminPagination
+        result={result.data}
+        page={page}
+        size={size}
+        disabled={result.loading || !!result.error}
+        onChange={query.update}
+      />
+
+      {selected && (
+        <AdminDetailDrawer title="Community details" onClose={() => setSelected(null)}>
+          <CommunityIdentity community={selected} />
+          <AdminFields items={[
+            ['Community Name', `c/${selected.name}`],
+            ['Description', selected.description || '—'],
+            ['Category', selected.categoryName],
+            ['Visibility', selected.visibility === 'PRIVATE' ? 'Private' : selected.visibility === 'PUBLIC' ? 'Public' : '—'],
+            ['Status', <AdminStatusBadge status={selected.status} />],
+            ['Member Count', adminNumber(selected.memberCount)],
+            ['Owner', selected.owner?.displayName || selected.owner?.username || '—'],
+            ['Created At', adminDate(selected.createdAt)],
+          ]} />
+        </AdminDetailDrawer>
+      )}
+    </div>
+  );
 }
