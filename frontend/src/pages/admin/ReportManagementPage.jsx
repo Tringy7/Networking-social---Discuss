@@ -2,11 +2,15 @@ import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { listAdminReports } from '../../services/adminReportService.js';
+import { getAdminReportDetail, listAdminReports } from '../../services/adminReportService.js';
 import {
   AdminDataTable,
+  AdminDetailDrawer,
+  AdminErrorState,
   AdminEmptyState,
+  AdminFields,
   AdminFilter,
+  AdminLoadingSkeleton,
   AdminPageHeader,
   AdminPagination,
   AdminStatusBadge,
@@ -36,6 +40,34 @@ const REASONS = {
   OTHER: 'Other',
 };
 
+function ReportDetailContent({ type, reportId }) {
+  const detail = useAdminResource(useCallback(() => getAdminReportDetail(type, reportId), [type, reportId]));
+
+  if (detail.loading) return <AdminLoadingSkeleton />;
+  if (detail.error) return <AdminErrorState error={detail.error} retry={detail.reload} />;
+
+  const report = detail.data;
+  return (
+    <div className="admin-report-detail">
+      <AdminFields items={[
+        ['Report ID', report.id],
+        ['Target Type', report.targetType],
+        ['Target ID', report.targetId],
+        ['Community Name', report.communityName],
+        ['Reporter Username', report.reporterUsername ? `@${report.reporterUsername}` : '—'],
+        ['Reason', REASONS[report.reason] || report.reason],
+        ['Description', report.description],
+        ['Status', <AdminStatusBadge status={report.status} />],
+        ['Action', report.action],
+        ['Resolution Note', report.resolutionNote],
+        ['Resolved By', report.resolvedBy],
+        ['Resolved At', adminDate(report.resolvedAt)],
+        ['Created At', adminDate(report.createdAt)],
+      ]} />
+    </div>
+  );
+}
+
 export default function ReportManagementPage() {
   const query = useAdminQuery();
   const typeValue = query.params.get('type') || '';
@@ -49,6 +81,7 @@ export default function ReportManagementPage() {
     [type, status, communityName, page, size],
   ));
   const [communityDraftState, setCommunityDraftState] = useState({ source: communityName, value: communityName });
+  const [selectedReport, setSelectedReport] = useState(null);
   const communityDraft = communityDraftState.source === communityName ? communityDraftState.value : communityName;
   const reports = result.data?.empty ? [] : result.data?.content || [];
 
@@ -94,6 +127,12 @@ export default function ReportManagementPage() {
     { key: 'resolvedBy', label: 'Resolved By', render: report => report.resolvedBy || '—' },
     { key: 'resolvedAt', label: 'Resolved At', numeric: true, render: report => adminDate(report.resolvedAt) },
     { key: 'createdAt', label: 'Created At', numeric: true, render: report => adminDate(report.createdAt) },
+    {
+      key: 'viewDetails',
+      label: 'Details',
+      className: 'admin-actions-cell',
+      render: report => <button className="admin-text-action" type="button" onClick={() => setSelectedReport({ type: report.targetType, reportId: report.id })}>View Details</button>,
+    },
   ];
 
   return (
@@ -161,6 +200,14 @@ export default function ReportManagementPage() {
         disabled={result.loading || !!result.error}
         onChange={query.update}
       />
+      {selectedReport && (
+        <AdminDetailDrawer
+          title={`Report #${selectedReport.reportId}`}
+          onClose={() => setSelectedReport(null)}
+        >
+          <ReportDetailContent type={selectedReport.type} reportId={selectedReport.reportId} />
+        </AdminDetailDrawer>
+      )}
     </div>
   );
 }

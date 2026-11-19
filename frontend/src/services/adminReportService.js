@@ -8,3 +8,8 @@ export function listAdminReports({ type, status = '', communityName = '', page =
 
   return apiClient.get(`/admin/reports?${params}`);
 }
+
+export function getAdminReportDetail(type, reportId) {
+  const reportType = ['POST', 'COMMENT', 'COMMUNITY'].includes(type) ? type : 'POST';
+  return apiClient.get(`/admin/reports/${encodeURIComponent(reportType)}/${encodeURIComponent(String(reportId))}`);
+}

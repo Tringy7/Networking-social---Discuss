@@ -606,6 +606,7 @@ a.admin-breakdown-row:hover { text-decoration:underline; }
 .admin-post-delete-preview { display:grid; gap:8px; overflow-wrap:anywhere; }
 .admin-post-delete-preview span { color:var(--text-secondary); font-size:13px; }
 .admin-report-management .admin-report-description { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; white-space:pre-line; }
+.admin-report-management .admin-data-table .admin-actions-cell { width:112px; white-space:nowrap; }
 @media (max-width:700px) {
   .admin-post-management .admin-data-table .admin-actions-cell { width:auto; }
   .admin-post-row-actions { gap:10px; }
