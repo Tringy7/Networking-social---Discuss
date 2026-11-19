@@ -1,10 +1,12 @@
 import { useCallback, useState } from 'react';
-import { Eye, Image as ImageIcon, UserRound } from 'lucide-react';
+import { Eye, Image as ImageIcon, LockKeyhole, UserRound } from 'lucide-react';
 import { adminService } from '../../services';
+import { useAuthStore } from '../../store/useAuthStore';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
 import {
   AdminAvatar,
+  AdminConfirmDialog,
   AdminDataTable,
   AdminDetailDrawer,
   AdminEmptyState,
@@ -98,6 +100,18 @@ export default function UserManagementPage() {
   ));
   const users = result.data?.empty ? [] : result.data?.content || [];
   const [selected, setSelected] = useState(null);
+  const [action, setAction] = useState(null);
+  const currentUsername = useAuthStore(state => state.user?.username);
+
+  const requestLock = user => setAction({
+    title: 'Lock user account',
+    label: 'Lock account',
+    danger: true,
+    description: `The account @${user.username} will be locked and its access suspended. Continue?`,
+    preview: <UserIdentity user={user} />,
+    execute: () => adminService.lockUser(user.id),
+    success: `Account @${user.username} locked successfully.`,
+  });
 
   const columns = [
     {
@@ -141,12 +155,15 @@ export default function UserManagementPage() {
       key: 'action',
       label: 'Action',
       className: 'admin-actions-cell',
-      render: user => <button className="admin-user-view" type="button" onClick={() => setSelected(user)} aria-label={`Xem ${user.username}`} title="Xem chi tiết"><Eye size={17} /></button>,
+      render: user => <div className="admin-user-actions">
+        <button className="admin-user-view" type="button" onClick={() => setSelected(user)} aria-label={`Xem ${user.username}`} title="View details"><Eye size={17} /></button>
+        {user.status === 'ACTIVE' && <button className="admin-user-lock" type="button" disabled={user.username === currentUsername} onClick={() => requestLock(user)} title={user.username === currentUsername ? 'You cannot lock your own account.' : 'Lock account'}><LockKeyhole size={14} /><span>Lock</span></button>}
+      </div>,
     },
   ];
 
   return (
-    <div className="admin-page">
+    <div className="admin-page admin-user-management">
       <AdminPageHeader
         title="User Management"
         description="Review account details, roles, and current status."
@@ -222,6 +239,8 @@ export default function UserManagementPage() {
           <UserDetailContent userId={selected.id} />
         </AdminDetailDrawer>
       )}
+
+      {action && <AdminConfirmDialog action={action} onClose={() => setAction(null)} onSuccess={result.reload} />}
     </div>
   );
 }
