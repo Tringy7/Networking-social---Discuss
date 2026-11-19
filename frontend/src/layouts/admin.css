@@ -481,22 +481,48 @@ a.admin-breakdown-row:hover { text-decoration:underline; }
 .admin-capability-note { border-radius:8px; }
 .admin-drawer-section { border-color:var(--admin-line); }
 .admin-skip-link { border-radius:8px; box-shadow:0 8px 24px #10182818; }
+.admin-statistics { margin-bottom:30px; }
+.admin-stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+.admin-stat-card { --stat-ink:var(--color-orange-ink); --stat-wash:var(--color-orange-soft); min-width:0; min-height:128px; display:grid; grid-template-columns:40px minmax(0,1fr); grid-template-rows:auto 1fr; align-items:start; align-content:start; column-gap:12px; row-gap:10px; padding:18px; border:1px solid var(--admin-line); border-radius:10px; background:var(--bg-main); box-shadow:0 1px 2px #10182808; transition:transform 160ms ease,border-color 160ms ease,box-shadow 160ms ease; }
+.admin-stat-card:hover { transform:translateY(-2px); border-color:color-mix(in srgb,var(--stat-ink) 26%,var(--admin-line)); box-shadow:0 8px 20px #1018280d; }
+.admin-stat-card.tone-active { --stat-ink:#216644; --stat-wash:#edf7f0; }
+.admin-stat-card.tone-suspended { --stat-ink:#a32e43; --stat-wash:#fff0f2; }
+.admin-stat-card.tone-communities { --stat-ink:#386a9c; --stat-wash:#edf5fc; }
+.admin-stat-card.tone-posts { --stat-ink:#7951a8; --stat-wash:#f4effa; }
+.admin-stat-card.tone-comments { --stat-ink:#177b78; --stat-wash:#eaf7f6; }
+.admin-stat-icon { grid-column:1; grid-row:1 / span 2; width:40px; height:40px; display:grid; place-items:center; border-radius:10px; background:var(--stat-wash); color:var(--stat-ink); }
+.admin-stat-label { align-self:center; min-width:0; color:var(--text-secondary); font-size:12px; line-height:1.35; font-weight:700; }
+.admin-stat-card strong { grid-column:2; align-self:end; color:var(--text-primary); font-size:clamp(25px,2.2vw,32px); line-height:1; font-weight:750; letter-spacing:-.045em; font-variant-numeric:tabular-nums; }
+.dark .admin-stat-card.tone-active { --stat-ink:#a6dbb9; --stat-wash:#1b2d22; }
+.dark .admin-stat-card.tone-suspended { --stat-ink:#f3b2c0; --stat-wash:#321c23; }
+.dark .admin-stat-card.tone-communities { --stat-ink:#a6c8e8; --stat-wash:#1d2a36; }
+.dark .admin-stat-card.tone-posts { --stat-ink:#d0b6ed; --stat-wash:#2a2234; }
+.dark .admin-stat-card.tone-comments { --stat-ink:#9bd9d4; --stat-wash:#1b302f; }
+.admin-stat-card.is-loading { pointer-events:none; }
+.admin-stat-card.is-loading > span:first-child { width:38px; height:38px; border-radius:10px; background:var(--bg-hover); animation:admin-skeleton 1.2s ease-in-out infinite alternate; }
+.admin-stat-card.is-loading strong { width:62%; height:28px; margin-top:4px; border-radius:6px; background:var(--bg-hover); animation:admin-skeleton 1.2s ease-in-out infinite alternate; }
+.admin-stat-card.is-loading small { grid-column:2; width:74%; height:12px; border-radius:4px; background:var(--bg-hover); animation:admin-skeleton 1.2s ease-in-out infinite alternate; }
+.admin-stat-error { border:1px solid var(--admin-line); border-radius:10px; background:var(--bg-main); }
+.admin-stat-error .admin-empty { padding:32px 20px; }
 @media (max-width:1100px) {
   .admin-navigation.is-open { box-shadow:12px 0 40px #1018281a; }
+}
+@media (max-width:900px) {
+  .admin-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
 }
 @media (max-width:700px) {
   .admin-sheet { padding:22px 16px; }
   .admin-breadcrumb { margin-bottom:18px; }
   .admin-page-heading { margin-bottom:24px; }
-  .admin-metrics { border-radius:10px; }
-  .admin-metric { padding:18px 14px; }
-  .admin-metric strong { font-size:26px; }
+  .admin-statistics { margin-bottom:24px; }
+  .admin-stat-card { min-height:116px; padding:15px; column-gap:10px; }
+  .admin-stat-card strong { font-size:26px; }
   .admin-moderation-strip { border-radius:10px; }
   .admin-moderation-strip > a { min-width:0; }
   .admin-pagination { row-gap:12px; }
 }
 @media (prefers-reduced-motion:reduce) {
-  .admin-nav-link,.admin-button,.admin-quick-links a,.admin-moderation-strip > a,.admin-menu-panel,.admin-loading span { animation:none; transition:none; }
+  .admin-nav-link,.admin-button,.admin-quick-links a,.admin-moderation-strip > a,.admin-stat-card,.admin-menu-panel,.admin-loading span,.admin-stat-card.is-loading > * { animation:none; transition:none; }
 }
 
 .admin-auth-workspace { display:flex; flex-direction:column; }
