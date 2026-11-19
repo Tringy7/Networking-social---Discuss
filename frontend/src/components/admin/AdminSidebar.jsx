@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, FolderKanban, FileText, Tags, ShieldAlert, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, Users, FolderKanban, FileText, Tags, ShieldAlert, History, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAdminData } from './AdminDataContext.jsx';
 import { AdminAvatar, adminNumber } from './AdminUI.jsx';
@@ -35,6 +35,10 @@ const groups = [{
     to: '/admin/reports',
     label: 'Báo cáo',
     icon: ShieldAlert
+  }, {
+    to: '/admin/activity-logs',
+    label: 'Activity Logs',
+    icon: History
   }]
 }];
 export default function AdminSidebar({

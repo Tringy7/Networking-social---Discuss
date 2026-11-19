@@ -8,6 +8,7 @@ const adminPages = {
   '/admin/posts': 'Bài viết',
   '/admin/reports': 'Báo cáo',
   '/admin/categories': 'Danh mục',
+  '/admin/activity-logs': 'Activity Logs',
 };
 
 export function AdminBreadcrumb() {

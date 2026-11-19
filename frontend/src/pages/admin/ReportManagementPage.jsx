@@ -2,139 +2,295 @@ import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { adminModeration, adminMutations, adminCapabilities } from '../../services/adminModeration';
-import { useAdminData } from '../../components/admin/AdminDataContext.jsx';
-import { CommunityPreview, PostPreview, CommentPreview } from '../../components/admin/AdminPreviews.jsx';
-import { AdminPageHeader, AdminSearchInput, AdminFilter, AdminNotice, AdminDataTable, AdminEmptyState, AdminPagination, AdminStatusBadge, AdminRowMenu, AdminDetailDrawer, AdminConfirmDialog, AdminFields, AdminLoadingSkeleton, AdminErrorState, adminDate, adminNumber } from '../../components/admin/AdminUI.jsx';
-const types = {
-  POST: 'Bài viết',
-  COMMENT: 'Bình luận',
-  COMMUNITY: 'Cộng đồng'
-};
-const reasons = {
+import { getAdminReportDetail, listAdminReports, rejectAdminReport, resolveAdminReport } from '../../services/adminReportService.js';
+import Modal from '../../components/ui/Modal';
+import { useToastStore } from '../../store/useToastStore';
+import {
+  AdminDataTable,
+  AdminDetailDrawer,
+  AdminErrorState,
+  AdminEmptyState,
+  AdminFields,
+  AdminFilter,
+  AdminLoadingSkeleton,
+  AdminPageHeader,
+  AdminPagination,
+  AdminStatusBadge,
+  adminDate,
+  adminNumber,
+} from '../../components/admin/AdminUI.jsx';
+
+const REPORT_TYPES = [
+  ['POST', 'Post'],
+  ['COMMENT', 'Comment'],
+  ['COMMUNITY', 'Community'],
+];
+
+const REPORT_STATUSES = [
+  ['', 'All statuses'],
+  ['PENDING', 'Pending'],
+  ['RESOLVED', 'Resolved'],
+  ['REJECTED', 'Rejected'],
+];
+
+const REASONS = {
   SPAM: 'Spam',
-  HARASSMENT: 'Quấy rối',
-  HATE_SPEECH: 'Ngôn từ thù ghét',
-  INAPPROPRIATE_CONTENT: 'Nội dung không phù hợp',
-  MISINFORMATION: 'Thông tin sai lệch',
-  OTHER: 'Khác'
+  HARASSMENT: 'Harassment',
+  HATE_SPEECH: 'Hate speech',
+  INAPPROPRIATE_CONTENT: 'Inappropriate content',
+  MISINFORMATION: 'Misinformation',
+  OTHER: 'Other',
 };
-function ReportCommentContext({
-  report,
-  onRemove
-}) {
-  const [draft, setDraft] = useState('');
-  const [post, setPost] = useState('');
-  const result = useAdminResource(useCallback(() => post ? adminModeration.comments(post) : Promise.resolve([]), [post]));
-  const comment = result.data?.find(row => row.id === report.targetId);
-  const submit = event => {
+
+function ReportDecisionDialog({ type, reportId, decision, onClose, onSuccess }) {
+  const [resolutionNote, setResolutionNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const addToast = useToastStore(state => state.addToast);
+
+  const submit = async event => {
     event.preventDefault();
-    if (/^\d+$/.test(draft.trim())) setPost(draft.trim());
+    const note = resolutionNote.trim();
+    if (!note) {
+      setError('Resolution Note là bắt buộc.');
+      return;
+    }
+    if (note.length > 2000) {
+      setError('Resolution Note không được vượt quá 2000 ký tự.');
+      return;
+    }
+
+    setBusy(true);
+    setError('');
+    try {
+      const submitDecision = decision === 'reject' ? rejectAdminReport : resolveAdminReport;
+      await submitDecision(type, reportId, note);
+      addToast(`Report #${reportId} ${decision === 'reject' ? 'rejected' : 'resolved'} successfully.`, 'success');
+      onSuccess();
+      onClose();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Không thể cập nhật báo cáo.');
+    } finally {
+      setBusy(false);
+    }
   };
-  return <div className="admin-report-context"><AdminNotice>Báo cáo chưa kèm bài viết gốc. Nhập ID bài viết chứa bình luận #{report.targetId} để kiểm tra đúng nội dung trước khi xóa.</AdminNotice><form className="admin-context-form" onSubmit={submit}><label>ID bài viết<input value={draft} onChange={event => setDraft(event.target.value)} inputMode="numeric" pattern="[0-9]+" required placeholder="Ví dụ: 123" /></label><button className="admin-button" type="submit">Xem ngữ cảnh</button></form>
-    {post && (result.loading ? <AdminLoadingSkeleton /> : result.error ? <AdminErrorState error={result.error} retry={result.reload} /> : comment ? <><CommentPreview comment={comment} /><button className="admin-button admin-button-danger-outline" disabled={comment.status === 'DELETED'} onClick={() => onRemove(comment)}>Xóa bình luận</button></> : <AdminNotice>Không tìm thấy bình luận #{report.targetId} trong bài viết #{post}.</AdminNotice>)}
-    {post && <Link className="admin-text-action" to={`/post/${post}`}>Mở bài viết gốc</Link>}</div>;
+
+  return (
+    <Modal isOpen onClose={() => !busy && onClose()} closeDisabled={busy} title={decision === 'reject' ? 'Reject report' : 'Resolve report'} maxWidth="md">
+      <form className="admin-resolve-form" onSubmit={submit}>
+        <p>{decision === 'reject' ? 'Nhập Resolution Note để từ chối báo cáo này.' : 'Nhập Resolution Note để xác nhận báo cáo này đã được xử lý.'}</p>
+        <label htmlFor="admin-report-resolution-note">Resolution Note</label>
+        <textarea
+          id="admin-report-resolution-note"
+          value={resolutionNote}
+          onChange={event => setResolutionNote(event.target.value)}
+          maxLength={2000}
+          rows={6}
+          required
+          aria-describedby="admin-report-resolution-count"
+        />
+        <div className="admin-resolve-form-meta">
+          <span id="admin-report-resolution-count" role="status">{resolutionNote.length}/2000</span>
+        </div>
+        {error && <p className="admin-inline-error" role="alert">{error}</p>}
+        <div className="admin-dialog-actions">
+          <button className="admin-button" type="button" onClick={onClose} disabled={busy}>Cancel</button>
+          <button className={`admin-button ${decision === 'reject' ? 'admin-button-danger' : 'admin-button-primary'}`} type="submit" disabled={busy || !resolutionNote.trim() || resolutionNote.length > 2000}>
+            {busy ? 'Saving…' : decision === 'reject' ? 'Reject' : 'Resolve'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
 }
+
+function ReportDetailContent({ type, reportId, onListRefresh }) {
+  const detail = useAdminResource(useCallback(() => getAdminReportDetail(type, reportId), [type, reportId]));
+  const [decision, setDecision] = useState(null);
+
+  if (detail.loading) return <AdminLoadingSkeleton />;
+  if (detail.error) return <AdminErrorState error={detail.error} retry={detail.reload} />;
+
+  const report = detail.data;
+  return (
+    <div className="admin-report-detail">
+      <AdminFields items={[
+        ['Report ID', report.id],
+        ['Target Type', report.targetType],
+        ['Target ID', report.targetId],
+        ['Community Name', report.communityName],
+        ['Reporter Username', report.reporterUsername ? `@${report.reporterUsername}` : '—'],
+        ['Reason', REASONS[report.reason] || report.reason],
+        ['Description', report.description],
+        ['Status', <AdminStatusBadge status={report.status} />],
+        ['Action', report.action],
+        ['Resolution Note', report.resolutionNote],
+        ['Resolved By', report.resolvedBy],
+        ['Resolved At', adminDate(report.resolvedAt)],
+        ['Created At', adminDate(report.createdAt)],
+      ]} />
+      {report.status === 'PENDING' && (
+        <div className="admin-inline-actions">
+          <button className="admin-button admin-button-primary" type="button" onClick={() => setDecision('resolve')}>Resolve</button>
+          <button className="admin-button admin-button-danger-outline" type="button" onClick={() => setDecision('reject')}>Reject</button>
+        </div>
+      )}
+      {decision && report.status === 'PENDING' && (
+        <ReportDecisionDialog
+          type={type}
+          reportId={reportId}
+          decision={decision}
+          onClose={() => setDecision(null)}
+          onSuccess={() => {
+            detail.reload();
+            onListRefresh();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 export default function ReportManagementPage() {
   const query = useAdminQuery();
-  const {
-    page,
-    size
-  } = query;
-  const status = ['PENDING', 'RESOLVED', 'REJECTED'].includes(query.params.get('status') || '') ? query.params.get('status') : '';
-  const type = ['POST', 'COMMENT', 'COMMUNITY'].includes(query.params.get('type') || '') ? query.params.get('type') : '';
-  const community = query.params.get('community') || '';
-  const result = useAdminResource(useCallback(() => adminModeration.reports({
-    page,
-    size,
-    status,
-    type,
-    community
-  }), [page, size, status, type, community]));
-  const [selected, setSelected] = useState(null);
-  const [action, setAction] = useState(null);
-  const summary = useAdminData();
-  const resolve = (report, reject) => setAction({
-    title: reject ? 'Bác bỏ báo cáo' : 'Giải quyết báo cáo',
-    label: reject ? 'Xác nhận bác bỏ' : 'Xác nhận giải quyết',
-    description: `Báo cáo ${types[report.targetType].toLowerCase()} #${report.targetId} của @${report.reporterUsername} sẽ được đánh dấu ${reject ? 'đã bác bỏ' : 'đã giải quyết'}.`,
-    available: adminCapabilities.reportResolution,
-    execute: () => adminMutations.resolveReport(report, reject ? 'REJECTED' : 'RESOLVED'),
-    success: 'Đã cập nhật báo cáo.'
-  });
-  const deletePost = report => setAction({
-    title: 'Xóa bài viết được báo cáo',
-    label: 'Xác nhận xóa bài viết',
-    danger: true,
-    description: `Bài viết #${report.targetId} sẽ bị xóa mềm. Thao tác này không tự động thay đổi trạng thái báo cáo.`,
-    preview: <PostPreview id={String(report.targetId)} />,
-    execute: () => adminMutations.deletePost(String(report.targetId)),
-    success: 'Đã xóa bài viết. Trạng thái báo cáo chưa thay đổi.'
-  });
-  const deleteComment = comment => setAction({
-    title: 'Xóa bình luận được báo cáo',
-    label: 'Xác nhận xóa bình luận',
-    danger: true,
-    description: 'Bình luận sẽ bị xóa mềm, nội dung được thay bằng [deleted]. Trạng thái báo cáo chưa thay đổi.',
-    preview: <CommentPreview comment={comment} />,
-    execute: () => adminMutations.deleteComment(String(comment.id)),
-    success: 'Đã xóa bình luận. Trạng thái báo cáo chưa thay đổi.'
-  });
-  const columns = [{
-    key: 'target',
-    label: 'Đối tượng',
-    render: report => <button className="admin-name-button" onClick={() => setSelected(report)}><strong>{types[report.targetType]} #{report.targetId}</strong><small>c/{report.communityName}</small></button>
-  }, {
-    key: 'type',
-    label: 'Loại báo cáo',
-    render: report => types[report.targetType]
-  }, {
-    key: 'reason',
-    label: 'Lý do',
-    render: report => reasons[report.reason] || report.reason
-  }, {
-    key: 'reporter',
-    label: 'Người báo cáo',
-    render: report => <Link to={`/u/${encodeURIComponent(report.reporterUsername)}`}>@{report.reporterUsername}</Link>
-  }, {
-    key: 'date',
-    label: 'Ngày báo cáo',
-    numeric: true,
-    render: report => adminDate(report.createdAt)
-  }, {
-    key: 'status',
-    label: 'Trạng thái',
-    render: report => <AdminStatusBadge status={report.status} />
-  }, {
-    key: 'actions',
-    label: '',
-    className: 'admin-actions-cell',
-    render: report => <AdminRowMenu label={`báo cáo ${report.targetType} ${report.id}`}><button onClick={() => setSelected(report)}>Xem xét báo cáo</button><button disabled={report.status !== 'PENDING'} onClick={() => resolve(report, false)}>Giải quyết báo cáo</button><button disabled={report.status !== 'PENDING'} onClick={() => resolve(report, true)}>Bác bỏ báo cáo</button></AdminRowMenu>
-  }];
-  return <div className="admin-page"><AdminPageHeader title="Trung tâm báo cáo" description="Xem xét và xử lý nội dung được cộng đồng báo cáo." loading={result.loading} onRefresh={result.reload} />
-    <div className="admin-status-tabs" aria-label="Trạng thái báo cáo">{[['', 'Tất cả'], ['PENDING', 'Chờ xử lý'], ['RESOLVED', 'Đã giải quyết'], ['REJECTED', 'Đã bác bỏ']].map(([value, label]) => <button key={value} aria-pressed={status === value} onClick={() => query.update({
-        status: value
-      })}>{label}</button>)}</div>
-    <div className="admin-table-toolbar"><AdminSearchInput label="Lọc báo cáo theo cộng đồng" value={community} onChange={value => query.update({
-        community: value
-      }, true)} placeholder="Tên chính xác của cộng đồng…" /><div className="admin-filter-bar"><AdminFilter label="Đối tượng" value={type} onChange={value => query.update({
-          type: value
-        })} options={[['', 'Tất cả loại'], ['POST', 'Bài viết'], ['COMMENT', 'Bình luận'], ['COMMUNITY', 'Cộng đồng']]} /><label className="admin-filter"><span>Ngày báo cáo</span><input type="date" disabled aria-label="Lọc ngày báo cáo chưa khả dụng" /><small>Chưa hỗ trợ lọc ngày</small></label></div></div>
-    <div className="admin-list-meta"><span role="status">{result.loading ? 'Đang tải báo cáo…' : result.error ? 'Chưa tải được báo cáo' : `${adminNumber(result.data?.totalElements)} báo cáo`}</span>{(status || type || community) && <button onClick={query.reset}>Đặt lại bộ lọc</button>}</div>
-    <AdminDataTable rows={result.data?.content || []} columns={columns} rowKey={row => `${row.targetType}-${row.id}`} loading={result.loading} error={result.error} retry={result.reload} caption="Danh sách báo cáo kiểm duyệt" empty={<AdminEmptyState title="Không có báo cáo phù hợp" onReset={query.reset} />} />
-    <AdminPagination result={result.data} page={page} size={size} disabled={result.loading || !!result.error} onChange={query.update} />
-    <AdminNotice>Đã hỗ trợ xem báo cáo và xóa bài viết / bình luận vi phạm. Giải quyết hoặc bác bỏ báo cáo chưa khả dụng; xóa nội dung không tự động đánh dấu báo cáo đã xử lý.</AdminNotice>
-    {selected && !action && <AdminDetailDrawer title="Xem xét báo cáo" onClose={() => setSelected(null)}><div className="admin-report-heading"><h2>{types[selected.targetType]} #{selected.targetId}</h2><AdminStatusBadge status={selected.status} /></div>
-      <AdminFields items={[['Người báo cáo', <Link to={`/u/${encodeURIComponent(selected.reporterUsername)}`}>@{selected.reporterUsername}</Link>], ['Cộng đồng', <Link to={`/c/${encodeURIComponent(selected.communityName)}`}>c/{selected.communityName}</Link>], ['Lý do', reasons[selected.reason] || selected.reason], ['Ngày báo cáo', adminDate(selected.createdAt)]]} />
-      <h2>Mô tả bổ sung</h2><p className="admin-preserve-lines">{selected.description || 'Không có mô tả bổ sung.'}</p>
-      {(selected.resolutionNote || selected.resolvedBy) && <AdminFields items={[['Ghi chú xử lý', selected.resolutionNote], ['Người xử lý', selected.resolvedBy], ['Ngày xử lý', adminDate(selected.resolvedAt)]]} />}
-      <div className="admin-drawer-section"><h2>Nội dung được báo cáo</h2>{selected.targetType === 'POST' ? <PostPreview id={String(selected.targetId)} onDelete={() => deletePost(selected)} /> : selected.targetType === 'COMMUNITY' ? <CommunityPreview name={selected.communityName} /> : <ReportCommentContext report={selected} onRemove={deleteComment} />}</div>
-      <div className="admin-drawer-section"><h2>Kết quả xem xét</h2><AdminNotice>Cập nhật kết quả xem xét chưa được hệ thống hỗ trợ.</AdminNotice><div className="admin-inline-actions"><button className="admin-button" disabled={selected.status !== 'PENDING'} onClick={() => resolve(selected, false)}>Giải quyết báo cáo</button><button className="admin-button" disabled={selected.status !== 'PENDING'} onClick={() => resolve(selected, true)}>Bác bỏ báo cáo</button></div></div>
-    </AdminDetailDrawer>}
-    {action && <AdminConfirmDialog action={action} onClose={() => setAction(null)} onSuccess={() => {
-      setSelected(null);
-      result.reload();
-      summary.reload();
-    }} />}
-  </div>;
+  const typeValue = query.params.get('type') || '';
+  const type = REPORT_TYPES.some(([value]) => value === typeValue) ? typeValue : 'POST';
+  const statusValue = query.params.get('status') || '';
+  const status = ['PENDING', 'RESOLVED', 'REJECTED'].includes(statusValue) ? statusValue : '';
+  const communityName = (query.params.get('communityName') || '').slice(0, 255);
+  const { page, size } = query;
+  const result = useAdminResource(useCallback(
+    () => listAdminReports({ type, status, communityName, page, size }),
+    [type, status, communityName, page, size],
+  ));
+  const [communityDraftState, setCommunityDraftState] = useState({ source: communityName, value: communityName });
+  const [selectedReport, setSelectedReport] = useState(null);
+  const communityDraft = communityDraftState.source === communityName ? communityDraftState.value : communityName;
+  const reports = result.data?.empty ? [] : result.data?.content || [];
+
+  const applyCommunity = event => {
+    event.preventDefault();
+    const value = communityDraft.trim().slice(0, 255);
+    setCommunityDraftState({ source: value, value });
+    query.update({ communityName: value });
+  };
+
+  const resetFilters = () => {
+    setCommunityDraftState({ source: '', value: '' });
+    query.update({ type: 'POST', status: '', communityName: '' });
+  };
+
+  const columns = [
+    { key: 'id', label: 'Report ID', numeric: true, render: report => adminNumber(report.id) },
+    { key: 'targetType', label: 'Target Type', render: report => report.targetType || '—' },
+    { key: 'targetId', label: 'Target ID', numeric: true, render: report => report.targetId ?? '—' },
+    {
+      key: 'communityName',
+      label: 'Community Name',
+      render: report => report.communityName
+        ? <Link to={`/c/${encodeURIComponent(report.communityName)}`}>c/{report.communityName}</Link>
+        : '—',
+    },
+    {
+      key: 'reporterUsername',
+      label: 'Reporter Username',
+      render: report => report.reporterUsername
+        ? <Link to={`/u/${encodeURIComponent(report.reporterUsername)}`}>@{report.reporterUsername}</Link>
+        : '—',
+    },
+    { key: 'reason', label: 'Reason', render: report => REASONS[report.reason] || report.reason || '—' },
+    {
+      key: 'description',
+      label: 'Description',
+      className: 'admin-wrap-cell',
+      render: report => <span className="admin-report-description">{report.description || '—'}</span>,
+    },
+    { key: 'status', label: 'Status', render: report => <AdminStatusBadge status={report.status} /> },
+    { key: 'action', label: 'Action', render: report => report.action || '—' },
+    { key: 'resolvedBy', label: 'Resolved By', render: report => report.resolvedBy || '—' },
+    { key: 'resolvedAt', label: 'Resolved At', numeric: true, render: report => adminDate(report.resolvedAt) },
+    { key: 'createdAt', label: 'Created At', numeric: true, render: report => adminDate(report.createdAt) },
+    {
+      key: 'viewDetails',
+      label: 'Details',
+      className: 'admin-actions-cell',
+      render: report => <button className="admin-text-action" type="button" onClick={() => setSelectedReport({ type: report.targetType, reportId: report.id })}>View Details</button>,
+    },
+  ];
+
+  return (
+    <div className="admin-page admin-report-management">
+      <AdminPageHeader
+        title="Report Management"
+        description="Theo dõi báo cáo nội dung theo loại, trạng thái và cộng đồng."
+        loading={result.loading}
+        onRefresh={result.reload}
+      />
+
+      <div className="admin-table-toolbar">
+        <form className="admin-filter-bar" onSubmit={applyCommunity}>
+          <AdminFilter
+            label="Type"
+            value={type}
+            options={REPORT_TYPES}
+            onChange={value => query.update({ type: value })}
+          />
+          <AdminFilter
+            label="Status"
+            value={status}
+            options={REPORT_STATUSES}
+            onChange={value => query.update({ status: value })}
+          />
+          <label className="admin-filter" htmlFor="admin-report-community-name">
+            <span>Community Name</span>
+            <input
+              id="admin-report-community-name"
+              value={communityDraft}
+              maxLength={255}
+              onChange={event => setCommunityDraftState({ source: communityName, value: event.target.value })}
+              placeholder="Nhập tên cộng đồng"
+            />
+          </label>
+          <button className="admin-button admin-button-primary" type="submit">Áp dụng</button>
+          {(status || communityName || type !== 'POST') && <button className="admin-button" type="button" onClick={resetFilters}>Đặt lại bộ lọc</button>}
+        </form>
+      </div>
+
+      <div className="admin-list-meta">
+        <span role="status">
+          {result.loading
+            ? 'Đang tải báo cáo…'
+            : result.error
+              ? 'Chưa tải được danh sách báo cáo'
+              : `${adminNumber(result.data?.totalElements)} báo cáo`}
+        </span>
+      </div>
+
+      <AdminDataTable
+        rows={reports}
+        columns={columns}
+        rowKey={report => `${report.targetType}-${report.id}`}
+        loading={result.loading}
+        error={result.error}
+        retry={result.reload}
+        caption="Danh sách báo cáo Admin"
+        empty={<AdminEmptyState title="Không tìm thấy báo cáo" onReset={resetFilters} />}
+      />
+      <AdminPagination
+        result={result.data}
+        page={page}
+        size={size}
+        disabled={result.loading || !!result.error}
+        onChange={query.update}
+      />
+      {selectedReport && (
+        <AdminDetailDrawer
+          title={`Report #${selectedReport.reportId}`}
+          onClose={() => setSelectedReport(null)}
+        >
+          <ReportDetailContent type={selectedReport.type} reportId={selectedReport.reportId} onListRefresh={result.reload} />
+        </AdminDetailDrawer>
+      )}
+    </div>
+  );
 }

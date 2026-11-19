@@ -10,6 +10,7 @@ const CommunityManagementPage = React.lazy(() => import('../pages/admin/Communit
 const ReportManagementPage = React.lazy(() => import('../pages/admin/ReportManagementPage.jsx'));
 const PostManagementPage = React.lazy(() => import('../pages/admin/PostManagementPage.jsx'));
 const CategoryManagementPage = React.lazy(() => import('../pages/admin/CategoryManagementPage.jsx'));
+const ActivityLogManagementPage = React.lazy(() => import('../pages/admin/ActivityLogManagementPage.jsx'));
 const routeLoading = <div className="route-loading" role="status">Đang mở trang quản trị…</div>;
 export const adminRoutes = <>
   <Route element={<AdminAuthLayout />}>
@@ -23,6 +24,7 @@ export const adminRoutes = <>
         <Route path="reports" element={<React.Suspense fallback={routeLoading}><ReportManagementPage /></React.Suspense>} />
         <Route path="posts" element={<React.Suspense fallback={routeLoading}><PostManagementPage /></React.Suspense>} />
         <Route path="categories" element={<React.Suspense fallback={routeLoading}><CategoryManagementPage /></React.Suspense>} />
+        <Route path="activity-logs" element={<React.Suspense fallback={routeLoading}><ActivityLogManagementPage /></React.Suspense>} />
         <Route path="*" element={<div className="admin-empty"><h1>Không tìm thấy trang quản trị</h1><a href="/admin">Về tổng quan quản trị</a></div>} />
       </Route>
 
