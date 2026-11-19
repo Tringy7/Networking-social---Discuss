@@ -12,3 +12,19 @@ export function listAdminCommunities({ page = 0, size = 10, status = '', visibil
 
   return apiClient.get(`/admin/communities?${params}`);
 }
+
+export function searchAdminCommunities({ search, page = 0, size = 10, status = '', visibility = '' }) {
+  const term = String(search || '').trim().slice(0, 200);
+  if (!term) throw new Error('Search term is required.');
+
+  const params = new URLSearchParams({
+    search: term,
+    page: String(page),
+    size: String(size),
+  });
+
+  if (status) params.set('status', status);
+  if (visibility) params.set('visibility', visibility);
+
+  return apiClient.get(`/admin/communities/search?${params}`);
+}

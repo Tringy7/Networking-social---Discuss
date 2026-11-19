@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Eye } from 'lucide-react';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { listAdminCommunities } from '../../services/adminCommunityService.js';
+import { listAdminCommunities, searchAdminCommunities } from '../../services/adminCommunityService.js';
 import {
   AdminAvatar,
   AdminDataTable,
@@ -12,6 +12,7 @@ import {
   AdminFilter,
   AdminPageHeader,
   AdminPagination,
+  AdminSearchInput,
   AdminStatusBadge,
   adminDate,
   adminNumber,
@@ -32,10 +33,13 @@ export default function CommunityManagementPage() {
   const visibilityValue = query.params.get('visibility') || '';
   const status = ['ACTIVE', 'BANED'].includes(statusValue) ? statusValue : '';
   const visibility = ['PUBLIC', 'PRIVATE'].includes(visibilityValue) ? visibilityValue : '';
+  const search = (query.params.get('search') || '').trim().slice(0, 200);
   const { page, size } = query;
   const result = useAdminResource(useCallback(
-    () => listAdminCommunities({ page, size, status, visibility }),
-    [page, size, status, visibility],
+    () => search
+      ? searchAdminCommunities({ search, page, size, status, visibility })
+      : listAdminCommunities({ page, size, status, visibility }),
+    [page, size, search, status, visibility],
   ));
   const communities = result.data?.empty ? [] : result.data?.content || [];
   const [selected, setSelected] = useState(null);
@@ -109,6 +113,13 @@ export default function CommunityManagementPage() {
       />
 
       <div className="admin-table-toolbar admin-community-filters">
+        <AdminSearchInput
+          value={search}
+          onChange={value => query.update({ search: value }, true)}
+          placeholder="Search community name…"
+          label="Search communities"
+          maxLength={200}
+        />
         <div className="admin-filter-bar">
           <AdminFilter
             label="Status"
@@ -139,9 +150,9 @@ export default function CommunityManagementPage() {
             ? 'Loading communities…'
             : result.error
               ? 'Could not load communities'
-              : `${adminNumber(result.data?.totalElements)} communities`}
+              : `${adminNumber(result.data?.totalElements)} ${search ? 'matching communities' : 'communities'}`}
         </span>
-        {(status || visibility) && <button type="button" onClick={query.reset}>Clear filters</button>}
+        {(search || status || visibility) && <button type="button" onClick={query.reset}>Clear filters</button>}
       </div>
 
       <AdminDataTable
@@ -152,7 +163,7 @@ export default function CommunityManagementPage() {
         error={result.error}
         retry={result.reload}
         caption="Admin community list"
-        empty={<AdminEmptyState title="No communities found" description="Try changing the status or visibility filters." onReset={query.reset} />}
+        empty={<AdminEmptyState title="No communities found" description={search ? 'No communities match this search and the selected filters.' : 'Try changing the status or visibility filters.'} onReset={query.reset} />}
       />
 
       <AdminPagination
