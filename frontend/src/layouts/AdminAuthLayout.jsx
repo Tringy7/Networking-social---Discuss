@@ -2,7 +2,6 @@ import { Outlet, Link } from 'react-router-dom';
 import Logo from '../components/common/Logo';
 import ThemeToggle from '../components/ui/ThemeToggle';
 import './admin.css';
-
 export default function AdminAuthLayout() {
   return <div className="admin-workspace admin-auth-workspace">
     <header className="admin-topbar"><div className="admin-brand"><Logo size="sm" /><span>Không gian quản trị</span></div><div className="admin-top-actions"><ThemeToggle /><Link to="/login" className="admin-button">Đăng nhập người dùng</Link></div></header>
