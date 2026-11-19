@@ -2,7 +2,9 @@ import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { getAdminReportDetail, listAdminReports } from '../../services/adminReportService.js';
+import { getAdminReportDetail, listAdminReports, resolveAdminReport } from '../../services/adminReportService.js';
+import Modal from '../../components/ui/Modal';
+import { useToastStore } from '../../store/useToastStore';
 import {
   AdminDataTable,
   AdminDetailDrawer,
@@ -40,8 +42,70 @@ const REASONS = {
   OTHER: 'Other',
 };
 
-function ReportDetailContent({ type, reportId }) {
+function ResolveReportDialog({ type, reportId, onClose, onSuccess }) {
+  const [resolutionNote, setResolutionNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const addToast = useToastStore(state => state.addToast);
+
+  const submit = async event => {
+    event.preventDefault();
+    const note = resolutionNote.trim();
+    if (!note) {
+      setError('Resolution Note là bắt buộc.');
+      return;
+    }
+    if (note.length > 2000) {
+      setError('Resolution Note không được vượt quá 2000 ký tự.');
+      return;
+    }
+
+    setBusy(true);
+    setError('');
+    try {
+      await resolveAdminReport(type, reportId, note);
+      addToast(`Report #${reportId} resolved successfully.`, 'success');
+      onSuccess();
+      onClose();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Không thể xử lý báo cáo.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal isOpen onClose={() => !busy && onClose()} closeDisabled={busy} title="Resolve report" maxWidth="md">
+      <form className="admin-resolve-form" onSubmit={submit}>
+        <p>Nhập Resolution Note để xác nhận báo cáo này đã được xử lý.</p>
+        <label htmlFor="admin-report-resolution-note">Resolution Note</label>
+        <textarea
+          id="admin-report-resolution-note"
+          value={resolutionNote}
+          onChange={event => setResolutionNote(event.target.value)}
+          maxLength={2000}
+          rows={6}
+          required
+          aria-describedby="admin-report-resolution-count"
+        />
+        <div className="admin-resolve-form-meta">
+          <span id="admin-report-resolution-count" role="status">{resolutionNote.length}/2000</span>
+        </div>
+        {error && <p className="admin-inline-error" role="alert">{error}</p>}
+        <div className="admin-dialog-actions">
+          <button className="admin-button" type="button" onClick={onClose} disabled={busy}>Cancel</button>
+          <button className="admin-button admin-button-primary" type="submit" disabled={busy || !resolutionNote.trim() || resolutionNote.length > 2000}>
+            {busy ? 'Resolving…' : 'Resolve'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function ReportDetailContent({ type, reportId, onListRefresh }) {
   const detail = useAdminResource(useCallback(() => getAdminReportDetail(type, reportId), [type, reportId]));
+  const [resolveOpen, setResolveOpen] = useState(false);
 
   if (detail.loading) return <AdminLoadingSkeleton />;
   if (detail.error) return <AdminErrorState error={detail.error} retry={detail.reload} />;
@@ -64,6 +128,22 @@ function ReportDetailContent({ type, reportId }) {
         ['Resolved At', adminDate(report.resolvedAt)],
         ['Created At', adminDate(report.createdAt)],
       ]} />
+      {report.status === 'PENDING' && (
+        <div className="admin-inline-actions">
+          <button className="admin-button admin-button-primary" type="button" onClick={() => setResolveOpen(true)}>Resolve</button>
+        </div>
+      )}
+      {resolveOpen && report.status === 'PENDING' && (
+        <ResolveReportDialog
+          type={type}
+          reportId={reportId}
+          onClose={() => setResolveOpen(false)}
+          onSuccess={() => {
+            detail.reload();
+            onListRefresh();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -205,7 +285,7 @@ export default function ReportManagementPage() {
           title={`Report #${selectedReport.reportId}`}
           onClose={() => setSelectedReport(null)}
         >
-          <ReportDetailContent type={selectedReport.type} reportId={selectedReport.reportId} />
+          <ReportDetailContent type={selectedReport.type} reportId={selectedReport.reportId} onListRefresh={result.reload} />
         </AdminDetailDrawer>
       )}
     </div>

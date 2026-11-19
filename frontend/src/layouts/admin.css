@@ -607,6 +607,12 @@ a.admin-breakdown-row:hover { text-decoration:underline; }
 .admin-post-delete-preview span { color:var(--text-secondary); font-size:13px; }
 .admin-report-management .admin-report-description { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; white-space:pre-line; }
 .admin-report-management .admin-data-table .admin-actions-cell { width:112px; white-space:nowrap; }
+.admin-resolve-form { display:flex; flex-direction:column; gap:12px; font-size:14px; }
+.admin-resolve-form > p { margin:0; line-height:1.6; }
+.admin-resolve-form > label { color:var(--text-primary); font-weight:650; }
+.admin-resolve-form textarea { min-width:0; width:100%; resize:vertical; padding:10px 12px; border:1px solid var(--border-hover); border-radius:8px; background:var(--bg-main); color:var(--text-primary); font:inherit; line-height:1.6; }
+.admin-resolve-form textarea:focus-visible { outline:0; border-color:var(--color-orange-ink); box-shadow:0 0 0 3px color-mix(in srgb,var(--color-orange) 18%,transparent); }
+.admin-resolve-form-meta { display:flex; justify-content:flex-end; color:var(--text-muted); font-size:12px; font-variant-numeric:tabular-nums; }
 @media (max-width:700px) {
   .admin-post-management .admin-data-table .admin-actions-cell { width:auto; }
   .admin-post-row-actions { gap:10px; }

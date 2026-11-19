@@ -13,3 +13,17 @@ export function getAdminReportDetail(type, reportId) {
   const reportType = ['POST', 'COMMENT', 'COMMUNITY'].includes(type) ? type : 'POST';
   return apiClient.get(`/admin/reports/${encodeURIComponent(reportType)}/${encodeURIComponent(String(reportId))}`);
 }
+
+export function resolveAdminReport(type, reportId, resolutionNote) {
+  if (!['POST', 'COMMENT', 'COMMUNITY'].includes(type)) {
+    throw new Error('Loại báo cáo không hợp lệ.');
+  }
+  const note = String(resolutionNote || '').trim();
+  if (!note) throw new Error('Resolution Note là bắt buộc.');
+  if (note.length > 2000) throw new Error('Resolution Note không được vượt quá 2000 ký tự.');
+
+  return apiClient.patch(
+    `/admin/reports/${encodeURIComponent(type)}/${encodeURIComponent(String(reportId))}/resolve`,
+    { resolutionNote: note },
+  );
+}
