@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Users, UserRoundCheck, UserRoundX, FolderKanban, FolderCheck, FolderX, FileText, MessageSquare, ShieldAlert, CheckCheck } from 'lucide-react';
 import { useAdminData } from '../../components/admin/AdminDataContext.jsx';
-import { AdminErrorState, AdminNotice, AdminPageHeader, adminNumber } from '../../components/admin/AdminUI.jsx';
+import { AdminErrorState, AdminPageHeader, adminNumber } from '../../components/admin/AdminUI.jsx';
 export default function AdminDashboardPage() {
   const {
     stats,
@@ -92,6 +92,6 @@ export default function AdminDashboardPage() {
         }) => <Link key={title} to={to} className={pending ? 'needs-attention' : ''}><span><Icon size={16} />{title}</span><strong>{value}<ArrowRight size={15} /></strong></Link>)}</div>
     </section>
     <section className="admin-section"><div className="admin-section-heading"><h2>Truy cập nhanh</h2></div><div className="admin-quick-links">{[['/admin/users', 'Quản lý người dùng'], ['/admin/reports?status=PENDING', 'Xử lý báo cáo'], ['/admin/communities', 'Quản lý cộng đồng'], ['/admin/posts', 'Quản lý bài viết']].map(([to, label]) => <Link to={to} key={to}>{label}<ArrowRight size={15} /></Link>)}</div></section>
-    <section className="admin-activity"><h2>Hoạt động kiểm duyệt gần đây</h2><AdminNotice>Nhật ký kiểm duyệt chưa khả dụng. Các sự kiện khóa tài khoản, cấm cộng đồng và xử lý báo cáo sẽ xuất hiện khi tính năng được hỗ trợ.</AdminNotice></section>
+    <section className="admin-activity"><div className="admin-section-heading"><div><h2>Nhật ký hoạt động</h2><p className="admin-panel-description">Xem lại thao tác quản trị theo người thực hiện, hành động hoặc loại đối tượng.</p></div><Link className="admin-button" to="/admin/activity-logs">Mở nhật ký <ArrowRight size={15} /></Link></div></section>
   </div>;
 }
