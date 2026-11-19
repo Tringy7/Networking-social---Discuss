@@ -127,14 +127,18 @@ export function AdminPagination({
   hidePageSize = false
 }) {
   const total = result?.totalElements;
-  const start = result?.content.length ? page * size + 1 : 0;
+  const currentPage = result?.page ?? page;
+  const currentSize = result?.size ?? size;
+  const isFirst = result?.first ?? currentPage === 0;
+  const isLast = result?.last ?? (result ? currentPage + 1 >= result.totalPages : true);
+  const start = result?.content.length ? currentPage * currentSize + 1 : 0;
   const end = result?.content.length ? start + result.content.length - 1 : 0;
   return <div className="admin-pagination">{!hidePageSize && <label>Hiển thị <select aria-label="Số dòng mỗi trang" value={size} onChange={event => onChange({
         size: event.target.value
-      })}>{[10, 20, 50].map(value => <option key={value} value={value}>{value}</option>)}</select> / trang</label>}<span>{total == null || disabled ? '—' : `${adminNumber(start)}–${adminNumber(end)} / ${adminNumber(total)}`}</span><div><button className="admin-button" aria-label="Trang trước" disabled={disabled || page === 0} onClick={() => onChange({
-        page: String(page - 1)
-      })}><ChevronLeft size={16} /></button><span>Trang {page + 1}{result?.totalPages ? ` / ${result.totalPages}` : ''}</span><button className="admin-button" aria-label="Trang sau" disabled={disabled || !result || page + 1 >= result.totalPages} onClick={() => onChange({
-        page: String(page + 1)
+      })}>{[10, 20, 50].map(value => <option key={value} value={value}>{value}</option>)}</select> / trang</label>}<span>{total == null || disabled ? '—' : `${adminNumber(start)}–${adminNumber(end)} / ${adminNumber(total)}`}</span><div><button className="admin-button" aria-label="Trang trước" disabled={disabled || isFirst} onClick={() => onChange({
+        page: String(currentPage - 1)
+      })}><ChevronLeft size={16} /></button><span>Trang {currentPage + 1}{result?.totalPages ? ` / ${result.totalPages}` : ''}</span><button className="admin-button" aria-label="Trang sau" disabled={disabled || isLast} onClick={() => onChange({
+        page: String(currentPage + 1)
       })}><ChevronRight size={16} /></button></div></div>;
 }
 export function AdminRowMenu({

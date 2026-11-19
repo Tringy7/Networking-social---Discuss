@@ -1,109 +1,170 @@
 import { useCallback, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowUpRight } from 'lucide-react';
-import { adminService, userService } from '../../services';
-import { adminCapabilities, adminMutations } from '../../services/adminModeration';
-import { useAuthStore } from '../../store/useAuthStore';
+import { Eye } from 'lucide-react';
+import { adminService } from '../../services';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { useAdminData } from '../../components/admin/AdminDataContext.jsx';
-import { AdminPageHeader, AdminDataTable, AdminSearchInput, AdminFilter, AdminStatusBadge, AdminPagination, AdminRowMenu, AdminDetailDrawer, AdminFields, AdminAvatar, AdminConfirmDialog, AdminNotice, AdminEmptyState, AdminLoadingSkeleton, AdminErrorState, adminDate, adminNumber, AdminRoleBadge } from '../../components/admin/AdminUI.jsx';
-function Identity({
-  user
-}) {
-  return <div className="admin-identity"><AdminAvatar name={user.displayName || user.username} src={user.avatarUrl} /><span><strong>{user.displayName || user.username}</strong><small>@{user.username}</small></span></div>;
+import {
+  AdminAvatar,
+  AdminDataTable,
+  AdminDetailDrawer,
+  AdminEmptyState,
+  AdminFields,
+  AdminFilter,
+  AdminPageHeader,
+  AdminPagination,
+  AdminRoleBadge,
+  AdminStatusBadge,
+  adminDate,
+  adminNumber,
+} from '../../components/admin/AdminUI.jsx';
+
+function UserIdentity({ user }) {
+  return (
+    <div className="admin-identity">
+      <AdminAvatar name={user.displayName || user.username} src={user.avatarUrl} />
+      <span><strong>@{user.username}</strong></span>
+    </div>
+  );
 }
-function Profile({
-  username
-}) {
-  const result = useAdminResource(useCallback(() => userService.getPublicProfile(username), [username]));
-  if (result.loading) return <AdminLoadingSkeleton />;
-  if (result.error) return <AdminErrorState error={result.error} retry={result.reload} />;
-  return <AdminFields items={[['Giới thiệu', result.data?.bio || '—'], ['Địa điểm', result.data?.location || '—']]} />;
-}
+
 export default function UserManagementPage() {
   const query = useAdminQuery();
-  const search = (query.params.get('search') || '').slice(0, 200);
-  const status = ['ACTIVE', 'SUSPENDED'].includes(query.params.get('status') || '') ? query.params.get('status') : '';
-  const sort = query.params.get('sort') === 'createdAt,asc' ? 'createdAt,asc' : 'createdAt,desc';
-  const role = ['USER', 'ADMIN'].includes(query.params.get('role') || '') ? query.params.get('role') : '';
-  const {
-    page
-  } = query;
-  const size = 10;
-  const result = useAdminResource(useCallback(() => adminService.listUsers({
-    page,
-    size,
-    search,
-    status,
-    role,
-    sort
-  }), [page, size, search, status, role, sort]));
+  const statusValue = query.params.get('status') || '';
+  const roleValue = query.params.get('role') || '';
+  const status = ['ACTIVE', 'SUSPENDED'].includes(statusValue) ? statusValue : '';
+  const role = ['USER', 'ADMIN'].includes(roleValue) ? roleValue : '';
+  const { page, size } = query;
+  const result = useAdminResource(useCallback(
+    () => adminService.listUsers({ page, size, status, role }),
+    [page, size, status, role],
+  ));
+  const users = result.data?.empty ? [] : result.data?.content || [];
   const [selected, setSelected] = useState(null);
-  const [action, setAction] = useState(null);
-  const current = useAuthStore(state => state.user);
-  const summary = useAdminData();
-  const openStatus = user => {
-    const locked = ['LOCKED', 'SUSPENDED'].includes(user.status);
-    if (!locked && user.status !== 'ACTIVE') return;
-    setAction({
-      title: locked ? 'Mở khóa tài khoản' : 'Khóa tài khoản',
-      label: locked ? 'Mở khóa' : 'Xác nhận khóa',
-      danger: !locked,
-      available: adminCapabilities.userStatus,
-      description: `${locked ? 'Cho phép đăng nhập lại' : 'Tạm ngừng quyền truy cập'} đối với tài khoản @${user.username}.`,
-      preview: <Identity user={user} />,
-      execute: () => adminMutations.setUserStatus(user.id, locked ? 'ACTIVE' : 'LOCKED'),
-      success: 'Đã cập nhật trạng thái tài khoản.'
-    });
-  };
-  const canChangeStatus = user => ['ACTIVE', 'LOCKED', 'SUSPENDED'].includes(user.status);
-  const columns = [{
-    key: 'user',
-    label: 'Người dùng',
-    render: user => <button className="admin-name-button" onClick={() => setSelected(user)}><Identity user={user} /></button>
-  }, {
-    key: 'email',
-    label: 'Email',
-    render: user => user.email || '—',
-    className: 'admin-wrap-cell'
-  }, {
-    key: 'role',
-    label: 'Vai trò',
-    render: user => <AdminRoleBadge role={user.role} />
-  }, {
-    key: 'status',
-    label: 'Trạng thái',
-    render: user => <AdminStatusBadge status={user.status} label={user.status === 'PENDING' ? 'Chờ xác thực' : undefined} />
-  }, {
-    key: 'date',
-    label: 'Ngày tham gia',
-    numeric: true,
-    render: user => adminDate(user.createdAt)
-  }, {
-    key: 'actions',
-    label: '',
-    className: 'admin-actions-cell',
-    render: user => <AdminRowMenu label={user.username}><button onClick={() => setSelected(user)}>Xem chi tiết</button><button disabled={current?.username === user.username || !canChangeStatus(user)} title={current?.username === user.username ? 'Không thể tự khóa tài khoản đang đăng nhập.' : !canChangeStatus(user) ? 'Chỉ tài khoản đang hoạt động hoặc đã khóa mới có thể đổi trạng thái.' : undefined} onClick={() => openStatus(user)}>{['LOCKED', 'SUSPENDED'].includes(user.status) ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}</button></AdminRowMenu>
-  }];
-  return <div className="admin-page"><AdminPageHeader title="Quản lý người dùng" description="Theo dõi tài khoản, trạng thái hoạt động và quyền truy cập." loading={result.loading} onRefresh={result.reload} />
-    <div className="admin-table-toolbar"><AdminSearchInput value={search} onChange={value => query.update({
-        search: value
-      }, true)} placeholder="Tìm username hoặc email…" label="Tìm người dùng" /><div className="admin-filter-bar"><AdminFilter label="Trạng thái" value={status} onChange={value => query.update({
-          status: value
-        })} options={[['', 'Tất cả trạng thái'], ['ACTIVE', 'Đang hoạt động'], ['SUSPENDED', 'Đã khóa']]} /><div className={`admin-role-filter${role ? ' is-active' : ''}`}><AdminFilter label="Vai trò" value={role} onChange={value => query.update({
-            role: value
-          })} options={[['', 'Tất cả vai trò'], ['USER', 'Người dùng'], ['ADMIN', 'Quản trị viên']]} /></div><AdminFilter label="Sắp xếp" value={sort} onChange={value => query.update({
-          sort: value
-        })} options={[['createdAt,desc', 'Mới nhất'], ['createdAt,asc', 'Cũ nhất']]} /></div></div>
-    <div className="admin-list-meta"><span role="status">{result.loading ? 'Đang tải người dùng…' : result.error ? 'Chưa tải được danh sách' : `${adminNumber(result.data?.totalElements)} ${role === 'ADMIN' ? 'quản trị viên' : role === 'USER' ? 'người dùng' : 'tài khoản'}${search || status || role ? ' phù hợp' : ''}`}</span><span>10 tài khoản / trang</span>{(search || status || role) && <button onClick={query.reset}>Đặt lại bộ lọc</button>}</div>
-    <AdminDataTable rows={result.data?.content || []} columns={columns} rowKey={user => user.id} loading={result.loading} error={result.error} retry={result.reload} caption="Danh sách người dùng" empty={<AdminEmptyState title="Không tìm thấy người dùng" onReset={query.reset} />} />
-    <AdminPagination hidePageSize result={result.data} page={page} size={size} disabled={result.loading || !!result.error} onChange={query.update} />
-    {selected && !action && <AdminDetailDrawer title="Chi tiết người dùng" onClose={() => setSelected(null)}><Identity user={selected} /><AdminFields items={[['ID tài khoản', selected.id], ['Email', selected.email], ['Trạng thái', <AdminStatusBadge status={selected.status} label={selected.status === 'PENDING' ? 'Chờ xác thực' : undefined} />], ['Vai trò', <AdminRoleBadge role={selected.role} />], ['Ngày tham gia', adminDate(selected.createdAt)]]} /><h2>Hồ sơ công khai</h2><Profile username={selected.username} /><Link className="admin-button" to={`/u/${encodeURIComponent(selected.username)}`}>Xem hồ sơ <ArrowUpRight size={15} /></Link><div className="admin-drawer-section"><h2>Quản lý tài khoản</h2>{current?.username === selected.username && <AdminNotice>Không thể tự khóa tài khoản đang đăng nhập.</AdminNotice>}<div className="admin-inline-actions"><button className="admin-button" disabled={current?.username === selected.username || !canChangeStatus(selected)} onClick={() => openStatus(selected)}>{['LOCKED', 'SUSPENDED'].includes(selected.status) ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}</button></div></div></AdminDetailDrawer>}
-    {action && <AdminConfirmDialog action={action} onClose={() => setAction(null)} onSuccess={() => {
-      setSelected(null);
-      result.reload();
-      summary.reload();
-    }} />}
-  </div>;
+
+  const columns = [
+    {
+      key: 'avatar',
+      label: 'Avatar',
+      render: user => <AdminAvatar name={user.displayName || user.username} src={user.avatarUrl} />,
+    },
+    {
+      key: 'username',
+      label: 'Username',
+      render: user => <strong className="admin-user-username">@{user.username}</strong>,
+    },
+    {
+      key: 'displayName',
+      label: 'Display Name',
+      render: user => user.displayName || '—',
+      className: 'admin-wrap-cell',
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      render: user => user.email || '—',
+      className: 'admin-wrap-cell',
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      render: user => <AdminRoleBadge role={user.role} />,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: user => <AdminStatusBadge status={user.status} />,
+    },
+    {
+      key: 'createdAt',
+      label: 'Created At',
+      render: user => adminDate(user.createdAt),
+    },
+    {
+      key: 'action',
+      label: 'Action',
+      className: 'admin-actions-cell',
+      render: user => <button className="admin-user-view" type="button" onClick={() => setSelected(user)} aria-label={`Xem ${user.username}`} title="Xem chi tiết"><Eye size={17} /></button>,
+    },
+  ];
+
+  return (
+    <div className="admin-page">
+      <AdminPageHeader
+        title="User Management"
+        description="Review account details, roles, and current status."
+        loading={result.loading}
+        onRefresh={result.reload}
+      />
+
+      <div className="admin-table-toolbar admin-user-filters">
+        <div className="admin-filter-bar">
+          <AdminFilter
+            label="Status"
+            value={status}
+            onChange={value => query.update({ status: value })}
+            options={[
+              ['', 'All statuses'],
+              ['ACTIVE', 'Active'],
+              ['SUSPENDED', 'Suspended'],
+            ]}
+          />
+          <AdminFilter
+            label="Role"
+            value={role}
+            onChange={value => query.update({ role: value })}
+            options={[
+              ['', 'All roles'],
+              ['USER', 'User'],
+              ['ADMIN', 'Admin'],
+            ]}
+          />
+        </div>
+      </div>
+
+      <div className="admin-list-meta">
+        <span role="status">
+          {result.loading
+            ? 'Loading users…'
+            : result.error
+              ? 'Could not load users'
+              : `${adminNumber(result.data?.totalElements)} users`}
+        </span>
+        {(status || role) && <button type="button" onClick={query.reset}>Clear filters</button>}
+      </div>
+
+      <AdminDataTable
+        rows={users}
+        columns={columns}
+        rowKey={user => user.id}
+        loading={result.loading}
+        error={result.error}
+        retry={result.reload}
+        caption="Admin user list"
+        empty={<AdminEmptyState title="No users found" description="Try changing the status or role filters." onReset={query.reset} />}
+      />
+
+      <AdminPagination
+        result={result.data}
+        page={page}
+        size={size}
+        disabled={result.loading || !!result.error}
+        onChange={query.update}
+      />
+
+      {selected && (
+        <AdminDetailDrawer title="User details" onClose={() => setSelected(null)}>
+          <UserIdentity user={selected} />
+          <AdminFields items={[
+            ['Username', `@${selected.username}`],
+            ['Display Name', selected.displayName],
+            ['Email', selected.email],
+            ['Role', <AdminRoleBadge role={selected.role} />],
+            ['Status', <AdminStatusBadge status={selected.status} />],
+            ['Created At', adminDate(selected.createdAt)],
+            ['User ID', selected.id],
+          ]} />
+        </AdminDetailDrawer>
+      )}
+    </div>
+  );
 }
