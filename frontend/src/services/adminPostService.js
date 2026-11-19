@@ -22,3 +22,7 @@ export function searchAdminPosts({ search, page = 0, size = 10, status = '', com
 export function getAdminPostDetail(id) {
   return apiClient.get(`/admin/posts/${encodeURIComponent(String(id))}`);
 }
+
+export function deleteAdminPost(id) {
+  return apiClient.delete(`/admin/posts/${encodeURIComponent(String(id))}`);
+}

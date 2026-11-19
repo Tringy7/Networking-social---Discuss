@@ -600,3 +600,12 @@ a.admin-breakdown-row:hover { text-decoration:underline; }
 .admin-post-detail-media > img,.admin-post-detail-media > video { display:block; width:100%; max-height:360px; object-fit:contain; border-radius:6px; background:var(--admin-frame); }
 .admin-post-detail-media .admin-field-list { margin:12px 0 0; }
 .admin-post-detail-media .admin-field-list > div { padding:8px 0; }
+.admin-post-management .admin-data-table .admin-actions-cell { width:152px; white-space:nowrap; }
+.admin-post-row-actions { display:flex; justify-content:flex-end; gap:12px; }
+.admin-text-action.is-danger { color:var(--admin-negative); }
+.admin-post-delete-preview { display:grid; gap:8px; overflow-wrap:anywhere; }
+.admin-post-delete-preview span { color:var(--text-secondary); font-size:13px; }
+@media (max-width:700px) {
+  .admin-post-management .admin-data-table .admin-actions-cell { width:auto; }
+  .admin-post-row-actions { gap:10px; }
+}

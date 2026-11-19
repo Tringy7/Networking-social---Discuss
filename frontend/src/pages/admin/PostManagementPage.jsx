@@ -2,11 +2,12 @@ import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { getAdminPostDetail, listAdminPosts, searchAdminPosts } from '../../services/adminPostService.js';
+import { deleteAdminPost, getAdminPostDetail, listAdminPosts, searchAdminPosts } from '../../services/adminPostService.js';
 import PostMarkdown from '../../components/post/PostMarkdown';
 import { httpUrl } from '../../components/post/postUrls';
 import {
   AdminAvatar,
+  AdminConfirmDialog,
   AdminDataTable,
   AdminDetailDrawer,
   AdminErrorState,
@@ -138,8 +139,26 @@ export default function PostManagementPage() {
   ));
   const [communityDraftState, setCommunityDraftState] = useState({ source: communityName, value: communityName });
   const [selectedPostId, setSelectedPostId] = useState(null);
+  const [action, setAction] = useState(null);
   const communityDraft = communityDraftState.source === communityName ? communityDraftState.value : communityName;
   const posts = result.data?.empty ? [] : result.data?.content || [];
+
+  const requestDelete = post => setAction({
+    title: 'Delete post',
+    label: 'Delete post',
+    danger: true,
+    description: 'This post will be deleted. Confirm to continue.',
+    preview: (
+      <div className="admin-post-delete-preview">
+        <strong>{post.title || 'Untitled post'}</strong>
+        <span>Post ID: {post.id}</span>
+        <span>Author: {post.author?.username ? `@${post.author.username}` : '—'}</span>
+        <span>Community: {post.communityName ? `c/${post.communityName}` : '—'}</span>
+      </div>
+    ),
+    execute: () => deleteAdminPost(post.id),
+    success: `Post #${post.id} deleted successfully.`,
+  });
 
   const columns = [
     {
@@ -177,7 +196,10 @@ export default function PostManagementPage() {
       key: 'actions',
       label: 'Actions',
       className: 'admin-actions-cell',
-      render: post => <button className="admin-text-action" type="button" onClick={() => setSelectedPostId(post.id)}>View Details</button>,
+      render: post => <div className="admin-post-row-actions">
+        <button className="admin-text-action" type="button" onClick={() => setSelectedPostId(post.id)}>View Details</button>
+        <button className="admin-text-action is-danger" type="button" onClick={() => requestDelete(post)}>Delete</button>
+      </div>,
     },
   ];
 
@@ -189,7 +211,7 @@ export default function PostManagementPage() {
   };
 
   return (
-    <div className="admin-page">
+    <div className="admin-page admin-post-management">
       <AdminPageHeader
         title="Post Management"
         description="Theo dõi trạng thái và hoạt động của bài viết trong Discuss."
@@ -259,6 +281,7 @@ export default function PostManagementPage() {
         onChange={query.update}
       />
       {selectedPostId !== null && <AdminDetailDrawer title="Post Details" onClose={() => setSelectedPostId(null)}><PostDetailContent postId={selectedPostId} /></AdminDetailDrawer>}
+      {action && <AdminConfirmDialog action={action} onClose={() => setAction(null)} onSuccess={result.reload} />}
     </div>
   );
 }
