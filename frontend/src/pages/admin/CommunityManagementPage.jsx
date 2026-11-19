@@ -1,15 +1,17 @@
 import { useCallback, useState } from 'react';
-import { Eye } from 'lucide-react';
+import { Eye, Image as ImageIcon, UserRound } from 'lucide-react';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { listAdminCommunities, searchAdminCommunities } from '../../services/adminCommunityService.js';
+import { getAdminCommunityDetail, listAdminCommunities, searchAdminCommunities } from '../../services/adminCommunityService.js';
 import {
   AdminAvatar,
   AdminDataTable,
   AdminDetailDrawer,
+  AdminErrorState,
   AdminEmptyState,
   AdminFields,
   AdminFilter,
+  AdminLoadingSkeleton,
   AdminPageHeader,
   AdminPagination,
   AdminSearchInput,
@@ -18,11 +20,54 @@ import {
   adminNumber,
 } from '../../components/admin/AdminUI.jsx';
 
-function CommunityIdentity({ community }) {
+function CommunityDetailContent({ communityId }) {
+  const detail = useAdminResource(useCallback(() => getAdminCommunityDetail(communityId), [communityId]));
+
+  if (detail.loading) return <AdminLoadingSkeleton />;
+  if (detail.error) return <AdminErrorState error={detail.error} retry={detail.reload} />;
+
+  const community = detail.data;
+  const owner = community.owner || {};
+
   return (
-    <div className="admin-identity">
-      <AdminAvatar name={community.name || 'Community'} src={community.avatarUrl} square />
-      <span><strong>c/{community.name}</strong></span>
+    <div className="admin-community-detail">
+      <section className="admin-community-detail-section" aria-labelledby="admin-community-information-title">
+        <h2 id="admin-community-information-title">Community information</h2>
+        <div className="admin-community-detail-media">
+          {community.avatarUrl
+            ? <img className="admin-community-detail-avatar" src={community.avatarUrl} alt={`c/${community.name} avatar`} />
+            : <div className="admin-community-detail-avatar-placeholder"><UserRound size={24} aria-hidden="true" /><span>No avatar</span></div>}
+          {community.bannerUrl
+            ? <img className="admin-community-detail-banner" src={community.bannerUrl} alt={`c/${community.name} banner`} />
+            : <div className="admin-community-detail-banner-placeholder"><ImageIcon size={20} aria-hidden="true" /><span>No banner</span></div>}
+        </div>
+        <AdminFields items={[
+          ['Community ID', community.id],
+          ['Community Name', `c/${community.name}`],
+          ['Description', community.description || '—'],
+          ['Rules', community.rules || '—'],
+          ['Category ID', community.categoryId],
+          ['Category Name', community.categoryName],
+          ['Visibility', community.visibility === 'PUBLIC' ? 'Public' : community.visibility === 'PRIVATE' ? 'Private' : '—'],
+          ['Status', <AdminStatusBadge status={community.status} />],
+          ['Member Count', adminNumber(community.memberCount)],
+          ['Created At', adminDate(community.createdAt)],
+        ]} />
+      </section>
+
+      <section className="admin-community-detail-section" aria-labelledby="admin-community-owner-title">
+        <h2 id="admin-community-owner-title">Owner</h2>
+        <div className="admin-community-owner-profile">
+          {owner.avatarUrl
+            ? <img className="admin-community-owner-avatar" src={owner.avatarUrl} alt={`${owner.displayName || owner.username || 'Owner'} avatar`} />
+            : <div className="admin-community-owner-avatar-placeholder"><UserRound size={21} aria-hidden="true" /><span>No avatar</span></div>}
+          <AdminFields items={[
+            ['User ID', owner.userId],
+            ['Username', owner.username ? `@${owner.username}` : '—'],
+            ['Display Name', owner.displayName],
+          ]} />
+        </div>
+      </section>
     </div>
   );
 }
@@ -42,7 +87,7 @@ export default function CommunityManagementPage() {
     [page, size, search, status, visibility],
   ));
   const communities = result.data?.empty ? [] : result.data?.content || [];
-  const [selected, setSelected] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
 
   const columns = [
     {
@@ -53,7 +98,7 @@ export default function CommunityManagementPage() {
     {
       key: 'name',
       label: 'Community Name',
-      render: community => <button className="admin-name-button" type="button" onClick={() => setSelected(community)}><strong>c/{community.name}</strong></button>,
+      render: community => <button className="admin-name-button" type="button" onClick={() => setSelectedId(community.id)}><strong>c/{community.name}</strong></button>,
       className: 'admin-title-cell',
     },
     {
@@ -99,7 +144,7 @@ export default function CommunityManagementPage() {
       key: 'actions',
       label: 'Actions',
       className: 'admin-actions-cell',
-      render: community => <button className="admin-community-view" type="button" onClick={() => setSelected(community)} aria-label={`View c/${community.name}`} title="View details"><Eye size={17} /></button>,
+      render: community => <button className="admin-community-view" type="button" onClick={() => setSelectedId(community.id)} aria-label={`View c/${community.name}`} title="View details"><Eye size={17} /></button>,
     },
   ];
 
@@ -174,19 +219,9 @@ export default function CommunityManagementPage() {
         onChange={query.update}
       />
 
-      {selected && (
-        <AdminDetailDrawer title="Community details" onClose={() => setSelected(null)}>
-          <CommunityIdentity community={selected} />
-          <AdminFields items={[
-            ['Community Name', `c/${selected.name}`],
-            ['Description', selected.description || '—'],
-            ['Category', selected.categoryName],
-            ['Visibility', selected.visibility === 'PRIVATE' ? 'Private' : selected.visibility === 'PUBLIC' ? 'Public' : '—'],
-            ['Status', <AdminStatusBadge status={selected.status} />],
-            ['Member Count', adminNumber(selected.memberCount)],
-            ['Owner', selected.owner?.displayName || selected.owner?.username || '—'],
-            ['Created At', adminDate(selected.createdAt)],
-          ]} />
+      {selectedId != null && (
+        <AdminDetailDrawer title="Community details" onClose={() => setSelectedId(null)}>
+          <CommunityDetailContent communityId={selectedId} />
         </AdminDetailDrawer>
       )}
     </div>

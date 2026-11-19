@@ -522,6 +522,16 @@ a.admin-breakdown-row:hover { text-decoration:underline; }
 .admin-community-view:hover { border-color:var(--color-orange-border); background:var(--color-orange-soft); color:var(--color-orange-ink); }
 .admin-community-filters { justify-content:flex-start; margin-top:0; }
 .admin-community-filters .admin-filter-bar { justify-content:flex-start; }
+.admin-community-detail-section + .admin-community-detail-section { margin-top:26px; padding-top:22px; border-top:1px solid var(--admin-line); }
+.admin-community-detail-section > h2 { margin:0 0 14px; font-size:14px; letter-spacing:-.015em; }
+.admin-community-detail-media { display:grid; grid-template-columns:92px minmax(0,1fr); align-items:stretch; gap:12px; }
+.admin-community-detail-avatar,.admin-community-detail-avatar-placeholder { width:92px; height:92px; border-radius:11px; }
+.admin-community-detail-banner,.admin-community-detail-banner-placeholder { width:100%; height:92px; border-radius:9px; }
+.admin-community-detail-avatar,.admin-community-detail-banner,.admin-community-owner-avatar { display:block; object-fit:cover; border:1px solid var(--admin-line); }
+.admin-community-detail-avatar-placeholder,.admin-community-detail-banner-placeholder,.admin-community-owner-avatar-placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; border:1px dashed var(--border-hover); background:var(--admin-frame); color:var(--text-muted); font-size:11px; }
+.admin-community-owner-profile { display:grid; grid-template-columns:72px minmax(0,1fr); align-items:start; gap:12px; }
+.admin-community-owner-avatar,.admin-community-owner-avatar-placeholder { width:72px; height:72px; border-radius:50%; }
+.admin-community-owner-profile .admin-field-list { margin:0; }
 .admin-user-detail-section + .admin-user-detail-section { margin-top:26px; padding-top:22px; border-top:1px solid var(--admin-line); }
 .admin-user-detail-section > h2 { margin:0 0 14px; font-size:14px; letter-spacing:-.015em; }
 .admin-user-profile-media { display:grid; grid-template-columns:92px minmax(0,1fr); align-items:stretch; gap:12px; }

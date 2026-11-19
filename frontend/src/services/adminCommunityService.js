@@ -28,3 +28,7 @@ export function searchAdminCommunities({ search, page = 0, size = 10, status = '
 
   return apiClient.get(`/admin/communities/search?${params}`);
 }
+
+export function getAdminCommunityDetail(id) {
+  return apiClient.get(`/admin/communities/${encodeURIComponent(String(id))}`);
+}
