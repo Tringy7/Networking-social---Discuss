@@ -19,6 +19,14 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
 
     long countByCommunityAndStatus(Community community, MembershipStatus status);
 
+    @Query("""
+            select cm.user.id from CommunityMember cm
+            where cm.community.id = :communityId and cm.status = :status and cm.user.id <> :authorId
+            """)
+    List<Long> findNotificationRecipientIds(@Param("communityId") Long communityId,
+                                           @Param("status") MembershipStatus status,
+                                           @Param("authorId") Long authorId);
+
     Optional<CommunityMember> findByCommunityAndUser(Community community, User user);
 
     Optional<CommunityMember> findByCommunityAndUserAndStatus(

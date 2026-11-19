@@ -7,6 +7,7 @@ import com.discuss.discuss.exception.comment.CommentErrorCode;
 import com.discuss.discuss.exception.comment.CommentException;
 import com.discuss.discuss.repository.*;
 import com.discuss.discuss.service.community.CommunityAuthorizationService;
+import com.discuss.discuss.service.notification.NotificationService;
 import com.discuss.discuss.service.post.PostSupport;
 import com.discuss.discuss.service.user.UserService;
 import com.discuss.discuss.utils.annotation.auth.HasRole;
@@ -30,6 +31,7 @@ public class CommentService {
     private final CommentAttachmentService attachmentService;
     private final UserService userService;
     private final CommunityAuthorizationService authorization;
+    private final NotificationService notificationService;
 
     public CommentResponseDTO create(CreateCommentRequestDTO request) {
         return create(request, List.of());
@@ -67,6 +69,7 @@ public class CommentService {
                 .status(CommentStatus.VISIBLE).build();
         commentRepository.saveAndFlush(comment);
         attachmentService.store(comment, files);
+        notificationService.notifyCommentCreated(comment);
         return commentSupport.toResponse(comment, user);
     }
     public CommentResponseDTO update(Long id, UpdateCommentRequestDTO request) {
