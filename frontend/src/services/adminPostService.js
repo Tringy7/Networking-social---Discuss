@@ -7,3 +7,14 @@ export function listAdminPosts({ page = 0, size = 10, status = '', communityName
 
   return apiClient.get(`/admin/posts?${params}`);
 }
+
+export function searchAdminPosts({ search, page = 0, size = 10, status = '', communityName = '' } = {}) {
+  const term = String(search || '').trim().slice(0, 200);
+  if (!term) throw new Error('Search term is required.');
+
+  const params = new URLSearchParams({ search: term, page: String(page), size: String(size) });
+  if (status) params.set('status', status);
+  if (communityName) params.set('communityName', String(communityName).slice(0, 255));
+
+  return apiClient.get(`/admin/posts/search?${params}`);
+}

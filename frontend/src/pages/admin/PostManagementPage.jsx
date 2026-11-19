@@ -2,13 +2,14 @@ import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { listAdminPosts } from '../../services/adminPostService.js';
+import { listAdminPosts, searchAdminPosts } from '../../services/adminPostService.js';
 import {
   AdminDataTable,
   AdminEmptyState,
   AdminFilter,
   AdminPageHeader,
   AdminPagination,
+  AdminSearchInput,
   AdminStatusBadge,
   adminDate,
   adminNumber,
@@ -23,13 +24,16 @@ const POST_STATUSES = [
 
 export default function PostManagementPage() {
   const query = useAdminQuery();
+  const search = (query.params.get('search') || '').trim().slice(0, 200);
   const statusValue = query.params.get('status') || '';
   const status = ['PUBLISHED', 'HIDDEN', 'DELETED'].includes(statusValue) ? statusValue : '';
   const communityName = (query.params.get('communityName') || '').slice(0, 255);
   const { page, size } = query;
   const result = useAdminResource(useCallback(
-    () => listAdminPosts({ page, size, status, communityName }),
-    [page, size, status, communityName],
+    () => search
+      ? searchAdminPosts({ search, page, size, status, communityName })
+      : listAdminPosts({ page, size, status, communityName }),
+    [page, size, search, status, communityName],
   ));
   const [communityDraftState, setCommunityDraftState] = useState({ source: communityName, value: communityName });
   const communityDraft = communityDraftState.source === communityName ? communityDraftState.value : communityName;
@@ -92,6 +96,13 @@ export default function PostManagementPage() {
       />
 
       <div className="admin-table-toolbar">
+        <AdminSearchInput
+          label="Tìm kiếm bài viết"
+          value={search}
+          onChange={value => query.update({ search: value.slice(0, 200) }, true)}
+          placeholder="Tìm theo nội dung bài viết…"
+          maxLength={200}
+        />
         <form className="admin-filter-bar" onSubmit={applyCommunity}>
           <AdminFilter
             label="Status"
@@ -106,7 +117,7 @@ export default function PostManagementPage() {
               className="admin-filter-input"
               value={communityDraft}
               maxLength={255}
-            onChange={event => setCommunityDraftState({ source: communityName, value: event.target.value })}
+              onChange={event => setCommunityDraftState({ source: communityName, value: event.target.value })}
               placeholder="Nhập tên cộng đồng"
             />
           </label>
