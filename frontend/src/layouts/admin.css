@@ -316,7 +316,15 @@ a.admin-breakdown-row:hover { text-decoration:underline; }
 .admin-report-heading h2 { margin:0; }
 .admin-report-context .admin-text-action { display:flex; width:fit-content; margin-top:16px; text-decoration:underline; }
 .admin-categories-table { max-width:900px; }
-.admin-categories-table th:first-child { width:50%; }
+.admin-categories-table th:first-child { width:88px; }
+.admin-categories-table th:nth-child(2) { width:50%; }
+.admin-category-management .admin-data-table .admin-actions-cell { width:150px; }
+.admin-category-row-actions { display:flex; justify-content:flex-end; gap:14px; }
+.admin-category-slug { padding:3px 7px; border:1px solid var(--admin-line); border-radius:6px; color:var(--text-secondary); font-size:12px; background:var(--admin-frame); }
+.admin-category-no-actions { color:var(--text-muted); }
+.admin-category-create-form { gap:18px; }
+.admin-category-create-form label { display:flex; flex-direction:column; gap:8px; color:var(--text-primary); font-size:13px; font-weight:650; }
+.admin-category-create-form small { color:var(--text-muted); font-size:12px; font-weight:400; }
 @media (max-width:1100px) {
   .admin-workspace.is-collapsed .admin-frame,.admin-frame { grid-template-columns:minmax(0,1fr); }
   .admin-navigation { display:none; }
