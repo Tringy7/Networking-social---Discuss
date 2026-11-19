@@ -32,3 +32,7 @@ export function searchAdminCommunities({ search, page = 0, size = 10, status = '
 export function getAdminCommunityDetail(id) {
   return apiClient.get(`/admin/communities/${encodeURIComponent(String(id))}`);
 }
+
+export function lockAdminCommunity(id) {
+  return apiClient.patch(`/admin/communities/${encodeURIComponent(String(id))}/lock`);
+}

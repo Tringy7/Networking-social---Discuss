@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
-import { Eye, Image as ImageIcon, UserRound } from 'lucide-react';
+import { Eye, Image as ImageIcon, LockKeyhole, UserRound } from 'lucide-react';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { getAdminCommunityDetail, listAdminCommunities, searchAdminCommunities } from '../../services/adminCommunityService.js';
+import { getAdminCommunityDetail, listAdminCommunities, lockAdminCommunity, searchAdminCommunities } from '../../services/adminCommunityService.js';
 import {
   AdminAvatar,
+  AdminConfirmDialog,
   AdminDataTable,
   AdminDetailDrawer,
   AdminErrorState,
@@ -88,6 +89,16 @@ export default function CommunityManagementPage() {
   ));
   const communities = result.data?.empty ? [] : result.data?.content || [];
   const [selectedId, setSelectedId] = useState(null);
+  const [action, setAction] = useState(null);
+
+  const requestLock = community => setAction({
+    title: 'Lock community',
+    label: 'Lock community',
+    danger: true,
+    description: `The community c/${community.name} will be locked and its status changed to BANED. Continue?`,
+    execute: () => lockAdminCommunity(community.id),
+    success: `Community c/${community.name} locked successfully.`,
+  });
 
   const columns = [
     {
@@ -144,7 +155,10 @@ export default function CommunityManagementPage() {
       key: 'actions',
       label: 'Actions',
       className: 'admin-actions-cell',
-      render: community => <button className="admin-community-view" type="button" onClick={() => setSelectedId(community.id)} aria-label={`View c/${community.name}`} title="View details"><Eye size={17} /></button>,
+      render: community => <div className="admin-community-actions">
+        <button className="admin-community-view" type="button" onClick={() => setSelectedId(community.id)} aria-label={`View c/${community.name}`} title="View details"><Eye size={17} /></button>
+        {community.status === 'ACTIVE' && <button className="admin-community-lock" type="button" onClick={() => requestLock(community)} title="Lock community"><LockKeyhole size={14} /><span>Lock</span></button>}
+      </div>,
     },
   ];
 
@@ -224,6 +238,8 @@ export default function CommunityManagementPage() {
           <CommunityDetailContent communityId={selectedId} />
         </AdminDetailDrawer>
       )}
+
+      {action && <AdminConfirmDialog action={action} onClose={() => setAction(null)} onSuccess={result.reload} />}
     </div>
   );
 }
