@@ -3,6 +3,9 @@ package com.discuss.discuss.exception.community;
 import org.springframework.http.HttpStatus;
 
 public enum CommunityErrorCode {
+    JOIN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "Join request not found"),
+    JOIN_REQUEST_ALREADY_REVIEWED(HttpStatus.CONFLICT, "Join request is already closed"),
+
     CATEGORY_ALREADY_EXISTS(HttpStatus.CONFLICT, "Category name or slug already exists"),
     CATEGORY_IN_USE(HttpStatus.CONFLICT, "Category is still used by a community"),
 

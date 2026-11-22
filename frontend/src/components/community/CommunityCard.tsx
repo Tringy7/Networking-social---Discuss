@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Settings, ShieldCheck, LogOut } from 'lucide-react';
+import { Users, Settings, ShieldCheck, LogOut, Lock } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import type { Community } from '../../types';
@@ -24,6 +24,7 @@ export default function CommunityCard({ community, variant = 'explore', onLeave,
   const role = community.currentUserRole;
   const joined = ['OWNER', 'MODERATOR', 'MEMBER'].includes(role);
   const manager = role === 'OWNER' || role === 'MODERATOR';
+  const isPrivate = community.visibility === 'PRIVATE';
   const href = `/c/${community.name}`;
   return <motion.article className="community-directory-row"
     initial={quiet ? false : { opacity: 0.85, y: 3 }} animate={{ opacity: 1, y: 0 }}
@@ -32,11 +33,15 @@ export default function CommunityCard({ community, variant = 'explore', onLeave,
       <Link to={href} className="directory-avatar" aria-label={`Truy cập ${title}`}><Avatar src={community.avatarUrl} alt={title} size="md" shape="rounded" /></Link>
       <div className="directory-identity"><h2><Link to={href} title={title}>{title}</Link></h2><span className="directory-handle" title={`c/${community.name}`}>c/{community.name}</span></div>
       <div className="directory-primary-action">
-        {variant === 'mine' || joined ? <Link to={href} className="directory-visit">Truy cập</Link> : <CommunityMembershipButton community={community} />}
+        {variant === 'mine' || joined || isPrivate ? <Link to={href} className="directory-visit">Truy cập</Link> : <CommunityMembershipButton community={community} />}
       </div>
     </div>
     <div className="directory-description">
-      <div className="directory-description-meta"><span className="directory-category" title={community.category}>{community.category || 'Chưa phân loại'}</span>{manager && <Badge role={role} />}</div>
+      <div className="directory-description-meta">
+        <span className="directory-category" title={community.category}>{community.category || 'Chưa phân loại'}</span>
+        {isPrivate && <Badge className="gap-1"><Lock size={12} aria-hidden="true" /> Riêng tư</Badge>}
+        {manager && <Badge role={role} />}
+      </div>
       <p className="line-clamp-2">{community.description || 'Chưa có mô tả cộng đồng.'}</p>
     </div>
     <div className="directory-card-footer">

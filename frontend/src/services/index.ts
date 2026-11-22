@@ -237,11 +237,21 @@ interface CommunityApiResponse {
   memberCount: number;
   currentUserRole?: Community['currentUserRole'] | null;
   myRole?: Community['currentUserRole'] | null;
+  joinRequestPending?: boolean;
   joined?: boolean;
   ownerId?: string | number;
   ownerUsername?: string;
   owner?: { userId?: string | number; username?: string };
   createdAt: string;
+}
+
+export interface CommunityJoinRequest {
+  id: number;
+  applicantUsername: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CLOSED';
+  requestedAt: string;
+  reviewerUsername: string | null;
+  reviewedAt: string | null;
 }
 
 interface CommunityPageResponse {
@@ -281,6 +291,7 @@ function mapCommunity(value: CommunityApiResponse): Community {
     status: mapCommunityStatus(value.status || value.communityStatus),
     memberCount: value.memberCount,
     currentUserRole: value.currentUserRole || value.myRole || (value.joined ? 'MEMBER' : 'NONE'),
+    joinRequestPending: value.joinRequestPending,
     ownerId: String(value.ownerId || value.owner?.userId || ''),
     ownerUsername: value.ownerUsername || value.owner?.username || '',
     createdAt: value.createdAt,
@@ -361,6 +372,12 @@ export const categoryService = {
 export const communityService = {
   list: async (): Promise<Community[]> =>
     (await getAllCommunityPages('/communities')).map(mapCommunity),
+  listJoinRequests: (name: string, history: boolean, page: number) =>
+    apiClient.get<{ content: CommunityJoinRequest[]; totalPages: number }>(
+      `/communities/${encodeURIComponent(name)}/join-requests?history=${history}&page=${page}`
+    ),
+  reviewJoinRequest: (name: string, id: number, approved: boolean) =>
+    apiClient.patch<CommunityJoinRequest>(`/communities/${encodeURIComponent(name)}/join-requests/${id}`, { approved }),
   listByCategory: async (slug: string): Promise<Community[]> =>
     (await getAllCommunityPages(`/categories/${encodeURIComponent(slug)}/communities`)).map(mapCommunity),
   search: async (query: string): Promise<Community[]> => {
@@ -445,7 +462,7 @@ export const communityService = {
   transferOwnership: async (name: string, username: string) =>
     apiClient.put(`/communities/${encodeURIComponent(name)}/owner`, { username }),
   join: async (name: string) => {
-    return apiClient.post<{ message: string; currentUserRole: Community['currentUserRole'] }>(
+    return apiClient.post<{ message: string; currentUserRole: Community['currentUserRole'] | null; joinRequestPending: boolean }>(
       `/communities/${encodeURIComponent(name)}/members`
     );
   },

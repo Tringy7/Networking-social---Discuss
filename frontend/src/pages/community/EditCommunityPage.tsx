@@ -201,7 +201,7 @@ function CommunitySettings({ community }: { community: Community }) {
           {activeTab.id === 'privacy' && <div className="community-settings-privacy" role="radiogroup" aria-label="Quyền riêng tư cộng đồng">
             {(['PUBLIC', 'PRIVATE'] as const).map((value) => <label key={value} className={`community-settings-privacy-option ${visibility === value ? 'is-selected' : ''}`}>
               <input type="radio" name="community-visibility" value={value} checked={visibility === value} onChange={() => setVisibility(value)} />
-              {value === 'PUBLIC' ? <Globe size={20} /> : <Lock size={20} />}<span><strong>{value === 'PUBLIC' ? 'Công khai' : 'Riêng tư'}</strong><span>{value === 'PUBLIC' ? 'Mọi người có thể tìm thấy và tham gia cộng đồng.' : 'Thành viên mới không thể tự tham gia cộng đồng.'}</span></span><Check size={17} className="community-settings-selected-check" />
+              {value === 'PUBLIC' ? <Globe size={20} /> : <Lock size={20} />}<span><strong>{value === 'PUBLIC' ? 'Công khai' : 'Riêng tư'}</strong><span>{value === 'PUBLIC' ? 'Mọi người có thể tìm thấy và tham gia cộng đồng.' : 'Yêu cầu tham gia cần được chủ cộng đồng hoặc người điều hành duyệt.'}</span></span><Check size={17} className="community-settings-selected-check" />
             </label>)}
           </div>}
         </fieldset>

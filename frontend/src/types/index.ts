@@ -68,6 +68,7 @@ export interface Community {
   status: 'ACTIVE' | 'RESTRICTED' | 'BANNED';
   memberCount: number;
   currentUserRole: CommunityMemberRole;
+  joinRequestPending?: boolean;
   ownerId: string;
   ownerUsername: string;
   createdAt: string;

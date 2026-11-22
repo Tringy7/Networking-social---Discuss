@@ -24,7 +24,7 @@ interface CommunityState {
   hydrateCommunity: (communityName: string) => Promise<void>;
   hydrateMine: () => Promise<void>;
   hydrateMembers: (communityName: string) => Promise<void>;
-  joinCommunity: (communityName: string) => Promise<void>;
+  joinCommunity: (communityName: string) => Promise<boolean>;
   leaveCommunity: (communityName: string) => Promise<void>;
   uploadAvatar: (communityName: string, file: File) => Promise<void>;
   uploadBanner: (communityName: string, file: File) => Promise<void>;
@@ -46,6 +46,7 @@ interface CommunityState {
 function mergeCommunityPreview(preview: Community, existing?: Community): Community {
   return {
     ...preview,
+    joinRequestPending: preview.joinRequestPending ?? existing?.joinRequestPending,
     rules: existing?.rules || preview.rules,
     bannerUrl: preview.bannerUrl || existing?.bannerUrl || '',
     // Preview DTOs omit owner information; keep the owner from the detail response.
@@ -128,12 +129,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
     if (!response) return;
     set((state) => {
       const existing = state.communities.find((item) => item.name === communityName);
-      const community = preserveNewerMedia(response, existing, previous);
-      const ownerChanged = existing?.currentUserRole === 'OWNER'
-        && (existing.ownerId !== response.ownerId || existing.ownerUsername !== response.ownerUsername);
-      const hydrated = existing && existing.currentUserRole !== 'NONE' && !ownerChanged
-        ? { ...community, currentUserRole: existing.currentUserRole }
-        : community;
+      const hydrated = preserveNewerMedia(response, existing, previous);
       const { user, isAuthenticated } = useAuthStore.getState();
       if (isCommunityOwner(response, user, isAuthenticated)) hydrated.currentUserRole = 'OWNER';
       return {
@@ -178,14 +174,16 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
       communities: state.communities.map((community) => community.name === communityName
         ? {
             ...community,
-            currentUserRole: membership.currentUserRole,
+            currentUserRole: membership.currentUserRole ?? 'NONE',
+            joinRequestPending: membership.joinRequestPending,
             ...(membership.currentUserRole === 'OWNER' && user
               ? { ownerId: user.id, ownerUsername: user.username } : {}),
-            memberCount: community.memberCount + 1,
+            memberCount: community.memberCount + (membership.joinRequestPending ? 0 : 1),
           }
         : community),
     }));
     void Promise.all([get().hydrateCommunity(communityName), get().hydrateMine()]).catch(() => undefined);
+    return membership.joinRequestPending;
   },
 
   leaveCommunity: async (communityName) => {

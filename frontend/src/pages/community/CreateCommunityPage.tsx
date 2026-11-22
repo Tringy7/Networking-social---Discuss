@@ -103,7 +103,7 @@ export const CreateCommunityPage: React.FC = () => {
         <div className="grid sm:grid-cols-2 gap-4">
           {(['PUBLIC', 'PRIVATE'] as const).map((value) => <button key={value} type="button" onClick={() => setVisibility(value)} aria-pressed={visibility === value} className={`rounded-[var(--radius-card)] border p-5 text-left transition-colors ${visibility === value ? 'border-[var(--color-orange)] bg-[var(--color-orange-soft)]' : 'border-[var(--border-color)] bg-[var(--bg-main)] hover:border-[var(--color-orange-border)]'}`}>
             <span className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">{value === 'PUBLIC' ? <Globe className="w-4 h-4 text-[var(--color-orange)]" /> : <Lock className="w-4 h-4 text-[var(--color-orange)]" />}{value === 'PUBLIC' ? 'Công khai' : 'Riêng tư'}</span>
-            <span className="mt-2 block text-xs text-[var(--text-secondary)]">{value === 'PUBLIC' ? 'Mọi người có thể tìm thấy và tham gia cộng đồng.' : 'Chỉ thành viên được mời mới có thể tham gia.'}</span>
+            <span className="mt-2 block text-xs text-[var(--text-secondary)]">{value === 'PUBLIC' ? 'Mọi người có thể tìm thấy và tham gia cộng đồng.' : 'Yêu cầu tham gia cần được chủ cộng đồng hoặc người điều hành duyệt.'}</span>
           </button>)}
         </div>
       </div>}
