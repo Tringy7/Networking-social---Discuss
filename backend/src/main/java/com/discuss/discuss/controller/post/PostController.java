@@ -55,6 +55,18 @@ public class PostController {
         return ResponseEntity.ok(postService.savePost(id, false));
     }
 
+    @PutMapping("/{id}/pin")
+    public ResponseEntity<Void> pin(@PathVariable @Positive Long id) {
+        postService.setPinned(id, true);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/pin")
+    public ResponseEntity<Void> unpin(@PathVariable @Positive Long id) {
+        postService.setPinned(id, false);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/saved")
     public ResponseEntity<PageResponseDTO<PostResponseDTO>> saved(
             @RequestParam(defaultValue = "0") @Min(0) int page,

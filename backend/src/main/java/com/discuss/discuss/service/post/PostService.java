@@ -190,6 +190,15 @@ public class PostService {
         return postSupport.toResponse(post, user);
     }
 
+    @Transactional
+    public void setPinned(Long id, boolean pinned) {
+        User user = userService.getCurrentUser();
+        Post post = postSupport.lockPublished(id);
+        postSupport.requireRead(post, user);
+        communityAuthorizationService.requireModeratorOrOwner(post.getCommunity(), user);
+        post.setIsPinned(pinned);
+    }
+
     private void validateRequest(CreatePostRequestDTO request) {
         if (request.getType() != PostType.TEXT) {
             throw new PostException(PostErrorCode.UNSUPPORTED_POST_TYPE);

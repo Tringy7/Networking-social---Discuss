@@ -38,13 +38,15 @@ export const CommunityDetailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
 
   const { communities, hydrateCommunity } = useCommunityStore();
-  const { posts, loadCommunityPosts, openCreateModal } = usePostStore();
+  const { posts, loadCommunityPosts, openCreateModal, setPinned } = usePostStore();
   const { isAuthenticated, user } = useAuthStore();
   const { addToast } = useToastStore();
 
   const [postPage, setPostPage] = useState(0);
   const [hasMorePosts, setHasMorePosts] = useState(false);
   const [postsLoading, setPostsLoading] = useState(false);
+  const [postListRevision, setPostListRevision] = useState(0);
+  const [pinPending, setPinPending] = useState(false);
   const [tab, setTab] = useState<'latest' | 'popular'>('latest');
   const [isCommunityLoading, setIsCommunityLoading] = useState(true);
   const [communityLoadFailed, setCommunityLoadFailed] = useState(false);
@@ -82,7 +84,7 @@ export const CommunityDetailPage: React.FC = () => {
       .catch((error: unknown) => { if (active) addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); })
       .finally(() => { if (active) setPostsLoading(false); });
     return () => { active = false; };
-  }, [communityName, isAuthenticated, canLoadPosts, loadCommunityPosts, addToast]);
+  }, [communityName, isAuthenticated, canLoadPosts, loadCommunityPosts, addToast, postListRevision]);
 
   // Auto-open composer if ?action=create is in URL
   React.useEffect(() => {
@@ -132,14 +134,33 @@ export const CommunityDetailPage: React.FC = () => {
   }
 
   const isManager = isAuthenticated && (isOwner || community.currentUserRole === 'MODERATOR');
+  const canPinPosts = isManager && canLoadPosts && POSTS_AVAILABLE;
   const canEditMedia = !isCommunityLoading && canEditCommunityMedia(community, user, isAuthenticated);
   const viewerRole = isOwner ? 'OWNER' : community.currentUserRole;
 
   const communityPosts = posts.filter((p) => p.communityName === community.name);
   const sortedPosts = [...communityPosts].sort((a, b) => {
+    const pinOrder = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
+    if (pinOrder !== 0) return pinOrder;
     if (tab === 'popular') return b.voteScore - a.voteScore;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
+
+  const changePin = async (id: string, pinned: boolean) => {
+    if (pinPending || postsLoading) return;
+    setPinPending(true);
+    try {
+      await setPinned(id, pinned);
+      setPostsLoading(true);
+      setHasMorePosts(false);
+      setPostListRevision(revision => revision + 1);
+      addToast(pinned ? 'Đã ghim bài viết.' : 'Đã bỏ ghim bài viết.', 'success');
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Không thể cập nhật ghim bài viết.', 'error');
+    } finally {
+      setPinPending(false);
+    }
+  };
 
   return (
     <div className="community-page">
@@ -177,8 +198,10 @@ export const CommunityDetailPage: React.FC = () => {
             <EditorialTabs label="Sắp xếp bài viết cộng đồng" options={[{ id: 'latest', label: 'Mới nhất', icon: <Clock /> }, { id: 'popular', label: 'Sôi nổi', icon: <Flame /> }]} value={tab} onChange={setTab} trailing={`${sortedPosts.length} bài viết`} />
             {!POSTS_AVAILABLE && <p className="feed-notice">Bài viết mẫu · Tương tác được lưu trong phiên hiện tại.</p>}
             {postsLoading && <p role="status" className="feed-notice">Đang tải bài viết…</p>}
-            <div className="discussion-list">{sortedPosts.map((post) => <PostCard key={post.id} post={post} showCommunity={false} />)}</div>
-            {hasMorePosts && <Button disabled={postsLoading} variant="secondary" onClick={async () => {
+            <div className="discussion-list">{sortedPosts.map((post) => <PostCard key={post.id} post={post} showCommunity={false}
+              onTogglePin={canPinPosts ? () => { void changePin(post.id, !post.pinned); } : undefined}
+              pinDisabled={pinPending || postsLoading} />)}</div>
+            {hasMorePosts && <Button disabled={postsLoading || pinPending} variant="secondary" onClick={async () => {
               setPostsLoading(true);
               try { setHasMorePosts(await loadCommunityPosts(community.name, postPage + 1)); setPostPage(postPage + 1); }
               catch (error) { addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); }

@@ -497,6 +497,9 @@ export const postService = {
   vote: (id: string, type: 'UP' | 'DOWN' | null) => type === null
     ? apiClient.delete<Post>(`/posts/${id}/vote`)
     : apiClient.put<Post>(`/posts/${id}/vote`, { type }),
+  setPinned: (id: string, pinned: boolean) => pinned
+    ? apiClient.put<void>(`/posts/${id}/pin`)
+    : apiClient.delete<void>(`/posts/${id}/pin`),
   list: (tab = 'for-you', page = 0) => apiClient.get<PostPage>(`/posts?tab=${encodeURIComponent(tab)}&page=${page}&size=20`),
   getById: (id: string) => apiClient.get<Post>(`/posts/${id}`),
   search: (query: string, page = 0) => apiClient.get<PostPage>(`/posts?tab=latest&q=${encodeURIComponent(query.trim())}&page=${page}&size=20`),
