@@ -24,6 +24,7 @@ public class PublicUserProfileService {
     private final UserProfileRepository profileRepository;
     private final UserPrivacySettingsRepository privacyRepository;
     private final UserMapper userMapper;
+    private final UserReputationService reputation;
 
     @Transactional(readOnly = true)
     public PublicUserProfileResponseDTO getById(Long userId) {
@@ -44,7 +45,8 @@ public class PublicUserProfileService {
                 profile,
                 resolveVisibleDateOfBirth(profile, privacy),
                 resolveVisibleLocation(profile, privacy),
-                emptyStatistics()
+                emptyStatistics(),
+                reputation.getReputation(user.getId())
         );
     }
 

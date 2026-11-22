@@ -25,6 +25,7 @@ public class UserInfoResponseDTO {
     private Profile profile;
 
     private PrivacySettings privacySettings;
+    private UserReputationDTO reputation;
 
     @Data
     @NoArgsConstructor

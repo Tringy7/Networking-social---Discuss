@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, FolderKanban, FileText, Tags, ShieldAlert, History, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Award, LayoutDashboard, Users, FolderKanban, FileText, Tags, ShieldAlert, History, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAdminData } from './AdminDataContext.jsx';
 import { AdminAvatar, adminNumber } from './AdminUI.jsx';
@@ -28,6 +28,10 @@ const groups = [{
     to: '/admin/categories',
     label: 'Danh mục',
     icon: Tags
+  }, {
+    to: '/admin/reputation',
+    label: 'Điểm uy tín',
+    icon: Award
   }]
 }, {
   label: 'Kiểm duyệt',

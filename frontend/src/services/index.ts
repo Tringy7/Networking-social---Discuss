@@ -8,6 +8,7 @@ interface AuthResponse {
 }
 
 interface UserResponse {
+  reputation?: User['reputation'];
   id?: string | number;
   username: string;
   email: string;
@@ -43,7 +44,7 @@ interface PublicUserProfileResponse {
     gender?: string | null;
     location?: string | null;
   } | null;
-  statistics: { postCount: number; commentCount: number; communityCount: number };
+  reputation?: User['reputation'];
   role: User['role'];
 }
 
@@ -191,7 +192,8 @@ export const userService = {
       role: response.role,
       status: 'ACTIVE',
       createdAt: response.joinedAt,
-      karma: response.statistics.postCount,
+      karma: response.reputation?.score ?? 0,
+      reputation: response.reputation,
     };
   },
 

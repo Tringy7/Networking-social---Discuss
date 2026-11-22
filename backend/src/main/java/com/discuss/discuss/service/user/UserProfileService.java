@@ -22,6 +22,7 @@ public class UserProfileService {
     private final UserService userService;
     private final UserUpdateMapper updateMapper;
     private final UserMapper userMapper;
+    private final UserReputationService reputation;
 
     @Transactional
     public void createProfile(User user, String displayName) {
@@ -69,7 +70,7 @@ public class UserProfileService {
     private UserInfoResponseDTO buildUserInfo(User user) {
         UserProfile profile = profileRepository.findByUser(user).orElse(null);
         UserPrivacySettings privacy = privacyRepository.findByUser(user).orElse(null);
-        return userMapper.toUserInfoResponse(user, profile, privacy);
+        return userMapper.toUserInfoResponse(user, profile, privacy, reputation.getReputation(user.getId()));
     }
 
     private UserProfile findOrNewProfile(User user) {

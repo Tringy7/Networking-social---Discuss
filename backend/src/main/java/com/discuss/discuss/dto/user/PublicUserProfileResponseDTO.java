@@ -19,6 +19,7 @@ public class PublicUserProfileResponseDTO {
 
     private Profile profile;
     private Statistics statistics;
+    private UserReputationDTO reputation;
 
     @Data
     @NoArgsConstructor

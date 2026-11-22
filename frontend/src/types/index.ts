@@ -35,6 +35,11 @@ export interface User {
   status: AccountStatus;
   createdAt: string;
   karma: number;
+  reputation?: {
+    score: number;
+    rank: 'MEMBER' | 'CONTRIBUTOR' | 'TRUSTED' | 'HIGHLY_TRUSTED';
+    hasReputationBadge: boolean;
+  };
 }
 
 export type CommunityCategory = 
