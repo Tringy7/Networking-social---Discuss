@@ -38,6 +38,7 @@ const messagesByCode = {
   OWNER_REQUIRED: 'Thao tác này yêu cầu quyền Chủ sở hữu.',
   JOIN_REQUEST_NOT_FOUND: 'Không tìm thấy yêu cầu tham gia.',
   JOIN_REQUEST_ALREADY_REVIEWED: 'Yêu cầu này đã được xử lý.',
+  JOIN_REQUESTS_PRIVATE_ONLY: 'Hàng đợi yêu cầu tham gia chỉ có ở cộng đồng riêng tư.',
   COMMUNITY_PRIVATE: 'Cộng đồng này đang ở chế độ riêng tư.',
   MEMBER_BANNED: 'Bạn đã bị cấm khỏi cộng đồng này.',
   MEMBER_KICKED: 'Bạn đã bị mời khỏi cộng đồng này và không thể tham gia lại.',

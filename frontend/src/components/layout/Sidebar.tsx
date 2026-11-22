@@ -20,6 +20,7 @@ export default function Sidebar() {
   const managed = joined.find((c) => ['OWNER', 'MODERATOR'].includes(c.currentUserRole));
   const moderationActive = managed
     ? matchPath({ path: '/c/:name/moderation', end: true }, location.pathname)?.params.name === managed.name
+      && (new URLSearchParams(location.search).has('type') || new URLSearchParams(location.search).get('tab') === 'reports')
     : false;
   const popular = location.pathname === '/' && new URLSearchParams(location.search).get('tab') === 'popular';
   const link = (to: string, label: string, Icon: React.ElementType, active?: boolean, end = false) => (
@@ -64,7 +65,7 @@ export default function Sidebar() {
           </nav>
           {(managed || (ADMIN_AVAILABLE && activeRole === 'ADMIN')) && <nav className="side-group">
             {!collapsed && <p className="sidebar-caption">Quản lý</p>}
-            {managed && link(`/c/${managed.name}/moderation`, 'Báo cáo cộng đồng', ShieldAlert, moderationActive, true)}
+            {managed && link(`/c/${managed.name}/moderation?tab=reports`, 'Báo cáo cộng đồng', ShieldAlert, moderationActive, true)}
             {ADMIN_AVAILABLE && activeRole === 'ADMIN' && link('/admin', 'Trung tâm quản trị', ShieldCheck)}
           </nav>}
         </> : !collapsed ? <div className="sidebar-invitation">

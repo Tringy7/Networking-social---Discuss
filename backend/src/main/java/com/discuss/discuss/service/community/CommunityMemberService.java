@@ -175,6 +175,7 @@ public class CommunityMemberService {
     ) {
         Community community = communitySupport.getCommunityByNameAndStatusActive(name);
         authorization.requireModeratorOrOwner(community, userService.getCurrentUser());
+        requirePrivateJoinRequests(community);
         var requests = history
                 ? joinRequestRepository.findByCommunityAndStatusNot(community, Status.PENDING, pageable)
                 : joinRequestRepository.findByCommunityAndStatus(community, Status.PENDING, pageable);
@@ -186,6 +187,7 @@ public class CommunityMemberService {
         Community community = communitySupport.getActiveCommunityForMembership(name);
         User reviewer = userService.getCurrentUser();
         authorization.requireModeratorOrOwner(community, reviewer);
+        requirePrivateJoinRequests(community);
 
         CommunityJoinRequest request = joinRequestRepository.findByIdAndCommunity(id, community)
                 .orElseThrow(() -> new CommunityException(CommunityErrorCode.JOIN_REQUEST_NOT_FOUND));
@@ -205,6 +207,12 @@ public class CommunityMemberService {
 
         request.review(reviewer, approve);
         return CommunityJoinRequestDTO.from(request);
+    }
+
+    private void requirePrivateJoinRequests(Community community) {
+        if (community.getVisibility() != CommunityVisibility.PRIVATE) {
+            throw new CommunityException(CommunityErrorCode.JOIN_REQUESTS_PRIVATE_ONLY);
+        }
     }
 
     public CommunityRole getActiveRole(Community community, User user) {

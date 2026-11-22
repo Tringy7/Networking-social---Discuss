@@ -135,6 +135,8 @@ export const CommunityDetailPage: React.FC = () => {
 
   const isManager = isAuthenticated && (isOwner || community.currentUserRole === 'MODERATOR');
   const canPinPosts = isManager && canLoadPosts && POSTS_AVAILABLE;
+  const canReviewJoinRequests = canLoadPosts && isAuthenticated && community.visibility === 'PRIVATE'
+    && (community.currentUserRole === 'OWNER' || community.currentUserRole === 'MODERATOR');
   const canEditMedia = !isCommunityLoading && canEditCommunityMedia(community, user, isAuthenticated);
   const viewerRole = isOwner ? 'OWNER' : community.currentUserRole;
 
@@ -180,6 +182,11 @@ export const CommunityDetailPage: React.FC = () => {
           </div>
           <div className="community-heading"><h1 className="editorial-title">{community.displayName || community.name}</h1><p className="community-handle">c/{community.name}</p></div>
           <div className="community-actions">
+            {canReviewJoinRequests && <Link
+              to={`/c/${encodeURIComponent(community.name)}/moderation`}
+              className="inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-orange-border)] px-3 py-1.5 text-sm font-semibold text-[var(--color-orange-ink)] hover:bg-[var(--color-orange-soft)]">
+              <ShieldAlert size={16} aria-hidden="true" />Hàng đợi kiểm duyệt
+            </Link>}
             {!privateContentLocked && <CommunityMembershipButton community={community} />}
             {!privateContentLocked && <Button variant="outline" size="sm" onClick={() => openCreateModal(community.name)} leftIcon={<Plus size={15} />}>Đăng bài</Button>}
             {isJoined && !isCommunityLoading && <CommunityNotificationToggle key={`${user?.id}:${community.name}`} name={community.name} />}
@@ -220,8 +227,6 @@ export const CommunityDetailPage: React.FC = () => {
           </section>
           <section className="context-section"><div className="context-title"><h2>Ban quản trị</h2>{isOwner && <Link to={`/c/${community.name}/settings?tab=members`}>Quản lý</Link>}</div>
             {community.ownerUsername && <Link to={`/u/${community.ownerUsername}`} className="context-community"><Avatar alt={community.ownerUsername} size="sm" /><div className="community-info"><span className="text-sm font-semibold">@{community.ownerUsername}</span><p>Chủ cộng đồng</p></div></Link>}
-            {isManager && <Link to={`/c/${community.name}/moderation?tab=join-requests`} className="side-link"><Users size={16} />Yêu cầu tham gia</Link>}
-            {isManager && <Link to={`/c/${community.name}/moderation`} className="side-link"><ShieldAlert size={16} />Hàng đợi kiểm duyệt</Link>}
           </section>
         </aside>
       </div>

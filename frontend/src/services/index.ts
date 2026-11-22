@@ -373,7 +373,7 @@ export const communityService = {
   list: async (): Promise<Community[]> =>
     (await getAllCommunityPages('/communities')).map(mapCommunity),
   listJoinRequests: (name: string, history: boolean, page: number) =>
-    apiClient.get<{ content: CommunityJoinRequest[]; totalPages: number }>(
+    apiClient.get<{ content: CommunityJoinRequest[]; page: number; totalElements: number; totalPages: number }>(
       `/communities/${encodeURIComponent(name)}/join-requests?history=${history}&page=${page}`
     ),
   reviewJoinRequest: (name: string, id: number, approved: boolean) =>
