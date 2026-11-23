@@ -237,11 +237,21 @@ interface CommunityApiResponse {
   memberCount: number;
   currentUserRole?: Community['currentUserRole'] | null;
   myRole?: Community['currentUserRole'] | null;
+  joinRequestPending?: boolean;
   joined?: boolean;
   ownerId?: string | number;
   ownerUsername?: string;
   owner?: { userId?: string | number; username?: string };
   createdAt: string;
+}
+
+export interface CommunityJoinRequest {
+  id: number;
+  applicantUsername: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CLOSED';
+  requestedAt: string;
+  reviewerUsername: string | null;
+  reviewedAt: string | null;
 }
 
 interface CommunityPageResponse {
@@ -281,6 +291,7 @@ function mapCommunity(value: CommunityApiResponse): Community {
     status: mapCommunityStatus(value.status || value.communityStatus),
     memberCount: value.memberCount,
     currentUserRole: value.currentUserRole || value.myRole || (value.joined ? 'MEMBER' : 'NONE'),
+    joinRequestPending: value.joinRequestPending,
     ownerId: String(value.ownerId || value.owner?.userId || ''),
     ownerUsername: value.ownerUsername || value.owner?.username || '',
     createdAt: value.createdAt,
@@ -361,6 +372,12 @@ export const categoryService = {
 export const communityService = {
   list: async (): Promise<Community[]> =>
     (await getAllCommunityPages('/communities')).map(mapCommunity),
+  listJoinRequests: (name: string, history: boolean, page: number) =>
+    apiClient.get<{ content: CommunityJoinRequest[]; page: number; totalElements: number; totalPages: number }>(
+      `/communities/${encodeURIComponent(name)}/join-requests?history=${history}&page=${page}`
+    ),
+  reviewJoinRequest: (name: string, id: number, approved: boolean) =>
+    apiClient.patch<CommunityJoinRequest>(`/communities/${encodeURIComponent(name)}/join-requests/${id}`, { approved }),
   listByCategory: async (slug: string): Promise<Community[]> =>
     (await getAllCommunityPages(`/categories/${encodeURIComponent(slug)}/communities`)).map(mapCommunity),
   search: async (query: string): Promise<Community[]> => {
@@ -445,7 +462,7 @@ export const communityService = {
   transferOwnership: async (name: string, username: string) =>
     apiClient.put(`/communities/${encodeURIComponent(name)}/owner`, { username }),
   join: async (name: string) => {
-    return apiClient.post<{ message: string; currentUserRole: Community['currentUserRole'] }>(
+    return apiClient.post<{ message: string; currentUserRole: Community['currentUserRole'] | null; joinRequestPending: boolean }>(
       `/communities/${encodeURIComponent(name)}/members`
     );
   },
@@ -480,6 +497,9 @@ export const postService = {
   vote: (id: string, type: 'UP' | 'DOWN' | null) => type === null
     ? apiClient.delete<Post>(`/posts/${id}/vote`)
     : apiClient.put<Post>(`/posts/${id}/vote`, { type }),
+  setPinned: (id: string, pinned: boolean) => pinned
+    ? apiClient.put<void>(`/posts/${id}/pin`)
+    : apiClient.delete<void>(`/posts/${id}/pin`),
   list: (tab = 'for-you', page = 0) => apiClient.get<PostPage>(`/posts?tab=${encodeURIComponent(tab)}&page=${page}&size=20`),
   getById: (id: string) => apiClient.get<Post>(`/posts/${id}`),
   search: (query: string, page = 0) => apiClient.get<PostPage>(`/posts?tab=latest&q=${encodeURIComponent(query.trim())}&page=${page}&size=20`),
@@ -647,7 +667,14 @@ type NotificationResponse = {
 
 function mapNotification(item: NotificationResponse): NotificationItem {
   let targetUrl = item.postId ? `/post/${item.postId}${item.commentId ? `#comment-${item.commentId}` : ''}` : '/notifications';
+  const communityLabel = item.communityName ? `c/${item.communityName}` : 'cộng đồng';
   const messages = {
+    COMMUNITY_JOIN_CONFIRMED: `Bạn đã tham gia ${communityLabel}.`,
+    COMMUNITY_MEMBER_JOINED: `đã tham gia ${communityLabel}.`,
+    COMMUNITY_JOIN_REQUEST_SENT: `Bạn đã gửi yêu cầu tham gia ${communityLabel}. Yêu cầu đang chờ duyệt.`,
+    COMMUNITY_JOIN_REQUEST_RECEIVED: `đã gửi yêu cầu tham gia ${communityLabel}.`,
+    COMMUNITY_JOIN_APPROVED: `Yêu cầu tham gia ${communityLabel} của bạn đã được duyệt.`,
+    COMMUNITY_JOIN_REJECTED: `Yêu cầu tham gia ${communityLabel} của bạn đã bị từ chối.`,
     COMMUNITY_POST_CREATED: item.communityName ? `đã đăng bài mới trong c/${item.communityName}.` : 'đã đăng bài mới trong cộng đồng.',
     POST_COMMENTED: 'đã bình luận về bài viết của bạn.',
     COMMENT_REPLIED: 'đã trả lời bình luận của bạn.',
@@ -665,9 +692,18 @@ function mapNotification(item: NotificationResponse): NotificationItem {
   if (item.type === 'REPORT_WARNING' && item.reportTargetType === 'COMMUNITY' && item.communityName) {
     targetUrl = `/c/${encodeURIComponent(item.communityName)}`;
   }
+  const isMembershipNotification = item.type.startsWith('COMMUNITY_JOIN_') || item.type === 'COMMUNITY_MEMBER_JOINED';
+  if (isMembershipNotification && item.communityName) {
+    const communityPath = `/c/${encodeURIComponent(item.communityName)}`;
+    targetUrl = item.type === 'COMMUNITY_JOIN_REQUEST_RECEIVED'
+      ? `${communityPath}/moderation?tab=join-requests`
+      : communityPath;
+  }
+  const showActor = !item.type.startsWith('REPORT_') && (!isMembershipNotification
+    || item.type === 'COMMUNITY_MEMBER_JOINED' || item.type === 'COMMUNITY_JOIN_REQUEST_RECEIVED');
   return {
     id: String(item.id), type: item.type,
-    actor: item.type.startsWith('REPORT_') ? null : item.actor,
+    actor: showActor ? item.actor : null,
     message: messages[item.type], targetUrl, isRead: item.read, createdAt: item.createdAt,
   };
 }

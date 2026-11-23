@@ -1,7 +1,7 @@
 import ReportModal from '../../components/post/ReportModal';
 import CommunityRulesContent from '../../components/community/CommunityRulesContent';
 import React, { useState } from 'react';
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { usePostStore } from '../../store/usePostStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -10,9 +10,11 @@ import { POSTS_AVAILABLE } from '../../services';
 import EditorialTabs from '../../components/ui/EditorialTabs';
 import PostCard from '../../components/post/PostCardView';
 import Avatar from '../../components/ui/Avatar';
+import Badge from '../../components/ui/Badge';
 import EntityBanner from '../../components/ui/EntityBanner';
 import EntityImageActions from '../../components/ui/EntityImageActions';
 import CommunityMediaEditor from '../../components/community/CommunityMediaEditor';
+import CommunityMembershipButton from '../../components/community/CommunityMembershipButton';
 import CommunityNotificationToggle from '../../components/community/CommunityNotificationToggle';
 import type { ProfileImageKind } from '../../components/profile/ImageCropEditor';
 import { canEditCommunityMedia, isCommunityOwner } from '../../utils/communityMedia';
@@ -24,28 +26,28 @@ import {
   ShieldAlert,
   Flame,
   Clock,
-  Check,
   BookOpen,
   Share2,
   Calendar,
   Flag,
+  Lock,
 } from 'lucide-react';
 
 export const CommunityDetailPage: React.FC = () => {
   const { communityName } = useParams<{ communityName: string }>();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
 
-  const { communities, joinCommunity, leaveCommunity, hydrateCommunity } = useCommunityStore();
-  const { posts, loadCommunityPosts, openCreateModal } = usePostStore();
+  const { communities, hydrateCommunity } = useCommunityStore();
+  const { posts, loadCommunityPosts, openCreateModal, setPinned } = usePostStore();
   const { isAuthenticated, user } = useAuthStore();
   const { addToast } = useToastStore();
 
   const [postPage, setPostPage] = useState(0);
   const [hasMorePosts, setHasMorePosts] = useState(false);
   const [postsLoading, setPostsLoading] = useState(false);
+  const [postListRevision, setPostListRevision] = useState(0);
+  const [pinPending, setPinPending] = useState(false);
   const [tab, setTab] = useState<'latest' | 'popular'>('latest');
-  const [isMembershipUpdating, setIsMembershipUpdating] = useState(false);
   const [isCommunityLoading, setIsCommunityLoading] = useState(true);
   const [communityLoadFailed, setCommunityLoadFailed] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
@@ -66,26 +68,30 @@ export const CommunityDetailPage: React.FC = () => {
         if (active) setIsCommunityLoading(false);
       });
     return () => { active = false; };
-  }, [addToast, communityName, hydrateCommunity]);
+  }, [addToast, communityName, hydrateCommunity, isAuthenticated, user?.id]);
+
+  const community = communities.find((c) => c.name === communityName);
+  const isOwner = Boolean(community && !isCommunityLoading && isCommunityOwner(community, user, isAuthenticated));
+  const isJoined = Boolean(community && isAuthenticated && (isOwner || community.currentUserRole !== 'NONE'));
+  const privateContentLocked = community?.visibility === 'PRIVATE' && (!isJoined || isCommunityLoading || communityLoadFailed);
+  const canLoadPosts = Boolean(community && !isCommunityLoading && !privateContentLocked && !communityLoadFailed);
 
   React.useEffect(() => {
-    if (!communityName || !isAuthenticated) return;
+    if (!communityName || !isAuthenticated || !canLoadPosts) return;
     let active = true;
     setPostPage(0); setPostsLoading(true);
     loadCommunityPosts(communityName).then((more) => { if (active) setHasMorePosts(more); })
       .catch((error: unknown) => { if (active) addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); })
       .finally(() => { if (active) setPostsLoading(false); });
     return () => { active = false; };
-  }, [communityName, isAuthenticated, loadCommunityPosts, addToast]);
-
-  const community = communities.find((c) => c.name === communityName);
+  }, [communityName, isAuthenticated, canLoadPosts, loadCommunityPosts, addToast, postListRevision]);
 
   // Auto-open composer if ?action=create is in URL
   React.useEffect(() => {
-    if (searchParams.get('action') === 'create' && community) {
+    if (searchParams.get('action') === 'create' && community && isJoined) {
       openCreateModal(community.name);
     }
-  }, [searchParams, community, openCreateModal]);
+  }, [searchParams, community, isJoined, openCreateModal]);
 
   if (!community) {
     return (
@@ -127,41 +133,34 @@ export const CommunityDetailPage: React.FC = () => {
     );
   }
 
-  const isOwner = !isCommunityLoading && isCommunityOwner(community, user, isAuthenticated);
-  const isJoined = isAuthenticated && (isOwner ||
-    community.currentUserRole === 'MEMBER' ||
-    community.currentUserRole === 'MODERATOR' ||
-    community.currentUserRole === 'OWNER');
-
   const isManager = isAuthenticated && (isOwner || community.currentUserRole === 'MODERATOR');
+  const canPinPosts = isManager && canLoadPosts && POSTS_AVAILABLE;
+  const canReviewJoinRequests = canLoadPosts && isAuthenticated && community.visibility === 'PRIVATE'
+    && (community.currentUserRole === 'OWNER' || community.currentUserRole === 'MODERATOR');
   const canEditMedia = !isCommunityLoading && canEditCommunityMedia(community, user, isAuthenticated);
+  const viewerRole = isOwner ? 'OWNER' : community.currentUserRole;
 
   const communityPosts = posts.filter((p) => p.communityName === community.name);
   const sortedPosts = [...communityPosts].sort((a, b) => {
+    const pinOrder = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
+    if (pinOrder !== 0) return pinOrder;
     if (tab === 'popular') return b.voteScore - a.voteScore;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
-  const handleJoinToggle = async () => {
-    if (isMembershipUpdating) return;
-    if (!isAuthenticated) {
-      addToast('Vui lòng đăng nhập để tham gia cộng đồng', 'warning');
-      navigate('/login');
-      return;
-    }
-    setIsMembershipUpdating(true);
+  const changePin = async (id: string, pinned: boolean) => {
+    if (pinPending || postsLoading) return;
+    setPinPending(true);
     try {
-      if (isJoined) {
-        await leaveCommunity(community.name);
-        addToast(`Đã rời khỏi ${community.displayName}`, 'info');
-      } else {
-        await joinCommunity(community.name);
-        addToast(`Đã tham gia ${community.displayName}!`, 'success');
-      }
+      await setPinned(id, pinned);
+      setPostsLoading(true);
+      setHasMorePosts(false);
+      setPostListRevision(revision => revision + 1);
+      addToast(pinned ? 'Đã ghim bài viết.' : 'Đã bỏ ghim bài viết.', 'success');
     } catch (error) {
-      addToast(error instanceof Error ? error.message : 'Không thể cập nhật thành viên cộng đồng.', 'error');
+      addToast(error instanceof Error ? error.message : 'Không thể cập nhật ghim bài viết.', 'error');
     } finally {
-      setIsMembershipUpdating(false);
+      setPinPending(false);
     }
   };
 
@@ -183,27 +182,40 @@ export const CommunityDetailPage: React.FC = () => {
           </div>
           <div className="community-heading"><h1 className="editorial-title">{community.displayName || community.name}</h1><p className="community-handle">c/{community.name}</p></div>
           <div className="community-actions">
-            <Button variant={isJoined ? 'secondary' : 'primary'} size="sm" isLoading={isMembershipUpdating} onClick={handleJoinToggle} aria-pressed={isJoined} leftIcon={isJoined ? <Check size={15} /> : <Plus size={15} />}>{isJoined ? 'Đã tham gia' : 'Tham gia cộng đồng'}</Button>
-            <Button variant="outline" size="sm" onClick={() => openCreateModal(community.name)} leftIcon={<Plus size={15} />}>Đăng bài</Button>
+            {canReviewJoinRequests && <Link
+              to={`/c/${encodeURIComponent(community.name)}/moderation`}
+              className="inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-orange-border)] px-3 py-1.5 text-sm font-semibold text-[var(--color-orange-ink)] hover:bg-[var(--color-orange-soft)]">
+              <ShieldAlert size={16} aria-hidden="true" />Hàng đợi kiểm duyệt
+            </Link>}
+            {!privateContentLocked && <CommunityMembershipButton community={community} />}
+            {!privateContentLocked && <Button variant="outline" size="sm" onClick={() => openCreateModal(community.name)} leftIcon={<Plus size={15} />}>Đăng bài</Button>}
             {isJoined && !isCommunityLoading && <CommunityNotificationToggle key={`${user?.id}:${community.name}`} name={community.name} />}
             {isOwner && <Link className="icon-button" aria-label="Cài đặt cộng đồng" to={`/c/${community.name}/settings`}><Settings size={18} /></Link>}
           </div>
         </div>
-        <div className="community-facts"><span><Users size={15} /> {community.memberCount.toLocaleString('vi-VN')} thành viên</span>{community.category && <span>{community.category}</span>}<span><Calendar size={15} /> {new Date(community.createdAt).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span><button onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); addToast('Đã sao chép liên kết cộng đồng!', 'success'); } catch { addToast('Không thể sao chép liên kết.', 'error'); } }}><Share2 size={15} /> Chia sẻ</button><button type="button" onClick={() => setIsReportOpen(true)}><Flag size={15} /> Báo cáo cộng đồng</button></div>
+        <div className="community-facts"><span><Users size={15} /> {community.memberCount.toLocaleString('vi-VN')} thành viên</span>{community.visibility === 'PRIVATE' && <span><Lock size={15} /> Riêng tư</span>}{isJoined && !isCommunityLoading && !communityLoadFailed && viewerRole !== 'NONE' && <Badge role={viewerRole} />}{community.category && <span>{community.category}</span>}<span><Calendar size={15} /> {new Date(community.createdAt).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span><button onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); addToast('Đã sao chép liên kết cộng đồng!', 'success'); } catch { addToast('Không thể sao chép liên kết.', 'error'); } }}><Share2 size={15} /> Chia sẻ</button><button type="button" onClick={() => setIsReportOpen(true)}><Flag size={15} /> Báo cáo cộng đồng</button></div>
       </header>
       <div className="community-columns">
         <section className="min-w-0" aria-label="Bài viết cộng đồng">
-          <EditorialTabs label="Sắp xếp bài viết cộng đồng" options={[{ id: 'latest', label: 'Mới nhất', icon: <Clock /> }, { id: 'popular', label: 'Sôi nổi', icon: <Flame /> }]} value={tab} onChange={setTab} trailing={`${sortedPosts.length} bài viết`} />
-          {!POSTS_AVAILABLE && <p className="feed-notice">Bài viết mẫu · Tương tác được lưu trong phiên hiện tại.</p>}
-          {postsLoading && <p role="status" className="feed-notice">Đang tải bài viết…</p>}
-          <div className="discussion-list">{sortedPosts.map((post) => <PostCard key={post.id} post={post} showCommunity={false} />)}</div>
-          {hasMorePosts && <Button disabled={postsLoading} variant="secondary" onClick={async () => {
-            setPostsLoading(true);
-            try { setHasMorePosts(await loadCommunityPosts(community.name, postPage + 1)); setPostPage(postPage + 1); }
-            catch (error) { addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); }
-            finally { setPostsLoading(false); }
-          }}>Xem thêm bài viết</Button>}
-          {!postsLoading && !sortedPosts.length && <div className="editorial-empty"><h2>Chia sẻ bài viết đầu tiên</h2><p>Chia sẻ câu hỏi hoặc góc nhìn đầu tiên cùng cộng đồng.</p><Button size="sm" className="mt-4" onClick={() => openCreateModal(community.name)}>Viết bài đầu tiên</Button></div>}
+          {privateContentLocked ? <div className="editorial-empty">
+            <h2>Cộng đồng riêng tư</h2>
+            <p>{isAuthenticated && community.joinRequestPending ? 'Yêu cầu của bạn đang chờ duyệt.' : 'Bạn cần được duyệt tham gia để xem bài viết.'}</p>
+            {!isCommunityLoading && !communityLoadFailed && <div className="mt-4"><CommunityMembershipButton community={community} /></div>}
+          </div> : <>
+            <EditorialTabs label="Sắp xếp bài viết cộng đồng" options={[{ id: 'latest', label: 'Mới nhất', icon: <Clock /> }, { id: 'popular', label: 'Sôi nổi', icon: <Flame /> }]} value={tab} onChange={setTab} trailing={`${sortedPosts.length} bài viết`} />
+            {!POSTS_AVAILABLE && <p className="feed-notice">Bài viết mẫu · Tương tác được lưu trong phiên hiện tại.</p>}
+            {postsLoading && <p role="status" className="feed-notice">Đang tải bài viết…</p>}
+            <div className="discussion-list">{sortedPosts.map((post) => <PostCard key={post.id} post={post} showCommunity={false}
+              onTogglePin={canPinPosts ? () => { void changePin(post.id, !post.pinned); } : undefined}
+              pinDisabled={pinPending || postsLoading} />)}</div>
+            {hasMorePosts && <Button disabled={postsLoading || pinPending} variant="secondary" onClick={async () => {
+              setPostsLoading(true);
+              try { setHasMorePosts(await loadCommunityPosts(community.name, postPage + 1)); setPostPage(postPage + 1); }
+              catch (error) { addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); }
+              finally { setPostsLoading(false); }
+            }}>Xem thêm bài viết</Button>}
+            {!postsLoading && !sortedPosts.length && <div className="editorial-empty"><h2>Chia sẻ bài viết đầu tiên</h2><p>Chia sẻ câu hỏi hoặc góc nhìn đầu tiên cùng cộng đồng.</p><Button size="sm" className="mt-4" onClick={() => openCreateModal(community.name)}>Viết bài đầu tiên</Button></div>}
+          </>}
         </section>
         <aside className="community-context">
           <section className="context-section" aria-label="Giới thiệu cộng đồng">
@@ -215,7 +227,6 @@ export const CommunityDetailPage: React.FC = () => {
           </section>
           <section className="context-section"><div className="context-title"><h2>Ban quản trị</h2>{isOwner && <Link to={`/c/${community.name}/settings?tab=members`}>Quản lý</Link>}</div>
             {community.ownerUsername && <Link to={`/u/${community.ownerUsername}`} className="context-community"><Avatar alt={community.ownerUsername} size="sm" /><div className="community-info"><span className="text-sm font-semibold">@{community.ownerUsername}</span><p>Chủ cộng đồng</p></div></Link>}
-            {isManager && <Link to={`/c/${community.name}/moderation`} className="side-link"><ShieldAlert size={16} />Hàng đợi kiểm duyệt</Link>}
           </section>
         </aside>
       </div>

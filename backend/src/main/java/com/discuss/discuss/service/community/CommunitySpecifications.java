@@ -21,13 +21,4 @@ public class CommunitySpecifications {
                 cb.locate(cb.lower(root.get("name")), cb.lower(cb.literal(search.trim()))), 0);
     }
 
-    public Specification<Community> buildPublicCommunitySpecification() {
-        return (root, query, cb) -> {
-            return cb.and(
-                    cb.equal(root.get("status"), CommunityStatus.ACTIVE),
-                    cb.equal(root.get("visibility"), CommunityVisibility.PUBLIC)
-            );
-        };
-    }
-
 }

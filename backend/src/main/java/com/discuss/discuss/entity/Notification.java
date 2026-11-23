@@ -7,6 +7,8 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "notifications",
@@ -36,7 +38,8 @@ public class Notification {
     private User actor;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 40)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 64)
     private NotificationType type;
 
     private Long postId;

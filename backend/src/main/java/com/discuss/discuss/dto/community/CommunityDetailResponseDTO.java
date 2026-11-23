@@ -1,5 +1,6 @@
 package com.discuss.discuss.dto.community;
 
+import com.discuss.discuss.enums.CommunityRole;
 import com.discuss.discuss.enums.CommunityStatus;
 import com.discuss.discuss.enums.CommunityVisibility;
 import lombok.AllArgsConstructor;
@@ -37,4 +38,6 @@ public class CommunityDetailResponseDTO {
     private LocalDateTime createdAt;
 
     private CommunityOwnerResponseDTO owner;
+    private CommunityRole currentUserRole;
+    private boolean joinRequestPending;
 }

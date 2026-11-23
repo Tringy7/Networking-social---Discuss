@@ -97,8 +97,8 @@ public class CommunityService {
             String communityName,
             UpdateCommunityRequestDTO request
     ) {
+        Community community = communitySupport.getActiveCommunityForMembership(communityName);
         User user = userService.getCurrentUser();
-        Community community = communitySupport.getCommunityByNameAndStatusActive(communityName);
 
         // Check role user into community
         communityAuthorizationService.requireOwner(community, user);
@@ -126,6 +126,10 @@ public class CommunityService {
     ) {
         Community community = communitySupport.getCommunityByNameAndStatusActive(name);
 
+        if (community.getVisibility() == CommunityVisibility.PRIVATE) {
+            communityAuthorizationService.requireMembership(community, userService.getCurrentUser());
+        }
+
         Page<CommunityMemberResponseDTO> members =
                 communityMemberService
                         .getCommunityMembers(community, role, pageable)
@@ -141,16 +145,13 @@ public class CommunityService {
     public CommunityDetailResponseDTO getCommunityDetail(String name) {
         Community community = communitySupport.getCommunityByNameAndStatusActive(name);
 
-        CommunityInfo info = community.getInfo();
-
-        long memberCount =
-                communityMemberService.countActiveMembers(community);
-
-        return communityMapper.toDetail(
-                community,
-                info,
-                memberCount
-        );
+        User viewer = userService.getCurrentUser();
+        CommunityDetailResponseDTO detail = toDetail(community);
+        CommunityRole role = communityMemberService.getActiveRole(community, viewer);
+        detail.setCurrentUserRole(role);
+        detail.setJoinRequestPending(role == null && community.getVisibility() == CommunityVisibility.PRIVATE
+                && communityMemberService.hasPendingJoinRequest(community, viewer));
+        return detail;
     }
 
     /*
@@ -161,7 +162,7 @@ public class CommunityService {
             Pageable pageable) {
 
         Specification<Community> specification =
-                communitySpecifications.buildPublicCommunitySpecification();
+                communitySpecifications.hasStatus(CommunityStatus.ACTIVE);
 
         if (filter != null) {
             specification = specification.and(filter);
@@ -244,11 +245,13 @@ public class CommunityService {
                         .map(member -> {
                             Community community = member.getCommunity();
 
-                            return communityMapper.toPreview(
+                            CommunityPreviewResponseDTO preview = communityMapper.toPreview(
                                     community,
                                     community.getInfo(),
                                     communityMemberService.countActiveMembers(community)
                             );
+                            preview.setCurrentUserRole(member.getRole());
+                            return preview;
                         });
 
         return pageMapper.toResponse(communities);

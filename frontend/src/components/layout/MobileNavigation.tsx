@@ -102,9 +102,6 @@ export const MobileNavigation: React.FC = () => {
                       <span className="truncate">c/{community.name}</span>
                     </Link>
                   ))}
-                  {(activeRole === 'OWNER' || activeRole === 'MODERATOR' || activeRole === 'ADMIN') && (
-                    <Link onClick={closeMoreMenu} to="/c/lap-trinh-viet-nam/moderation" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><ShieldCheck className="h-4 w-4" />Kiểm duyệt</Link>
-                  )}
                   {activeRole === 'ADMIN' && <Link onClick={closeMoreMenu} to="/admin" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><ShieldCheck className="h-4 w-4" />Quản trị</Link>}
                 </>
               ) : (

@@ -1,5 +1,6 @@
 package com.discuss.discuss.dto.community;
 
+import com.discuss.discuss.enums.CommunityRole;
 import com.discuss.discuss.enums.CommunityStatus;
 import com.discuss.discuss.enums.CommunityVisibility;
 import lombok.AllArgsConstructor;
@@ -26,6 +27,7 @@ public class CommunityPreviewResponseDTO {
     private String categoryName;
     private CommunityStatus communityStatus;
     private CommunityVisibility visibility;
+    private CommunityRole currentUserRole;
 
     private long memberCount;
     private LocalDateTime createdAt;

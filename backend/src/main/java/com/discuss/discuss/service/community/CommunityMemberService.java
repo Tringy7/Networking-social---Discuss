@@ -1,16 +1,24 @@
 package com.discuss.discuss.service.community;
 
+import com.discuss.discuss.dto.common.PageResponseDTO;
+import com.discuss.discuss.dto.community.CommunityJoinRequestDTO;
 import com.discuss.discuss.entity.Community;
+import com.discuss.discuss.entity.CommunityJoinRequest;
+import com.discuss.discuss.entity.CommunityJoinRequest.Status;
 import com.discuss.discuss.entity.CommunityMember;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.CommunityRole;
-import com.discuss.discuss.enums.CommunityStatus;
+import com.discuss.discuss.enums.UserStatus;
 import com.discuss.discuss.enums.CommunityVisibility;
 import com.discuss.discuss.enums.MembershipStatus;
+import com.discuss.discuss.enums.NotificationEventType;
 import com.discuss.discuss.exception.community.CommunityErrorCode;
 import com.discuss.discuss.exception.community.CommunityException;
+import com.discuss.discuss.mapper.page.PageMapper;
+import com.discuss.discuss.repository.CommunityJoinRequestRepository;
 import com.discuss.discuss.repository.CommunityMemberRepository;
 import com.discuss.discuss.repository.CommunityRepository;
+import com.discuss.discuss.service.notification.NotificationEvents;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +37,12 @@ public class CommunityMemberService {
     private final UserService userService;
 
     private final CommunityRepository communityRepository;
+    private final CommunityJoinRequestRepository joinRequestRepository;
+    private final CommunityAuthorizationService authorization;
+    private final PageMapper pageMapper;
+    private final NotificationEvents notificationEvents;
+
+    public record JoinResult(CommunityRole role, boolean pending) {}
 
     // Creates the initial Owner membership when a community is created.
     @Transactional
@@ -139,31 +153,107 @@ public class CommunityMemberService {
         );
     }
 
-    // Joins a community; if there is no ACTIVE Owner, the joining user becomes the Owner.
     @Transactional
-    public CommunityMember joinCommunity(String communityName) {
-        User user = userService.getCurrentUser();
+    public JoinResult joinCommunity(String communityName) {
         Community community = communitySupport.getActiveCommunityForMembership(communityName);
-
-        validateCanJoin(community);
-
+        User user = userService.getCurrentUser();
         CommunityMember member = getExistingMembership(community, user);
+        validateJoinMembership(member);
 
+        var pending = joinRequestRepository.findByCommunityAndApplicantAndStatus(community, user, Status.PENDING);
+        if (community.getVisibility() == CommunityVisibility.PRIVATE) {
+            if (pending.isEmpty()) {
+                joinRequestRepository.save(new CommunityJoinRequest(community, user));
+                notificationEvents.communityMembershipChanged(
+                        NotificationEventType.COMMUNITY_JOIN_REQUESTED, user.getId(), community.getId());
+            }
+            return new JoinResult(null, true);
+        }
+
+        pending.ifPresent(CommunityJoinRequest::close);
+        CommunityRole role = activateMembership(community, user, member).getRole();
+        notificationEvents.communityMembershipChanged(
+                NotificationEventType.COMMUNITY_JOINED, user.getId(), community.getId());
+        return new JoinResult(role, false);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponseDTO<CommunityJoinRequestDTO> listJoinRequests(
+            String name, boolean history, Pageable pageable
+    ) {
+        Community community = communitySupport.getCommunityByNameAndStatusActive(name);
+        authorization.requireModeratorOrOwner(community, userService.getCurrentUser());
+        requirePrivateJoinRequests(community);
+        var requests = history
+                ? joinRequestRepository.findByCommunityAndStatusNot(community, Status.PENDING, pageable)
+                : joinRequestRepository.findByCommunityAndStatus(community, Status.PENDING, pageable);
+        return pageMapper.toResponse(requests.map(CommunityJoinRequestDTO::from));
+    }
+
+    @Transactional
+    public CommunityJoinRequestDTO reviewJoinRequest(String name, Long id, boolean approve) {
+        Community community = communitySupport.getActiveCommunityForMembership(name);
+        User reviewer = userService.getCurrentUser();
+        authorization.requireModeratorOrOwner(community, reviewer);
+        requirePrivateJoinRequests(community);
+
+        CommunityJoinRequest request = joinRequestRepository.findByIdAndCommunity(id, community)
+                .orElseThrow(() -> new CommunityException(CommunityErrorCode.JOIN_REQUEST_NOT_FOUND));
+        if (request.getStatus() != Status.PENDING) {
+            throw new CommunityException(CommunityErrorCode.JOIN_REQUEST_ALREADY_REVIEWED);
+        }
+
+        if (approve) {
+            User applicant = request.getApplicant();
+            if (applicant.getStatus() != UserStatus.ACTIVE) {
+                throw new CommunityException(CommunityErrorCode.FORBIDDEN, "Applicant account is not active");
+            }
+            CommunityMember member = getExistingMembership(community, applicant);
+            validateJoinMembership(member);
+            activateMembership(community, applicant, member);
+        }
+
+        request.review(reviewer, approve);
+        notificationEvents.communityMembershipChanged(
+                approve ? NotificationEventType.COMMUNITY_JOIN_APPROVED : NotificationEventType.COMMUNITY_JOIN_REJECTED,
+                request.getApplicant().getId(), community.getId());
+        return CommunityJoinRequestDTO.from(request);
+    }
+
+    private void requirePrivateJoinRequests(Community community) {
+        if (community.getVisibility() != CommunityVisibility.PRIVATE) {
+            throw new CommunityException(CommunityErrorCode.JOIN_REQUESTS_PRIVATE_ONLY);
+        }
+    }
+
+    public CommunityRole getActiveRole(Community community, User user) {
+        return memberRepository.findByCommunityAndUserAndStatus(community, user, MembershipStatus.ACTIVE)
+                .map(CommunityMember::getRole)
+                .orElse(null);
+    }
+
+    public boolean hasPendingJoinRequest(Community community, User user) {
+        return joinRequestRepository.findByCommunityAndApplicantAndStatus(community, user, Status.PENDING).isPresent();
+    }
+
+    private CommunityMember activateMembership(Community community, User user, CommunityMember member) {
         if (member == null) {
             return createMembership(community, user);
         }
+        reactivateMembership(member);
+        return member;
+    }
 
+    private void validateJoinMembership(CommunityMember member) {
+        if (member == null) {
+            return;
+        }
         if (member.getStatus() == MembershipStatus.ACTIVE) {
             throw new CommunityException(CommunityErrorCode.ALREADY_MEMBER);
         }
-
         if (member.getStatus() == MembershipStatus.BANNED) {
             throw new CommunityException(CommunityErrorCode.MEMBER_BANNED);
         }
-
-        // LEFT or KICKED members can rejoin; the role is determined again.
-        reactivateMembership(member);
-        return member;
     }
 
     // Leaves a community; if the leaving user is the Owner, ownership is transferred first when a successor exists.
@@ -188,8 +278,9 @@ public class CommunityMemberService {
     // Kicks a member out of the community; the Owner cannot be kicked.
     @Transactional
     public void kickMember(String communityName, String username) {
-        User targetUser = userService.getActiveByUsername(username);
         Community community = communitySupport.getActiveCommunityForMembership(communityName);
+        authorization.requireModeratorOrOwner(community, userService.getCurrentUser());
+        User targetUser = userService.getActiveByUsername(username);
 
         CommunityMember member = getExistingMembership(community, targetUser);
         validateActiveMembership(member);
@@ -250,6 +341,10 @@ public class CommunityMemberService {
                         )
                         .orElse(null));
 
+        if (successor == null && community.getVisibility() == CommunityVisibility.PRIVATE) {
+            throw new CommunityException(CommunityErrorCode.OWNER_CANNOT_LEAVE);
+        }
+
         // If no other members remain, the community temporarily has no Owner.
         community.setOwner(successor == null ? null : successor.getUser());
         communityRepository.save(community);
@@ -259,13 +354,6 @@ public class CommunityMemberService {
 
         successor.setRole(CommunityRole.OWNER);
         memberRepository.save(successor);
-    }
-
-    // Checks whether the community allows direct joining.
-    private void validateCanJoin(Community community) {
-        if (community.getVisibility() == CommunityVisibility.PRIVATE) {
-            throw new CommunityException(CommunityErrorCode.COMMUNITY_PRIVATE);
-        }
     }
 
     // Creates a new membership with the Owner role if the community has no ACTIVE Owner.
@@ -331,23 +419,4 @@ public class CommunityMemberService {
     private CommunityMember getExistingMembership(Community community, User user) {
         return memberRepository.findByCommunityAndUser(community, user).orElse(null);
     }
-
-//    // Finds a community by its normalized name and requires it to be ACTIVE.
-//    private Community getCommunityByNameAndStatusActive(String name) {
-//        String normalizedName = nameNormalizer.normalize(name);
-//
-//        Community community = communityRepository.findByNameForUpdate(normalizedName)
-//                .orElseThrow(() -> new CommunityException(
-//                        CommunityErrorCode.COMMUNITY_NOT_FOUND
-//                ));
-//
-//        if (community.getStatus() != CommunityStatus.ACTIVE) {
-//            throw new CommunityException(
-//                    CommunityErrorCode.FORBIDDEN,
-//                    "This community is not active"
-//            );
-//        }
-//
-//        return community;
-//    }
 }

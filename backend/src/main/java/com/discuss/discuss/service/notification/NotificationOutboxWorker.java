@@ -68,6 +68,13 @@ public class NotificationOutboxWorker {
             case REPORT_SUBMITTED -> notifyReportSubmitted(event);
             case REPORT_REVIEWED -> save(event, event.getReporterId(), NotificationType.REPORT_REVIEWED, null);
             case REPORT_WARNING -> notifyReportWarning(event);
+            case COMMUNITY_JOINED -> notifyMembership(event,
+                    NotificationType.COMMUNITY_JOIN_CONFIRMED, NotificationType.COMMUNITY_MEMBER_JOINED);
+            case COMMUNITY_JOIN_REQUESTED -> notifyMembership(event,
+                    NotificationType.COMMUNITY_JOIN_REQUEST_SENT, NotificationType.COMMUNITY_JOIN_REQUEST_RECEIVED);
+            case COMMUNITY_JOIN_APPROVED -> notifyMembership(event,
+                    NotificationType.COMMUNITY_JOIN_APPROVED, NotificationType.COMMUNITY_MEMBER_JOINED);
+            case COMMUNITY_JOIN_REJECTED -> notifyMembership(event, NotificationType.COMMUNITY_JOIN_REJECTED, null);
         }
         event.setStatus(OutboxStatus.COMPLETED);
         event.setProcessedAt(LocalDateTime.now());
@@ -116,9 +123,22 @@ public class NotificationOutboxWorker {
                     .setParameter("actor", event.getActorId()).getResultList();
             admins.forEach(admin -> save(event, admin, NotificationType.REPORT_SUBMITTED, null));
         } else if (community != null && community.getStatus() == CommunityStatus.ACTIVE) {
-            memberships.findReportRecipientIds(community.getId(), MembershipStatus.ACTIVE, UserStatus.ACTIVE,
+            memberships.findStaffNotificationRecipientIds(community.getId(), MembershipStatus.ACTIVE, UserStatus.ACTIVE,
                             List.of(CommunityRole.OWNER, CommunityRole.MODERATOR), event.getActorId())
                     .forEach(recipient -> save(event, recipient, NotificationType.REPORT_SUBMITTED, community.getName()));
+        }
+    }
+
+    private void notifyMembership(OutboxEvent event, NotificationType applicantType, NotificationType staffType) {
+        var community = entities.find(Community.class, event.getCommunityId());
+        if (community == null || community.getStatus() != CommunityStatus.ACTIVE) {
+            return;
+        }
+        save(event, event.getActorId(), applicantType, community.getName());
+        if (staffType != null) {
+            memberships.findStaffNotificationRecipientIds(community.getId(), MembershipStatus.ACTIVE, UserStatus.ACTIVE,
+                            List.of(CommunityRole.OWNER, CommunityRole.MODERATOR), event.getActorId())
+                    .forEach(recipient -> save(event, recipient, staffType, community.getName()));
         }
     }
 

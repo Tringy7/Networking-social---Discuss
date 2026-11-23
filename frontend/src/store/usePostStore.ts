@@ -23,6 +23,7 @@ interface PostState {
   searchPosts: (query: string, page?: number) => Promise<PostPage>;
   vote: (id: string, type: 'UP' | 'DOWN' | null) => Promise<void>;
   toggleSave: (id: string) => Promise<void>;
+  setPinned: (id: string, pinned: boolean) => Promise<void>;
   addPost: (input: PostInput) => Promise<Post>;
   editPost: (id: string, input: PostInput) => Promise<Post>;
   deletePost: (id: string) => Promise<void>;
@@ -185,6 +186,17 @@ export const usePostStore = create<PostState>((set, get) => ({
     if (generation === session) set((state) => ({
       posts: merge(state.posts, [post]),
       savedPosts: state.savedPosts.map((item) => item.id === id ? post : item),
+    }));
+  },
+  setPinned: async (id, pinned) => {
+    const generation = session;
+    await postService.setPinned(id, pinned);
+    if (generation !== session) return;
+
+    const update = (post: Post) => post.id === id ? { ...post, pinned } : post;
+    set(state => ({
+      posts: state.posts.map(update),
+      savedPosts: state.savedPosts.map(update),
     }));
   },
   toggleSave: async (id) => {

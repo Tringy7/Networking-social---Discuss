@@ -14,8 +14,13 @@ import ConfirmDialog from '../ui/ConfirmDialog';
 import PostActionsMenu from './PostActionsMenu';
 import { MessageSquare, Bookmark, Share2, Pin } from 'lucide-react';
 
-interface PostCardProps { post: Post; showCommunity?: boolean; }
-export default function PostCard({ post }: PostCardProps) {
+interface PostCardProps {
+  post: Post;
+  showCommunity?: boolean;
+  onTogglePin?: () => void;
+  pinDisabled?: boolean;
+}
+export default function PostCard({ post, onTogglePin, pinDisabled }: PostCardProps) {
   const navigate = useNavigate();
   const { toggleSave, openEditModal, deletePost } = usePostStore();
   const addToast = useToastStore((state) => state.addToast);
@@ -84,7 +89,8 @@ export default function PostCard({ post }: PostCardProps) {
           </div>
         </div>
         <PostActionsMenu post={post} onEdit={() => openEditModal(post)} onDelete={() => setIsDeleteOpen(true)}
-          onReport={() => setIsReportOpen(true)} onShare={handleShareClick} />
+          onReport={() => setIsReportOpen(true)} onShare={handleShareClick}
+          onTogglePin={onTogglePin} pinDisabled={pinDisabled} />
       </div>
       <div className="min-w-0">
         <h2 id={`post-title-${post.id}`} className="discussion-title"><Link to={postPath(post)}>{post.title}</Link></h2>

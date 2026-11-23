@@ -68,6 +68,7 @@ export interface Community {
   status: 'ACTIVE' | 'RESTRICTED' | 'BANNED';
   memberCount: number;
   currentUserRole: CommunityMemberRole;
+  joinRequestPending?: boolean;
   ownerId: string;
   ownerUsername: string;
   createdAt: string;
@@ -199,7 +200,10 @@ export interface CommunityMember {
 }
 
 export type NotificationType = 'COMMUNITY_POST_CREATED' | 'POST_COMMENTED' | 'COMMENT_REPLIED'
-  | 'REPORT_SUBMITTED' | 'REPORT_REVIEWED' | 'REPORT_WARNING';
+  | 'REPORT_SUBMITTED' | 'REPORT_REVIEWED' | 'REPORT_WARNING'
+  | 'COMMUNITY_JOIN_CONFIRMED' | 'COMMUNITY_MEMBER_JOINED'
+  | 'COMMUNITY_JOIN_REQUEST_SENT' | 'COMMUNITY_JOIN_REQUEST_RECEIVED'
+  | 'COMMUNITY_JOIN_APPROVED' | 'COMMUNITY_JOIN_REJECTED';
 
 export interface NotificationItem {
   id: string;

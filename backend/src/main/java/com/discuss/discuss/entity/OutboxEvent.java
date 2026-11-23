@@ -4,6 +4,8 @@ import com.discuss.discuss.enums.*;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "outbox_events", indexes = @Index(
@@ -19,7 +21,8 @@ public class OutboxEvent {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 64)
     private NotificationEventType eventType;
 
     @Column(nullable = false)
