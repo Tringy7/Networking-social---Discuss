@@ -667,7 +667,14 @@ type NotificationResponse = {
 
 function mapNotification(item: NotificationResponse): NotificationItem {
   let targetUrl = item.postId ? `/post/${item.postId}${item.commentId ? `#comment-${item.commentId}` : ''}` : '/notifications';
+  const communityLabel = item.communityName ? `c/${item.communityName}` : 'cộng đồng';
   const messages = {
+    COMMUNITY_JOIN_CONFIRMED: `Bạn đã tham gia ${communityLabel}.`,
+    COMMUNITY_MEMBER_JOINED: `đã tham gia ${communityLabel}.`,
+    COMMUNITY_JOIN_REQUEST_SENT: `Bạn đã gửi yêu cầu tham gia ${communityLabel}. Yêu cầu đang chờ duyệt.`,
+    COMMUNITY_JOIN_REQUEST_RECEIVED: `đã gửi yêu cầu tham gia ${communityLabel}.`,
+    COMMUNITY_JOIN_APPROVED: `Yêu cầu tham gia ${communityLabel} của bạn đã được duyệt.`,
+    COMMUNITY_JOIN_REJECTED: `Yêu cầu tham gia ${communityLabel} của bạn đã bị từ chối.`,
     COMMUNITY_POST_CREATED: item.communityName ? `đã đăng bài mới trong c/${item.communityName}.` : 'đã đăng bài mới trong cộng đồng.',
     POST_COMMENTED: 'đã bình luận về bài viết của bạn.',
     COMMENT_REPLIED: 'đã trả lời bình luận của bạn.',
@@ -685,9 +692,18 @@ function mapNotification(item: NotificationResponse): NotificationItem {
   if (item.type === 'REPORT_WARNING' && item.reportTargetType === 'COMMUNITY' && item.communityName) {
     targetUrl = `/c/${encodeURIComponent(item.communityName)}`;
   }
+  const isMembershipNotification = item.type.startsWith('COMMUNITY_JOIN_') || item.type === 'COMMUNITY_MEMBER_JOINED';
+  if (isMembershipNotification && item.communityName) {
+    const communityPath = `/c/${encodeURIComponent(item.communityName)}`;
+    targetUrl = item.type === 'COMMUNITY_JOIN_REQUEST_RECEIVED'
+      ? `${communityPath}/moderation?tab=join-requests`
+      : communityPath;
+  }
+  const showActor = !item.type.startsWith('REPORT_') && (!isMembershipNotification
+    || item.type === 'COMMUNITY_MEMBER_JOINED' || item.type === 'COMMUNITY_JOIN_REQUEST_RECEIVED');
   return {
     id: String(item.id), type: item.type,
-    actor: item.type.startsWith('REPORT_') ? null : item.actor,
+    actor: showActor ? item.actor : null,
     message: messages[item.type], targetUrl, isRead: item.read, createdAt: item.createdAt,
   };
 }

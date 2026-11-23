@@ -35,7 +35,7 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
             where cm.community.id = :communityId and cm.status = :status
               and cm.user.status = :userStatus and cm.role in :roles and cm.user.id <> :actorId
             """)
-    List<Long> findReportRecipientIds(@Param("communityId") Long communityId,
+    List<Long> findStaffNotificationRecipientIds(@Param("communityId") Long communityId,
                                       @Param("status") MembershipStatus status,
                                       @Param("userStatus") UserStatus userStatus,
                                       @Param("roles") Collection<CommunityRole> roles,

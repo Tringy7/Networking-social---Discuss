@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { isCommunityOwner } from '../../utils/communityMedia';
-import { ArrowLeft, ArrowUpRight, BookOpen, Camera, Check, Globe, Image as ImageIcon, Lock, Settings2, Users } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, BookOpen, Camera, Check, Globe, Image as ImageIcon, Lock, Settings2, ShieldAlert, Users } from 'lucide-react';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { useToastStore } from '../../store/useToastStore';
 import { categoryService } from '../../services';

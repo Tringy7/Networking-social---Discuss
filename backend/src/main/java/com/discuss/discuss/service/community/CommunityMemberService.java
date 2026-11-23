@@ -11,12 +11,14 @@ import com.discuss.discuss.enums.CommunityRole;
 import com.discuss.discuss.enums.UserStatus;
 import com.discuss.discuss.enums.CommunityVisibility;
 import com.discuss.discuss.enums.MembershipStatus;
+import com.discuss.discuss.enums.NotificationEventType;
 import com.discuss.discuss.exception.community.CommunityErrorCode;
 import com.discuss.discuss.exception.community.CommunityException;
 import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.repository.CommunityJoinRequestRepository;
 import com.discuss.discuss.repository.CommunityMemberRepository;
 import com.discuss.discuss.repository.CommunityRepository;
+import com.discuss.discuss.service.notification.NotificationEvents;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -38,6 +40,7 @@ public class CommunityMemberService {
     private final CommunityJoinRequestRepository joinRequestRepository;
     private final CommunityAuthorizationService authorization;
     private final PageMapper pageMapper;
+    private final NotificationEvents notificationEvents;
 
     public record JoinResult(CommunityRole role, boolean pending) {}
 
@@ -161,12 +164,17 @@ public class CommunityMemberService {
         if (community.getVisibility() == CommunityVisibility.PRIVATE) {
             if (pending.isEmpty()) {
                 joinRequestRepository.save(new CommunityJoinRequest(community, user));
+                notificationEvents.communityMembershipChanged(
+                        NotificationEventType.COMMUNITY_JOIN_REQUESTED, user.getId(), community.getId());
             }
             return new JoinResult(null, true);
         }
 
         pending.ifPresent(CommunityJoinRequest::close);
-        return new JoinResult(activateMembership(community, user, member).getRole(), false);
+        CommunityRole role = activateMembership(community, user, member).getRole();
+        notificationEvents.communityMembershipChanged(
+                NotificationEventType.COMMUNITY_JOINED, user.getId(), community.getId());
+        return new JoinResult(role, false);
     }
 
     @Transactional(readOnly = true)
@@ -206,6 +214,9 @@ public class CommunityMemberService {
         }
 
         request.review(reviewer, approve);
+        notificationEvents.communityMembershipChanged(
+                approve ? NotificationEventType.COMMUNITY_JOIN_APPROVED : NotificationEventType.COMMUNITY_JOIN_REJECTED,
+                request.getApplicant().getId(), community.getId());
         return CommunityJoinRequestDTO.from(request);
     }
 

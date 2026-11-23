@@ -16,6 +16,15 @@ ALTER TABLE notifications
 
 The development setting `spring.jpa.hibernate.ddl-auto=update` creates `outbox_events` and `community_notification_preferences` and adds the new notification columns and index. For deployments with schema updates disabled, apply the equivalent schema migration from the entity mappings before startup. Existing notifications keep their original contents and may have a null event ID.
 
+Community joins and private join requests also write events in the membership transaction.
+Applicants receive a confirmation or review result. Active owners and moderators receive new requests and successful joins.
+For deployments with automatic schema updates disabled, widen the event and notification type columns before deploying:
+
+```sql
+ALTER TABLE outbox_events MODIFY COLUMN event_type VARCHAR(64) NOT NULL;
+ALTER TABLE notifications MODIFY COLUMN type VARCHAR(64) NOT NULL;
+```
+
 ## Community preference
 
 Active members can call `GET /communities/{name}/notification-preferences` and `PUT /communities/{name}/notification-preferences`. The PUT body is `{"newPostEnabled":false}`. Preferences default to enabled and are read when processing the event. A change affects future deliveries and preserves notifications already received.
@@ -88,7 +97,7 @@ notificationEvents.postCreated(post);
 | `OutboxEventRepository.findDueIds(status, now, limit)` | Lấy các ID đủ điều kiện theo thứ tự thời điểm chạy và ID, có giới hạn theo lô. |
 | `CommunityNotificationPreferenceRepository.savePreference(...)` | Thêm hoặc cập nhật tùy chọn theo khóa ghép trên MySQL. |
 | `CommunityMemberRepository.findNotificationRecipientIds(...)` | Trả ID thành viên đủ điều kiện nhận bài mới, áp dụng tùy chọn tắt nhận. |
-| `CommunityMemberRepository.findReportRecipientIds(...)` | Trả ID thành viên có vai trò kiểm duyệt và tài khoản đang hoạt động. |
+| `CommunityMemberRepository.findStaffNotificationRecipientIds(...)` | Trả ID thành viên có vai trò kiểm duyệt và tài khoản đang hoạt động. |
 
 ## Cách dùng từ frontend
 

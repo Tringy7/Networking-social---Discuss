@@ -37,6 +37,10 @@ public class NotificationEvents {
                 .reportId(reportId).reportTargetType(type).reporterId(reporterId).reportStatus(status).build());
     }
 
+    public void communityMembershipChanged(NotificationEventType type, Long applicantId, Long communityId) {
+        repository.save(event(type, applicantId).communityId(communityId).build());
+    }
+
     private OutboxEvent.OutboxEventBuilder event(NotificationEventType type, Long actorId) {
         LocalDateTime now = LocalDateTime.now();
         return OutboxEvent.builder().eventType(type).actorId(actorId).status(OutboxStatus.PENDING)
