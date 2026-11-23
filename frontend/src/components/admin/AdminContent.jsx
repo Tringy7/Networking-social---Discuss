@@ -9,6 +9,7 @@ const adminPages = {
   '/admin/reports': 'Báo cáo',
   '/admin/categories': 'Danh mục',
   '/admin/activity-logs': 'Activity Logs',
+  '/admin/reputation': 'Điểm uy tín',
 };
 
 export function AdminBreadcrumb() {

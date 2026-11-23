@@ -96,7 +96,8 @@ function mapUser(
     role: response.role,
     status: response.status,
     createdAt: response.createdAt || currentUser?.createdAt || new Date().toISOString(),
-    karma: currentUser?.karma ?? 0,
+    karma: response.reputation?.score ?? 0,
+    reputation: response.reputation,
   };
 }
 

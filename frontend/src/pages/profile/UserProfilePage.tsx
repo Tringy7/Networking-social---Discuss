@@ -23,8 +23,16 @@ import {
   FileText,
   MessageSquare,
   Award,
+  BadgeCheck,
   Eye,
 } from 'lucide-react';
+
+const reputationRankLabels = {
+  MEMBER: 'Thành viên',
+  CONTRIBUTOR: 'Người đóng góp',
+  TRUSTED: 'Uy tín',
+  HIGHLY_TRUSTED: 'Uy tín cao',
+};
 
 export const UserProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
@@ -71,7 +79,7 @@ export const UserProfilePage: React.FC = () => {
     // the page fresh after profile edits in another tab/session.
     const request = isMe
       ? userService.getMe().then((response): User => ({
-          id: response.id || currentUser?.id || response.username,
+          id: String(response.id ?? currentUser?.id ?? response.username),
           username: response.username,
           displayName: response.profile?.displayName || response.username,
           email: response.email,
@@ -89,7 +97,8 @@ export const UserProfilePage: React.FC = () => {
           role: response.role,
           status: response.status,
           createdAt: response.createdAt || new Date().toISOString(),
-          karma: currentUser?.karma ?? 0,
+          karma: response.reputation?.score ?? 0,
+          reputation: response.reputation,
         }))
       : userService.getPublicProfile(username);
     request.then((profile) => {
@@ -117,6 +126,7 @@ export const UserProfilePage: React.FC = () => {
   }
 
   const userPosts = posts.filter((p) => p.author.username === profileUser.username);
+  const reputation = profileUser.reputation;
   const joinedDate = new Date(profileUser.createdAt);
   const joinedLabel = Number.isNaN(joinedDate.getTime())
     ? 'Chưa có thông tin'
@@ -151,6 +161,11 @@ export const UserProfilePage: React.FC = () => {
                 <h1 className="editorial-title profile-name text-[var(--text-primary)]">
                   {profileUser.displayName}
                 </h1>
+                {reputation?.hasReputationBadge && (
+                  <span title="Uy tín cộng đồng" role="img" aria-label="Uy tín cộng đồng" className="shrink-0 text-[var(--color-info)]">
+                    <BadgeCheck size={22} aria-hidden="true" />
+                  </span>
+                )}
                 {profileUser.role === 'OWNER' && <Badge role="OWNER" />}
                 {profileUser.role === 'MODERATOR' && <Badge role="MODERATOR" />}
                 {profileUser.role === 'ADMIN' && <Badge role="ADMIN" />}
@@ -270,6 +285,10 @@ export const UserProfilePage: React.FC = () => {
               <Award className="h-4 w-4 text-[var(--color-orange)]" />
               <span>{userPosts.length} bài viết</span>
             </div>
+            {reputation && <div className="profile-post-count">
+              <Award className="h-4 w-4 text-[var(--color-info)]" aria-hidden="true" />
+              <span>{reputation.score.toLocaleString('vi-VN')} điểm uy tín · {reputationRankLabels[reputation.rank]}</span>
+            </div>}
           </section>
         </aside>
       </div>

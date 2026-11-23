@@ -2,6 +2,7 @@ package com.discuss.discuss.mapper.user;
 
 import com.discuss.discuss.dto.user.PublicUserProfileResponseDTO;
 import com.discuss.discuss.dto.user.UserInfoResponseDTO;
+import com.discuss.discuss.dto.user.UserReputationDTO;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserPrivacySettings;
 import com.discuss.discuss.entity.UserProfile;
@@ -23,7 +24,8 @@ public class UserMapper {
     public UserInfoResponseDTO toUserInfoResponse(
             User user,
             UserProfile profile,
-            UserPrivacySettings privacySettings
+            UserPrivacySettings privacySettings,
+            UserReputationDTO reputation
     ) {
         UserInfoResponseDTO.Profile profileDTO = null;
 
@@ -56,7 +58,8 @@ public class UserMapper {
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
                 profileDTO,
-                privacySettingsDTO
+                privacySettingsDTO,
+                reputation
         );
     }
 
@@ -68,7 +71,8 @@ public class UserMapper {
             UserProfile profile,
             String dateOfBirth,
             String location,
-            PublicUserProfileResponseDTO.Statistics statistics
+            PublicUserProfileResponseDTO.Statistics statistics,
+            UserReputationDTO reputation
     ) {
         PublicUserProfileResponseDTO.Profile profileDTO = null;
 
@@ -89,7 +93,8 @@ public class UserMapper {
                 user.getUsername(),
                 user.getCreatedAt(),
                 profileDTO,
-                statistics
+                statistics,
+                reputation
         );
     }
 }
