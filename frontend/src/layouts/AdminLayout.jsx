@@ -32,7 +32,7 @@ export default function AdminLayout() {
     isAuthenticated
   } = useAuthStore();
   const location = useLocation();
-  if (!isAuthenticated) return <Navigate to="/admin/login" state={{
+  if (!isAuthenticated) return <Navigate to="/login" state={{
     from: location
   }} replace />;
   if (activeRole !== 'ADMIN') return <main className="admin-workspace"><div className="admin-empty"><h1>Không có quyền quản trị</h1><p>Tài khoản của bạn không có quyền truy cập khu vực này.</p><Link className="admin-button" to="/">Về trang người dùng</Link></div></main>;

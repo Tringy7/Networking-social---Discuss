@@ -1,8 +1,6 @@
 import React from 'react';
-import { Route } from 'react-router-dom';
+import { Navigate, Route } from 'react-router-dom';
 import AdminLayout from '../layouts/AdminLayout.jsx';
-import AdminAuthLayout from '../layouts/AdminAuthLayout.jsx';
-const LoginPage = React.lazy(() => import('../pages/auth/LoginPage'));
 // Admin Pages
 const AdminDashboardPage = React.lazy(() => import('../pages/admin/AdminDashboardPage.jsx'));
 const UserManagementPage = React.lazy(() => import('../pages/admin/UserManagementPage.jsx'));
@@ -14,9 +12,7 @@ const ActivityLogManagementPage = React.lazy(() => import('../pages/admin/Activi
 const ReputationSettingsPage = React.lazy(() => import('../pages/admin/ReputationSettingsPage'));
 const routeLoading = <div className="route-loading" role="status">Đang mở trang quản trị…</div>;
 export const adminRoutes = <>
-  <Route element={<AdminAuthLayout />}>
-    <Route path="/admin/login" element={<React.Suspense fallback={routeLoading}><LoginPage admin /></React.Suspense>} />
-  </Route>
+  <Route path="/admin/login" element={<Navigate to="/login" replace />} />
       {/* 3. ADMIN PORTAL (ADMIN SIDEBAR & RESTRICTED ACCESS) */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<React.Suspense fallback={routeLoading}><AdminDashboardPage /></React.Suspense>} />
