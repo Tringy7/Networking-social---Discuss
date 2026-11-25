@@ -2,6 +2,8 @@
 
 Discuss là nền tảng mạng xã hội chia sẻ và thảo luận theo cộng đồng chủ đề. Người dùng có thể khám phá cộng đồng, đăng bài viết dạng Markdown, bình luận, phản ứng, lưu bài, báo cáo vi phạm, nhận thông báo và quản lý tài khoản. Hệ thống còn cung cấp cổng quản trị để kiểm duyệt người dùng, cộng đồng, bài viết, báo cáo, danh mục và ghi nhật ký hoạt động.
 
+Xem bố cục các màn hình, design tokens và thành phần dùng chung trong [tài liệu thiết kế giao diện](DESIGN_README.md).
+
 ## 1. Mục tiêu dự án
 
 - Xây dựng môi trường thảo luận trực tuyến theo từng chủ đề.

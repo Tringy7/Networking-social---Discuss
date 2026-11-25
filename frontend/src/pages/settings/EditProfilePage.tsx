@@ -19,7 +19,7 @@ export const EditProfilePage: React.FC = () => {
   const [bio, setBio] = useState(user?.bio || '');
   const [location, setLocation] = useState(user?.location || '');
   const [dateOfBirth, setDateOfBirth] = useState(user?.dateOfBirth || '');
-  const [gender, setGender] = useState(user?.gender || 'Nam');
+  const [gender, setGender] = useState(user?.gender || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [bannerUrl, setBannerUrl] = useState(user?.bannerUrl || '');
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +32,7 @@ export const EditProfilePage: React.FC = () => {
       setBio('');
       setLocation('');
       setDateOfBirth('');
-      setGender('Nam');
+      setGender('');
       setAvatarUrl('');
       setBannerUrl('');
       return;
@@ -43,7 +43,7 @@ export const EditProfilePage: React.FC = () => {
     setBio(user?.bio || '');
     setLocation(user?.location || '');
     setDateOfBirth(user?.dateOfBirth || '');
-    setGender(user?.gender || 'Nam');
+    setGender(user?.gender || '');
     setAvatarUrl(user?.avatarUrl || '');
     setBannerUrl(user?.bannerUrl || '');
   }, [user]);
@@ -62,6 +62,7 @@ export const EditProfilePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setIsLoading(true);
     try {
       await updateProfile({
@@ -69,7 +70,7 @@ export const EditProfilePage: React.FC = () => {
         bio: bio.trim(),
         location: location.trim(),
         dateOfBirth,
-        gender,
+        gender: gender || undefined,
       });
       addToast('Cập nhật hồ sơ cá nhân thành công!', 'success');
     } catch (error: unknown) {
@@ -128,6 +129,7 @@ export const EditProfilePage: React.FC = () => {
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           placeholder="Ví dụ: Nguyễn Văn A"
+          maxLength={50}
           required
         />
 
@@ -152,6 +154,7 @@ export const EditProfilePage: React.FC = () => {
             label="Địa điểm / Tỉnh thành"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
+            maxLength={100}
             placeholder="TP. Hồ Chí Minh, Việt Nam"
           />
 
@@ -164,15 +167,17 @@ export const EditProfilePage: React.FC = () => {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-[var(--text-secondary)]">Giới tính</label>
+          <label htmlFor="profile-gender" className="text-sm font-semibold text-[var(--text-secondary)]">Giới tính</label>
           <select
+            id="profile-gender"
             value={gender}
             onChange={(e) => setGender(e.target.value)}
             className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-2.5 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] cursor-pointer"
           >
+            {(!user?.gender || gender === '') && <option value="">Chưa chọn</option>}
             <option value="Nam">Nam</option>
             <option value="Nữ">Nữ</option>
-            <option value="Khác">Khác / Không muốn tiết lộ</option>
+            <option value="Khác">Khác</option>
             <option value="Không muốn tiết lộ">Không muốn tiết lộ</option>
           </select>
         </div>
@@ -184,9 +189,13 @@ export const EditProfilePage: React.FC = () => {
           type="button"
           variant="ghost"
           size="md"
+          disabled={isLoading}
           onClick={() => {
             setDisplayName(user?.displayName || '');
             setBio(user?.bio || '');
+            setLocation(user?.location || '');
+            setDateOfBirth(user?.dateOfBirth || '');
+            setGender(user?.gender || '');
             addToast('Đã khôi phục các giá trị ban đầu', 'info');
           }}
         >

@@ -24,6 +24,7 @@ export interface User {
   username: string;
   displayName: string;
   email: string;
+  provider?: 'LOCAL' | 'GOOGLE';
   avatarUrl: string;
   bannerUrl: string;
   bio: string;

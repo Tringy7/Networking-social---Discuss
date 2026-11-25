@@ -52,6 +52,7 @@ public class UserMapper {
         return new UserInfoResponseDTO(
                 user.getUsername(),
                 user.getEmail(),
+                user.getProvider(),
                 user.getRole(),
                 user.getStatus(),
                 user.getCreatedAt(),

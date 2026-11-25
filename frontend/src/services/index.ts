@@ -12,6 +12,7 @@ interface UserResponse {
   id?: string | number;
   username: string;
   email: string;
+  provider?: User['provider'];
   role: User['role'];
   status: User['status'];
   createdAt: string;
@@ -204,6 +205,12 @@ export const userService = {
       showDateOfBirth: data.privacy?.showDateOfBirth,
       showLocation: data.privacy?.showLocation,
       showPostsOnProfile: data.privacy?.showPostsOnProfile,
+    }),
+
+  updatePrivacy: (privacy: Partial<Pick<User['privacy'], 'showDateOfBirth' | 'showLocation'>>) =>
+    apiClient.patch<Pick<User['privacy'], 'showDateOfBirth' | 'showLocation'>>('/users/me/settings/privacy', {
+      showDateOfBirth: privacy.showDateOfBirth,
+      showLocation: privacy.showLocation,
     }),
 
   uploadAvatar: (file: File) => {

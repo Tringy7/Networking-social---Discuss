@@ -25,7 +25,16 @@ import {
   Award,
   BadgeCheck,
   Eye,
+  AtSign,
+  Mail,
+  UserRound,
 } from 'lucide-react';
+
+const genderLabels: Record<string, string> = {
+  MALE: 'Nam',
+  FEMALE: 'Nữ',
+  OTHER: 'Khác',
+};
 
 const reputationRankLabels = {
   MEMBER: 'Thành viên',
@@ -96,7 +105,7 @@ export const UserProfilePage: React.FC = () => {
           },
           role: response.role,
           status: response.status,
-          createdAt: response.createdAt || new Date().toISOString(),
+          createdAt: response.createdAt || '',
           karma: response.reputation?.score ?? 0,
           reputation: response.reputation,
         }))
@@ -130,7 +139,17 @@ export const UserProfilePage: React.FC = () => {
   const joinedDate = new Date(profileUser.createdAt);
   const joinedLabel = Number.isNaN(joinedDate.getTime())
     ? 'Chưa có thông tin'
-    : joinedDate.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' });
+    : joinedDate.toLocaleDateString('vi-VN');
+  const genderLabel = genderLabels[profileUser.gender?.toUpperCase() ?? ''];
+  const birthDate = profileUser.dateOfBirth?.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$3/$2/$1');
+  const profileFacts = [
+    { label: 'Tên người dùng', value: `@${profileUser.username}`, icon: AtSign },
+    { label: 'Tham gia từ', value: joinedLabel, icon: Calendar },
+    { label: 'Giới tính', value: genderLabel, icon: UserRound },
+    { label: 'Địa điểm', value: (isMe || profileUser.privacy.showLocation) && profileUser.location, icon: MapPin },
+    { label: 'Ngày sinh', value: (isMe || profileUser.privacy.showDateOfBirth) && birthDate, icon: Cake },
+    { label: 'Email · Chỉ mình bạn', value: isMe && profileUser.email, icon: Mail },
+  ];
 
   const handleShareProfile = () => {
     navigator.clipboard?.writeText(window.location.href);
@@ -262,25 +281,24 @@ export const UserProfilePage: React.FC = () => {
                 </Link>
               )}
             </div>
-            {profileUser.bio && <p className="entity-about-description">{profileUser.bio}</p>}
-            <div className="profile-facts">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
-                <span>Tham gia {joinedLabel}</span>
-              </div>
-              {profileUser.privacy.showLocation && profileUser.location && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
-                  <span>{profileUser.location}</span>
+            {profileUser.bio.trim() ? (
+              <p className="entity-about-description whitespace-pre-wrap break-words">{profileUser.bio}</p>
+            ) : isMe && (
+              <Link to="/settings/profile" className="text-sm text-[var(--text-secondary)] underline underline-offset-4 hover:text-[var(--text-primary)]">
+                Thêm tiểu sử
+              </Link>
+            )}
+            <dl className="profile-facts">
+              {profileFacts.map(({ label, value, icon: Icon }) => value && (
+                <div key={label} className="flex items-start gap-2.5">
+                  <Icon className="h-4 w-4 shrink-0 text-[var(--text-muted)]" aria-hidden="true" />
+                  <div className="min-w-0">
+                    <dt className="text-xs text-[var(--text-muted)]">{label}</dt>
+                    <dd className="text-[var(--text-primary)]">{value}</dd>
+                  </div>
                 </div>
-              )}
-              {profileUser.privacy.showDateOfBirth && profileUser.dateOfBirth && (
-                <div className="flex items-center gap-2">
-                  <Cake className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
-                  <span>Sinh nhật {profileUser.dateOfBirth}</span>
-                </div>
-              )}
-            </div>
+              ))}
+            </dl>
             <div className="profile-post-count">
               <Award className="h-4 w-4 text-[var(--color-orange)]" />
               <span>{userPosts.length} bài viết</span>

@@ -50,7 +50,7 @@ interface AuthState {
   resendOtp: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
-  updatePrivacy: (privacy: Partial<PrivacySettings>) => Promise<void>;
+  updatePrivacy: (privacy: Partial<Pick<PrivacySettings, 'showDateOfBirth' | 'showLocation'>>) => Promise<void>;
   uploadAvatar: (file: File) => Promise<void>;
   uploadBanner: (file: File) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
@@ -80,6 +80,7 @@ function mapUser(
     username: response.username,
     displayName: profile?.displayName || currentUser?.displayName || response.username,
     email: response.email,
+    provider: response.provider ?? currentUser?.provider,
     avatarUrl: profile?.avatar || currentUser?.avatarUrl || '',
     bannerUrl: profile?.banner || currentUser?.bannerUrl || '',
     bio: profile?.bio ?? currentUser?.bio ?? '',
@@ -294,7 +295,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   updatePrivacy: async (privacy) => {
     const currentUser = get().user;
     if (!currentUser) throw new Error('Vui lòng đăng nhập để cập nhật quyền riêng tư');
-    await get().updateProfile({ privacy: { ...currentUser.privacy, ...privacy } });
+    const generation = sessionGeneration;
+    const saved = await userService.updatePrivacy(privacy);
+    set((state) => {
+      if (sessionGeneration !== generation || !state.user || state.user.id !== currentUser.id) return state;
+      return { user: { ...state.user, privacy: { ...state.user.privacy, ...saved } } };
+    });
   },
 
   uploadAvatar: async (file) => {
