@@ -1,7 +1,6 @@
 package com.discuss.discuss.repository;
 
 import com.discuss.discuss.entity.RefreshToken;
-import com.discuss.discuss.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -24,6 +23,4 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     @Modifying
     @Query("UPDATE RefreshToken t SET t.revoked = true WHERE t.session.id = :id AND t.revoked = false")
     int revokeBySessionId(@Param("id") String id);
-
-    void deleteByUser(User user);
 }

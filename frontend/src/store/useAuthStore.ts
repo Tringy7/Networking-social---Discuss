@@ -16,7 +16,7 @@ const UI_GENDERS: Record<string, string> = {
   PREFER_NOT_TO_SAY: 'Không muốn tiết lộ',
 };
 
-export interface RegistrationDraft {
+interface RegistrationDraft {
   username: string;
   displayName: string;
   email: string;

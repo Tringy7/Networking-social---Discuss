@@ -1,7 +1,5 @@
 package com.discuss.discuss.entity;
 
-import com.discuss.discuss.enums.CommunityStatus;
-import com.discuss.discuss.enums.CommunityVisibility;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;

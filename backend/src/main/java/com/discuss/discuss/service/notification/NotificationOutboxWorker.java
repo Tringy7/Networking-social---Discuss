@@ -13,9 +13,9 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -44,8 +44,7 @@ public class NotificationOutboxWorker {
         this.transaction = new TransactionTemplate(transactionManager);
     }
 
-    @Scheduled(fixedDelayString = "${app.notifications.poll-delay-ms:3000}")
-    public void processDueEvents() {
+    Optional<LocalDateTime> processDueEvents() {
         var ids = events.findDueIds(OutboxStatus.PENDING, LocalDateTime.now(), PageRequest.of(0, BATCH_SIZE));
         for (Long id : ids) {
             try {
@@ -55,6 +54,10 @@ public class NotificationOutboxWorker {
                 transaction.executeWithoutResult(ignored -> recordFailure(id, failure));
             }
         }
+        if (ids.size() == BATCH_SIZE) {
+            return Optional.of(LocalDateTime.now());
+        }
+        return events.findNextAttempts(OutboxStatus.PENDING, PageRequest.of(0, 1)).stream().findFirst();
     }
 
     private void process(Long id) {

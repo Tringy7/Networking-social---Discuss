@@ -10,7 +10,6 @@ import com.discuss.discuss.service.media.MinioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 
 @Component
 @RequiredArgsConstructor

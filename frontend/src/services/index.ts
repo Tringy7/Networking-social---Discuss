@@ -75,9 +75,6 @@ function requireFeature(available: boolean, name: string): void {
 }
 export const MESSAGES_AVAILABLE = false;
 
-export const POSTS_UNAVAILABLE_MESSAGE = 'Tính năng bài viết hiện chưa khả dụng vì backend chưa có API.';
-
-const postsUnavailableError = () => new Error(POSTS_UNAVAILABLE_MESSAGE);
 let localConversations = demoConversations.map((conversation) => ({
   ...conversation,
   participant: { ...conversation.participant },
@@ -743,33 +740,6 @@ export const messageService = {
       participant: { ...conversation.participant },
       messages: conversation.messages.map((message) => ({ ...message })),
     };
-  },
-  createConversation: async (username: string): Promise<Conversation> => {
-    if (MESSAGES_AVAILABLE) {
-      return apiClient.post<Conversation>('/messages/conversations', { username });
-    }
-    const normalizedUsername = username.trim().replace(/^@/, '');
-    if (!normalizedUsername) throw new Error('Vui lòng nhập tên người dùng.');
-    const existing = localConversations.find(
-      (conversation) => conversation.participant.username === normalizedUsername
-    );
-    if (existing) return existing;
-    const conversation: Conversation = {
-      id: `demo-conversation-${Date.now()}`,
-      participant: {
-        id: `demo-user-${normalizedUsername}`,
-        username: normalizedUsername,
-        displayName: normalizedUsername,
-        avatarUrl: '',
-        status: 'offline',
-      },
-      lastMessage: '',
-      lastMessageTime: '',
-      unreadCount: 0,
-      messages: [],
-    };
-    localConversations = [conversation, ...localConversations];
-    return conversation;
   },
   send: async (conversationId: string, text: string): Promise<ChatMessage> => {
     if (MESSAGES_AVAILABLE) {

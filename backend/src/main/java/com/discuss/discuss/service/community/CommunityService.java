@@ -15,7 +15,6 @@ import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.repository.CommunityRepository;
 import com.discuss.discuss.service.user.UserService;
 import com.discuss.discuss.utils.annotation.auth.HasRole;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;

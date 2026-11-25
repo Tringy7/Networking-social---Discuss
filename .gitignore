@@ -71,3 +71,10 @@ tools/
 
 # Local Taste Skill installation
 /.agents/skills/design-taste-frontend/
+
+# Local Impeccable installation
+/.agents/skills/impeccable/
+/.github/skills/impeccable/
+/.github/agents/impeccable-*.agent.md
+/.github/hooks/impeccable.json
+/.codex/hooks.json

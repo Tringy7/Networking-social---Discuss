@@ -4,7 +4,7 @@ import { useToastStore } from '../../store/useToastStore';
 import LoginSessions from '../../components/settings/LoginSessions';
 import ChangePasswordDialog from '../../components/auth/ChangePasswordDialog';
 import Button from '../../components/ui/Button';
-import { KeyRound, Shield, LogOut, CheckCircle2 } from 'lucide-react';
+import { KeyRound, LogOut, CheckCircle2 } from 'lucide-react';
 
 export const AccountSettingsPage: React.FC = () => {
   const { user, logout } = useAuthStore();

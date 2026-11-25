@@ -1,8 +1,10 @@
 # Notification outbox
 
-Post creation, comment creation, report submission and report review write an event in the same transaction as the business change. The worker polls every 3000 ms by default. Override `app.notifications.poll-delay-ms` to change the interval.
+Bài viết, bình luận, báo cáo và các thao tác thành viên được hỗ trợ ghi sự kiện vào `outbox_events` trong cùng giao dịch nghiệp vụ. Bản ghi có loại sự kiện, ID người dùng liên quan, đối tượng và trạng thái xử lý. Khi giao dịch commit, Spring đánh thức worker để tạo thông báo ở luồng nền. Khi rollback, bản ghi và tín hiệu xử lý cùng bị loại bỏ.
 
-The worker locks and processes one event per transaction. Notifications and completion commit together. Each pair of event ID and recipient ID is unique. Failed events retry after 5, 10, 20 and 40 seconds. After five failures, an event stays in `FAILED` for inspection.
+Worker khóa và xử lý từng sự kiện trong một giao dịch. Thông báo và trạng thái hoàn tất được commit cùng nhau. Mỗi cặp ID sự kiện và ID người nhận là duy nhất. Các lần thử lại được hẹn sau 5, 10, 20 và 40 giây. Sau năm lần thất bại, sự kiện ở lại trạng thái `FAILED` để kiểm tra.
+
+Ứng dụng kiểm tra tồn đọng khi khởi động và mặc định mỗi 5 phút để khôi phục sự kiện nếu tín hiệu sau commit bị mất. Có thể cấu hình khoảng khôi phục bằng `app.notifications.recovery-delay-ms` (mili giây). Khi còn sự kiện hẹn giờ, worker đặt một lịch theo thời điểm gần nhất. Nhật ký quản trị vẫn được lưu riêng trong `admin_activity_logs`.
 
 ## Existing MySQL database
 
@@ -66,7 +68,9 @@ notificationEvents.postCreated(post);
 
 | Hàm | Chức năng và cách dùng |
 |---|---|
-| `processDueEvents()` | Spring gọi định kỳ qua `@Scheduled`. Lấy tối đa 25 ID đang `PENDING` đã đến hạn. Mỗi ID được xử lý trong một giao dịch riêng. |
+| `NotificationOutboxDispatcher.onQueued()` | Nhận tín hiệu sau commit và đặt lịch chạy nền. Các tín hiệu đến gần nhau được gộp. |
+| `NotificationOutboxDispatcher.recoverPending()` | Kích hoạt kiểm tra tồn đọng khi khởi động hoặc đến lịch khôi phục. |
+| `processDueEvents()` | Lấy tối đa 25 ID `PENDING` đã đến hạn, xử lý mỗi ID trong giao dịch riêng và trả mốc chạy tiếp nếu còn việc. |
 | `process(id)` | Khóa sự kiện, chọn nhánh theo loại, tạo thông báo và chuyển sang `COMPLETED`. Nhánh `REPORT_REVIEWED` gửi trực tiếp cho `reporterId`. Sự kiện có thể hoàn tất với 0 người nhận. |
 | `notifyCommunity(event)` | Xử lý `POST_CREATED`. Kiểm tra bài còn được đăng và cộng đồng còn hoạt động. Bỏ tác giả và thành viên đã tắt nhận bài mới. |
 | `notifyComment(event)` | Xử lý `COMMENT_CREATED`. Bỏ qua bình luận đã ẩn hoặc gỡ. Chọn tác giả bài và tác giả bình luận được trả lời, loại người thực hiện, kiểm tra quyền đọc. Nếu hai vai trò trùng người, ưu tiên `COMMENT_REPLIED`. |

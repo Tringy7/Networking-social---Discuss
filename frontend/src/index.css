@@ -138,15 +138,6 @@
   .font-size-lg {
     font-size: 1.125rem;
   }
-
-  /* Density options */
-  .density-compact .density-py {
-    padding-top: 0.4rem;
-    padding-bottom: 0.4rem;
-  }
-  .density-compact .density-p {
-    padding: 0.65rem;
-  }
 }
 
 .skip-link {
@@ -213,16 +204,6 @@
   .font-code {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
-
-/* Focus outline */
-.focus-orange {
-  outline: none;
-  transition: box-shadow var(--duration-fast) ease, border-color var(--duration-fast) ease;
-}
-.focus-orange:focus {
-  border-color: var(--color-orange);
-  box-shadow: 0 0 0 3px var(--color-orange-soft);
-}
 
 [data-ui="popover"] {
   background-color: var(--bg-surface) !important;

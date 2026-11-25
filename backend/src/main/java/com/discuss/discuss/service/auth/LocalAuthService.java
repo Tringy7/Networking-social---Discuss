@@ -1,6 +1,5 @@
 package com.discuss.discuss.service.auth;
 
-import com.discuss.discuss.controller.auth.AuthController;
 import com.discuss.discuss.dto.auth.AuthResult;
 import com.discuss.discuss.dto.auth.AuthResponseDTO;
 import com.discuss.discuss.dto.auth.LoginRequestDTO;

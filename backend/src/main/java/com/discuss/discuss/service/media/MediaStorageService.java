@@ -7,17 +7,14 @@ import com.discuss.discuss.exception.media.MediaErrorCode;
 import com.discuss.discuss.exception.media.MediaException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -31,18 +28,11 @@ public class MediaStorageService {
             "image/webp", ".webp"
     );
 
-    /** Key hợp lệ do backend sinh ra: thư mục gốc cố định, chỉ ký tự an toàn, đuôi jpg/png/webp. */
-    private static final Pattern SAFE_KEY = Pattern.compile(
-            "^(profiles|posts|communities)/[A-Za-z0-9_\\-]+(/[A-Za-z0-9_\\-]+)*\\.(jpg|png|webp)$");
-
     /** Ảnh comment là private, không cho cache. */
     private static final Map<String, String> PRIVATE_HEADERS = Map.of("Cache-Control", "private, no-store");
 
     private final ImageProcessingService imageProcessor;
     private final MinioService minioService;
-
-    @Value("${media.image.max-files-per-request}")
-    private int maxFiles;
 
     // ------------------------------------------------------------------ public API
 
@@ -53,28 +43,6 @@ public class MediaStorageService {
 
     public StoredImageDTO storePostImage(Long postId, MultipartFile file, Consumer<String> reserve) {
         return upload(file, ImageKind.POST, ImageKind.POST.prefixFor(postId), reserve);
-    }
-
-    /** All-or-nothing: if any image fails, delete the images already uploaded in this request. */
-    public List<StoredImageDTO> storePostImages(String postId, List<MultipartFile> files) {
-        if (files == null || files.isEmpty()) {
-            throw new MediaException(MediaErrorCode.EMPTY_FILE, "No files provided");
-        }
-        if (files.size() > maxFiles) {
-            throw new MediaException(MediaErrorCode.TOO_MANY_FILES,
-                    "A maximum of " + maxFiles + " images is allowed per request");
-        }
-
-        List<StoredImageDTO> done = new ArrayList<>();
-        try {
-            for (MultipartFile f : files) {
-                done.add(store(ImageKind.POST, postId, f));
-            }
-            return done;
-        } catch (RuntimeException e) {
-            done.forEach(s -> safeDelete(s.getObjectKey())); // safeDelete never throws
-            throw e;
-        }
     }
 
     public void validateCommentImages(List<MultipartFile> images) {
@@ -98,10 +66,6 @@ public class MediaStorageService {
         } catch (Exception e) {
             log.warn("[MEDIA-ORPHAN] key={} reason={}", objectKey, e.getMessage());
         }
-    }
-
-    public boolean isManagedKey(String key) {
-        return key != null && key.length() < 300 && SAFE_KEY.matcher(key).matches();
     }
 
     // ------------------------------------------------------------------ internal

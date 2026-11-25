@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { AppearanceSettings } from '../types';
 
-export interface AccentColorPreset {
+interface AccentColorPreset {
   id: string;
   name: string;
   primary: string;

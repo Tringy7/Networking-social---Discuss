@@ -9,8 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CommunityInfoRepository extends JpaRepository<CommunityInfo,Long> {
     boolean existsByCategoryId(Long categoryId);
 
-    Optional<CommunityInfo> findByCommunityId(Long communityId);
-
     @EntityGraph(attributePaths = "category")
     Optional<CommunityInfo> findByCommunity(Community community);
 }

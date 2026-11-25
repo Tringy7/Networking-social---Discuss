@@ -10,7 +10,7 @@ function imageExpirations(comments: Comment[]): number[] {
 }
 
 /** One renewal for the whole post, with retries and foreground-tab recovery. */
-export function startCommentImageRefresh(comments: Comment[], refresh: () => Promise<void>): () => void {
+function startCommentImageRefresh(comments: Comment[], refresh: () => Promise<void>): () => void {
   const expirations = imageExpirations(comments);
   if (!expirations.length) return () => {};
   const valid = expirations.filter(Number.isFinite);

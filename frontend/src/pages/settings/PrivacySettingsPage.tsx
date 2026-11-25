@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import Button from '../../components/ui/Button';
-import { Lock, Eye, Check, RotateCcw } from 'lucide-react';
+import { Lock, Check, RotateCcw } from 'lucide-react';
 
 export const PrivacySettingsPage: React.FC = () => {
   const { user, updatePrivacy } = useAuthStore();
