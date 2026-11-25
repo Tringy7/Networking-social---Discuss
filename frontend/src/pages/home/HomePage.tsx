@@ -8,6 +8,7 @@ import PostCard from '../../components/post/PostCardView';
 import RightSidebar from '../../components/layout/RightSidebar';
 import Avatar from '../../components/ui/Avatar';
 import Button from '../../components/ui/Button';
+import EditorialTabs from '../../components/ui/EditorialTabs';
 import { Flame, Clock, MessageSquare, ArrowUpRight, ImagePlus } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useToastStore } from '../../store/useToastStore';
@@ -48,15 +49,9 @@ export default function HomePage() {
         <p><strong>Chào mừng đến với DISCUSS!</strong> Tìm cộng đồng của bạn và cùng trò chuyện.</p>
         <Link to="/login"><Button variant="primary" size="sm" rightIcon={<ArrowUpRight size={15} />}>Tham gia ngay</Button></Link>
       </div>}
-      <nav className="feed-tabs" aria-label="Sắp xếp bảng tin">
-        {tabs.map(({ id, label, icon: Icon }) => <button key={id} type="button" aria-pressed={currentTab === id}
-          className={`feed-tab ${currentTab === id ? 'is-selected' : ''}`}
-          onClick={() => { setSearchParams({ tab: id }); setDisplayCount(6); }}>
-          <Icon aria-hidden="true" /><span>{label}</span>
-          {currentTab === id && <motion.span className="tab-indicator" layoutId="feed-tab" transition={quiet ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 35 }} />}
-        </button>)}
-        <span className="feed-count">{sorted.length} bài viết</span>
-      </nav>
+      <EditorialTabs label="Sắp xếp bảng tin" value={currentTab}
+        options={tabs.map(({ id, label, icon: Icon }) => ({ id, label, icon: <Icon aria-hidden="true" /> }))}
+        onChange={(id) => { setSearchParams({ tab: id }); setDisplayCount(6); }} />
       {!POSTS_AVAILABLE && <p role="status" className="feed-notice">Bài viết mẫu · Tương tác được lưu trong phiên hiện tại.</p>}
       {loading && <p role="status" className="feed-notice">Đang tải bài viết…</p>}
       <div className="discussion-list">
@@ -66,7 +61,10 @@ export default function HomePage() {
           <PostCard post={post} />
         </motion.div>)}
       </div>
-      {!loading && sorted.length === 0 && <section className="editorial-empty"><h2>Cuộc trò chuyện tiếp theo?</h2><p>Hãy là người đầu tiên mở đầu một chủ đề.</p></section>}
+      {!loading && sorted.length === 0 && <section className="editorial-empty">
+        <h2>Chưa có bài viết để hiển thị</h2>
+        <Link className="text-sm font-semibold text-[var(--color-orange-ink)]" to="/explore">Khám phá cộng đồng</Link>
+      </section>}
       {(displayCount < sorted.length || hasMore) && <Button variant="secondary" className="mt-5 w-full" disabled={loading} onClick={async () => {
         if (displayCount >= sorted.length) {
           try { await loadMore(); } catch (error) { addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); }

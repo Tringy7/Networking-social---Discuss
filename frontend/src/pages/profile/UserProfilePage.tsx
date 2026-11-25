@@ -17,7 +17,6 @@ import {
   Calendar,
   MapPin,
   Cake,
-  Settings,
   Edit3,
   Share2,
   FileText,
@@ -25,7 +24,6 @@ import {
   Award,
   BadgeCheck,
   Eye,
-  AtSign,
   Mail,
   UserRound,
 } from 'lucide-react';
@@ -143,7 +141,6 @@ export const UserProfilePage: React.FC = () => {
   const genderLabel = genderLabels[profileUser.gender?.toUpperCase() ?? ''];
   const birthDate = profileUser.dateOfBirth?.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$3/$2/$1');
   const profileFacts = [
-    { label: 'Tên người dùng', value: `@${profileUser.username}`, icon: AtSign },
     { label: 'Tham gia từ', value: joinedLabel, icon: Calendar },
     { label: 'Giới tính', value: genderLabel, icon: UserRound },
     { label: 'Địa điểm', value: (isMe || profileUser.privacy.showLocation) && profileUser.location, icon: MapPin },
@@ -227,12 +224,13 @@ export const UserProfilePage: React.FC = () => {
         <EditorialTabs label="Hoạt động của người dùng" options={[{ id: 'posts', label: 'Bài viết', icon: <FileText /> }, { id: 'comments', label: 'Bình luận', icon: <MessageSquare /> }]} value={activeTab} onChange={setActiveTab} />
 
         {/* Tab content */}
-        {postsLoading && <p role="status">Đang tải bài viết…</p>}
         {activeTab === 'posts' && (
           <div className="discussion-list">
             {profileUser.privacy.showPostsOnProfile ? (
               userPosts.length > 0 ? (
                 userPosts.map((p) => <PostCard key={p.id} post={p} />)
+              ) : postsLoading ? (
+                <p className="profile-empty" role="status">Đang tải bài viết…</p>
               ) : (
                 <div className="profile-empty" role="status">
                   <FileText size={24} aria-hidden="true" />
@@ -268,19 +266,7 @@ export const UserProfilePage: React.FC = () => {
 
         <aside className="profile-about" aria-label="Giới thiệu người dùng">
           <section className="profile-about-content">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-[var(--text-primary)]">Giới thiệu</h2>
-              {isMe && (
-                <Link
-                  to="/settings/profile"
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border-color)] text-[var(--text-secondary)] transition-colors hover:border-[var(--color-orange)] hover:text-[var(--color-orange)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-orange)]"
-                  title="Cài đặt hồ sơ"
-                  aria-label="Cài đặt hồ sơ"
-                >
-                  <Settings className="h-4 w-4" />
-                </Link>
-              )}
-            </div>
+            <h2 className="font-semibold text-[var(--text-primary)]">Giới thiệu</h2>
             {profileUser.bio.trim() ? (
               <p className="entity-about-description whitespace-pre-wrap break-words">{profileUser.bio}</p>
             ) : isMe && (
@@ -288,25 +274,26 @@ export const UserProfilePage: React.FC = () => {
                 Thêm tiểu sử
               </Link>
             )}
+            {reputation && (
+              <div className="profile-reputation">
+                <Award className="h-5 w-5 shrink-0 text-[var(--color-orange-ink)]" aria-hidden="true" />
+                <div>
+                  <strong>{reputation.score.toLocaleString('vi-VN')} điểm uy tín</strong>
+                  <span>{reputationRankLabels[reputation.rank]}</span>
+                </div>
+              </div>
+            )}
             <dl className="profile-facts">
               {profileFacts.map(({ label, value, icon: Icon }) => value && (
                 <div key={label} className="flex items-start gap-2.5">
                   <Icon className="h-4 w-4 shrink-0 text-[var(--text-muted)]" aria-hidden="true" />
                   <div className="min-w-0">
-                    <dt className="text-xs text-[var(--text-muted)]">{label}</dt>
-                    <dd className="text-[var(--text-primary)]">{value}</dd>
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
                   </div>
                 </div>
               ))}
             </dl>
-            <div className="profile-post-count">
-              <Award className="h-4 w-4 text-[var(--color-orange)]" />
-              <span>{userPosts.length} bài viết</span>
-            </div>
-            {reputation && <div className="profile-post-count">
-              <Award className="h-4 w-4 text-[var(--color-info)]" aria-hidden="true" />
-              <span>{reputation.score.toLocaleString('vi-VN')} điểm uy tín · {reputationRankLabels[reputation.rank]}</span>
-            </div>}
           </section>
         </aside>
       </div>

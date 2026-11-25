@@ -188,19 +188,20 @@ export const PostDetailPage: React.FC = () => {
     setCollapsedThreads((prev) => ({ ...prev, [commentId]: !prev[commentId] }));
   };
 
-  const renderComment = (cmt: Comment, isNested = false) => {
+  const renderComment = (cmt: Comment, depth = 0) => {
     const isCollapsed = collapsedThreads[cmt.id];
+    const postedAt = new Date(cmt.createdAt);
 
     return (
       <div
         key={cmt.id}
         id={`comment-${cmt.id}`}
-        className={`text-left space-y-2.5 ${
-          isNested ? 'ml-6 sm:ml-8 pl-3' : 'pt-4'
+        className={`min-w-0 text-left space-y-2.5 ${
+          depth === 0 ? 'pt-4' : depth <= 2 ? 'comment-thread' : ''
         }`}
       >
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
+        <div className="flex items-start justify-between gap-2 text-xs">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 [overflow-wrap:anywhere]">
             <Avatar src={cmt.author.avatarUrl} alt={cmt.author.displayName} size="xs" />
             <Link
               to={`/u/${cmt.author.username}`}
@@ -214,8 +215,11 @@ export const PostDetailPage: React.FC = () => {
                 Tác giả
               </span>
             )}
-            <span className="text-[var(--text-muted)]">·</span>
-            <span className="text-[var(--text-muted)]">vừa xong</span>
+            {!Number.isNaN(postedAt.getTime()) && (
+              <time className="text-[var(--text-muted)]" dateTime={cmt.createdAt}>
+                {postedAt.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </time>
+            )}
           </div>
 
           {cmt.replies && cmt.replies.length > 0 && (
@@ -245,7 +249,7 @@ export const PostDetailPage: React.FC = () => {
 
             <CommentAttachmentList attachments={cmt.attachments} onRefresh={refreshImages} />
             {/* Comment Reactions & Reply Button */}
-            <div className="flex items-center gap-4 text-xs text-[var(--text-muted)] pl-8">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--text-muted)] pl-3 sm:pl-8">
               <CommentVotes comment={cmt} />
 
               <button
@@ -264,14 +268,14 @@ export const PostDetailPage: React.FC = () => {
 
             {/* Inline reply composer */}
             {replyingTo === cmt.id && (
-              <div className="pl-8 pt-2 flex flex-wrap items-center gap-2">
+              <div className="pl-3 sm:pl-8 pt-2 flex flex-wrap items-center gap-2">
                 <input
                   type="text"
                   value={replyInput}
                   onChange={(e) => setReplyInput(e.target.value)}
                   aria-label={`Trả lời @${cmt.author.username}`}
                   placeholder={`Trả lời @${cmt.author.username}...`}
-                  className="flex-1 bg-[var(--bg-main)] border border-[var(--bg-elevated)] focus:border-[var(--color-orange)] rounded-xl px-3 py-1.5 text-xs text-[var(--text-primary)] outline-none"
+                  className="min-w-0 flex-1 basis-32 bg-[var(--bg-main)] border border-[var(--border-color)] focus:border-[var(--color-orange-ink)] rounded-[var(--radius-control)] px-3 py-1.5 text-xs text-[var(--text-primary)]"
                   autoFocus
                 />
                 <Button variant="primary" size="sm" disabled={commentPending || (!replyInput.trim() && !replyFiles.length)} onClick={() => handleAddReply(cmt.id)}>
@@ -288,7 +292,7 @@ export const PostDetailPage: React.FC = () => {
             {/* Nested replies recursive rendering */}
             {cmt.replies && cmt.replies.length > 0 && (
               <div className="space-y-3 pt-2">
-                {cmt.replies.map((reply) => renderComment(reply, true))}
+                {cmt.replies.map((reply) => renderComment(reply, depth + 1))}
               </div>
             )}
           </>

@@ -60,7 +60,9 @@ export const Navbar: React.FC = () => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchButtonRef = useRef<HTMLButtonElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuButtonRef = useRef<HTMLButtonElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const notificationButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -120,6 +122,12 @@ export const Navbar: React.FC = () => {
       if (event.key === 'Escape' && !event.isComposing) {
         if (isNotifOpen && notifRef.current?.contains(document.activeElement)) {
           notificationButtonRef.current?.focus();
+        }
+        if (isUserMenuOpen && userMenuRef.current?.contains(document.activeElement)) {
+          userMenuButtonRef.current?.focus();
+        }
+        if (isMobileSearchOpen && searchRef.current?.contains(document.activeElement)) {
+          mobileSearchButtonRef.current?.focus();
         }
         setIsMobileSearchOpen(false);
         setIsSearchOpen(false);
@@ -184,7 +192,7 @@ export const Navbar: React.FC = () => {
               onFocus={() => setIsSearchOpen(true)}
               placeholder="Tìm nội dung, u/người dùng, c/cộng đồng..."
               aria-label="Tìm nội dung, u/ để tìm người dùng, c/ để tìm cộng đồng"
-              className="w-full h-10 pl-10 pr-20 sm:pr-9 bg-[var(--bg-main)] border border-[var(--border-color)] hover:border-[var(--border-hover)] focus:border-[var(--color-orange-ink)] rounded-full text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus:ring-2 focus:ring-[var(--focus-ring)]"
+              className="w-full min-h-10 pl-10 pr-20 sm:pr-9 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--border-hover)] focus:border-[var(--color-orange-ink)] rounded-[var(--radius-control)] text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus:ring-2 focus:ring-[var(--focus-ring)]"
             />
             {searchQuery && (
               <button
@@ -304,6 +312,7 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center gap-1 sm:gap-3 shrink-0">
           <ThemeToggle />
           <button
+            ref={mobileSearchButtonRef}
             type="button"
             onClick={() => {
               setIsMobileSearchOpen((open) => !open);
@@ -374,10 +383,13 @@ export const Navbar: React.FC = () => {
               {/* User Dropdown */}
               <div ref={userMenuRef} className="relative">
                 <button
+                  ref={userMenuButtonRef}
+                  type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full hover:bg-[var(--bg-elevated)] border border-transparent hover:border-[var(--border-color)] transition-[background-color,border-color] duration-[var(--duration-fast)] cursor-pointer"
                   aria-label="Mở menu tài khoản"
                   aria-expanded={isUserMenuOpen}
+                  aria-controls={isUserMenuOpen ? 'navbar-account-menu' : undefined}
                 >
                   <Avatar src={user.avatarUrl} alt={user.displayName} size="sm" isOnline />
                   <div className="hidden xl:flex flex-col text-left">
@@ -390,7 +402,7 @@ export const Navbar: React.FC = () => {
                 </button>
 
                 {isUserMenuOpen && (
-                  <div data-ui="popover" className="absolute right-0 top-12 w-64 border p-2 z-50 text-left space-y-1">
+                  <div id="navbar-account-menu" data-ui="popover" className="absolute right-0 top-12 w-64 border p-2 z-50 text-left space-y-1">
                     <div className="px-3 py-2 border-b border-[var(--border-color)] mb-1">
                       <div className="text-xs font-semibold text-[var(--text-primary)]">{user.displayName}</div>
                       <div className="text-xs text-[var(--text-muted)]">@{user.username}</div>
@@ -449,15 +461,11 @@ export const Navbar: React.FC = () => {
             </>
           ) : (
             <div className="flex items-center gap-2">
-              <Link to="/login">
-                <Button variant="ghost" size="sm">
-                  Đăng nhập
-                </Button>
+              <Link to="/login" className="inline-flex min-h-10 items-center rounded-[var(--radius-control)] px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]">
+                Đăng nhập
               </Link>
-              <Link to="/register" className="hidden sm:block">
-                <Button variant="primary" size="sm">
-                  Đăng ký
-                </Button>
+              <Link to="/register" className="hidden min-h-10 items-center rounded-[var(--radius-control)] bg-[var(--action-bg)] px-3 text-sm font-semibold text-[var(--action-ink)] hover:bg-[var(--action-hover)] sm:inline-flex">
+                Đăng ký
               </Link>
             </div>
           )}

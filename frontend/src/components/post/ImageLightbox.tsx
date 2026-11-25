@@ -1,7 +1,18 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import './postContent.css';
+
+function LightboxImage({ url, alt }: { url: string; alt: string }) {
+  const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
+  if (status === 'error') return <p className="post-lightbox-status" role="status">Không thể tải ảnh này.</p>;
+
+  return <>
+    {status === 'loading' && <p className="post-lightbox-status" role="status">Đang tải ảnh…</p>}
+    <img className="post-lightbox-image" src={url} alt={alt}
+      onLoad={() => setStatus('loaded')} onError={() => setStatus('error')} />
+  </>;
+}
 
 export default function ImageLightbox({ images, index, onChange, onClose }: {
   images: { url: string; alt?: string }[];
@@ -26,7 +37,7 @@ export default function ImageLightbox({ images, index, onChange, onClose }: {
       if (event.key === 'ArrowRight') { event.preventDefault(); move(1); }
     }}>
     <button autoFocus type="button" className="post-lightbox-close" aria-label="Đóng ảnh" onClick={onClose}><X /></button>
-    <img className="post-lightbox-image" src={current.url} alt={current.alt || `Ảnh ${index + 1}`} />
+    <LightboxImage key={current.url} url={current.url} alt={current.alt || `Ảnh ${index + 1}`} />
     {images.length > 1 && <>
       <button type="button" className="post-lightbox-prev" aria-label="Ảnh trước" onClick={() => move(-1)}><ChevronLeft /></button>
       <button type="button" className="post-lightbox-next" aria-label="Ảnh tiếp" onClick={() => move(1)}><ChevronRight /></button>

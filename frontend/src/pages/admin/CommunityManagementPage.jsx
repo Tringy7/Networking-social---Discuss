@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
-import { Eye, Image as ImageIcon, LockKeyhole, Unlock, UserRound } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Eye, LockKeyhole, Unlock } from 'lucide-react';
+import EntityBanner from '../../components/ui/EntityBanner';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
 import { getAdminCommunityDetail, listAdminCommunities, lockAdminCommunity, searchAdminCommunities, unlockAdminCommunity } from '../../services/adminCommunityService.js';
@@ -7,7 +9,8 @@ import {
   AdminAvatar,
   AdminConfirmDialog,
   AdminDataTable,
-  AdminDetailDrawer,
+  AdminDetailLink,
+  AdminDetailPage,
   AdminErrorState,
   AdminEmptyState,
   AdminFields,
@@ -21,6 +24,13 @@ import {
   adminNumber,
 } from '../../components/admin/AdminUI.jsx';
 
+export function CommunityDetailPage() {
+  const { communityId } = useParams();
+  return <AdminDetailPage title="Hồ sơ cộng đồng" backTo="/admin/communities" backLabel="Về danh sách cộng đồng">
+    <CommunityDetailContent key={communityId} communityId={communityId} />
+  </AdminDetailPage>;
+}
+
 function CommunityDetailContent({ communityId }) {
   const detail = useAdminResource(useCallback(() => getAdminCommunityDetail(communityId), [communityId]));
 
@@ -32,40 +42,35 @@ function CommunityDetailContent({ communityId }) {
 
   return (
     <div className="admin-community-detail">
-      <section className="admin-community-detail-section" aria-labelledby="admin-community-information-title">
-        <h2 id="admin-community-information-title">Community information</h2>
-        <div className="admin-community-detail-media">
-          {community.avatarUrl
-            ? <img className="admin-community-detail-avatar" src={community.avatarUrl} alt={`c/${community.name} avatar`} />
-            : <div className="admin-community-detail-avatar-placeholder"><UserRound size={24} aria-hidden="true" /><span>No avatar</span></div>}
-          {community.bannerUrl
-            ? <img className="admin-community-detail-banner" src={community.bannerUrl} alt={`c/${community.name} banner`} />
-            : <div className="admin-community-detail-banner-placeholder"><ImageIcon size={20} aria-hidden="true" /><span>No banner</span></div>}
+      <header className="admin-record-hero">
+        <EntityBanner variant="community" src={community.bannerUrl} alt="" />
+        <div className="admin-record-identity">
+          <AdminAvatar name={community.name} src={community.avatarUrl} square />
+          <div><h2>c/{community.name}</h2><p>{community.categoryName}</p></div>
+          <AdminStatusBadge status={community.status} />
         </div>
+      </header>
+      <section className="admin-community-detail-section" aria-labelledby="admin-community-information-title">
+        <h2 id="admin-community-information-title">Thông tin cộng đồng</h2>
         <AdminFields items={[
-          ['Community ID', community.id],
-          ['Community Name', `c/${community.name}`],
-          ['Description', community.description || '—'],
-          ['Rules', community.rules || '—'],
-          ['Category ID', community.categoryId],
-          ['Category Name', community.categoryName],
-          ['Visibility', community.visibility === 'PUBLIC' ? 'Public' : community.visibility === 'PRIVATE' ? 'Private' : '—'],
-          ['Status', <AdminStatusBadge status={community.status} />],
-          ['Member Count', adminNumber(community.memberCount)],
-          ['Created At', adminDate(community.createdAt)],
+          ['ID cộng đồng', community.id],
+          ['Mô tả', community.description || '—'],
+          ['Nội quy', community.rules || '—'],
+          ['ID danh mục', community.categoryId],
+          ['Quyền hiển thị', community.visibility === 'PUBLIC' ? 'Công khai' : community.visibility === 'PRIVATE' ? 'Riêng tư' : '—'],
+          ['Thành viên', adminNumber(community.memberCount)],
+          ['Ngày tạo', adminDate(community.createdAt)],
         ]} />
       </section>
 
       <section className="admin-community-detail-section" aria-labelledby="admin-community-owner-title">
-        <h2 id="admin-community-owner-title">Owner</h2>
+        <h2 id="admin-community-owner-title">Chủ cộng đồng</h2>
         <div className="admin-community-owner-profile">
-          {owner.avatarUrl
-            ? <img className="admin-community-owner-avatar" src={owner.avatarUrl} alt={`${owner.displayName || owner.username || 'Owner'} avatar`} />
-            : <div className="admin-community-owner-avatar-placeholder"><UserRound size={21} aria-hidden="true" /><span>No avatar</span></div>}
+          <AdminAvatar name={owner.displayName || owner.username || 'Chủ cộng đồng'} src={owner.avatarUrl} />
           <AdminFields items={[
-            ['User ID', owner.userId],
-            ['Username', owner.username ? `@${owner.username}` : '—'],
-            ['Display Name', owner.displayName],
+            ['ID người dùng', owner.userId],
+            ['Tên người dùng', owner.username ? `@${owner.username}` : '—'],
+            ['Tên hiển thị', owner.displayName],
           ]} />
         </div>
       </section>
@@ -88,20 +93,19 @@ export default function CommunityManagementPage() {
     [page, size, search, status, visibility],
   ));
   const communities = result.data?.empty ? [] : result.data?.content || [];
-  const [selectedId, setSelectedId] = useState(null);
   const [action, setAction] = useState(null);
 
   const requestLock = community => setAction({
-    title: 'Lock community',
-    label: 'Lock community',
+    title: 'Khóa cộng đồng',
+    label: 'Khóa cộng đồng',
     danger: true,
     description: `The community c/${community.name} will be locked and its status changed to BANED. Continue?`,
     execute: () => lockAdminCommunity(community.id),
     success: `Community c/${community.name} locked successfully.`,
   });
   const requestUnlock = community => setAction({
-    title: 'Unlock community',
-    label: 'Unlock community',
+    title: 'Mở lại cộng đồng',
+    label: 'Mở lại cộng đồng',
     description: `The community c/${community.name} will be unlocked and its status changed to ACTIVE. Continue?`,
     execute: () => unlockAdminCommunity(community.id),
     success: `Community c/${community.name} unlocked successfully.`,
@@ -110,62 +114,62 @@ export default function CommunityManagementPage() {
   const columns = [
     {
       key: 'avatar',
-      label: 'Community Avatar',
+      label: 'Ảnh đại diện',
       render: community => <AdminAvatar name={community.name || 'Community'} src={community.avatarUrl} square />,
     },
     {
       key: 'name',
-      label: 'Community Name',
-      render: community => <button className="admin-name-button" type="button" onClick={() => setSelectedId(community.id)}><strong>c/{community.name}</strong></button>,
+      label: 'Tên cộng đồng',
+      render: community => <AdminDetailLink className="admin-name-button" to={`/admin/communities/${community.id}`}><strong>c/{community.name}</strong></AdminDetailLink>,
       className: 'admin-title-cell',
     },
     {
       key: 'description',
-      label: 'Description',
+      label: 'Mô tả',
       render: community => <span className="admin-community-description">{community.description || '—'}</span>,
       className: 'admin-wrap-cell',
     },
     {
       key: 'category',
-      label: 'Category',
+      label: 'Danh mục',
       render: community => community.categoryName || '—',
     },
     {
       key: 'visibility',
-      label: 'Visibility',
-      render: community => community.visibility === 'PRIVATE' ? 'Private' : community.visibility === 'PUBLIC' ? 'Public' : '—',
+      label: 'Quyền hiển thị',
+      render: community => community.visibility === 'PRIVATE' ? 'Riêng tư' : community.visibility === 'PUBLIC' ? 'Công khai' : '—',
     },
     {
       key: 'status',
-      label: 'Status',
+      label: 'Trạng thái',
       render: community => <AdminStatusBadge status={community.status} />,
     },
     {
       key: 'members',
-      label: 'Member Count',
+      label: 'Thành viên',
       numeric: true,
       render: community => adminNumber(community.memberCount),
     },
     {
       key: 'owner',
-      label: 'Owner',
+      label: 'Chủ cộng đồng',
       render: community => community.owner?.displayName || community.owner?.username || '—',
       className: 'admin-wrap-cell',
     },
     {
       key: 'createdAt',
-      label: 'Created At',
+      label: 'Ngày tạo',
       numeric: true,
       render: community => adminDate(community.createdAt),
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: 'Thao tác',
       className: 'admin-actions-cell',
       render: community => <div className="admin-community-actions">
-        <button className="admin-community-view" type="button" onClick={() => setSelectedId(community.id)} aria-label={`View c/${community.name}`} title="View details"><Eye size={17} /></button>
-        {community.status === 'ACTIVE' && <button className="admin-community-lock" type="button" onClick={() => requestLock(community)} title="Lock community"><LockKeyhole size={14} /><span>Lock</span></button>}
-        {community.status === 'BANED' && <button className="admin-community-unlock" type="button" onClick={() => requestUnlock(community)} title="Unlock community"><Unlock size={14} /><span>Unlock</span></button>}
+        <AdminDetailLink className="admin-community-view" to={`/admin/communities/${community.id}`} aria-label={`Xem hồ sơ c/${community.name}`} title="Xem hồ sơ"><Eye size={17} aria-hidden="true" /></AdminDetailLink>
+        {community.status === 'ACTIVE' && <button className="admin-community-lock" type="button" onClick={() => requestLock(community)} title="Khóa cộng đồng"><LockKeyhole size={14} /><span>Khóa</span></button>}
+        {community.status === 'BANED' && <button className="admin-community-unlock" type="button" onClick={() => requestUnlock(community)} title="Mở lại cộng đồng"><Unlock size={14} /><span>Mở lại</span></button>}
       </div>,
     },
   ];
@@ -173,8 +177,8 @@ export default function CommunityManagementPage() {
   return (
     <div className="admin-page admin-community-management">
       <AdminPageHeader
-        title="Community Management"
-        description="Review community profiles, visibility, and activity."
+        title="Quản lý cộng đồng"
+        description="Tra cứu cộng đồng, quyền hiển thị và trạng thái."
         loading={result.loading}
         onRefresh={result.reload}
       />
@@ -183,29 +187,29 @@ export default function CommunityManagementPage() {
         <AdminSearchInput
           value={search}
           onChange={value => query.update({ search: value }, true)}
-          placeholder="Search community name…"
-          label="Search communities"
+          placeholder="Tìm theo tên cộng đồng…"
+          label="Tìm cộng đồng"
           maxLength={200}
         />
         <div className="admin-filter-bar">
           <AdminFilter
-            label="Status"
+            label="Trạng thái"
             value={status}
             onChange={value => query.update({ status: value })}
             options={[
-              ['', 'All statuses'],
-              ['ACTIVE', 'Active'],
-              ['BANED', 'Baned'],
+              ['', 'Tất cả trạng thái'],
+              ['ACTIVE', 'Đang hoạt động'],
+              ['BANED', 'Đã cấm'],
             ]}
           />
           <AdminFilter
-            label="Visibility"
+            label="Quyền hiển thị"
             value={visibility}
             onChange={value => query.update({ visibility: value })}
             options={[
-              ['', 'All visibility'],
-              ['PUBLIC', 'Public'],
-              ['PRIVATE', 'Private'],
+              ['', 'Tất cả quyền hiển thị'],
+              ['PUBLIC', 'Công khai'],
+              ['PRIVATE', 'Riêng tư'],
             ]}
           />
         </div>
@@ -214,10 +218,10 @@ export default function CommunityManagementPage() {
       <div className="admin-list-meta">
         <span role="status">
           {result.loading
-            ? 'Loading communities…'
+            ? 'Đang tải cộng đồng…'
             : result.error
-              ? 'Could not load communities'
-              : `${adminNumber(result.data?.totalElements)} ${search ? 'matching communities' : 'communities'}`}
+              ? 'Không thể tải cộng đồng'
+              : `${adminNumber(result.data?.totalElements)} ${search ? 'cộng đồng phù hợp' : 'cộng đồng'}`}
         </span>
         {(search || status || visibility) && <button type="button" onClick={query.reset}>Clear filters</button>}
       </div>
@@ -229,8 +233,8 @@ export default function CommunityManagementPage() {
         loading={result.loading}
         error={result.error}
         retry={result.reload}
-        caption="Admin community list"
-        empty={<AdminEmptyState title="No communities found" description={search ? 'No communities match this search and the selected filters.' : 'Try changing the status or visibility filters.'} onReset={query.reset} />}
+        caption="Danh sách cộng đồng"
+        empty={<AdminEmptyState title="Không tìm thấy cộng đồng" description={search ? 'Không có cộng đồng khớp từ khóa và bộ lọc.' : 'Thử chọn trạng thái hoặc quyền hiển thị khác.'} onReset={query.reset} />}
       />
 
       <AdminPagination
@@ -240,12 +244,6 @@ export default function CommunityManagementPage() {
         disabled={result.loading || !!result.error}
         onChange={query.update}
       />
-
-      {selectedId != null && (
-        <AdminDetailDrawer title="Community details" onClose={() => setSelectedId(null)}>
-          <CommunityDetailContent communityId={selectedId} />
-        </AdminDetailDrawer>
-      )}
 
       {action && <AdminConfirmDialog action={action} onClose={() => setAction(null)} onSuccess={result.reload} />}
     </div>

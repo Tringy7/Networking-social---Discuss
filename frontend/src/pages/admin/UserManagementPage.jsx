@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
-import { Eye, Image as ImageIcon, LockKeyhole, Unlock, UserRound } from 'lucide-react';
+import { Eye, LockKeyhole, Unlock } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import EntityBanner from '../../components/ui/EntityBanner';
 import { adminService } from '../../services';
 import { useAuthStore } from '../../store/useAuthStore';
 import useAdminQuery from '../../hooks/useAdminQuery';
@@ -8,7 +10,8 @@ import {
   AdminAvatar,
   AdminConfirmDialog,
   AdminDataTable,
-  AdminDetailDrawer,
+  AdminDetailLink,
+  AdminDetailPage,
   AdminEmptyState,
   AdminFields,
   AdminFilter,
@@ -32,6 +35,13 @@ function UserIdentity({ user }) {
   );
 }
 
+export function UserDetailPage() {
+  const { userId } = useParams();
+  return <AdminDetailPage title="Hồ sơ người dùng" backTo="/admin/users" backLabel="Về danh sách người dùng">
+    <UserDetailContent key={userId} userId={userId} />
+  </AdminDetailPage>;
+}
+
 function UserDetailContent({ userId }) {
   const detail = useAdminResource(useCallback(() => adminService.getUserDetail(userId), [userId]));
 
@@ -41,43 +51,41 @@ function UserDetailContent({ userId }) {
   const user = detail.data;
   const profile = user.profile || {};
   const statistics = user.statistics || {};
+  const displayName = profile.displayName || user.username;
 
   return (
     <div className="admin-user-detail">
+      <header className="admin-record-hero">
+        <EntityBanner variant="user" src={profile.banner} alt="" />
+        <div className="admin-record-identity">
+          <AdminAvatar name={displayName} src={profile.avatar} />
+          <div><h2>{displayName}</h2><p>@{user.username}</p></div>
+        </div>
+      </header>
       <section className="admin-user-detail-section" aria-labelledby="admin-user-basic-title">
-        <h2 id="admin-user-basic-title">Basic information</h2>
+        <h2 id="admin-user-basic-title">Thông tin tài khoản</h2>
         <AdminFields items={[
-          ['User ID', user.userId],
-          ['Username', `@${user.username}`],
-          ['Joined At', adminDate(user.joinedAt)],
+          ['ID người dùng', user.userId],
+          ['Ngày tham gia', adminDate(user.joinedAt)],
         ]} />
       </section>
 
       <section className="admin-user-detail-section" aria-labelledby="admin-user-profile-title">
-        <h2 id="admin-user-profile-title">Profile</h2>
-        <div className="admin-user-profile-media">
-          {profile.avatar
-            ? <img className="admin-user-avatar-image" src={profile.avatar} alt={`${profile.displayName || user.username} avatar`} />
-            : <div className="admin-user-avatar-placeholder"><UserRound size={24} aria-hidden="true" /><span>No avatar</span></div>}
-          {profile.banner
-            ? <img className="admin-user-banner-image" src={profile.banner} alt={`${profile.displayName || user.username} banner`} />
-            : <div className="admin-user-banner-placeholder"><ImageIcon size={20} aria-hidden="true" /><span>No banner</span></div>}
-        </div>
+        <h2 id="admin-user-profile-title">Giới thiệu</h2>
         <AdminFields items={[
-          ['Display Name', profile.displayName],
-          ['Bio', profile.bio || '—'],
-          ['Date Of Birth', profile.dateOfBirth ? adminDate(profile.dateOfBirth) : '—'],
-          ['Gender', profile.gender],
-          ['Location', profile.location],
+          ['Tiểu sử', profile.bio || '—'],
+          ['Ngày sinh', profile.dateOfBirth ? adminDate(profile.dateOfBirth) : '—'],
+          ['Giới tính', profile.gender],
+          ['Địa điểm', profile.location],
         ]} />
       </section>
 
       <section className="admin-user-detail-section" aria-labelledby="admin-user-statistics-title">
-        <h2 id="admin-user-statistics-title">Statistics</h2>
+        <h2 id="admin-user-statistics-title">Hoạt động</h2>
         <div className="admin-user-stat-grid">
-          <div><span>Post Count</span><strong>{adminNumber(statistics.postCount)}</strong></div>
-          <div><span>Comment Count</span><strong>{adminNumber(statistics.commentCount)}</strong></div>
-          <div><span>Community Count</span><strong>{adminNumber(statistics.communityCount)}</strong></div>
+          <div><span>Bài viết</span><strong>{adminNumber(statistics.postCount)}</strong></div>
+          <div><span>Bình luận</span><strong>{adminNumber(statistics.commentCount)}</strong></div>
+          <div><span>Cộng đồng</span><strong>{adminNumber(statistics.communityCount)}</strong></div>
         </div>
       </section>
     </div>
@@ -99,13 +107,12 @@ export default function UserManagementPage() {
     [page, size, search, status, role],
   ));
   const users = result.data?.empty ? [] : result.data?.content || [];
-  const [selected, setSelected] = useState(null);
   const [action, setAction] = useState(null);
   const currentUsername = useAuthStore(state => state.user?.username);
 
   const requestLock = user => setAction({
-    title: 'Lock user account',
-    label: 'Lock account',
+    title: 'Khóa tài khoản',
+    label: 'Khóa tài khoản',
     danger: true,
     description: `The account @${user.username} will be locked and its access suspended. Continue?`,
     preview: <UserIdentity user={user} />,
@@ -113,8 +120,8 @@ export default function UserManagementPage() {
     success: `Account @${user.username} locked successfully.`,
   });
   const requestUnlock = user => setAction({
-    title: 'Unlock user account',
-    label: 'Unlock account',
+    title: 'Mở khóa tài khoản',
+    label: 'Mở khóa tài khoản',
     description: `The account @${user.username} will be unlocked and access restored. Continue?`,
     preview: <UserIdentity user={user} />,
     execute: () => adminService.unlockUser(user.id),
@@ -124,17 +131,17 @@ export default function UserManagementPage() {
   const columns = [
     {
       key: 'avatar',
-      label: 'Avatar',
+      label: 'Ảnh đại diện',
       render: user => <AdminAvatar name={user.displayName || user.username} src={user.avatarUrl} />,
     },
     {
       key: 'username',
-      label: 'Username',
-      render: user => <button className="admin-name-button" type="button" onClick={() => setSelected(user)}><strong>@{user.username}</strong></button>,
+      label: 'Tên người dùng',
+      render: user => <AdminDetailLink className="admin-name-button" to={`/admin/users/${user.id}`}><strong>@{user.username}</strong></AdminDetailLink>,
     },
     {
       key: 'displayName',
-      label: 'Display Name',
+      label: 'Tên hiển thị',
       render: user => user.displayName || '—',
       className: 'admin-wrap-cell',
     },
@@ -146,27 +153,27 @@ export default function UserManagementPage() {
     },
     {
       key: 'role',
-      label: 'Role',
+      label: 'Vai trò',
       render: user => <AdminRoleBadge role={user.role} />,
     },
     {
       key: 'status',
-      label: 'Status',
+      label: 'Trạng thái',
       render: user => <AdminStatusBadge status={user.status} />,
     },
     {
       key: 'createdAt',
-      label: 'Created At',
+      label: 'Ngày tạo',
       render: user => adminDate(user.createdAt),
     },
     {
       key: 'action',
-      label: 'Action',
+      label: 'Thao tác',
       className: 'admin-actions-cell',
       render: user => <div className="admin-user-actions">
-        <button className="admin-user-view" type="button" onClick={() => setSelected(user)} aria-label={`Xem ${user.username}`} title="View details"><Eye size={17} /></button>
-        {user.status === 'ACTIVE' && <button className="admin-user-lock" type="button" disabled={user.username === currentUsername} onClick={() => requestLock(user)} title={user.username === currentUsername ? 'You cannot lock your own account.' : 'Lock account'}><LockKeyhole size={14} /><span>Lock</span></button>}
-        {user.status === 'SUSPENDED' && <button className="admin-user-unlock" type="button" onClick={() => requestUnlock(user)} title="Unlock account"><Unlock size={14} /><span>Unlock</span></button>}
+        <AdminDetailLink className="admin-user-view" to={`/admin/users/${user.id}`} aria-label={`Xem hồ sơ ${user.username}`} title="Xem hồ sơ"><Eye size={17} aria-hidden="true" /></AdminDetailLink>
+        {user.status === 'ACTIVE' && <button className="admin-user-lock" type="button" disabled={user.username === currentUsername} onClick={() => requestLock(user)} title={user.username === currentUsername ? 'Bạn không thể khóa tài khoản của mình.' : 'Khóa tài khoản'}><LockKeyhole size={14} /><span>Khóa</span></button>}
+        {user.status === 'SUSPENDED' && <button className="admin-user-unlock" type="button" onClick={() => requestUnlock(user)} title="Mở khóa tài khoản"><Unlock size={14} /><span>Mở khóa</span></button>}
       </div>,
     },
   ];
@@ -174,8 +181,8 @@ export default function UserManagementPage() {
   return (
     <div className="admin-page admin-user-management">
       <AdminPageHeader
-        title="User Management"
-        description="Review account details, roles, and current status."
+        title="Quản lý người dùng"
+        description="Tra cứu tài khoản, vai trò và trạng thái."
         loading={result.loading}
         onRefresh={result.reload}
       />
@@ -184,29 +191,29 @@ export default function UserManagementPage() {
         <AdminSearchInput
           value={search}
           onChange={value => query.update({ search: value }, true)}
-          placeholder="Search username or email…"
-          label="Search users"
+          placeholder="Tìm theo tên người dùng hoặc email…"
+          label="Tìm người dùng"
           maxLength={200}
         />
         <div className="admin-filter-bar">
           <AdminFilter
-            label="Status"
+            label="Trạng thái"
             value={status}
             onChange={value => query.update({ status: value })}
             options={[
-              ['', 'All statuses'],
-              ['ACTIVE', 'Active'],
-              ['SUSPENDED', 'Suspended'],
+              ['', 'Tất cả trạng thái'],
+              ['ACTIVE', 'Đang hoạt động'],
+              ['SUSPENDED', 'Đã khóa'],
             ]}
           />
           <AdminFilter
-            label="Role"
+            label="Vai trò"
             value={role}
             onChange={value => query.update({ role: value })}
             options={[
-              ['', 'All roles'],
-              ['USER', 'User'],
-              ['ADMIN', 'Admin'],
+              ['', 'Tất cả vai trò'],
+              ['USER', 'Người dùng'],
+              ['ADMIN', 'Quản trị viên'],
             ]}
           />
         </div>
@@ -215,10 +222,10 @@ export default function UserManagementPage() {
       <div className="admin-list-meta">
         <span role="status">
           {result.loading
-            ? 'Loading users…'
+            ? 'Đang tải người dùng…'
             : result.error
-              ? 'Could not load users'
-              : `${adminNumber(result.data?.totalElements)} ${search ? 'matching users' : 'users'}`}
+              ? 'Không thể tải người dùng'
+              : `${adminNumber(result.data?.totalElements)} ${search ? 'người dùng phù hợp' : 'người dùng'}`}
         </span>
         {(status || role || search) && <button type="button" onClick={query.reset}>Clear filters</button>}
       </div>
@@ -230,8 +237,8 @@ export default function UserManagementPage() {
         loading={result.loading}
         error={result.error}
         retry={result.reload}
-        caption="Admin user list"
-        empty={<AdminEmptyState title="No users found" description={search ? 'No accounts match this search and the selected filters.' : 'Try changing the status or role filters.'} onReset={query.reset} />}
+        caption="Danh sách người dùng"
+        empty={<AdminEmptyState title="Không tìm thấy người dùng" description={search ? 'Không có tài khoản khớp từ khóa và bộ lọc.' : 'Thử chọn trạng thái hoặc vai trò khác.'} onReset={query.reset} />}
       />
 
       <AdminPagination
@@ -241,13 +248,6 @@ export default function UserManagementPage() {
         disabled={result.loading || !!result.error}
         onChange={query.update}
       />
-
-      {selected && (
-        <AdminDetailDrawer title="User details" onClose={() => setSelected(null)}>
-          <UserIdentity user={selected} />
-          <UserDetailContent userId={selected.id} />
-        </AdminDetailDrawer>
-      )}
 
       {action && <AdminConfirmDialog action={action} onClose={() => setAction(null)} onSuccess={result.reload} />}
     </div>

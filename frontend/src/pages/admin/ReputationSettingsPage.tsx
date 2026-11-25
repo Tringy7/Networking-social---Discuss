@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Award, BadgeCheck, Save, Sparkles } from 'lucide-react';
-import { AdminPageHeader } from '../../components/admin/AdminUI.jsx';
+import { AdminErrorState, AdminLoadingSkeleton, AdminPageHeader } from '../../components/admin/AdminUI.jsx';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import useAdminResource from '../../hooks/useAdminResource';
@@ -61,7 +61,7 @@ function ThresholdForm({ thresholds }: { thresholds: Thresholds }) {
   }
 
   return <form onSubmit={submit} aria-labelledby="reputation-thresholds-title"
-    className="max-w-3xl overflow-hidden rounded-[var(--radius-card)] border border-[var(--admin-line)]">
+    className="max-w-3xl overflow-hidden rounded-[var(--radius-card)] border border-[var(--admin-line)] bg-[var(--bg-surface)]">
     <div className="flex items-center justify-between gap-4 border-b border-[var(--admin-line)] bg-[var(--admin-frame)] px-4 py-3 sm:px-6">
       <h2 id="reputation-thresholds-title" className="text-sm font-semibold">Hạng uy tín</h2>
       <span className="text-xs font-medium text-[var(--text-secondary)]">Điểm tối thiểu</span>
@@ -108,14 +108,11 @@ function ThresholdForm({ thresholds }: { thresholds: Thresholds }) {
 export default function ReputationSettingsPage() {
   const { data, loading, error, reload } = useAdminResource(loadThresholds);
 
-  return <section className="space-y-5">
+  return <section className="admin-page">
     <AdminPageHeader title="Cấu hình điểm uy tín"
       description="Ngưỡng mới áp dụng khi người dùng tải lại hồ sơ." />
-    {loading && <p role="status">Đang tải cấu hình…</p>}
-    {error && <div role="alert" className="space-y-2">
-      <p>{error}</p>
-      <Button size="sm" variant="secondary" onClick={reload}>Thử lại</Button>
-    </div>}
+    {loading && <AdminLoadingSkeleton />}
+    {error && <AdminErrorState error={error} retry={reload} />}
     {data && <ThresholdForm thresholds={data} />}
   </section>;
 }

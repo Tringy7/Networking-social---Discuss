@@ -17,7 +17,7 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
     id: 'sunset',
     name: 'DISCUSS Orange (Mặc định)',
     primary: '#F97316',
-    ink: '#C2410C',
+    ink: '#A8370A',
     hover: '#EA580C',
     soft: 'rgba(249, 115, 22, 0.10)',
     border: 'rgba(249, 115, 22, 0.24)',
@@ -27,7 +27,7 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
     id: 'tangerine',
     name: 'Vivid Tangerine',
     primary: '#FF5700',
-    ink: '#C2410C',
+    ink: '#A8370A',
     hover: '#E94B00',
     soft: 'rgba(255, 87, 0, 0.12)',
     border: 'rgba(255, 87, 0, 0.28)',
@@ -47,7 +47,7 @@ export const ACCENT_PRESETS: AccentColorPreset[] = [
     id: 'emerald',
     name: 'Emerald Pine',
     primary: '#059669',
-    ink: '#047857',
+    ink: '#056348',
     hover: '#047857',
     soft: 'rgba(5, 150, 105, 0.12)',
     border: 'rgba(5, 150, 105, 0.28)',
@@ -143,7 +143,9 @@ const applyDOMClasses = (settings: AppearanceSettings) => {
   // Accent Color injection into CSS variables
   const matchedPreset = ACCENT_PRESETS.find((p) => p.primary === settings.accentColor) || ACCENT_PRESETS[0];
   root.style.setProperty('--color-orange', matchedPreset.primary);
-  root.style.setProperty('--color-orange-ink', isDark ? matchedPreset.primary : matchedPreset.ink);
+  root.style.setProperty('--color-orange-ink', isDark
+    ? `color-mix(in srgb, ${matchedPreset.primary} 60%, white)`
+    : matchedPreset.ink);
   root.style.setProperty('--color-orange-hover', matchedPreset.hover);
   root.style.setProperty('--color-orange-soft', matchedPreset.soft);
   root.style.setProperty('--color-orange-border', matchedPreset.border);
@@ -160,8 +162,6 @@ const applyDOMClasses = (settings: AppearanceSettings) => {
     return Math.round(darkInk ? value + (255 - value) * 0.08 : value * 0.92).toString(16).padStart(2, '0');
   }).join('');
   root.style.setProperty('--action-hover', `#${hover}`);
-
-
   // Density
   root.classList.remove('density-comfortable', 'density-compact');
   root.classList.add(`density-${settings.density}`);
