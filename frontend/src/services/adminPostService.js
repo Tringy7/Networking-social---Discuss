@@ -26,3 +26,7 @@ export function getAdminPostDetail(id) {
 export function deleteAdminPost(id) {
   return apiClient.delete(`/admin/posts/${encodeURIComponent(String(id))}`);
 }
+
+export function restoreAdminPost(id) {
+  return apiClient.patch(`/admin/posts/${encodeURIComponent(String(id))}/restore`);
+}

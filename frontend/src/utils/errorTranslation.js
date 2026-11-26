@@ -62,6 +62,8 @@ const messagesByCode = {
   TOO_MANY_MEDIA: 'Mỗi bài viết chỉ được đính kèm tối đa 20 ảnh.',
   POST_EDIT_FORBIDDEN: 'Chỉ tác giả mới có thể chỉnh sửa bài viết này.',
   POST_NOT_FOUND: 'Không tìm thấy bài viết.',
+  POST_RESTORE_NOT_ALLOWED: 'Chỉ có thể khôi phục bài viết đã bị kiểm duyệt gỡ.',
+  POST_RESTORE_COMMUNITY_INACTIVE: 'Cần mở lại cộng đồng trước khi khôi phục bài viết.',
   UNSUPPORTED_MEDIA_TYPE: 'Hiện chưa hỗ trợ tải video lên.',
   EMPTY_COMMENT: 'Bình luận cần có nội dung hoặc ảnh.',
   CONTENT_TOO_LONG: 'Nội dung bình luận vượt quá 10.000 ký tự.',
@@ -86,6 +88,9 @@ const messagesByCode = {
   STORAGE_READ_FAILED: 'Không thể đọc tệp. Vui lòng thử lại.',
 
   // Reports
+  REPORT_NOT_FOUND: 'Không tìm thấy báo cáo.',
+  REPORT_ALREADY_HANDLED: 'Báo cáo đã được xử lý. Hãy làm mới trang để xem kết quả.',
+  INVALID_MODERATION_ACTION: 'Hành động kiểm duyệt không phù hợp với loại báo cáo này.',
   INVALID_COMMUNITY_REPORT_TYPE: 'Chỉ hỗ trợ báo cáo bài viết hoặc bình luận trong mục kiểm duyệt cộng đồng.',
   ADMIN_REQUIRED: 'Chỉ quản trị viên mới có thể xem tất cả báo cáo.',
   TARGET_NOT_FOUND: 'Không tìm thấy nội dung cần báo cáo hoặc nội dung không còn khả dụng.',

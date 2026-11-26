@@ -30,4 +30,11 @@ public class AdminPostService {
         postService.deleteForAdmin(id);
         activityLogService.record("DELETE_POST", "POST", id, null);
     }
+
+    @Transactional
+    public PostResponseDTO restore(Long id) {
+        var restored = postService.restoreForAdmin(id);
+        activityLogService.record("RESTORE_POST", "POST", id, restored.status().name());
+        return restored;
+    }
 }

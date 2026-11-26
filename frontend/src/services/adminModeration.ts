@@ -1,22 +1,26 @@
-import apiClient from './apiClient';
+import { listAdminReports } from './adminReportService';
 import { adminService } from './index';
 
-type ReportType = 'POST' | 'COMMENT' | 'COMMUNITY';
-
-const reportTypes: ReportType[] = ['POST', 'COMMENT', 'COMMUNITY'];
-function reportPage(type: ReportType, page: number, size: number, status = '') {
-  const query = new URLSearchParams({ type, page: String(page), size: String(size) });
-  if (status) query.set('status', status);
-  return apiClient.get<{ totalElements: number }>(`/admin/reports?${query}`);
-}
+export const ADMIN_REPORT_TYPES = [
+  ['POST', 'Bài viết'],
+  ['COMMENT', 'Bình luận'],
+  ['COMMUNITY', 'Cộng đồng'],
+] as const;
 
 export const adminModeration = {
   stats: adminService.getStats,
   reportCounts: async () => {
-    const totals = await Promise.all((['PENDING', 'RESOLVED'] as const).map(async status => {
-      const pages = await Promise.all(reportTypes.map(type => reportPage(type, 0, 1, status)));
-      return pages.reduce((sum, page) => sum + page.totalElements, 0);
+    const byType = await Promise.all(ADMIN_REPORT_TYPES.map(async ([type, label]) => {
+      const [pending, resolved] = await Promise.all([
+        listAdminReports({ type, size: 1, status: 'PENDING' }),
+        listAdminReports({ type, size: 1, status: 'RESOLVED' }),
+      ]);
+      return { type, label, pending: pending.totalElements, resolved: resolved.totalElements };
     }));
-    return { pending: totals[0], resolved: totals[1] };
+    return {
+      pending: byType.reduce((total, count) => total + count.pending, 0),
+      resolved: byType.reduce((total, count) => total + count.resolved, 0),
+      byType,
+    };
   },
 };

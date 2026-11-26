@@ -36,13 +36,15 @@ export default function AdminDashboardPage() {
   const moderation = [{
     title: 'Báo cáo chờ xử lý',
     value: reportCount(reports.data?.pending),
-    to: '/admin/reports?status=PENDING',
+    reportStatus: 'PENDING',
+    countKey: 'pending',
     icon: ShieldAlert,
     pending: !!reports.data?.pending
   }, {
     title: 'Báo cáo đã giải quyết',
     value: reportCount(reports.data?.resolved),
-    to: '/admin/reports?status=RESOLVED',
+    reportStatus: 'RESOLVED',
+    countKey: 'resolved',
     icon: CheckCheck
   }, {
     title: 'Tài khoản bị khóa',
@@ -64,8 +66,27 @@ export default function AdminDashboardPage() {
           value,
           to,
           icon: Icon,
-          pending
-        }) => <Link key={title} to={to} className={pending ? 'needs-attention' : ''}><span><Icon size={16} aria-hidden="true" />{title}</span><strong>{value}<ArrowRight size={15} aria-hidden="true" /></strong></Link>)}</div>
+          pending,
+          reportStatus,
+          countKey
+        }) => reportStatus ? (
+          <div key={title} className={`admin-report-summary${pending ? ' needs-attention' : ''}`}>
+            <span><Icon size={16} aria-hidden="true" />{title}</span>
+            <strong>{value}</strong>
+            <ul className="admin-report-type-links">
+              {reports.data?.byType.map(({ type, label, [countKey]: count }) => (
+                <li key={type}>
+                  <Link to={`/admin/reports?type=${type}&status=${reportStatus}`}
+                    aria-label={`${title}: ${label}, ${adminNumber(count)} báo cáo`}>
+                    <span>{label}</span><span>{adminNumber(count)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <Link key={title} to={to}><span><Icon size={16} aria-hidden="true" />{title}</span><strong>{value}<ArrowRight size={15} aria-hidden="true" /></strong></Link>
+        ))}</div>
     </section>
     <section className="admin-section admin-statistics" aria-labelledby="admin-statistics-title" aria-busy={stats.loading}>
       <div className="admin-section-heading"><h2 id="admin-statistics-title">Thống kê hệ thống</h2></div>

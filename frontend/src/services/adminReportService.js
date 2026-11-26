@@ -14,22 +14,26 @@ export function getAdminReportDetail(type, reportId) {
   return apiClient.get(`/admin/reports/${encodeURIComponent(reportType)}/${encodeURIComponent(String(reportId))}`);
 }
 
-function submitReportDecision(type, reportId, resolutionNote, decision) {
+export function getAdminReportTarget(type, reportId) {
+  return apiClient.get(`/admin/reports/${encodeURIComponent(type)}/${encodeURIComponent(String(reportId))}/target`);
+}
+
+function submitReportDecision(type, reportId, resolutionNote, decision, action) {
   if (!['POST', 'COMMENT', 'COMMUNITY'].includes(type)) {
     throw new Error('Loại báo cáo không hợp lệ.');
   }
   const note = String(resolutionNote || '').trim();
-  if (!note) throw new Error('Resolution Note là bắt buộc.');
-  if (note.length > 2000) throw new Error('Resolution Note không được vượt quá 2000 ký tự.');
+  if (!note) throw new Error('Ghi chú xử lý là bắt buộc.');
+  if (note.length > 2000) throw new Error('Ghi chú xử lý không được vượt quá 2000 ký tự.');
 
   return apiClient.patch(
     `/admin/reports/${encodeURIComponent(type)}/${encodeURIComponent(String(reportId))}/${decision}`,
-    { resolutionNote: note },
+    { resolutionNote: note, ...(action ? { action } : {}) },
   );
 }
 
-export function resolveAdminReport(type, reportId, resolutionNote) {
-  return submitReportDecision(type, reportId, resolutionNote, 'resolve');
+export function resolveAdminReport(type, reportId, resolutionNote, action) {
+  return submitReportDecision(type, reportId, resolutionNote, 'resolve', action);
 }
 
 export function rejectAdminReport(type, reportId, resolutionNote) {

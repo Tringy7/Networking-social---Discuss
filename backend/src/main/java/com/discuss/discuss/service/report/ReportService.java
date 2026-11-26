@@ -1,10 +1,12 @@
 package com.discuss.discuss.service.report;
 
 import com.discuss.discuss.dto.report.*;
+import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.entity.*;
 import com.discuss.discuss.enums.ReportStatus;
 import com.discuss.discuss.enums.ReportTargetType;
 import com.discuss.discuss.mapper.report.ReportMapper;
+import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.repository.*;
 import com.discuss.discuss.service.comment.CommentSupport;
 import com.discuss.discuss.service.community.CommunitySupport;
@@ -14,6 +16,7 @@ import com.discuss.discuss.service.user.UserService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +34,17 @@ public class ReportService {
     private final CommentReportRepository commentReports;
     private final CommunityReportRepository communityReports;
     private final NotificationEvents notificationEvents;
+    private final PageMapper pageMapper;
+
+    @Transactional(readOnly = true)
+    public PageResponseDTO<MyReportResponseDTO> listMine(ReportTargetType type, ReportStatus status, Pageable pageable) {
+        Long reporterId = userService.getCurrentUser().getId();
+        return pageMapper.toResponse(switch (type) {
+            case POST -> postReports.findMine(reporterId, status, pageable);
+            case COMMENT -> commentReports.findMine(reporterId, status, pageable);
+            case COMMUNITY -> communityReports.findMine(reporterId, status, pageable);
+        });
+    }
 
     @Transactional
     public ReportResponseDTO create(CreateReportRequestDTO request) {

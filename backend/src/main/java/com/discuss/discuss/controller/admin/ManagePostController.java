@@ -46,6 +46,11 @@ public class ManagePostController {
         return ResponseEntity.ok(adminPostService.getDetail(id));
     }
 
+    @PatchMapping("/{id}/restore")
+    public ResponseEntity<PostResponseDTO> restore(@PathVariable @Positive Long id) {
+        return ResponseEntity.ok(adminPostService.restore(id));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse> delete(@PathVariable @Positive Long id) {
         adminPostService.delete(id);

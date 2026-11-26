@@ -83,7 +83,8 @@ public class PostMapper {
                 Boolean.TRUE.equals(post.getIsPinned()),
                 post.getStatus(),
                 post.getCreatedAt(),
-                post.getUpdatedAt()
+                post.getUpdatedAt(),
+                post.isModerationRemoval()
         );
     }
 

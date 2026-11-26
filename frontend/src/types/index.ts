@@ -179,6 +179,18 @@ export interface CreateReportRequest {
 }
 export type ReportStatus = 'PENDING' | 'RESOLVED' | 'REJECTED';
 
+export interface MyReport {
+  id: number;
+  targetType: ReportTargetType;
+  targetId: number;
+  communityName: string;
+  reason: ReportReason;
+  description: string | null;
+  status: ReportStatus;
+  createdAt: string;
+  resolvedAt: string | null;
+}
+
 export interface Report {
   id: string;
   contentType: ReportContentType;

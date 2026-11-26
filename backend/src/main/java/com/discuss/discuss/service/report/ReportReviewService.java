@@ -1,19 +1,25 @@
 package com.discuss.discuss.service.report;
 
+import com.discuss.discuss.dto.comment.CommentAttachmentDTO;
+import com.discuss.discuss.dto.report.AdminReportTargetDTO;
 import com.discuss.discuss.dto.report.ReportResponseDTO;
 import com.discuss.discuss.entity.*;
 import com.discuss.discuss.enums.*;
 import com.discuss.discuss.exception.report.ReportErrorCode;
 import com.discuss.discuss.exception.report.ReportException;
 import com.discuss.discuss.mapper.report.ReportMapper;
+import com.discuss.discuss.service.comment.CommentSupport;
 import com.discuss.discuss.service.community.CommunityAuthorizationService;
 import com.discuss.discuss.service.community.CommunitySupport;
+import com.discuss.discuss.service.community.CommunityService;
 import com.discuss.discuss.service.notification.NotificationEvents;
+import com.discuss.discuss.service.post.PostSupport;
 import com.discuss.discuss.service.user.UserService;
 import com.discuss.discuss.utils.annotation.auth.HasRole;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +34,9 @@ public class ReportReviewService {
     private final CommunitySupport communitySupport;
     private final CommunityAuthorizationService communityAuthorization;
     private final NotificationEvents notificationEvents;
+    private final PostSupport postSupport;
+    private final CommentSupport commentSupport;
+    private final CommunityService communityService;
 
     @HasRole("ADMIN")
     @Transactional(readOnly = true)
@@ -40,9 +49,37 @@ public class ReportReviewService {
     }
 
     @HasRole("ADMIN")
+    @Transactional(readOnly = true)
+    public AdminReportTargetDTO getTarget(ReportTargetType type, Long id) {
+        return switch (type) {
+            case POST -> {
+                var post = find(PostReport.class, id, false).getPost();
+                yield new AdminReportTargetDTO(postSupport.toResponse(post, userService.getCurrentUser()), null, null);
+            }
+            case COMMENT -> {
+                var comment = find(CommentReport.class, id, false).getComment();
+                var actor = userService.getCurrentUser();
+                List<CommentAttachmentDTO> attachments = comment.getStatus() == CommentStatus.VISIBLE
+                        ? commentSupport.toResponse(comment, actor).getAttachments() : List.of();
+                var preview = new AdminReportTargetDTO.CommentPreview(comment.getId(),
+                        comment.getUser().getUsername(),
+                        comment.getStatus() == CommentStatus.DELETED ? null : comment.getContent(),
+                        comment.getStatus(), attachments);
+                yield new AdminReportTargetDTO(
+                        postSupport.toResponse(comment.getPost(), actor), preview, null);
+            }
+            case COMMUNITY -> {
+                var community = find(CommunityReport.class, id, false).getCommunity();
+                yield new AdminReportTargetDTO(null, null, communityService.getCommunityDetailById(community.getId()));
+            }
+        };
+    }
+
+    @HasRole("ADMIN")
     @Transactional
-    public ReportResponseDTO review(ReportTargetType type, Long id, ReportStatus status, String note) {
-        return review(type, id, status, note, userService.getCurrentUser(), null);
+    public ReportResponseDTO review(ReportTargetType type, Long id, ReportStatus status, String note,
+                                    ReportModerationAction action) {
+        return review(type, id, status, note, userService.getCurrentUser(), null, action);
     }
 
     @Transactional
@@ -54,11 +91,12 @@ public class ReportReviewService {
         User actor = userService.getCurrentUser();
         Community community = communitySupport.getCommunityByName(communityName);
         communityAuthorization.requireOwner(community, actor);
-        return review(type, id, status, note, actor, community);
+        return review(type, id, status, note, actor, community, ReportModerationAction.REVIEWED);
     }
 
     private ReportResponseDTO review(
-            ReportTargetType type, Long id, ReportStatus status, String note, User actor, Community community) {
+            ReportTargetType type, Long id, ReportStatus status, String note, User actor, Community community,
+            ReportModerationAction moderationAction) {
         if (status != ReportStatus.RESOLVED && status != ReportStatus.REJECTED) {
             throw new ReportException(ReportErrorCode.INVALID_REPORT_STATUS);
         }
@@ -67,7 +105,7 @@ public class ReportReviewService {
         }
         String resolutionNote = note.strip();
         LocalDateTime now = LocalDateTime.now();
-        String action = status == ReportStatus.RESOLVED ? "REVIEWED" : "REJECTED";
+        String action = status == ReportStatus.RESOLVED ? moderationAction.name() : "REJECTED";
         return switch (type) {
             case POST -> {
                 var report = find(PostReport.class, id, true);

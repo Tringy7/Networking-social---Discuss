@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { deleteAdminPost, getAdminPostDetail, listAdminPosts, searchAdminPosts } from '../../services/adminPostService.js';
+import { deleteAdminPost, getAdminPostDetail, listAdminPosts, restoreAdminPost, searchAdminPosts } from '../../services/adminPostService.js';
 import ImageLightbox from '../../components/post/ImageLightbox';
 import PostMarkdown from '../../components/post/PostMarkdown';
 import { httpUrl } from '../../components/post/postUrls';
@@ -32,6 +32,17 @@ const POST_STATUSES = [
   ['DELETED', 'Đã xóa'],
 ];
 
+function restoreAction(post) {
+  return {
+    title: 'Khôi phục bài viết',
+    label: 'Khôi phục',
+    description: 'Khôi phục bài viết về trạng thái trước khi bị gỡ? Bài viết có thể hiển thị lại với những người có quyền xem.',
+    preview: <strong>{post.title || `Bài viết #${post.id}`}</strong>,
+    execute: () => restoreAdminPost(post.id),
+    success: `Đã khôi phục bài viết #${post.id}.`,
+  };
+}
+
 export function PostDetailPage() {
   const { postId } = useParams();
   return <AdminDetailPage title="Chi tiết bài viết" backTo="/admin/posts" backLabel="Về danh sách bài viết">
@@ -42,6 +53,7 @@ export function PostDetailPage() {
 function PostDetailContent({ postId }) {
   const detail = useAdminResource(useCallback(() => getAdminPostDetail(postId), [postId]));
   const [selectedImage, setSelectedImage] = useState(null);
+  const [confirmRestore, setConfirmRestore] = useState(false);
 
   if (detail.loading) return <AdminLoadingSkeleton />;
   if (detail.error) return <AdminErrorState error={detail.error} retry={detail.reload} />;
@@ -72,30 +84,29 @@ function PostDetailContent({ postId }) {
         <h2>{post.title || 'Thông tin bài viết'}</h2>
         <AdminFields items={[
           ['ID bài viết', post.id],
-          ['Community Name', post.communityName],
-          ['Community Display Name', post.communityDisplayName],
           ['Loại bài', post.type],
-          ['Link URL', linkUrl ? <a href={linkUrl} target="_blank" rel="noopener noreferrer">{post.linkUrl}</a> : post.linkUrl],
+          ...(linkUrl ? [['Liên kết', <a href={linkUrl} target="_blank" rel="noopener noreferrer">{linkUrl}</a>]] : []),
           ['Điểm bình chọn', adminNumber(post.voteScore)],
           ['Bình luận', adminNumber(post.commentCount)],
-          ['User Vote', post.userVote],
-          ['Is Saved', post.isSaved == null ? '—' : post.isSaved ? 'Yes' : 'No'],
-          ['Pinned', post.pinned == null ? '—' : post.pinned ? 'Yes' : 'No'],
+          ['Ghim bài viết', post.pinned == null ? '—' : post.pinned ? 'Đã ghim' : 'Chưa ghim'],
           ['Trạng thái', <AdminStatusBadge status={post.status} />],
           ['Ngày tạo', adminDate(post.createdAt)],
           ['Cập nhật', adminDate(post.updatedAt)],
         ]} />
+        {post.moderationRemoval && <div className="admin-inline-actions">
+          <button type="button" className="admin-button admin-button-primary" onClick={() => setConfirmRestore(true)}>Khôi phục bài viết</button>
+        </div>}
       </section>
 
       <section className="admin-post-detail-section">
         <h2>Cộng đồng</h2>
         <div className="admin-post-detail-identity">
-          <AdminAvatar name={post.communityName || 'Cộng đồng'} src={post.communityAvatar} square />
-          <AdminFields items={[
-            ['Community Name', post.communityName],
-            ['Community Display Name', post.communityDisplayName],
-            ['Community Avatar', post.communityAvatar],
-          ]} />
+          <AdminAvatar name={post.communityDisplayName || post.communityName || 'Cộng đồng'} src={post.communityAvatar} square />
+          <div>
+            {post.communityDisplayName && post.communityDisplayName !== post.communityName && <strong>{post.communityDisplayName}</strong>}
+            {post.communityName && <Link to={`/c/${encodeURIComponent(post.communityName)}`}>c/{post.communityName}</Link>}
+            {!post.communityDisplayName && !post.communityName && <span>—</span>}
+          </div>
         </div>
       </section>
 
@@ -103,12 +114,11 @@ function PostDetailContent({ postId }) {
         <h2>Tác giả</h2>
         <div className="admin-post-detail-identity">
           <AdminAvatar name={author.displayName || author.username || 'Tác giả'} src={author.avatarUrl} />
-          <AdminFields items={[
-            ['ID', author.id],
-            ['Username', author.username ? `@${author.username}` : '—'],
-            ['Display Name', author.displayName],
-            ['Avatar URL', author.avatarUrl],
-          ]} />
+          <div>
+            {author.displayName && author.displayName !== author.username && <strong>{author.displayName}</strong>}
+            {author.username && <Link to={`/u/${encodeURIComponent(author.username)}`}>@{author.username}</Link>}
+            {!author.displayName && !author.username && <span>—</span>}
+          </div>
         </div>
       </section>
 
@@ -145,6 +155,7 @@ function PostDetailContent({ postId }) {
       )}
       {selectedImage !== null && <ImageLightbox images={images} index={selectedImage}
         onChange={setSelectedImage} onClose={() => setSelectedImage(null)} />}
+      {confirmRestore && <AdminConfirmDialog action={restoreAction(post)} onClose={() => setConfirmRestore(false)} onSuccess={detail.reload} />}
     </div>
   );
 }
@@ -171,17 +182,17 @@ export default function PostManagementPage() {
     title: 'Xóa bài viết',
     label: 'Xóa bài viết',
     danger: true,
-    description: 'This post will be deleted. Confirm to continue.',
+    description: 'Bài viết sẽ bị gỡ khỏi cộng đồng.',
     preview: (
       <div className="admin-post-delete-preview">
-        <strong>{post.title || 'Untitled post'}</strong>
-        <span>Post ID: {post.id}</span>
-        <span>Author: {post.author?.username ? `@${post.author.username}` : '—'}</span>
-        <span>Community: {post.communityName ? `c/${post.communityName}` : '—'}</span>
+        <strong>{post.title || 'Bài viết chưa có tiêu đề'}</strong>
+        <span>ID bài viết: {post.id}</span>
+        <span>Tác giả: {post.author?.username ? `@${post.author.username}` : '—'}</span>
+        <span>Cộng đồng: {post.communityName ? `c/${post.communityName}` : '—'}</span>
       </div>
     ),
     execute: () => deleteAdminPost(post.id),
-    success: `Post #${post.id} deleted successfully.`,
+    success: `Đã gỡ bài viết #${post.id}.`,
   });
 
   const columns = [
@@ -222,7 +233,8 @@ export default function PostManagementPage() {
       className: 'admin-actions-cell',
       render: post => <div className="admin-post-row-actions">
         <AdminDetailLink className="admin-text-action" to={`/admin/posts/${post.id}`}>Xem chi tiết</AdminDetailLink>
-        <button className="admin-text-action is-danger" type="button" onClick={() => requestDelete(post)}>Delete</button>
+        {post.status !== 'DELETED' && <button className="admin-text-action is-danger" type="button" onClick={() => requestDelete(post)}>Gỡ bài</button>}
+        {post.moderationRemoval && <button className="admin-text-action" type="button" onClick={() => setAction(restoreAction(post))}>Khôi phục</button>}
       </div>,
     },
   ];

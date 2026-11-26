@@ -1,6 +1,6 @@
 import apiClient from './apiClient';
 import { assertImageRequestSize } from '../utils/imageUploadLimits';
-import { Community, CommunityMember, Post, User, Report, CreateReportRequest, NotificationItem, Conversation, ChatMessage } from '../types';
+import { Community, CommunityMember, Post, User, Report, MyReport, CreateReportRequest, NotificationItem, Conversation, ChatMessage } from '../types';
 import { demoConversations } from '../mocks/demoContent';
 interface AuthResponse {
   message?: string;
@@ -552,6 +552,11 @@ export const commentService = {
 };
 
 export const reportService = {
+  listMine: (type: MyReport['targetType'], status: MyReport['status'] | '', page: number) => {
+    const params = new URLSearchParams({ type, page: String(page), size: '10' });
+    if (status) params.set('status', status);
+    return apiClient.get<{ content: MyReport[]; last: boolean; totalPages: number }>(`/reports/me?${params}`);
+  },
   create: async (data: CreateReportRequest): Promise<Report> => {
     requireFeature(REPORT_CREATION_AVAILABLE, 'Báo cáo');
     if (!Number.isSafeInteger(data.targetId) || data.targetId <= 0) throw new Error('Nội dung báo cáo không hợp lệ.');

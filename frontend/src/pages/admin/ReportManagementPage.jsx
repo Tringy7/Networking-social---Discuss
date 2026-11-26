@@ -1,9 +1,14 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
-import { getAdminReportDetail, listAdminReports, rejectAdminReport, resolveAdminReport } from '../../services/adminReportService.js';
+import { getAdminReportDetail, getAdminReportTarget, listAdminReports, rejectAdminReport, resolveAdminReport } from '../../services/adminReportService.js';
+import { ADMIN_REPORT_TYPES } from '../../services/adminModeration';
+import { useAdminData } from '../../components/admin/AdminDataContext.jsx';
 import Modal from '../../components/ui/Modal';
+import PostBody from '../../components/post/PostBody';
+import { CommentAttachmentList } from '../../components/comment/CommentAttachments';
+import { httpUrl } from '../../components/post/postUrls';
 import { useToastStore } from '../../store/useToastStore';
 import {
   AdminDataTable,
@@ -21,11 +26,7 @@ import {
   adminNumber,
 } from '../../components/admin/AdminUI.jsx';
 
-const REPORT_TYPES = [
-  ['POST', 'Bài viết'],
-  ['COMMENT', 'Bình luận'],
-  ['COMMUNITY', 'Cộng đồng'],
-];
+const reportTypeLabels = Object.fromEntries(ADMIN_REPORT_TYPES);
 
 const REPORT_STATUSES = [
   ['', 'Tất cả trạng thái'],
@@ -43,14 +44,31 @@ const REASONS = {
   OTHER: 'Khác',
 };
 
-function ReportDecisionDialog({ type, reportId, decision, onClose, onSuccess }) {
+const moderationActions = {
+  POST: 'REMOVE_POST',
+  COMMENT: 'REMOVE_COMMENT',
+  COMMUNITY: 'LOCK_COMMUNITY',
+};
+const actionLabels = {
+  REVIEWED: 'Đã xem xét',
+  REJECTED: 'Từ chối báo cáo',
+  REMOVE_POST: 'Gỡ bài viết',
+  REMOVE_COMMENT: 'Gỡ bình luận',
+  LOCK_COMMUNITY: 'Khóa cộng đồng',
+};
+
+function ReportDecisionDialog({ type, reportId, decision, canActOnTarget, onClose, onSuccess }) {
   const [resolutionNote, setResolutionNote] = useState('');
+  const [action, setAction] = useState('REVIEWED');
   const [busy, setBusy] = useState(false);
+  const pending = useRef(false);
   const [error, setError] = useState('');
   const addToast = useToastStore(state => state.addToast);
+  const { reports } = useAdminData();
 
   const submit = async event => {
     event.preventDefault();
+    if (pending.current) return;
     const note = resolutionNote.trim();
     if (!note) {
       setError('Ghi chú xử lý là bắt buộc.');
@@ -61,17 +79,21 @@ function ReportDecisionDialog({ type, reportId, decision, onClose, onSuccess }) 
       return;
     }
 
+    pending.current = true;
     setBusy(true);
     setError('');
     try {
-      const submitDecision = decision === 'reject' ? rejectAdminReport : resolveAdminReport;
-      await submitDecision(type, reportId, note);
-      addToast(`Report #${reportId} ${decision === 'reject' ? 'rejected' : 'resolved'} successfully.`, 'success');
+      if (decision === 'reject') await rejectAdminReport(type, reportId, note);
+      else await resolveAdminReport(type, reportId, note, action);
+      const result = decision === 'reject' ? 'Đã từ chối' : 'Đã giải quyết';
+      addToast(`${result} báo cáo #${reportId}.`, 'success');
+      reports.reload();
       onSuccess();
       onClose();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Không thể cập nhật báo cáo.');
     } finally {
+      pending.current = false;
       setBusy(false);
     }
   };
@@ -79,7 +101,17 @@ function ReportDecisionDialog({ type, reportId, decision, onClose, onSuccess }) 
   return (
     <Modal isOpen onClose={() => !busy && onClose()} closeDisabled={busy} title={decision === 'reject' ? 'Từ chối báo cáo' : 'Giải quyết báo cáo'} maxWidth="md">
       <form className="admin-resolve-form" onSubmit={submit}>
-        <p>{decision === 'reject' ? 'Nhập Ghi chú xử lý để từ chối báo cáo này.' : 'Nhập Ghi chú xử lý để xác nhận báo cáo này đã được xử lý.'}</p>
+        <p>{decision === 'reject' ? 'Nhập lý do từ chối báo cáo.' : 'Nhập ghi chú về cách bạn đã xử lý báo cáo.'}</p>
+        {decision === 'resolve' && canActOnTarget && <AdminFilter
+          label="Hành động kiểm duyệt"
+          value={action}
+          onChange={setAction}
+          disabled={busy}
+          options={[
+            ['REVIEWED', 'Giữ nguyên nội dung'],
+            [moderationActions[type], actionLabels[moderationActions[type]]],
+          ]}
+        />}
         <label htmlFor="admin-report-resolution-note">Ghi chú xử lý</label>
         <textarea
           id="admin-report-resolution-note"
@@ -96,8 +128,8 @@ function ReportDecisionDialog({ type, reportId, decision, onClose, onSuccess }) 
         {error && <p className="admin-inline-error" role="alert">{error}</p>}
         <div className="admin-dialog-actions">
           <button className="admin-button" type="button" onClick={onClose} disabled={busy}>Hủy</button>
-          <button className={`admin-button ${decision === 'reject' ? 'admin-button-danger' : 'admin-button-primary'}`} type="submit" disabled={busy || !resolutionNote.trim() || resolutionNote.length > 2000}>
-            {busy ? 'Đang lưu…' : decision === 'reject' ? 'Từ chối' : 'Giải quyết'}
+          <button className={`admin-button ${decision === 'reject' || action !== 'REVIEWED' ? 'admin-button-danger' : 'admin-button-primary'}`} type="submit" disabled={busy || !resolutionNote.trim() || resolutionNote.length > 2000}>
+            {busy ? 'Đang lưu…' : decision === 'reject' ? 'Từ chối' : action === 'REVIEWED' ? 'Giải quyết' : `${actionLabels[action]} và giải quyết`}
           </button>
         </div>
       </form>
@@ -108,7 +140,7 @@ function ReportDecisionDialog({ type, reportId, decision, onClose, onSuccess }) 
 export function ReportDetailPage() {
   const { type, reportId } = useParams();
   const [params] = useSearchParams();
-  const validType = REPORT_TYPES.some(([value]) => value === type);
+  const validType = ADMIN_REPORT_TYPES.some(([value]) => value === type);
   const backParams = new URLSearchParams(params);
   if (validType && !backParams.has('type') && type !== 'POST') backParams.set('type', type);
 
@@ -121,30 +153,37 @@ export function ReportDetailPage() {
 
 function ReportDetailContent({ type, reportId }) {
   const detail = useAdminResource(useCallback(() => getAdminReportDetail(type, reportId), [type, reportId]));
+  const target = useAdminResource(useCallback(() => getAdminReportTarget(type, reportId), [type, reportId]));
   const [decision, setDecision] = useState(null);
 
   if (detail.loading) return <AdminLoadingSkeleton />;
   if (detail.error) return <AdminErrorState error={detail.error} retry={detail.reload} />;
 
   const report = detail.data;
+  const canActOnTarget = type === 'POST'
+    ? Boolean(target.data?.post && target.data.post.status !== 'DELETED')
+    : type === 'COMMENT'
+      ? Boolean(target.data?.comment && target.data.comment.status !== 'DELETED')
+      : target.data?.community?.status === 'ACTIVE';
   return (
     <div className="admin-report-detail">
       <h2>Thông tin báo cáo</h2>
       <AdminFields items={[
         ['ID báo cáo', report.id],
-        ['Loại đối tượng', report.targetType],
+        ['Loại đối tượng', reportTypeLabels[report.targetType] || report.targetType],
         ['ID đối tượng', report.targetId],
         ['Cộng đồng', report.communityName],
         ['Người báo cáo', report.reporterUsername ? `@${report.reporterUsername}` : '—'],
         ['Lý do', REASONS[report.reason] || report.reason],
         ['Mô tả', report.description],
         ['Trạng thái', <AdminStatusBadge status={report.status} />],
-        ['Hành động', report.action],
+        ['Hành động', actionLabels[report.action] || report.action],
         ['Ghi chú xử lý', report.resolutionNote],
         ['Người xử lý', report.resolvedBy],
         ['Ngày xử lý', adminDate(report.resolvedAt)],
         ['Ngày tạo', adminDate(report.createdAt)],
       ]} />
+      <ReportTargetPreview resource={target} />
       {report.status === 'PENDING' && (
         <div className="admin-inline-actions">
           <button className="admin-button admin-button-primary" type="button" onClick={() => setDecision('resolve')}>Giải quyết</button>
@@ -156,18 +195,54 @@ function ReportDetailContent({ type, reportId }) {
           type={type}
           reportId={reportId}
           decision={decision}
+          canActOnTarget={canActOnTarget}
           onClose={() => setDecision(null)}
-          onSuccess={detail.reload}
+          onSuccess={() => {
+            detail.reload();
+            target.reload();
+          }}
         />
       )}
     </div>
   );
 }
 
+function ReportTargetPreview({ resource }) {
+  const { post, comment, community } = resource.data || {};
+  return (
+    <section className="admin-report-target" aria-labelledby="admin-report-target-title">
+      <h2 id="admin-report-target-title">Nội dung bị báo cáo</h2>
+      {resource.loading ? <AdminLoadingSkeleton /> : resource.error
+        ? <AdminErrorState error={resource.error} retry={resource.reload} />
+        : <>
+          {comment && <article>
+            <header><h3>Bình luận của @{comment.username}</h3><AdminStatusBadge status={comment.status} /></header>
+            {comment.status === 'DELETED' ? <p>Bình luận đã bị gỡ.</p> : <>
+              {comment.content && <p>{comment.content}</p>}
+              <CommentAttachmentList attachments={comment.attachments?.filter(attachment => httpUrl(attachment.url))} />
+            </>}
+          </article>}
+          {post && <article>
+            <header><h3>{comment ? 'Bài viết gốc' : 'Bài viết'} · {post.title}</h3><AdminStatusBadge status={post.status} /></header>
+            {post.author?.username && <p>@{post.author.username} · c/{post.communityName}</p>}
+            {post.status === 'DELETED' ? <p>Bài viết đã bị gỡ.</p> : <PostBody post={post} />}
+            <Link to={`/admin/posts/${post.id}`}>Mở chi tiết bài viết</Link>
+          </article>}
+          {community && <article>
+            <header><h3>c/{community.name}</h3><AdminStatusBadge status={community.status} /></header>
+            {community.description && <p>{community.description}</p>}
+            <p>{adminNumber(community.memberCount)} thành viên{community.owner?.username ? ` · Chủ cộng đồng @${community.owner.username}` : ''}</p>
+            <Link to={`/admin/communities/${community.id}`}>Mở hồ sơ cộng đồng</Link>
+          </article>}
+        </>}
+    </section>
+  );
+}
+
 export default function ReportManagementPage() {
   const query = useAdminQuery();
   const typeValue = query.params.get('type') || '';
-  const type = REPORT_TYPES.some(([value]) => value === typeValue) ? typeValue : 'POST';
+  const type = ADMIN_REPORT_TYPES.some(([value]) => value === typeValue) ? typeValue : 'POST';
   const statusValue = query.params.get('status') || '';
   const status = ['PENDING', 'RESOLVED', 'REJECTED'].includes(statusValue) ? statusValue : '';
   const communityName = (query.params.get('communityName') || '').slice(0, 255);
@@ -194,7 +269,7 @@ export default function ReportManagementPage() {
 
   const columns = [
     { key: 'id', label: 'ID báo cáo', numeric: true, render: report => adminNumber(report.id) },
-    { key: 'targetType', label: 'Loại đối tượng', render: report => report.targetType || '—' },
+    { key: 'targetType', label: 'Loại đối tượng', render: report => reportTypeLabels[report.targetType] || report.targetType || '—' },
     { key: 'targetId', label: 'ID đối tượng', numeric: true, render: report => report.targetId ?? '—' },
     {
       key: 'communityName',
@@ -218,7 +293,7 @@ export default function ReportManagementPage() {
       render: report => <span className="admin-report-description">{report.description || '—'}</span>,
     },
     { key: 'status', label: 'Trạng thái', render: report => <AdminStatusBadge status={report.status} /> },
-    { key: 'action', label: 'Hành động', render: report => report.action || '—' },
+    { key: 'action', label: 'Hành động', render: report => actionLabels[report.action] || report.action || '—' },
     { key: 'resolvedBy', label: 'Người xử lý', render: report => report.resolvedBy || '—' },
     { key: 'resolvedAt', label: 'Ngày xử lý', numeric: true, render: report => adminDate(report.resolvedAt) },
     { key: 'createdAt', label: 'Ngày tạo', numeric: true, render: report => adminDate(report.createdAt) },
@@ -244,7 +319,7 @@ export default function ReportManagementPage() {
           <AdminFilter
             label="Loại báo cáo"
             value={type}
-            options={REPORT_TYPES}
+            options={ADMIN_REPORT_TYPES}
             onChange={value => query.update({ type: value })}
           />
           <AdminFilter
