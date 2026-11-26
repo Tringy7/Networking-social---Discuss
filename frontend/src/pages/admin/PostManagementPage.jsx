@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import useAdminQuery from '../../hooks/useAdminQuery';
 import useAdminResource from '../../hooks/useAdminResource';
 import { deleteAdminPost, getAdminPostDetail, listAdminPosts, restoreAdminPost, searchAdminPosts } from '../../services/adminPostService.js';
+import VideoPlayer from '../../components/common/VideoPlayer';
 import ImageLightbox from '../../components/post/ImageLightbox';
 import PostMarkdown from '../../components/post/PostMarkdown';
 import { httpUrl } from '../../components/post/postUrls';
@@ -149,7 +150,7 @@ function PostDetailContent({ postId }) {
         <section className="admin-post-detail-section">
           <h2>Video</h2>
           <div className="admin-post-video-list">
-            {videos.map(({ url, key }) => <video key={key} src={url} controls preload="metadata" />)}
+            {videos.map(({ url, key }) => <VideoPlayer key={key} src={url} />)}
           </div>
         </section>
       )}

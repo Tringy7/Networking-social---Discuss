@@ -1,0 +1,13 @@
+.discuss-video { width: 100%; min-width: 0; background: #151515; color: #fff; border-radius: 8px; overflow: hidden; }
+.discuss-video-screen { position: relative; }
+.discuss-video-screen > video { display: block; width: 100%; max-height: 72vh; background: #000; }
+.discuss-video-controls { display: flex; gap: .6rem 1rem; flex-wrap: wrap; align-items: center; padding: .55rem .75rem; font-size: .82rem; }
+.discuss-video-controls label { display: inline-flex; gap: .35rem; align-items: center; }
+.discuss-video-controls button, .discuss-video-controls select { color: #fff; background: #303030; border: 1px solid #555; border-radius: 4px; padding: .25rem .45rem; }
+.discuss-video-controls button[aria-pressed="true"] { background: #fff; color: #151515; }
+.discuss-video-controls input { width: min(5rem, 22vw); }
+.discuss-video-caption { pointer-events: none; position: absolute; inset: auto 5% 3.5rem; width: fit-content; max-width: 90%; margin-inline: auto; padding: .2rem .5rem; background: #000d; color: #fff; text-align: center; overflow-wrap: anywhere; border-radius: 4px; }
+.discuss-video-status { margin: 0; padding: 0 .75rem .5rem; font-size: .82rem; }
+.discuss-video:fullscreen, .discuss-video-expanded { display: flex; flex-direction: column; justify-content: center; background: #000; }
+.discuss-video-expanded { position: fixed; inset: 0; z-index: 10000; }
+.discuss-video:fullscreen video, .discuss-video-expanded video { max-height: 85dvh; }

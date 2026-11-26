@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { X, FileText, ImagePlus } from 'lucide-react';
 import { imageRequestError } from '../../utils/imageUploadLimits';
 import type { CommentAttachment } from '../../types';
+import VideoPlayer from '../common/VideoPlayer';
 import ImageLightbox from '../post/ImageLightbox';
 import '../post/postContent.css';
 
@@ -75,10 +76,9 @@ export function CommentAttachmentList({ attachments, onRefresh }: { attachments?
             />
           </button>
         : file.contentType === 'video/mp4'
-          ? <video key={file.url} src={file.url} controls playsInline preload="metadata"
-              aria-label={file.fileName} className="w-full max-h-72 rounded bg-black"
+          ? <VideoPlayer src={file.url} label={file.fileName}
               onError={() => setFailedMedia(previous => new Set(previous).add(file.id))}
-              onLoadedMetadata={() => setFailedMedia(previous => { const next = new Set(previous); next.delete(file.id); return next; })} />
+              onLoaded={() => setFailedMedia(previous => { const next = new Set(previous); next.delete(file.id); return next; })} />
           : <a href={file.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2">
             <FileText size={16} /><span className="break-all">{file.fileName}</span>
           </a>}

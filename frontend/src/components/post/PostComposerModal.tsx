@@ -6,6 +6,7 @@ import { usePostStore } from '../../store/usePostStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { useToastStore } from '../../store/useToastStore';
 import type { PostImage, PostMedia, PostMediaInput } from '../../types';
+import VideoPlayer from '../common/VideoPlayer';
 import MarkdownEditor from './MarkdownEditor';
 import { imageRequestError } from '../../utils/imageUploadLimits';
 import PostBody from './PostBody';
@@ -135,7 +136,7 @@ export default function PostComposerModal() {
             onChange={(event) => { acceptFiles(Array.from(event.target.files || [])); event.target.value = ''; }} />
         </div>
         <div className="post-image-drafts">{media.map((item, index) => <section key={item.id} className="post-image-draft">
-          {item.type === 'VIDEO' ? <video src={item.preview || httpUrl(item.url)} controls playsInline preload="metadata" /> : <img src={item.preview || item.url} alt={`Ảnh ${index + 1}`} />}
+          {item.type === 'VIDEO' ? <VideoPlayer src={item.preview || httpUrl(item.url)} label="Xem trước video" /> : <img src={item.preview || item.url} alt={`Ảnh ${index + 1}`} />}
           <div><span>{index + 1} / {media.length}</span><span>{item.file ? 'Tệp mới · Chưa gửi' : 'Tệp hiện có'}</span></div>
           {item.objectKey && inlineKeys.includes(item.objectKey) && <p className="post-inline-media-note">Đang chèn trong nội dung</p>}
           <div className="post-image-tools">
