@@ -53,7 +53,7 @@ export default function PostBody({ post, preview = false }: { post: BodyPost; pr
     </div>}
     {videos.length > 0 && <div className="post-media-list">
       {videos.map((item) => <figure key={item.objectKey || item.url} className="post-gallery">
-        <video src={mediaUrl(item.url)} controls preload="metadata" className="post-gallery-full" />
+        <video src={mediaUrl(item.url)} controls playsInline preload="metadata" className="post-gallery-full" />
       </figure>)}
     </div>}
     {link && <a className="post-link-card" href={link} target="_blank" rel="noopener noreferrer">

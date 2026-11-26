@@ -68,7 +68,10 @@ public class PostAttachmentService {
 
         for (PostMediaDTO item : mediaOf(request)) {
             if (item.getFileIndex() == null) continue;
-            var stored = imageService.storePostImage(post.getId(), files.get(item.getFileIndex()));
+            var file = files.get(item.getFileIndex());
+            var stored = item.getType() == MediaType.VIDEO
+                    ? imageService.storePostVideo(post.getId(), file)
+                    : imageService.storePostImage(post.getId(), file);
             replacements.put(item.getObjectKey(), stored.getObjectKey());
             item.setObjectKey(stored.getObjectKey());
             item.setFileIndex(null);
@@ -77,20 +80,19 @@ public class PostAttachmentService {
     }
 
     private List<String> extractImageKeys(CreatePostRequestDTO request) {
-        Set<String> imageKeys = new LinkedHashSet<>();
+        Set<String> keys = new LinkedHashSet<>();
+        Set<String> imageKeys = new HashSet<>();
 
         for (PostMediaDTO mediaItem : mediaOf(request)) {
-            if (mediaItem.getType() != MediaType.IMAGE) {
-                throw new PostException(PostErrorCode.UNSUPPORTED_MEDIA_TYPE);
-            }
-            if (!imageKeys.add(mediaItem.getObjectKey())) {
+            if (!keys.add(mediaItem.getObjectKey())) {
                 throw new PostException(PostErrorCode.DUPLICATE_MEDIA);
             }
+            if (mediaItem.getType() == MediaType.IMAGE) imageKeys.add(mediaItem.getObjectKey());
         }
         if (!imageKeys.containsAll(PostMarkdown.imageKeys(request.getContent()))) {
             throw new PostException(PostErrorCode.MARKDOWN_MEDIA_MISSING);
         }
-        return List.copyOf(imageKeys);
+        return List.copyOf(keys);
     }
 
     private List<PostMediaDTO> mediaOf(CreatePostRequestDTO request) {

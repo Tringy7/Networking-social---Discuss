@@ -21,6 +21,17 @@ class MediaStorageServiceTest {
     private final MediaStorageService media = new MediaStorageService(processor, minio);
 
     @Test
+    void rejectsVideoWithoutMp4HeaderBeforeUploading() {
+        var invalid = new MockMultipartFile("files", "invalid.mp4", "video/mp4", new byte[]{1, 2, 3});
+
+        assertThatThrownBy(() -> media.storePostVideo(1L, invalid, key -> {}))
+                .isInstanceOf(MediaException.class)
+                .extracting(error -> ((MediaException) error).getError())
+                .isEqualTo(MediaErrorCode.INVALID_VIDEO);
+        verifyNoInteractions(minio);
+    }
+
+    @Test
     void resizesAvatarAndUsesRealImageFormatForObjectKey() throws IOException {
         var image = media.store(ImageKind.AVATAR, 1L, png("photo.jpg", 512, 300));
 

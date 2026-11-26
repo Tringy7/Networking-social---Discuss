@@ -1,5 +1,7 @@
 package com.discuss.discuss.controller.comment;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import com.discuss.discuss.entity.Comment;
 import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.entity.Post;
@@ -14,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -80,18 +81,22 @@ class CommentControllerIntegrationTest extends AbstractApiIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.voteScore").value(0));
     }
 
-    @Test
-    void acceptsMultipartCommentWithAttachment() throws Exception {
+    @ParameterizedTest
+    @CsvSource({"comment.png, image/png", "comment.mp4, video/mp4"})
+    void acceptsMultipartCommentWithAttachment(String name, String contentType) throws Exception {
         User author = user(UserRole.USER);
         Post post = publishedPost(author, community(author, CommunityVisibility.PUBLIC));
-        var file = new MockMultipartFile("files", "comment.png", "image/png", new byte[]{1, 2, 3});
-        org.mockito.Mockito.when(images.storeCommentImage(org.mockito.ArgumentMatchers.anyLong(),
-                org.mockito.ArgumentMatchers.eq(file))).thenReturn(
-                new com.discuss.discuss.dto.media.StoredCommentImageDTO("test/comment.png", "comment.png", "image/png", 3));
+        var file = new MockMultipartFile("files", name, contentType, new byte[]{1, 2, 3});
+        var stored = new com.discuss.discuss.dto.media.StoredCommentImageDTO("comments/1/" + name, name, contentType, 3);
+        boolean video = "video/mp4".equals(contentType);
+        org.mockito.Mockito.when(video
+                ? images.storeCommentVideo(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.eq(file))
+                : images.storeCommentImage(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.eq(file)))
+                .thenReturn(stored);
 
         mvc.perform(multipart("/comments").file(jsonPart("comment",
                         "{\"postId\":" + post.getId() + ",\"content\":\"With picture\"}")).file(file).with(as(author)))
-                .andExpect(status().isCreated()).andExpect(jsonPath("$.content").value("With picture"));
-        verify(images).storeCommentImage(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.eq(file));
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.content").value("With picture"))
+                .andExpect(jsonPath("$.attachments[0].contentType").value(contentType));
     }
 }

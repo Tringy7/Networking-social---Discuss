@@ -12,10 +12,11 @@ const sizeLabel = (size: number) => size < 1024 * 1024
 function FilePreview({ file }: { file: File }) {
   const [url, setUrl] = useState('');
   useEffect(() => {
-    if (!file.type.startsWith('image/')) return;
+    if (!file.type.startsWith('image/') && file.type !== 'video/mp4') return;
     const next = URL.createObjectURL(file); setUrl(next);
     return () => URL.revokeObjectURL(next);
   }, [file]);
+  if (url && file.type === 'video/mp4') return <video src={url} muted playsInline preload="metadata" className="h-10 w-10 rounded object-cover shrink-0" />;
   return url ? <img src={url} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
     : <FileText className="h-5 w-5 shrink-0 text-[var(--text-muted)]" />;
 }
@@ -26,11 +27,11 @@ export function CommentFilePicker({ files, onChange, disabled, onError }: {
   const images = useRef<HTMLInputElement>(null);
   const select = (selected: FileList | null) => {
     const next = [...files, ...Array.from(selected || [])];
-    if (next.some(file => !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type))) {
-      onError('Bình luận chỉ hỗ trợ ảnh JPEG, PNG, WebP hoặc GIF.'); return;
+    if (next.some(file => !['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4'].includes(file.type))) {
+      onError('Bình luận hỗ trợ ảnh JPEG, PNG, WebP, GIF và video MP4.'); return;
     }
     if (next.some(file => file.size > MAX_COMMENT_FILE_SIZE || file.size === 0)) {
-      onError('Chọn ảnh có dung lượng lớn hơn 0 và không quá 10 MB.'); return;
+      onError('Chọn tệp có dung lượng lớn hơn 0 và không quá 10 MB.'); return;
     }
     const sizeError = imageRequestError(next);
     if (sizeError) { onError(sizeError); return; }
@@ -40,12 +41,12 @@ export function CommentFilePicker({ files, onChange, disabled, onError }: {
     <div className="flex flex-wrap items-center gap-3 text-[13px] text-[var(--text-secondary)]">
       <button type="button" disabled={disabled} onClick={() => images.current?.click()}
         className="inline-flex items-center gap-1.5 py-1.5 disabled:opacity-40 hover:text-[var(--text-primary)]">
-        <ImagePlus size={16} />Ảnh
+        <ImagePlus size={16} />Ảnh hoặc video
       </button>
     </div>
-    <input ref={images} type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" aria-label="Chọn ảnh đính kèm"
+    <input ref={images} type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,video/mp4" className="hidden" aria-label="Chọn ảnh hoặc video đính kèm"
       onChange={e => { select(e.target.files); e.target.value = ''; }} />
-    {files.length > 0 && <ul className="space-y-1.5" aria-label="Ảnh đã chọn">
+    {files.length > 0 && <ul className="space-y-1.5" aria-label="Tệp đã chọn">
       {files.map((file, index) => <li key={`${file.name}-${index}`} className="flex items-center gap-2 rounded-lg border border-[var(--border-color)] p-2 text-[13px]">
         <FilePreview file={file} />
         <div className="min-w-0 flex-1"><p className="truncate">{file.name}</p><span className="text-[var(--text-muted)]">{sizeLabel(file.size)}</span></div>
@@ -56,31 +57,36 @@ export function CommentFilePicker({ files, onChange, disabled, onError }: {
 }
 
 export function CommentAttachmentList({ attachments, onRefresh }: { attachments?: CommentAttachment[]; onRefresh?: () => Promise<void> }) {
-  const [failedImages, setFailedImages] = useState(new Set<string>());
+  const [failedMedia, setFailedMedia] = useState(new Set<string>());
   const [refreshing, setRefreshing] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const images = (attachments || []).filter(file => file.contentType.startsWith('image/'));
   const selectedIndex = images.findIndex(file => file.id === selectedId);
   if (!attachments?.length) return null;
   return <div className="pl-8 min-w-0">
-    <ul className="comment-media-grid" data-count={Math.min(attachments.length, 3)} aria-label="Ảnh bình luận">
+    <ul className="comment-media-grid" data-count={Math.min(attachments.length, 3)} aria-label="Tệp đính kèm bình luận">
     {attachments.map(file => <li key={file.id}>
       {file.contentType.startsWith('image/')
         ? <button type="button" className="post-gallery-image post-media-tile comment-media-tile"
             aria-label={`Xem ${file.fileName} kích thước lớn`} onClick={() => setSelectedId(file.id)}>
             <img src={file.url} alt={file.fileName} loading="lazy"
-              onError={() => setFailedImages(previous => new Set(previous).add(file.id))}
-              onLoad={() => setFailedImages(previous => { const next = new Set(previous); next.delete(file.id); return next; })}
+              onError={() => setFailedMedia(previous => new Set(previous).add(file.id))}
+              onLoad={() => setFailedMedia(previous => { const next = new Set(previous); next.delete(file.id); return next; })}
             />
           </button>
-        : <a href={file.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2">
+        : file.contentType === 'video/mp4'
+          ? <video key={file.url} src={file.url} controls playsInline preload="metadata"
+              aria-label={file.fileName} className="w-full max-h-72 rounded bg-black"
+              onError={() => setFailedMedia(previous => new Set(previous).add(file.id))}
+              onLoadedMetadata={() => setFailedMedia(previous => { const next = new Set(previous); next.delete(file.id); return next; })} />
+          : <a href={file.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2">
             <FileText size={16} /><span className="break-all">{file.fileName}</span>
           </a>}
-      {failedImages.has(file.id) && onRefresh && <button type="button" disabled={refreshing}
+      {failedMedia.has(file.id) && onRefresh && <button type="button" disabled={refreshing}
         className="block text-xs text-[var(--text-secondary)] underline" onClick={async () => {
           setRefreshing(true);
           try { await onRefresh(); } catch { /* Keep the retry action visible. */ } finally { setRefreshing(false); }
-        }}>{refreshing ? 'Đang tải lại ảnh…' : 'Ảnh chưa tải được. Thử lại'}</button>}
+        }}>{refreshing ? 'Đang tải lại…' : 'Tệp chưa tải được. Thử lại'}</button>}
     </li>)}
     </ul>
     {selectedIndex >= 0 && <ImageLightbox images={images.map(file => ({ url: file.url, alt: file.fileName }))}

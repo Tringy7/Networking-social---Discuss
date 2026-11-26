@@ -48,14 +48,14 @@ export default function PostComposerModal() {
 
   const acceptFiles = (files: File[]) => {
     if (busy) return;
-    const valid = files.filter((file) => ['image/jpeg', 'image/png', 'image/webp'].includes(file.type) && file.size > 0 && file.size <= 10 * 1024 * 1024);
-    if (valid.length !== files.length) toast('Chỉ hỗ trợ JPG, PNG, WebP tối đa 10 MB mỗi ảnh.', 'error');
-    if (media.length + valid.length > 20) { toast('Mỗi bài viết có tối đa 20 ảnh.', 'error'); return; }
+    const valid = files.filter((file) => ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'].includes(file.type) && file.size > 0 && file.size <= 10 * 1024 * 1024);
+    if (valid.length !== files.length) toast('Chỉ hỗ trợ JPG, PNG, WebP và MP4, tối đa 10 MB mỗi tệp.', 'error');
+    if (media.length + valid.length > 20) { toast('Mỗi bài viết có tối đa 20 tệp đính kèm.', 'error'); return; }
     const sizeError = imageRequestError([...media.flatMap(item => item.file ? [item.file] : []), ...valid]);
     if (sizeError) { toast(sizeError, 'error'); return; }
     setMedia((items) => [...items, ...valid.map((file) => {
       const url = URL.createObjectURL(file); objectUrls.current.add(url);
-      return { id: crypto.randomUUID(), objectKey: `local/${crypto.randomUUID()}`, type: 'IMAGE' as const, file, preview: url, url, position: items.length, inlineImage: false };
+      return { id: crypto.randomUUID(), objectKey: `local/${crypto.randomUUID()}`, type: file.type === 'video/mp4' ? 'VIDEO' as const : 'IMAGE' as const, file, preview: url, url, position: items.length, inlineImage: false };
     })]);
   };
   const move = (index: number, direction: number) => setMedia((items) => {
@@ -78,7 +78,7 @@ export default function PostComposerModal() {
     if (!selectedCommunity) { toast('Hãy tham gia một cộng đồng trước khi đăng bài.', 'error'); return; }
     if (!canPost.some((community) => community.name === selectedCommunity)) { toast('Bạn cần là thành viên của cộng đồng để đăng bài.', 'error'); return; }
     if (!title.trim()) { toast('Vui lòng nhập tiêu đề bài viết.', 'error'); return; }
-    if (type === 'TEXT' && !content.trim() && !media.length) { toast('Vui lòng nhập nội dung hoặc chọn ảnh.', 'error'); return; }
+    if (type === 'TEXT' && !content.trim() && !media.length) { toast('Vui lòng nhập nội dung hoặc đính kèm ảnh hay video.', 'error'); return; }
     if (inlineKeys.some((key) => !media.some((item) => item.objectKey === key))) { toast('Ảnh chèn trong nội dung phải có trong danh sách media.', 'error'); return; }
     setBusy(true);
     setFormError('');
@@ -86,7 +86,7 @@ export default function PostComposerModal() {
       const attachments: PostMediaInput[] = [];
       const files: File[] = [];
       for (const item of media) {
-        if (!item.objectKey) throw new Error('Ảnh không có mã tham chiếu. Hãy chọn lại ảnh.');
+        if (!item.objectKey) throw new Error('Tệp đính kèm không có mã tham chiếu. Hãy chọn lại tệp.');
         const fileIndex = item.file ? files.push(item.file) - 1 : undefined;
         attachments.push({ type: item.type, objectKey: item.objectKey, fileIndex, caption: item.caption ?? undefined });
       }
@@ -108,7 +108,7 @@ export default function PostComposerModal() {
     inlineImage: !!item.objectKey && inlineKeys.includes(item.objectKey),
   }));
   return <Modal isOpen={isCreateModalOpen} onClose={closeCreateModal} closeDisabled={busy}
-    title={editingPost ? 'Chỉnh sửa bài viết' : 'Tạo bài viết'} description="Chia sẻ nội dung, ảnh hoặc cả hai với cộng đồng của bạn." maxWidth="4xl">
+    title={editingPost ? 'Chỉnh sửa bài viết' : 'Tạo bài viết'} description="Chia sẻ nội dung, ảnh hoặc video với cộng đồng của bạn." maxWidth="4xl">
     <form onSubmit={submit} className="post-composer" aria-busy={busy}>
       <fieldset disabled={busy} className="post-composer-fields">
         <label>Cộng đồng<select aria-label="Cộng đồng đăng bài" value={communityName || canPost[0]?.name || ''} disabled={!!editingPost}
@@ -122,21 +122,21 @@ export default function PostComposerModal() {
         </select></label>
         {!canPost.length && !editingPost && <p className="post-composer-help" role="status">Tham gia một cộng đồng để bắt đầu đăng bài.</p>}
         <label>Tiêu đề<input aria-label="Tiêu đề bài viết" value={title} maxLength={300} required onChange={(event) => setTitle(event.target.value)} placeholder="Bắt đầu một cuộc trò chuyện" /></label>
-        <div className="post-composer-section"><h2>Nội dung bài viết</h2><p>Có thể để trống nếu bạn đính kèm ảnh. Hỗ trợ Markdown và đoạn code.</p></div>
+        <div className="post-composer-section"><h2>Nội dung bài viết</h2><p>Có thể để trống nếu bạn đính kèm ảnh hoặc video. Hỗ trợ Markdown và đoạn code.</p></div>
         <MarkdownEditor value={content} onChange={setContent} images={resolvedMedia.filter((item) => item.type === 'IMAGE')}
           onImage={onInlineImage} imageLimitReached={media.length >= 20} />
-        <div className="post-composer-section"><h2>Ảnh đính kèm <span>{media.length}/20</span></h2><p>Sắp xếp ảnh theo thứ tự bạn muốn hiển thị.</p></div>
+        <div className="post-composer-section"><h2>Ảnh và video <span>{media.length}/20</span></h2><p>Sắp xếp các tệp theo thứ tự bạn muốn hiển thị.</p></div>
         <div className="post-image-dropzone" onDragOver={(event) => event.preventDefault()} onDrop={(event) => {
           event.preventDefault(); acceptFiles(Array.from(event.dataTransfer.files));
         }}>
-          <ImagePlus size={24} /><p>Kéo ảnh vào đây hoặc chọn từ thiết bị</p><span>Tối đa 20 ảnh · JPG, PNG, WebP · 10 MB/ảnh · Tổng mỗi lần gửi tối đa 55 MB</span>
-          <Button type="button" variant="secondary" disabled={media.length >= 20} onClick={() => fileInput.current?.click()}>Chọn ảnh</Button>
-          <input ref={fileInput} type="file" hidden multiple accept="image/jpeg,image/png,image/webp"
+          <ImagePlus size={24} /><p>Kéo ảnh hoặc video vào đây, hoặc chọn từ thiết bị</p><span>Tối đa 20 tệp · JPG, PNG, WebP, MP4 · 10 MB/tệp · Tổng mỗi lần gửi tối đa 55 MB</span>
+          <Button type="button" variant="secondary" disabled={media.length >= 20} onClick={() => fileInput.current?.click()}>Chọn ảnh hoặc video</Button>
+          <input ref={fileInput} type="file" hidden multiple accept="image/jpeg,image/png,image/webp,video/mp4"
             onChange={(event) => { acceptFiles(Array.from(event.target.files || [])); event.target.value = ''; }} />
         </div>
         <div className="post-image-drafts">{media.map((item, index) => <section key={item.id} className="post-image-draft">
-          {item.type === 'VIDEO' ? <video src={httpUrl(item.url)} controls preload="metadata" /> : <img src={item.preview || item.url} alt={`Ảnh ${index + 1}`} />}
-          <div><span>{index + 1} / {media.length}</span><span>{item.file ? 'Ảnh mới · Chưa gửi' : 'Ảnh hiện có'}</span></div>
+          {item.type === 'VIDEO' ? <video src={item.preview || httpUrl(item.url)} controls playsInline preload="metadata" /> : <img src={item.preview || item.url} alt={`Ảnh ${index + 1}`} />}
+          <div><span>{index + 1} / {media.length}</span><span>{item.file ? 'Tệp mới · Chưa gửi' : 'Tệp hiện có'}</span></div>
           {item.objectKey && inlineKeys.includes(item.objectKey) && <p className="post-inline-media-note">Đang chèn trong nội dung</p>}
           <div className="post-image-tools">
             <button type="button" aria-label={`Đưa media ${index + 1} lên trước`} disabled={index === 0} onClick={() => move(index, -1)}><ArrowLeft size={16} /></button>

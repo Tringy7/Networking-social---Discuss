@@ -162,4 +162,24 @@ class PostControllerIntegrationTest extends AbstractApiIntegrationTest {
         mvc.perform(multipart("/posts").file(jsonPart("post", post)).file(file).with(as(author)))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.media[0].objectKey").value(key));
     }
+
+    @Test
+    void createsVideoOnlyPostAndPersistsVideoAttachment() throws Exception {
+        User author = user(UserRole.USER);
+        Community community = community(author, CommunityVisibility.PUBLIC);
+        var file = new MockMultipartFile("files", "post.mp4", "video/mp4", new byte[]{1, 2, 3});
+        String key = community.getName() + "/post.mp4";
+        when(images.storePostVideo(anyLong(), eq(file)))
+                .thenReturn(new StoredImageDTO(key, "", "video/mp4", 0, 0, 3));
+        String post = """
+                {"communityName":"%s","title":"Video post","type":"TEXT","content":"",
+                 "media":[{"type":"VIDEO","objectKey":"local/video","fileIndex":0}]}
+                """.formatted(community.getName());
+
+        mvc.perform(multipart("/posts").file(jsonPart("post", post)).file(file).with(as(author)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.media[0].type").value("VIDEO"))
+                .andExpect(jsonPath("$.media[0].objectKey").value(key))
+                .andExpect(jsonPath("$.media[0].inlineImage").value(false));
+    }
 }

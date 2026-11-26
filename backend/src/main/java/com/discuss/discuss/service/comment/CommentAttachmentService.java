@@ -16,14 +16,16 @@ public class CommentAttachmentService {
     private final ImageService imageService;
 
     public void validate(List<MultipartFile> images) {
-        imageService.validateCommentImages(images);
+        imageService.validateCommentMedia(images);
     }
 
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
     public void store(Comment comment, List<MultipartFile> images) {
         validate(images);
         for (MultipartFile image : images) {
-            var stored = imageService.storeCommentImage(comment.getId(), image);
+            var stored = "video/mp4".equalsIgnoreCase(image.getContentType())
+                    ? imageService.storeCommentVideo(comment.getId(), image)
+                    : imageService.storeCommentImage(comment.getId(), image);
             attachments.save(
                     CommentAttachment.builder()
                             .comment(comment)
