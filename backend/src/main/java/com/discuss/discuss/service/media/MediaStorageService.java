@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,8 +47,53 @@ public class MediaStorageService {
         return upload(file, ImageKind.POST, ImageKind.POST.prefixFor(postId), reserve);
     }
 
-    public void validateCommentImages(List<MultipartFile> images) {
-        imageProcessor.validateCommentImages(images);
+    public StoredImageDTO storePostVideo(Long postId, MultipartFile file, Consumer<String> reserve) {
+        byte[] data = readMp4(file);
+        String key = ImageKind.POST.prefixFor(postId) + UUID.randomUUID() + ".mp4";
+        putObject(key, data, "video/mp4", Map.of(), reserve);
+        return new StoredImageDTO(key, minioService.buildFileUrl(key), "video/mp4", 0, 0, data.length);
+    }
+
+    private byte[] readMp4(MultipartFile file) {
+        validateVideoSize(file);
+        if (!"video/mp4".equalsIgnoreCase(file.getContentType())) {
+            throw new MediaException(MediaErrorCode.INVALID_VIDEO);
+        }
+
+        final byte[] data;
+        try {
+            data = file.getBytes();
+        } catch (IOException ex) {
+            throw new MediaException(MediaErrorCode.INVALID_VIDEO);
+        }
+
+        // An MP4 starts with an ISO Base Media file type box.
+        if (data.length < 16 || data[4] != 'f' || data[5] != 't' || data[6] != 'y' || data[7] != 'p') {
+            throw new MediaException(MediaErrorCode.INVALID_VIDEO);
+        }
+        int boxSize = ByteBuffer.wrap(data).getInt();
+        if (boxSize < 16 || boxSize > data.length) throw new MediaException(MediaErrorCode.INVALID_VIDEO);
+
+        return data;
+    }
+
+    private void validateVideoSize(MultipartFile file) {
+        if (file.isEmpty()) throw new MediaException(MediaErrorCode.EMPTY_FILE);
+        if (file.getSize() > 10 * 1024 * 1024) throw new MediaException(MediaErrorCode.FILE_TOO_LARGE);
+    }
+
+    public void validateCommentMedia(List<MultipartFile> files) {
+        for (MultipartFile file : files) {
+            if ("video/mp4".equalsIgnoreCase(file.getContentType())) validateVideoSize(file);
+            else imageProcessor.validateCommentImages(List.of(file));
+        }
+    }
+
+    public StoredCommentImageDTO storeCommentVideo(Long commentId, MultipartFile file, Consumer<String> reserve) {
+        byte[] data = readMp4(file);
+        String key = "comments/" + commentId + "/" + UUID.randomUUID() + ".mp4";
+        putObject(key, data, "video/mp4", PRIVATE_HEADERS, reserve);
+        return new StoredCommentImageDTO(key, sanitizeFileName(file.getOriginalFilename()), "video/mp4", data.length);
     }
 
     /** Lưu ảnh comment. reserve(key) được gọi TRƯỚC khi ghi byte để upload bị gián đoạn vẫn dọn được. */
