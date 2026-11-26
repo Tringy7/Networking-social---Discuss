@@ -111,6 +111,19 @@ public class CommentService {
         if (!Objects.equals(comment.getUser().getId(), user.getId()) && user.getRole() != UserRole.ADMIN) {
             authorization.requireModeratorOrOwner(comment.getPost().getCommunity(), user);
         }
+        markDeleted(comment);
+    }
+
+    @HasRole("ADMIN")
+    public boolean deleteForAdmin(Long id) {
+        var comment = commentRepository.lockById(id)
+                .orElseThrow(() -> commentSupport.notFound(CommentErrorCode.COMMENT_NOT_FOUND));
+        if (comment.getStatus() == CommentStatus.DELETED) return false;
+        markDeleted(comment);
+        return true;
+    }
+
+    private void markDeleted(Comment comment) {
         comment.setStatus(CommentStatus.DELETED);
         comment.setContent("[deleted]");
         comment.setDeletedAt(LocalDateTime.now());

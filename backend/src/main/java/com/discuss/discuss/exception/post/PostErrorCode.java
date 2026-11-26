@@ -18,6 +18,9 @@ public enum PostErrorCode {
     // 404 - Not Found
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "Post not found"),
 
+    POST_RESTORE_NOT_ALLOWED(HttpStatus.CONFLICT, "Only posts removed by moderation can be restored here"),
+    POST_RESTORE_COMMUNITY_INACTIVE(HttpStatus.CONFLICT, "The community must be active before restoring this post"),
+
     // 415 - Unsupported Media Type
     UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Video upload is not available yet");
 

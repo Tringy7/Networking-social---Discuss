@@ -1,6 +1,7 @@
 package com.discuss.discuss.repository;
 
 import com.discuss.discuss.entity.CommunityReport;
+import com.discuss.discuss.dto.report.MyReportResponseDTO;
 import com.discuss.discuss.enums.ReportStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,6 +11,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 
 public interface CommunityReportRepository extends JpaRepository<CommunityReport, Long> {
+    @Query("""
+            select new com.discuss.discuss.dto.report.MyReportResponseDTO(
+                r.id, com.discuss.discuss.enums.ReportTargetType.COMMUNITY, r.community.id,
+                r.community.name, r.reason, r.description, r.status, r.createdAt, r.handledAt)
+            from CommunityReport r where r.user.id = :reporterId and (:status is null or r.status = :status)
+            """)
+    Page<MyReportResponseDTO> findMine(@Param("reporterId") Long reporterId,
+            @Param("status") ReportStatus status, Pageable pageable);
+
     boolean existsByCommunityIdAndUserIdAndStatus(Long targetId, Long reporterId, ReportStatus status);
 
     @EntityGraph(attributePaths = {"community", "user", "handledBy"})

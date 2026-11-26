@@ -11,7 +11,8 @@ public record PostResponseDTO(
         Author author, String title, PostType type, String content,
         List<Media> media, String linkUrl,
         long voteScore, long commentCount, com.discuss.discuss.enums.VoteType userVote, boolean isSaved,
-        boolean pinned, PostStatus status, LocalDateTime createdAt, LocalDateTime updatedAt
+        boolean pinned, PostStatus status, LocalDateTime createdAt, LocalDateTime updatedAt,
+        boolean moderationRemoval
 ) {
     public record Author(String id, String username, String displayName, String avatarUrl) {}
     public record Media(MediaType type, String objectKey, String caption, String url, int position, boolean inlineImage) {}

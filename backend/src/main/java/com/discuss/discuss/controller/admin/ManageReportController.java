@@ -1,6 +1,7 @@
 package com.discuss.discuss.controller.admin;
 
 import com.discuss.discuss.dto.common.PageResponseDTO;
+import com.discuss.discuss.dto.report.AdminReportTargetDTO;
 import com.discuss.discuss.dto.report.ReportQueryRequestDTO;
 import com.discuss.discuss.dto.report.ReportResponseDTO;
 import com.discuss.discuss.dto.report.ReviewReportRequestDTO;
@@ -62,15 +63,20 @@ public class ManageReportController {
         return ResponseEntity.ok(adminReportService.getDetail(type, reportId));
     }
 
+    @GetMapping("/admin/reports/{type}/{reportId}/target")
+    public ResponseEntity<AdminReportTargetDTO> target(@PathVariable ReportTargetType type, @PathVariable @Positive Long reportId) {
+        return ResponseEntity.ok(adminReportService.getTarget(type, reportId));
+    }
+
     @PatchMapping("/admin/reports/{type}/{reportId}/resolve")
     public ResponseEntity<ReportResponseDTO> resolve(@PathVariable ReportTargetType type, @PathVariable @Positive Long reportId,
             @Valid @RequestBody ReviewReportRequestDTO request) {
-        return ResponseEntity.ok(adminReportService.review(type, reportId, ReportStatus.RESOLVED, request.resolutionNote()));
+        return ResponseEntity.ok(adminReportService.review(type, reportId, ReportStatus.RESOLVED, request.resolutionNote(), request.action()));
     }
 
     @PatchMapping("/admin/reports/{type}/{reportId}/reject")
     public ResponseEntity<ReportResponseDTO> reject(@PathVariable ReportTargetType type, @PathVariable @Positive Long reportId,
             @Valid @RequestBody ReviewReportRequestDTO request) {
-        return ResponseEntity.ok(adminReportService.review(type, reportId, ReportStatus.REJECTED, request.resolutionNote()));
+        return ResponseEntity.ok(adminReportService.review(type, reportId, ReportStatus.REJECTED, request.resolutionNote(), request.action()));
     }
 }

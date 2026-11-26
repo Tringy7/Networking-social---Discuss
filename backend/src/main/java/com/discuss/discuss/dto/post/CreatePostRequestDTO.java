@@ -1,11 +1,9 @@
 package com.discuss.discuss.dto.post;
 
 import com.discuss.discuss.enums.PostType;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.*;
-import org.hibernate.validator.constraints.URL;
 
 import java.util.List;
 

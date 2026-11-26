@@ -6,8 +6,6 @@ import com.discuss.discuss.dto.community.UpdateCommunityRequestDTO;
 import com.discuss.discuss.entity.Category;
 import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.entity.CommunityInfo;
-import com.discuss.discuss.enums.CommunityStatus;
-import com.discuss.discuss.enums.CommunityVisibility;
 import com.discuss.discuss.exception.community.CommunityErrorCode;
 import com.discuss.discuss.exception.community.CommunityException;
 import com.discuss.discuss.repository.CommunityInfoRepository;

@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, matchPath } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 
 const adminPages = {
@@ -8,18 +8,19 @@ const adminPages = {
   '/admin/posts': 'Bài viết',
   '/admin/reports': 'Báo cáo',
   '/admin/categories': 'Danh mục',
-  '/admin/activity-logs': 'Activity Logs',
   '/admin/reputation': 'Điểm uy tín',
 };
 
 export function AdminBreadcrumb() {
-  const { pathname } = useLocation();
-  const currentPage = adminPages[pathname] || 'Quản trị';
+  const { pathname, search } = useLocation();
+  const parent = Object.keys(adminPages).find(path => path !== '/admin' && matchPath(`${path}/*`, pathname) && pathname !== path);
+  const currentPage = parent ? 'Chi tiết' : adminPages[pathname] || 'Quản trị';
 
   return (
     <nav className="admin-breadcrumb" aria-label="Đường dẫn">
       <ol>
-        <li><Link to="/admin">DISCUSS Admin</Link></li>
+        <li><Link to="/admin">Quản trị</Link></li>
+        {parent && <li><ChevronRight size={14} aria-hidden="true" /><Link to={{ pathname: parent, search }}>{adminPages[parent]}</Link></li>}
         <li aria-current="page"><ChevronRight size={14} aria-hidden="true" /><span>{currentPage}</span></li>
       </ol>
     </nav>

@@ -91,24 +91,24 @@ export default function ActivityLogManagementPage() {
   };
 
   const columns = [
-    { key: 'id', label: 'Log ID', numeric: true, render: log => adminNumber(log.id) },
-    { key: 'actorUserId', label: 'Actor User ID', numeric: true, render: log => log.actorUserId ?? '—' },
-    { key: 'actorUsername', label: 'Actor Username', render: log => log.actorUsername || '—' },
+    { key: 'id', label: 'ID nhật ký', numeric: true, render: log => adminNumber(log.id) },
+    { key: 'actorUserId', label: 'ID người thực hiện', numeric: true, render: log => log.actorUserId ?? '—' },
+    { key: 'actorUsername', label: 'Người thực hiện', render: log => log.actorUsername || '—' },
     {
       key: 'action',
-      label: 'Action',
+      label: 'Hành động',
       render: log => <span className={`admin-activity-action-badge tone-${activityTone(log.action)}`}>{log.action || '—'}</span>,
     },
-    { key: 'targetType', label: 'Target Type', render: log => log.targetType || '—' },
-    { key: 'targetId', label: 'Target ID', numeric: true, render: log => log.targetId ?? '—' },
-    { key: 'note', label: 'Note', className: 'admin-wrap-cell', render: log => <span className="admin-activity-note">{log.note || '—'}</span> },
-    { key: 'createdAt', label: 'Created At', numeric: true, render: log => activityDateTime(log.createdAt) },
+    { key: 'targetType', label: 'Loại đối tượng', render: log => log.targetType || '—' },
+    { key: 'targetId', label: 'ID đối tượng', numeric: true, render: log => log.targetId ?? '—' },
+    { key: 'note', label: 'Ghi chú', className: 'admin-wrap-cell', render: log => <span className="admin-activity-note">{log.note || '—'}</span> },
+    { key: 'createdAt', label: 'Thời điểm', numeric: true, render: log => activityDateTime(log.createdAt) },
   ];
 
   return (
     <div className="admin-page admin-activity-log-management">
       <AdminPageHeader
-        title="Activity Logs"
+        title="Nhật ký hoạt động"
         description="Theo dõi các thao tác quản trị được ghi nhận trong hệ thống."
         loading={result.loading}
         onRefresh={result.reload}
@@ -116,7 +116,7 @@ export default function ActivityLogManagementPage() {
 
       <form className="admin-activity-filters" onSubmit={applyFilters}>
         <label className="admin-filter" htmlFor="admin-log-actor-id">
-          <span>Actor User ID</span>
+          <span>ID người thực hiện</span>
           <input
             id="admin-log-actor-id"
             type="number"
@@ -128,7 +128,7 @@ export default function ActivityLogManagementPage() {
           />
         </label>
         <label className="admin-filter" htmlFor="admin-log-action">
-          <span>Action</span>
+          <span>Mã hành động</span>
           <input
             id="admin-log-action"
             value={drafts.action}
@@ -138,7 +138,7 @@ export default function ActivityLogManagementPage() {
           />
         </label>
         <label className="admin-filter" htmlFor="admin-log-target-type">
-          <span>Target Type</span>
+          <span>Loại đối tượng</span>
           <input
             id="admin-log-target-type"
             value={drafts.targetType}
@@ -148,8 +148,8 @@ export default function ActivityLogManagementPage() {
           />
         </label>
         <div className="admin-activity-filter-actions">
-          <button className="admin-button admin-button-primary" type="submit">Apply filters</button>
-          {(actorUserId || action || targetType) && <button className="admin-button" type="button" onClick={clearFilters}>Clear</button>}
+          <button className="admin-button admin-button-primary" type="submit">Áp dụng</button>
+          {(actorUserId || action || targetType) && <button className="admin-button" type="button" onClick={clearFilters}>Xóa bộ lọc</button>}
         </div>
       </form>
       {filterError && <p className="admin-inline-error" role="alert">{filterError}</p>}
@@ -157,10 +157,10 @@ export default function ActivityLogManagementPage() {
       <div className="admin-list-meta">
         <span role="status">
           {result.loading
-            ? 'Đang tải activity logs…'
+            ? 'Đang tải nhật ký…'
             : result.error
-              ? 'Chưa tải được activity logs'
-              : `${adminNumber(result.data?.totalElements)} logs`}
+              ? 'Không thể tải nhật ký'
+              : `${adminNumber(result.data?.totalElements)} bản ghi`}
         </span>
       </div>
       <AdminDataTable
@@ -170,8 +170,8 @@ export default function ActivityLogManagementPage() {
         loading={result.loading}
         error={result.error}
         retry={result.reload}
-        caption="Activity Logs"
-        empty={<AdminEmptyState title="Không tìm thấy activity log" />}
+        caption="Nhật ký hoạt động"
+        empty={<AdminEmptyState title="Không tìm thấy nhật ký hoạt động" />}
       />
       <AdminPagination
         result={result.data}

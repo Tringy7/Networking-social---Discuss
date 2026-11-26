@@ -6,7 +6,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import Avatar from '../ui/Avatar';
-import { Home, Compass, TrendingUp, Bookmark, Bell, MessageSquare, Users, Settings, ShieldAlert, ShieldCheck, Plus, LogIn, UserRound, PanelLeftClose, PanelLeftOpen, ArrowUpRight } from 'lucide-react';
+import { Home, Compass, TrendingUp, Bookmark, Bell, Flag, MessageSquare, Users, Settings, ShieldAlert, ShieldCheck, Plus, LogIn, UserRound, PanelLeftClose, PanelLeftOpen, ArrowUpRight } from 'lucide-react';
 
 export default function Sidebar() {
   const { user, isAuthenticated, activeRole } = useAuthStore();
@@ -51,6 +51,7 @@ export default function Sidebar() {
           <nav className="side-group">
             {!collapsed && <p className="sidebar-caption">Thư viện cá nhân</p>}
             {link('/saved', 'Bài viết đã lưu', Bookmark)}
+            {link('/reports/mine', 'Báo cáo của tôi', Flag)}
             {link(`/u/${user.username}`, 'Hồ sơ của bạn', UserRound)}
             {link('/notifications', 'Thông báo', Bell)}
             {link('/messages', 'Tin nhắn', MessageSquare)}

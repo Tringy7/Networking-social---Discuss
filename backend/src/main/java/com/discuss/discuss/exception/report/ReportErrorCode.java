@@ -7,6 +7,7 @@ public enum ReportErrorCode {
     REPORT_ALREADY_HANDLED(HttpStatus.CONFLICT, "Report has already been handled"),
     INVALID_REPORT_STATUS(HttpStatus.BAD_REQUEST, "Review status must be RESOLVED or REJECTED"),
     INVALID_REVIEW_NOTE(HttpStatus.BAD_REQUEST, "Resolution note is required and must be at most 2000 characters"),
+    INVALID_MODERATION_ACTION(HttpStatus.BAD_REQUEST, "This moderation action is not supported for the report"),
     INVALID_COMMUNITY_REPORT_TYPE(HttpStatus.BAD_REQUEST,
             "Community moderation only supports POST and COMMENT reports"),
 

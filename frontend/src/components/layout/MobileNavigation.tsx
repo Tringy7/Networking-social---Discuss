@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Bell, Compass, Home, Menu, MessageSquare, Plus, Settings, ShieldCheck, UserRound, Users, X, Bookmark, LogIn } from 'lucide-react';
+import { Bell, Compass, Flag, Home, Menu, MessageSquare, Plus, Settings, ShieldCheck, UserRound, Users, X, Bookmark, LogIn } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import NotificationBadge from '../ui/NotificationBadge';
@@ -93,6 +93,7 @@ export const MobileNavigation: React.FC = () => {
                 <>
                   <Link onClick={closeMoreMenu} to={`/u/${user.username}`} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><UserRound className="h-4 w-4" />Hồ sơ</Link>
                   <Link onClick={closeMoreMenu} to="/saved" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Bookmark className="h-4 w-4" />Đã lưu</Link>
+                  <Link onClick={closeMoreMenu} to="/reports/mine" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Flag className="h-4 w-4 shrink-0" aria-hidden="true" />Báo cáo của tôi</Link>
                   <Link onClick={closeMoreMenu} to="/messages" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><MessageSquare className="h-4 w-4" />Tin nhắn</Link>
                   <Link onClick={closeMoreMenu} to="/communities/mine" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Users className="h-4 w-4" />Cộng đồng của tôi</Link>
                   <Link onClick={closeMoreMenu} to="/communities/create" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Plus className="h-4 w-4" />Tạo cộng đồng</Link>

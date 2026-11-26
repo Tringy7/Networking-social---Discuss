@@ -1,5 +1,0 @@
-{
-    "java.configuration.updateBuildConfiguration": "interactive",
-    "java.autobuild.enabled": false,
-    "postman.settings.dotenv-detection-notification-visibility": false
-}

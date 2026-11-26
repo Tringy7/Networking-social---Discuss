@@ -2,6 +2,7 @@ package com.discuss.discuss.controller.report;
 
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.report.CreateReportRequestDTO;
+import com.discuss.discuss.dto.report.MyReportResponseDTO;
 import com.discuss.discuss.dto.report.ReportQueryRequestDTO;
 import com.discuss.discuss.dto.report.ReportResponseDTO;
 import com.discuss.discuss.dto.report.ReviewReportRequestDTO;
@@ -30,6 +31,13 @@ public class ReportController {
     private final PostReportQueryService postReportQueries;
     private final CommentReportQueryService commentReportQueries;
     private final ReportReviewService reportReviewService;
+
+    @GetMapping("/reports/me")
+    public ResponseEntity<PageResponseDTO<MyReportResponseDTO>> listMyReports(
+            @RequestParam(defaultValue = "POST") ReportTargetType type,
+            @Valid @ModelAttribute ReportQueryRequestDTO request) {
+        return ResponseEntity.ok(reportService.listMine(type, request.getStatus(), request.toPageable()));
+    }
 
     @PatchMapping({"/communities/{name}/reports/{type}/{reportId}/resolve", "/reports/community/{name}/{type}/{reportId}/resolve"})
     public ResponseEntity<ReportResponseDTO> resolveCommunityReport(

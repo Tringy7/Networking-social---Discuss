@@ -8,6 +8,7 @@ import com.discuss.discuss.dto.user.UserInfoResponseDTO;
 import com.discuss.discuss.service.community.CommunityService;
 import com.discuss.discuss.service.media.ImageService;
 import com.discuss.discuss.service.user.PublicUserProfileService;
+import com.discuss.discuss.service.user.UserPrivacyService;
 import com.discuss.discuss.service.user.UserProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class UserController {
     private final UserProfileService userProfileService;
+    private final UserPrivacyService userPrivacyService;
     private final PublicUserProfileService publicUserProfileService;
 
     private final ImageService imageService;
@@ -77,6 +79,13 @@ public class UserController {
         );
     }
 
+
+    public record UpdatePrivacyRequest(Boolean showDateOfBirth, Boolean showLocation) {}
+
+    @PatchMapping("/users/me/settings/privacy")
+    public UserInfoResponseDTO.PrivacySettings updatePrivacy(@RequestBody UpdatePrivacyRequest request) {
+        return userPrivacyService.updateMyPrivacy(request.showDateOfBirth(), request.showLocation());
+    }
 
     @PatchMapping({"/users/me/profile", "/user/me/profile"})
     public ResponseEntity<UserInfoResponseDTO> editUserInfo(

@@ -8,8 +8,6 @@ import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.mapper.report.ReportMapper;
 import com.discuss.discuss.repository.CommunityReportRepository;
 import com.discuss.discuss.service.community.CommunitySupport;
-import com.discuss.discuss.service.community.CommunityAuthorizationService;
-import com.discuss.discuss.service.user.UserService;
 import com.discuss.discuss.service.user.UserAuthorizationService;
 import com.discuss.discuss.utils.annotation.auth.HasRole;
 import lombok.RequiredArgsConstructor;

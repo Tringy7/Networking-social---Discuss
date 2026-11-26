@@ -1,125 +1,43 @@
-# DISCUSS Admin UI
+# Thiết kế giao diện quản trị Discuss
 
-## Phạm vi bàn giao
+Khu vực `/admin` phục vụ quản trị viên cần tra cứu, kiểm duyệt và theo dõi thao tác trên Discuss. Giao diện ưu tiên ba việc thường gặp: nhận biết mục cần xử lý, tìm đúng đối tượng và xác nhận trước khi thay đổi dữ liệu.
 
-Giao diện gồm bảy màn hình, dùng chung khung Admin, bảng dữ liệu, bộ lọc,
-phân trang, menu thao tác, ngăn chi tiết và hộp xác nhận. Giữ React/Vite,
-Nunito Sans, Zustand, React Router, cơ chế theme và API client có cookie/refresh token.
-Không thay đổi backend hoặc hợp đồng API.
+## Bố cục và nhận diện
 
-| Đường dẫn | Chức năng có thể dùng |
+| Vùng | Thiết kế hiện tại |
 | --- | --- |
-| `/admin` | Tổng số người dùng/cộng đồng/bài viết/bình luận, trạng thái tài khoản/cộng đồng, số báo cáo chờ xử lý/đã giải quyết, lối tắt quản lý |
-| `/admin/users` | Tìm username/email, lọc ACTIVE/SUSPENDED, sắp xếp, phân trang, xem thông tin và hồ sơ công khai |
-| `/admin/communities` | Xem và tìm trong danh sách cộng đồng ACTIVE, xem chi tiết/chủ sở hữu/quyền riêng tư |
-| `/admin/posts` | Bài đã đăng trong phạm vi được phép xem, tìm tiêu đề/nội dung, lọc cộng đồng, xem Markdown/ảnh/code, xóa mềm có xác nhận |
-| `/admin/comments` | Chọn/tìm bài viết, xem bình luận trong bài, lọc nội dung/tác giả, phân trang phía client, xem đầy đủ và xóa mềm có xác nhận |
-| `/admin/reports` | POST/COMMENT/COMMUNITY, lọc trạng thái/loại/cộng đồng, ghép và phân trang, xem nội dung, xóa bài viết/bình luận vi phạm |
-| `/admin/categories` | Danh sách và tìm tên/slug, phân trang; có biểu mẫu tạo/sửa và xác nhận xóa nhưng chưa thể gửi |
+| Thanh đầu trang | Cao 64 px, đặt logo Discuss và tên khu vực ở trái. Đổi chủ đề, về cộng đồng và menu tài khoản nằm ở phải. |
+| Điều hướng | Sidebar rộng 240 px, có thể thu gọn. Ba nhóm là Tổng quan, Quản lý và Kiểm duyệt. Mục đang mở dùng nền pha màu nhấn. Mục Báo cáo có số chờ xử lý khi số liệu đã tải. |
+| Vùng nội dung | Dùng nền trung tính. Bảng, bộ lọc và biểu mẫu dùng bề mặt riêng với viền mảnh. Tiêu đề trang, mô tả ngắn và hành động chung nằm phía trên. |
+| Màn hình nhỏ | Từ 1100 px trở xuống, sidebar mở dạng ngăn trượt và vùng chính chiếm toàn bộ chiều rộng. Từ 900 px trở xuống, lưới tổng quan còn hai cột. Từ 700 px trở xuống, các hàng bảng chuyển thành nhóm trường có nhãn. |
 
-## Tệp mới
+Admin dùng Nunito Sans và dùng chung chủ đề sáng/tối cùng màu nhấn của Discuss. Chủ đề sáng có nền `#F6F7F9`, sidebar trắng và đường viền `#E1E5EB`. Chủ đề tối dùng nền `#101416`, sidebar `#151C1F` và đường viền `#2C3437`. Màu cam mặc định `#F97316` dành cho hành động chính và trạng thái đang chọn. Trạng thái nghiệp vụ có màu và nhãn chữ riêng.
 
-- `src/components/admin/AdminHeader.tsx`: logo, theme, tài khoản, đăng xuất, về cộng đồng.
-- `src/components/admin/AdminSidebar.tsx`: bảy mục theo nhóm, thu gọn, số báo cáo chờ xử lý.
-- `src/components/admin/AdminDataContext.tsx`: thống kê dùng chung và tổng số báo cáo.
-- `src/components/admin/AdminUI.tsx`: header, bảng, bộ lọc, tìm kiếm debounce, badge, phân trang, trạng thái tải/lỗi/rỗng, menu, avatar, ngăn chi tiết, xác nhận.
-- `src/components/admin/AdminPreviews.tsx`: xem trước cộng đồng, bài viết, bình luận.
-- `src/hooks/useAdminQuery.ts`: đồng bộ bộ lọc/phân trang với URL.
-- `src/hooks/useAdminResource.ts`: tải dữ liệu, thử lại, ngăn kết quả cũ ghi đè sau khi đổi bộ lọc.
-- `src/services/adminModeration.ts`: adapter API, ghép báo cáo, capability và ranh giới tích hợp còn thiếu.
-- `src/pages/admin/PostManagementPage.tsx`.
-- `src/pages/admin/CommentManagementPage.tsx`.
-- `src/pages/admin/CategoryManagementPage.tsx`.
-- `src/layouts/admin.css`: token và giao diện riêng cho Admin, hỗ trợ light/dark/responsive.
-- `ADMIN_UI.md`: tài liệu này.
+Xem [AdminLayout](src/layouts/AdminLayout.jsx), [AdminHeader](src/components/admin/AdminHeader.jsx), [AdminSidebar](src/components/admin/AdminSidebar.jsx), [admin.css](src/layouts/admin.css) và [quy tắc thiết kế chung](../DESIGN_README.md).
 
-## Tệp chỉnh sửa / tái sử dụng
+## Các màn hình
 
-- `src/layouts/AdminLayout.tsx`: ghép header/sidebar/provider, giữ kiểm tra đăng nhập và ADMIN trước khi tải API quản trị.
-- `src/pages/admin/AdminDashboardPage.tsx`: thống kê thật và tổng quan kiểm duyệt.
-- `src/pages/admin/UserManagementPage.tsx`: bảng và ngăn hồ sơ dùng chung.
-- `src/pages/admin/CommunityManagementPage.tsx`: danh sách đúng phạm vi và ngăn chi tiết.
-- `src/pages/admin/ReportManagementPage.tsx`: không gian xem xét báo cáo.
-- `src/routes/index.tsx`: bổ sung routes bài viết/bình luận/danh mục.
-- `src/components/ui/Modal.tsx`: thêm placement bên phải; bàn phím nhường cho native image dialog khi đang mở. Mặc định vẫn là modal giữa màn hình.
-- `src/services/index.ts`: tái sử dụng thống kê/người dùng/phần hồ sơ từ triển khai trước, postService.delete và commentService.delete. Các cờ quản lý chưa có API vẫn tắt.
-- Bộ hiển thị `PostBody`, `PostMarkdown`, `ImageLightbox` và toast/theme hiện có được tái sử dụng.
+| Màn hình | Tuyến đường | Bố cục và thao tác |
+| --- | --- | --- |
+| Tổng quan hệ thống | `/admin` | Khối Kiểm duyệt nằm đầu trang với báo cáo chờ xử lý, báo cáo đã giải quyết, tài khoản bị khóa và cộng đồng bị cấm. Bên dưới là bốn ô tổng số người dùng, cộng đồng, bài viết và bình luận. Số đang hoạt động nằm dưới tổng người dùng và tổng cộng đồng. |
+| Người dùng | `/admin/users` | Tìm theo tên người dùng hoặc email, lọc vai trò và trạng thái. Hồ sơ riêng tại `/admin/users/:userId` hiển thị ảnh, thông tin tài khoản, giới thiệu và hoạt động. Khóa hoặc mở khóa có xác nhận. |
+| Cộng đồng | `/admin/communities` | Tìm theo tên, lọc trạng thái và quyền hiển thị. Hồ sơ tại `/admin/communities/:communityId` có thông tin cộng đồng và chủ sở hữu. |
+| Bài viết | `/admin/posts` | Tìm nội dung, lọc trạng thái và cộng đồng. Trang `/admin/posts/:postId` hiển thị thông tin bài, tác giả, nội dung và tệp đính kèm. |
+| Danh mục | `/admin/categories` | Bảng tên và slug. Tạo và sửa bằng biểu mẫu trong hộp thoại. Xóa có bước xác nhận. |
+| Điểm uy tín | `/admin/reputation` | Biểu mẫu cấu hình ngưỡng Người đóng góp, Uy tín và Uy tín cao, có thông báo lỗi nhập liệu và phản hồi sau khi lưu. |
+| Báo cáo | `/admin/reports` | Lọc loại đối tượng, trạng thái và cộng đồng. Trang `/admin/reports/:type/:reportId` hiển thị nội dung và các hành động xử lý báo cáo. |
 
-## API đã nối
+Tuyến đường và giới hạn truy cập được khai báo trong [adminRoutes.jsx](src/routes/adminRoutes.jsx) và [AdminLayout](src/layouts/AdminLayout.jsx). Bố cục quản trị xuất hiện khi phiên đăng nhập có vai trò ADMIN.
 
-| API | Cách sử dụng |
+## Thành phần và trạng thái dùng chung
+
+| Thành phần | Quy tắc |
 | --- | --- |
-| `GET /admin/stats` | Đọc lớp bọc `data`, không tạo số liệu tăng trưởng giả |
-| `GET /admin/users` | `page`, `size`, `sort`, `status`; page từ 0 |
-| `GET /admin/users/search` | `search` và các tham số phân trang/trạng thái |
-| `GET /user/{name}` | Qua `userService.getPublicProfile`; tôn trọng thông tin công khai backend trả về |
-| `GET /explore` | Đọc các trang cộng đồng ACTIVE; tìm kiếm client sau khi đã có đầy đủ các trang của phạm vi này |
-| `GET /communities/{name}` | Chi tiết cộng đồng và chủ sở hữu |
-| `GET /posts` | `tab=latest`, `q`, `page`, `size`; chỉ dữ liệu được phép xem theo backend |
-| `GET /communities/{name}/posts` | Lọc cộng đồng; nếu thêm từ khóa thì lọc toàn bộ các trang trong cộng đồng, không lọc riêng một trang |
-| `GET /posts/{id}` | Nội dung xem trước thật |
-| `GET /posts/{postId}/comments` | Danh sách phẳng; tìm kiếm và chia trang client trong bài viết |
-| `DELETE /posts/{id}` | Xóa mềm theo backend, có xác nhận/chống gửi lặp/hiển thị lỗi |
-| `DELETE /comments/{id}` | Xóa mềm và thay nội dung bằng `[deleted]` theo backend |
-| `GET /reports/posts` | Báo cáo bài viết |
-| `GET /reports/comments` | Báo cáo bình luận |
-| `GET /reports/communities` | Báo cáo cộng đồng |
-| `GET /categories` | Danh mục thật; không giả số lượng cộng đồng |
+| Tiêu đề trang | Đặt tên màn hình và mô tả ngắn. Nút làm mới hoặc hành động cấp trang nằm cạnh tiêu đề. |
+| Tìm kiếm và bộ lọc | Đặt trước bảng. Các trang dùng `useAdminQuery` lưu bộ lọc và trang hiện tại trong URL để có thể mở lại đúng danh sách. |
+| Bảng dữ liệu | Header cao 44 px trên desktop. Canh số và thời gian nhất quán theo cột. Vùng bảng có thể nhận tiêu điểm bàn phím khi cần cuộn. Mật độ gọn giảm đệm các hàng. Trên mobile, các nút thao tác nằm cuối mỗi bản ghi. |
+| Trang chi tiết | Mở trong vùng nội dung quản trị, hỗ trợ mở trực tiếp theo URL. Liên kết quay lại giữ bộ lọc và số trang của danh sách. |
+| Hộp thoại xác nhận | Nêu rõ đối tượng và hành động sắp thực hiện. Hành động như xóa hoặc khóa được đánh dấu nguy hiểm. Trạng thái đang xử lý phản ánh tiến độ gửi yêu cầu. |
+| Đang tải, trống và lỗi | Dùng skeleton khi đang tải. Trạng thái trống giải thích kết quả và cung cấp đặt lại bộ lọc ở màn hình có hỗ trợ. Trạng thái lỗi có thao tác thử lại. |
 
-Tổng số báo cáo trên sidebar/overview lấy `totalElements` của từng loại với
-`size=1`, theo trạng thái PENDING/RESOLVED. Danh sách tất cả loại ghép các nguồn
-theo `createdAt DESC`, `id DESC`, loại; khóa hàng gồm cả loại và ID vì các bảng
-báo cáo có thể trùng ID. Đọc tiền tố đủ dài của từng nguồn để chia trang toàn cục,
-không tải toàn bộ lịch sử báo cáo cho mỗi trang.
-
-## API / tích hợp còn thiếu
-
-Không đặt URL mới dự đoán và không trả thành công giả cho các phần này:
-
-- Khóa/mở khóa tài khoản, đổi vai trò, lọc người dùng theo vai trò.
-- Danh sách cộng đồng mọi trạng thái và cấm/mở lại cộng đồng.
-- Danh sách bài viết toàn hệ thống bao gồm trạng thái ẩn/đã xóa/nội dung riêng tư.
-- Danh sách bình luận toàn hệ thống, tra một bình luận theo ID độc lập với bài viết.
-- Cập nhật báo cáo thành RESOLVED/REJECTED, lọc ngày báo cáo.
-- Nhật ký hoạt động kiểm duyệt.
-- Tạo/sửa/xóa danh mục, quy tắc chỉnh sửa slug/ràng buộc xóa, số cộng đồng theo danh mục.
-
-Các thao tác chưa có tích hợp nằm trong `adminMutations` và được bảo vệ bằng
-`adminCapabilities`. Giao diện có thể mở biểu mẫu/xác nhận để thấy rõ dự kiến,
-nhưng nút gửi bị khóa. Chỉ bật capability sau khi đã nối API thật và xác nhận
-kiểm tra quyền phía backend; đổi cờ đơn thuần không làm thao tác hoạt động.
-Không tự khóa hoặc đổi quyền tài khoản đang đăng nhập.
-
-Báo cáo bình luận không chứa postId trong DTO hiện tại. Ngăn báo cáo yêu cầu
-ID bài viết gốc, tải bình luận của bài đó và đối chiếu đúng targetId trước khi
-hiển thị nội dung/xóa. Không đoán bài viết gốc. Xóa nội dung không tự chuyển
-trạng thái báo cáo thành đã giải quyết.
-
-## Thiết kế và kiểm tra
-
-- Taste direction: Framed sheet, seed `1961064246`, giữ palette/type của DISCUSS.
-  Theo yêu cầu, header có đường viền, metric có icon nhỏ không nền, sheet radius 10px,
-  active navigation dùng cam nhạt. Không biểu đồ hoặc tăng trưởng giả.
-- Build production và kiểm tra TypeScript có mục tiêu: đạt.
-- 25 kiểm tra tương tác trình duyệt và 4 kiểm tra bổ sung: đạt với dữ liệu kiểm tra riêng.
-  Bao gồm phân quyền, xóa/hủy/lỗi 403/chống gửi lặp, các trang quản lý, báo cáo ghép,
-  phân trang qua mốc 100 bản ghi/nguồn, dữ liệu 0, phản hồi cũ và xem ảnh lồng trong drawer.
-- Đã chụp/kiểm tra 1440px, 768px, 390px; sáng/tối; drawer/modal; loading/empty/error.
-  Các trang không có FAIL của inspector sau sửa. Cảnh báo khoảng trống còn lại ở
-  danh sách danh mục ít dữ liệu và cuối danh sách chọn năm bài gần đây được giữ có chủ ý;
-  không tạo hàng hoặc nội dung giả để lấp đầy canvas. Overview cho phép `no-data-hue`
-  vì icon Lucide bị nhận nhầm là biểu đồ, trong khi màn hình chỉ chứa số liệu.
-- Source lint không có FAIL. Cảnh báo shadow chỉ thuộc menu nổi; dấu gạch ngang
-  biểu thị trường chưa có dữ liệu.
-- Backend không phản hồi tại localhost:8080 ở thời điểm kiểm tra; chưa có kiểm thử
-  end-to-end với phiên backend thật. Fixture và ảnh kiểm tra nằm trong `.taste-skill/`
-  đã được gitignore, không nhập vào mã production và không thay đổi dữ liệu thật.
-- Vite vẫn báo chunk chính trên 500kB; không đổi thư viện/routing của toàn ứng dụng.
-
-## Giới hạn vận hành
-
-Tìm cộng đồng và tìm trong một cộng đồng kèm từ khóa cần đọc đủ các trang của
-phạm vi đó vì backend chưa có truy vấn quản trị tương ứng. Với lượng dữ liệu lớn,
-nên bổ sung bộ lọc/phân trang server cho các phạm vi này trước khi mở rộng vận hành.
-Frontend không mở rộng quyền truy cập nội dung riêng tư và không thay thế kiểm tra
-quyền phía backend. Các bộ lọc chưa được hỗ trợ không được gửi như thể đã có hiệu lực.
+Mã dùng chung nằm trong [AdminUI.jsx](src/components/admin/AdminUI.jsx), [useAdminQuery](src/hooks/useAdminQuery.ts), [useAdminResource](src/hooks/useAdminResource.ts) và [Modal](src/components/ui/Modal.tsx).

@@ -60,9 +60,9 @@ function CategoryFormModal({ category, onClose, onSaved }) {
   };
 
   return (
-    <Modal isOpen onClose={() => !busy && onClose()} closeDisabled={busy} title={isEditing ? 'Edit Category' : 'Create Category'} maxWidth="md">
+    <Modal isOpen onClose={() => !busy && onClose()} closeDisabled={busy} title={isEditing ? 'Sửa danh mục' : 'Thêm danh mục'} maxWidth="md">
       <form className="admin-edit-form admin-category-create-form" onSubmit={submit}>
-        <label htmlFor="admin-category-name">Category Name
+        <label htmlFor="admin-category-name">Tên danh mục
           <input
             id="admin-category-name"
             value={name}
@@ -95,9 +95,9 @@ function CategoryFormModal({ category, onClose, onSaved }) {
         </label>
         {error && <p className="admin-inline-error" role="alert">{error}</p>}
         <div className="admin-dialog-actions">
-          <button className="admin-button" type="button" onClick={onClose} disabled={busy}>Cancel</button>
+          <button className="admin-button" type="button" onClick={onClose} disabled={busy}>Hủy</button>
           <button className="admin-button admin-button-primary" type="submit" disabled={busy}>
-            {busy ? 'Saving…' : isEditing ? 'Save Changes' : 'Create Category'}
+            {busy ? 'Đang lưu…' : isEditing ? 'Lưu thay đổi' : 'Thêm danh mục'}
           </button>
         </div>
       </form>
@@ -113,16 +113,16 @@ export default function CategoryManagementPage() {
   const categories = Array.isArray(result.data) ? result.data : [];
   const columns = [
     { key: 'id', label: 'ID', numeric: true, render: category => adminNumber(category.id) },
-    { key: 'name', label: 'Category Name', render: category => <strong>{category.name || '—'}</strong> },
+    { key: 'name', label: 'Tên danh mục', render: category => <strong>{category.name || '—'}</strong> },
     { key: 'slug', label: 'Slug', render: category => <code className="admin-category-slug">{category.slug || '—'}</code> },
     {
       key: 'actions',
-      label: 'Actions',
+      label: 'Thao tác',
       className: 'admin-actions-cell',
       render: category => (
         <div className="admin-category-row-actions">
-          <button className="admin-text-action" type="button" onClick={() => setEditingCategory(category)}>Edit</button>
-          <button className="admin-text-action is-danger" type="button" onClick={() => setDeleteTarget(category)}>Delete</button>
+          <button className="admin-text-action" type="button" onClick={() => setEditingCategory(category)}>Sửa</button>
+          <button className="admin-text-action is-danger" type="button" onClick={() => setDeleteTarget(category)}>Xóa</button>
         </div>
       ),
     },
@@ -131,11 +131,11 @@ export default function CategoryManagementPage() {
   return (
     <div className="admin-page admin-category-management">
       <AdminPageHeader
-        title="Category Management"
+        title="Quản lý danh mục"
         description="Danh sách danh mục đang được quản lý trong Discuss."
         loading={result.loading}
         onRefresh={result.reload}
-      ><button className="admin-button admin-button-primary" type="button" onClick={() => setCreateOpen(true)}>Create Category</button></AdminPageHeader>
+      ><button className="admin-button admin-button-primary" type="button" onClick={() => setCreateOpen(true)}>Thêm danh mục</button></AdminPageHeader>
       <div className="admin-list-meta">
         <span role="status">
           {result.loading
@@ -161,10 +161,10 @@ export default function CategoryManagementPage() {
       {editingCategory && <CategoryFormModal key={editingCategory.id} category={editingCategory} onClose={() => setEditingCategory(null)} onSaved={result.reload} />}
       {deleteTarget && <AdminConfirmDialog
         action={{
-          title: 'Delete Category',
-          label: 'Delete Category',
+          title: 'Xóa danh mục',
+          label: 'Xóa danh mục',
           danger: true,
-          description: 'This action will delete the selected category.',
+          description: 'Danh mục đã chọn sẽ bị xóa.',
           preview: <strong>{deleteTarget.name}</strong>,
           execute: () => deleteAdminCategory(deleteTarget.id),
           success: `Category “${deleteTarget.name}” deleted successfully.`,

@@ -1,7 +1,5 @@
 package com.discuss.discuss.dto.auth;
 
-import com.discuss.discuss.utils.annotation.auth.UniqueUsername;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;

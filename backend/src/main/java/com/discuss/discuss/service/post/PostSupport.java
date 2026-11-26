@@ -87,6 +87,7 @@ public class PostSupport {
 
     public boolean canRestore(Post post, User user) {
         return Objects.equals(post.getUser().getId(), user.getId())
+                && !post.isModerationRemoval()
                 && (post.getDeletedByUserId() == null
                 || Objects.equals(post.getDeletedByUserId(), user.getId()));
     }

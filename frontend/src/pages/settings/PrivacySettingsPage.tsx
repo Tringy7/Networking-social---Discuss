@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import Button from '../../components/ui/Button';
-import { Lock, Eye, Check, RotateCcw } from 'lucide-react';
+import { Lock, Check, RotateCcw } from 'lucide-react';
 
 export const PrivacySettingsPage: React.FC = () => {
   const { user, updatePrivacy } = useAuthStore();
@@ -10,24 +10,25 @@ export const PrivacySettingsPage: React.FC = () => {
 
   const [showDOB, setShowDOB] = useState(user?.privacy.showDateOfBirth ?? true);
   const [showLocation, setShowLocation] = useState(user?.privacy.showLocation ?? true);
-  const [showPosts, setShowPosts] = useState(user?.privacy.showPostsOnProfile ?? true);
   const [isLoading, setIsLoading] = useState(false);
 
+  const savedDOB = user?.privacy.showDateOfBirth;
+  const savedLocation = user?.privacy.showLocation;
+  const hasChanges = Boolean(user) && (savedDOB !== showDOB || savedLocation !== showLocation);
+
   useEffect(() => {
-    if (!user) return;
-    setShowDOB(user.privacy.showDateOfBirth);
-    setShowLocation(user.privacy.showLocation);
-    setShowPosts(user.privacy.showPostsOnProfile);
-  }, [user]);
+    if (savedDOB !== undefined) setShowDOB(savedDOB);
+    if (savedLocation !== undefined) setShowLocation(savedLocation);
+  }, [user?.id, savedDOB, savedLocation]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading || !hasChanges) return;
     setIsLoading(true);
     try {
       await updatePrivacy({
-        showDateOfBirth: showDOB,
-        showLocation: showLocation,
-        showPostsOnProfile: showPosts,
+        showDateOfBirth: savedDOB === showDOB ? undefined : showDOB,
+        showLocation: savedLocation === showLocation ? undefined : showLocation,
       });
       addToast('Cài đặt quyền riêng tư đã được lưu thành công!', 'success');
     } catch (error: unknown) {
@@ -37,16 +38,9 @@ export const PrivacySettingsPage: React.FC = () => {
     }
   };
 
-  const handleReset = async () => {
+  const handleReset = () => {
     setShowDOB(true);
     setShowLocation(true);
-    setShowPosts(true);
-    try {
-      await updatePrivacy({ showDateOfBirth: true, showLocation: true, showPostsOnProfile: true });
-      addToast('Đã khôi phục cài đặt riêng tư mặc định.', 'info');
-    } catch (error: unknown) {
-      addToast(error instanceof Error ? error.message : 'Không thể khôi phục cài đặt riêng tư.', 'error');
-    }
   };
 
   return (
@@ -72,6 +66,7 @@ export const PrivacySettingsPage: React.FC = () => {
           </div>
           <button
             type="button"
+            disabled={isLoading}
             role="switch"
             aria-checked={showDOB}
             aria-label="Hiển thị ngày sinh trên hồ sơ"
@@ -99,6 +94,7 @@ export const PrivacySettingsPage: React.FC = () => {
           <button
             type="button"
             role="switch"
+            disabled={isLoading}
             aria-checked={showLocation}
             aria-label="Hiển thị vị trí hoặc tỉnh thành"
             onClick={() => setShowLocation(!showLocation)}
@@ -114,37 +110,13 @@ export const PrivacySettingsPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Toggle 3: Posts on profile */}
-        <div className="flex items-center justify-between gap-4 setting-group">
-          <div className="space-y-0.5 max-w-md">
-            <h4 className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">Hiển thị danh sách bài viết trên hồ sơ</h4>
-            <p className="text-xs text-[var(--text-secondary)]">
-              Khi tắt tính năng này, người khác truy cập trang cá nhân của bạn sẽ không thấy danh sách bài viết đã đăng.
-            </p>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={showPosts}
-            aria-label="Hiển thị danh sách bài viết trên hồ sơ"
-            onClick={() => setShowPosts(!showPosts)}
-            className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-              showPosts ? 'bg-[var(--color-orange)]' : 'bg-[var(--bg-elevated)]'
-            }`}
-          >
-            <div
-              className={`bg-white w-4 h-4 rounded-full transform transition-transform ${
-                showPosts ? 'translate-x-6' : 'translate-x-0'
-              }`}
-            />
-          </button>
-        </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
         <button
           type="button"
           onClick={handleReset}
+          disabled={isLoading}
           className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
@@ -155,6 +127,7 @@ export const PrivacySettingsPage: React.FC = () => {
           type="submit"
           variant="primary"
           size="md"
+          disabled={!hasChanges}
           isLoading={isLoading}
           leftIcon={<Check className="w-4 h-4" />}
         >

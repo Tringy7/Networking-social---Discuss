@@ -16,4 +16,11 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEvent, Long> 
             order by e.nextAttemptAt, e.id
             """)
     List<Long> findDueIds(@Param("status") OutboxStatus status, @Param("now") LocalDateTime now, Pageable limit);
+
+    @Query("""
+            select e.nextAttemptAt from OutboxEvent e
+            where e.status = :status
+            order by e.nextAttemptAt, e.id
+            """)
+    List<LocalDateTime> findNextAttempts(@Param("status") OutboxStatus status, Pageable limit);
 }

@@ -12,10 +12,6 @@ import org.springframework.stereotype.Service;
 public class UserAuthorizationService {
     private final UserService userService;
 
-    public void requireUser() {
-        requireRole(UserRole.USER);
-    }
-
     public void requireAdmin() {
         requireRole(UserRole.ADMIN);
     }

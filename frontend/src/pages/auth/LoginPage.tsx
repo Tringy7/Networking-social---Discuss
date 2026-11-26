@@ -10,7 +10,7 @@ import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { getApiFieldErrors } from '../../utils/apiFieldErrors';
 import { AuthDivider, AuthError, AuthHeading, AuthSwitch } from '../../components/auth/AuthFormParts';
 
-export const LoginPage: React.FC<{ admin?: boolean }> = ({ admin = false }) => {
+export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const authenticated = useAuthStore(state => state.isAuthenticated);
@@ -43,14 +43,9 @@ export const LoginPage: React.FC<{ admin?: boolean }> = ({ admin = false }) => {
     setIsLoading(true);
     try {
       await login(emailOrUsername, password);
-      if (admin && useAuthStore.getState().activeRole !== 'ADMIN') {
-        await useAuthStore.getState().logout().catch(() => undefined);
-        setError('Tài khoản này không có quyền truy cập khu vực quản trị.');
-        return;
-      }
-      addToast(admin ? 'Đăng nhập quản trị thành công!' : 'Chào mừng bạn quay trở lại DISCUSS!', 'success');
+      addToast('Chào mừng bạn quay trở lại DISCUSS!', 'success');
       const from = location.state?.from;
-      const destination = from?.pathname?.startsWith('/admin/') && from.pathname !== '/admin/login'
+      const destination = from?.pathname?.startsWith('/admin') && from.pathname !== '/admin/login'
         ? `${from.pathname}${from.search || ''}` : '/admin';
       navigate(useAuthStore.getState().activeRole === 'ADMIN' ? destination : '/', { replace: true });
     } catch (err: unknown) {
@@ -89,11 +84,11 @@ export const LoginPage: React.FC<{ admin?: boolean }> = ({ admin = false }) => {
     }
   }, [addToast, loginSocial, navigate]);
 
-  if (authenticated && (!admin || role === 'ADMIN')) return <Navigate to={role === 'ADMIN' ? '/admin' : '/'} replace />;
+  if (authenticated) return <Navigate to={role === 'ADMIN' ? '/admin' : '/'} replace />;
 
   return (
     <div className="auth-page">
-      <AuthHeading title={admin ? 'Đăng nhập quản trị' : 'Chào mừng trở lại'}>{admin ? 'Dành cho tài khoản có quyền quản trị hệ thống Discuss.' : 'Đăng nhập để tiếp tục câu chuyện của bạn.'}</AuthHeading>
+      <AuthHeading title="Chào mừng trở lại">Đăng nhập để tiếp tục câu chuyện của bạn.</AuthHeading>
       <AuthError message={error} />
 
       <form onSubmit={handleSubmit} className="auth-fields" noValidate aria-busy={isLoading}>
@@ -171,10 +166,9 @@ export const LoginPage: React.FC<{ admin?: boolean }> = ({ admin = false }) => {
         </Button>
       </form>
 
-      {!admin && <><AuthDivider />
+      <><AuthDivider />
       <GoogleSignInButton disabled={isLoading} onCredential={handleGoogleSignIn} />
-      <AuthSwitch prompt="Chưa có tài khoản?" to="/register">Đăng ký</AuthSwitch></>}
-      {admin && <AuthSwitch prompt="Dành cho thành viên" to="/login">Đăng nhập người dùng</AuthSwitch>}
+      <AuthSwitch prompt="Chưa có tài khoản?" to="/register">Đăng ký</AuthSwitch></>
     </div>
   );
 };

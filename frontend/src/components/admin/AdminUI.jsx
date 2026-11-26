@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Search, X, ChevronLeft, ChevronRight, RefreshCw, MoreHorizontal, Info } from 'lucide-react';
+import { ArrowLeft, Search, X, ChevronLeft, ChevronRight, RefreshCw, MoreHorizontal, Info } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import Modal from '../ui/Modal';
 import { useToastStore } from '../../store/useToastStore';
 export const adminNumber = value => value == null ? '—' : value.toLocaleString('vi-VN');
@@ -40,7 +41,7 @@ export function AdminPageHeader({
   onRefresh,
   children
 }) {
-  return <div className="admin-page-heading"><div><h1>{title}</h1><p>{description}</p></div><div className="admin-heading-actions">{children}{onRefresh && <button className="admin-button" disabled={loading} onClick={onRefresh} aria-label="Làm mới"><RefreshCw size={15} className={loading ? 'admin-spinning' : ''} /><span>Làm mới</span></button>}</div></div>;
+  return <header className="admin-page-heading"><div><h1>{title}</h1>{description && <p>{description}</p>}</div>{(children || onRefresh) && <div className="admin-heading-actions">{children}{onRefresh && <button type="button" className="admin-button" disabled={loading} onClick={onRefresh} aria-label="Làm mới"><RefreshCw size={15} className={loading ? 'admin-spinning' : ''} aria-hidden="true" /><span>Làm mới</span></button>}</div>}</header>;
 }
 export function AdminNotice({
   children
@@ -116,7 +117,7 @@ export function AdminDataTable({
   if (loading) return <AdminLoadingSkeleton />;
   if (error) return <AdminErrorState error={error} retry={retry} />;
   if (!rows.length) return <>{empty || <AdminEmptyState />}</>;
-  return <div className="admin-data-scroll"><table className="admin-data-table"><caption className="sr-only">{caption}</caption><thead><tr>{columns.map(column => <th key={column.key} className={`${column.numeric ? 'admin-numeric' : ''} ${column.className || ''}`}>{column.label || <span className="sr-only">Thao tác</span>}</th>)}</tr></thead><tbody>{rows.map(row => <tr key={rowKey(row)}>{columns.map(column => <td key={column.key} data-label={column.label} className={`${column.numeric ? 'admin-numeric' : ''} ${column.className || ''}`}>{column.render(row)}</td>)}</tr>)}</tbody></table></div>;
+  return <div className="admin-data-scroll" tabIndex={0} role="region" aria-label={caption}><table className="admin-data-table"><caption className="sr-only">{caption}</caption><thead><tr>{columns.map(column => <th scope="col" key={column.key} className={`${column.numeric ? 'admin-numeric' : ''} ${column.className || ''}`}>{column.label || <span className="sr-only">Thao tác</span>}</th>)}</tr></thead><tbody>{rows.map(row => <tr key={rowKey(row)}>{columns.map(column => <td key={column.key} data-label={column.label} className={`${column.numeric ? 'admin-numeric' : ''} ${column.className || ''}`}>{column.render(row)}</td>)}</tr>)}</tbody></table></div>;
 }
 export function AdminPagination({
   result,
@@ -184,12 +185,27 @@ export function AdminRowMenu({
       }
     }}>{children}</div></details>;
 }
-export function AdminDetailDrawer({
-  title,
-  children,
-  onClose
-}) {
-  return <Modal isOpen onClose={onClose} title={title} placement="right" maxWidth="2xl"><div className="admin-drawer-content">{children}</div></Modal>;
+export function AdminDetailLink({ to, ...props }) {
+  const { search } = useLocation();
+  return <Link to={{ pathname: to, search }} {...props} />;
+}
+export function AdminDetailPage({ title, backTo, backLabel, backSearch, children }) {
+  const headingRef = useRef(null);
+  const { pathname, search } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    headingRef.current?.focus({ preventScroll: true });
+  }, [pathname]);
+
+  return (
+    <section className="admin-page admin-detail-page">
+      <Link className="admin-detail-back" to={{ pathname: backTo, search: backSearch ?? search }}>
+        <ArrowLeft size={17} aria-hidden="true" />{backLabel}
+      </Link>
+      <h1 ref={headingRef} tabIndex={-1}>{title}</h1>
+      {children}
+    </section>
+  );
 }
 export function AdminFields({
   items

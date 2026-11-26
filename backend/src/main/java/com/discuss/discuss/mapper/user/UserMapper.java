@@ -10,7 +10,6 @@ import com.discuss.discuss.service.media.MinioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 
 @Component
 @RequiredArgsConstructor
@@ -53,6 +52,7 @@ public class UserMapper {
         return new UserInfoResponseDTO(
                 user.getUsername(),
                 user.getEmail(),
+                user.getProvider(),
                 user.getRole(),
                 user.getStatus(),
                 user.getCreatedAt(),

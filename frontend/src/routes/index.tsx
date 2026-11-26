@@ -29,6 +29,7 @@ const TermsOfUsePage = React.lazy(() => import('../pages/auth/TermsOfUsePage'));
 const NotificationsPage = React.lazy(() => import('../pages/notifications/NotificationsPage'));
 const MessagesPage = React.lazy(() => import('../pages/messages/MessagesPage'));
 const SavedPostsPage = React.lazy(() => import('../pages/saved/SavedPostsPage'));
+const MyReportsPage = React.lazy(() => import('../pages/reports/MyReportsPage'));
 
 // Settings Pages
 const GeneralSettingsPage = React.lazy(() => import('../pages/settings/GeneralSettingsPage'));
@@ -87,6 +88,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/notifications" element={<React.Suspense fallback={routeLoading}><NotificationsPage /></React.Suspense>} />
           <Route path="/messages" element={<React.Suspense fallback={routeLoading}><MessagesPage /></React.Suspense>} />
           <Route path="/saved" element={<React.Suspense fallback={routeLoading}><SavedPostsPage /></React.Suspense>} />
+          <Route path="/reports/mine" element={<React.Suspense fallback={routeLoading}><MyReportsPage /></React.Suspense>} />
 
           {/* Community Management */}
           <Route path="/communities/create" element={<React.Suspense fallback={routeLoading}><CreateCommunityPage /></React.Suspense>} />

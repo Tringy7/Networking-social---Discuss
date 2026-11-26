@@ -1,7 +1,6 @@
 package com.discuss.discuss.service.admin;
 import com.discuss.discuss.dto.community.CategoryRequestDTO;
 import com.discuss.discuss.dto.community.CategoryResponseDTO;
-import com.discuss.discuss.entity.Category;
 import com.discuss.discuss.service.audit.ActivityLogService;
 import com.discuss.discuss.service.community.CategoryService;
 import com.discuss.discuss.utils.annotation.auth.HasRole;

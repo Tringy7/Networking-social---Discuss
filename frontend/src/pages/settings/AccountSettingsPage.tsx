@@ -4,18 +4,22 @@ import { useToastStore } from '../../store/useToastStore';
 import LoginSessions from '../../components/settings/LoginSessions';
 import ChangePasswordDialog from '../../components/auth/ChangePasswordDialog';
 import Button from '../../components/ui/Button';
-import { KeyRound, Shield, LogOut, CheckCircle2 } from 'lucide-react';
+import { KeyRound, LogOut, CheckCircle2 } from 'lucide-react';
 
 export const AccountSettingsPage: React.FC = () => {
   const { user, logout } = useAuthStore();
   const { addToast } = useToastStore();
 
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await logout();
     } catch (error: unknown) {
       addToast(error instanceof Error ? error.message : 'Đăng xuất thất bại.', 'error');
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -53,11 +57,13 @@ export const AccountSettingsPage: React.FC = () => {
         <div className="setting-group flex items-center justify-between gap-4">
           <div>
             <h4 className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">Mật khẩu tài khoản</h4>
-            <p className="text-xs text-[var(--text-secondary)]">Đổi mật khẩu định kỳ để nâng cao tính an toàn.</p>
+            <p className="text-xs text-[var(--text-secondary)]">{user?.provider === 'GOOGLE' ? 'Tài khoản này đăng nhập bằng Google.' : 'Đổi mật khẩu bằng mã xác nhận gửi qua email.'}</p>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => setIsPasswordModalOpen(true)}>
-            Đổi mật khẩu
-          </Button>
+          {user?.provider === 'LOCAL' && (
+            <Button variant="secondary" size="sm" onClick={() => setIsPasswordModalOpen(true)}>
+              Đổi mật khẩu
+            </Button>
+          )}
         </div>
 
         {/* Linked providers */}
@@ -85,11 +91,11 @@ export const AccountSettingsPage: React.FC = () => {
               </svg>
               <div>
                 <div className="text-xs font-semibold text-[var(--text-primary)]">Google Account</div>
-                <div className="text-xs text-[var(--text-muted)]">Đã liên kết cho đăng nhập 1 chạm</div>
+                <div className="text-xs text-[var(--text-muted)]">{user?.provider === 'GOOGLE' ? 'Đăng nhập bằng Google' : 'Tài khoản Google'}</div>
               </div>
             </div>
             <span className="text-xs font-semibold text-[var(--color-success)] bg-[var(--color-success)]/15 px-2.5 py-0.5 rounded-full">
-              Đã kích hoạt
+              {user?.provider === 'GOOGLE' ? 'Đã liên kết' : user?.provider === 'LOCAL' ? 'Chưa liên kết' : 'Chưa rõ'}
             </span>
           </div>
         </div>
@@ -103,6 +109,7 @@ export const AccountSettingsPage: React.FC = () => {
           variant="danger"
           size="md"
           onClick={handleLogout}
+          isLoading={isLoggingOut}
           leftIcon={<LogOut className="w-4 h-4" />}
         >
           Đăng xuất khỏi thiết bị này

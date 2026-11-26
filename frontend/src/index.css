@@ -50,7 +50,7 @@
     --color-success: #15803D;
     --color-warning: #A16207;
     --color-info: #0369A1;
-    --focus-ring: rgba(194, 65, 12, 0.28);
+    --focus-ring: color-mix(in srgb, var(--color-orange-ink) 36%, transparent);
     --surface-shadow: 0 12px 32px rgba(20, 24, 20, 0.14);
     --toast-bg: #FFFFFF;
     --toast-border: #E4E8EB;
@@ -78,7 +78,7 @@
     --space-16: 4rem;
     --radius-sm: 0.5rem;
     --radius-control: 0.625rem;
-    --radius-card: 0.875rem;
+    --radius-card: 0.75rem;
     --radius-panel: 1rem;
     --radius-full: 9999px;
     --duration-fast: 120ms;
@@ -113,7 +113,6 @@
     --color-success: #4ADE80;
     --color-warning: #FBBF24;
     --color-info: #38BDF8;
-    --focus-ring: rgba(251, 146, 60, 0.32);
     --surface-shadow: 0 16px 40px rgba(0, 0, 0, 0.36);
     --toast-bg: #202427;
     --toast-border: #384147;
@@ -137,15 +136,6 @@
   }
   .font-size-lg {
     font-size: 1.125rem;
-  }
-
-  /* Density options */
-  .density-compact .density-py {
-    padding-top: 0.4rem;
-    padding-bottom: 0.4rem;
-  }
-  .density-compact .density-p {
-    padding: 0.65rem;
   }
 }
 
@@ -213,16 +203,6 @@
   .font-code {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
-
-/* Focus outline */
-.focus-orange {
-  outline: none;
-  transition: box-shadow var(--duration-fast) ease, border-color var(--duration-fast) ease;
-}
-.focus-orange:focus {
-  border-color: var(--color-orange);
-  box-shadow: 0 0 0 3px var(--color-orange-soft);
-}
 
 [data-ui="popover"] {
   background-color: var(--bg-surface) !important;

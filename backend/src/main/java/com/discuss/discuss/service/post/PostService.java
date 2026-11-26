@@ -8,6 +8,7 @@ import com.discuss.discuss.entity.PostMedia;
 import com.discuss.discuss.entity.PostSave;
 import com.discuss.discuss.entity.PostVote;
 import com.discuss.discuss.entity.User;
+import com.discuss.discuss.enums.CommunityStatus;
 import com.discuss.discuss.enums.PostStatus;
 import com.discuss.discuss.enums.UserRole;
 import com.discuss.discuss.enums.PostType;
@@ -119,14 +120,14 @@ public class PostService {
     @Transactional
     public void deletePost(Long id) {
         User user = userService.getCurrentUser();
-        Post post = postSupport.findPublished(id);
+        Post post = postSupport.lockPublished(id);
 
         boolean isPostAuthor = Objects.equals(post.getUser().getId(), user.getId());
         if (!isPostAuthor && user.getRole() != UserRole.ADMIN) {
             communityAuthorizationService.requireModeratorOrOwner(post.getCommunity(), user);
         }
 
-        softDelete(post, user);
+        softDelete(post, user, !isPostAuthor);
     }
 
     @Transactional
@@ -140,9 +141,7 @@ public class PostService {
         postSupport.requireRead(post, user);
         communityAuthorizationService.requireMembership(post.getCommunity(), user);
 
-        post.setStatus(PostStatus.PUBLISHED);
-        post.setDeletedAt(null);
-        post.setDeletedByUserId(null);
+        restore(post, PostStatus.PUBLISHED);
         return postSupport.toResponse(post, user);
     }
 
@@ -153,7 +152,27 @@ public class PostService {
         User actor = userService.getCurrentUser();
         Post post = postRepository.lockById(id).orElseThrow(postSupport::notFound);
         if (post.getStatus() == PostStatus.DELETED) return;
-        softDelete(post, actor);
+        softDelete(post, actor, true);
+    }
+
+    @HasRole("ADMIN")
+    @Transactional
+    public PostResponseDTO restoreForAdmin(Long id) {
+        Post post = postRepository.lockById(id).orElseThrow(postSupport::notFound);
+        if (!post.isModerationRemoval()) throw new PostException(PostErrorCode.POST_RESTORE_NOT_ALLOWED);
+        if (post.getCommunity().getStatus() != CommunityStatus.ACTIVE) {
+            throw new PostException(PostErrorCode.POST_RESTORE_COMMUNITY_INACTIVE);
+        }
+        PostStatus previous = post.getStatusBeforeModerationRemoval();
+        restore(post, previous == null ? PostStatus.PUBLISHED : previous);
+        return postSupport.toResponse(post, userService.getCurrentUser());
+    }
+
+    private void restore(Post post, PostStatus status) {
+        post.setStatus(status);
+        post.setDeletedAt(null);
+        post.setDeletedByUserId(null);
+        post.setStatusBeforeModerationRemoval(null);
     }
 
     /** Sets the current user's vote; null removes it. */
@@ -215,7 +234,8 @@ public class PostService {
         content.setContent(request.getContent() == null ? "" : request.getContent());
     }
 
-    private void softDelete(Post post, User actor) {
+    private void softDelete(Post post, User actor, boolean moderationRemoval) {
+        post.setStatusBeforeModerationRemoval(moderationRemoval ? post.getStatus() : null);
         post.setStatus(PostStatus.DELETED);
         post.setDeletedAt(LocalDateTime.now());
         post.setDeletedByUserId(actor.getId());

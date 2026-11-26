@@ -1,13 +1,7 @@
 package com.discuss.discuss.repository;
 
 import com.discuss.discuss.entity.Category;
-import com.discuss.discuss.entity.Community;
-import com.discuss.discuss.enums.CommunityStatus;
-import io.lettuce.core.dynamic.annotation.Param;
-import java.util.Optional;
 import java.util.Set;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
