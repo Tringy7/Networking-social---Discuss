@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ExternalLink } from 'lucide-react';
 import type { Post } from '../../types';
+import VideoPlayer from '../common/VideoPlayer';
 import PostMarkdown from './PostMarkdown';
 import ImageLightbox from './ImageLightbox';
 import { httpUrl } from './postUrls';
@@ -53,7 +54,7 @@ export default function PostBody({ post, preview = false }: { post: BodyPost; pr
     </div>}
     {videos.length > 0 && <div className="post-media-list">
       {videos.map((item) => <figure key={item.objectKey || item.url} className="post-gallery">
-        <video src={mediaUrl(item.url)} controls preload="metadata" className="post-gallery-full" />
+        <VideoPlayer src={mediaUrl(item.url)} label={item.caption || post.title} />
       </figure>)}
     </div>}
     {link && <a className="post-link-card" href={link} target="_blank" rel="noopener noreferrer">

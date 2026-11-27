@@ -84,13 +84,23 @@ public class ImageService {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
+    public StoredImageDTO storePostVideo(Long postId, MultipartFile file) {
+        return storage.storePostVideo(postId, file, this::deleteUncommittedImage);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
     public void deletePostImageAfterCommit(String key) {
         deleteAfterCommit(key);
     }
 
     // ==================== COMMENT ====================
-    public void validateCommentImages(List<MultipartFile> images) {
-        storage.validateCommentImages(images);
+    public void validateCommentMedia(List<MultipartFile> files) {
+        storage.validateCommentMedia(files);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public StoredCommentImageDTO storeCommentVideo(Long commentId, MultipartFile file) {
+        return storage.storeCommentVideo(commentId, file, this::deleteUncommittedImage);
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
