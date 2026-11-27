@@ -52,6 +52,16 @@ class NotificationControllerIntegrationTest extends AbstractApiIntegrationTest {
         Notification unread = notification(sender, recipient);
         Notification read = notification(sender, recipient);
         notification(sender, sender);
+        for (NotificationType type : new NotificationType[]{
+                NotificationType.CHAT_MESSAGE_RECEIVED, NotificationType.CHAT_REQUEST_RECEIVED}) {
+            notifications.save(Notification.builder().actor(sender).recipientId(recipient.getId())
+                    .type(type).build());
+        }
+
+        mvc.perform(get("/notifications/unread-count").with(as(recipient))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.unreadCount").value(2));
+        mvc.perform(get("/notifications").with(as(recipient))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2));
         mvc.perform(put("/notifications/{id}/read", read.getId()).with(as(recipient)))
                 .andExpect(status().isNoContent());
 

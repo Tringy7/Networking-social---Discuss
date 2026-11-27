@@ -35,7 +35,7 @@ export const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, logout, activeRole } = useAuthStore();
-  const unreadMessages = useChatStore(state => state.threads.reduce((total, thread) => total + (thread.hidden ? 0 : thread.unread), 0));
+  const unreadMessages = useChatStore(state => state.threads.reduce((total, thread) => total + (thread.hidden || thread.muted ? 0 : thread.unread), 0));
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return;
     const stop = useChatStore.getState().connect();

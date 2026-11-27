@@ -56,8 +56,10 @@ class ReportControllerIntegrationTest extends AbstractApiIntegrationTest {
     @ValueSource(strings = {"/communities/{name}/reports/POST/{id}/reject", "/reports/community/{name}/POST/{id}/reject"})
     void listsPersonalAndCommunityReportsAndSupportsRejection(String path) throws Exception {
         User owner = user(UserRole.USER);
+        User moderator = user(UserRole.USER);
         User reporter = user(UserRole.USER);
         Community community = community(owner, CommunityVisibility.PUBLIC);
+        addMember(community, moderator, CommunityRole.MODERATOR);
         addMember(community, reporter, CommunityRole.MEMBER);
         Post post = publishedPost(owner, community);
         MvcResult result = mvc.perform(body(post("/reports").with(as(reporter)),
@@ -73,7 +75,7 @@ class ReportControllerIntegrationTest extends AbstractApiIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1));
         mvc.perform(get("/reports/community/{name}/comments", community.getName()).with(as(owner)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
-        mvc.perform(body(patch(path, community.getName(), id).with(as(owner)),
+        mvc.perform(body(patch(path, community.getName(), id).with(as(moderator)),
                 "{\"resolutionNote\":\"No violation\"}")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("REJECTED"));
     }

@@ -187,6 +187,8 @@ export const CommunityDetailPage: React.FC = () => {
               className="inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-orange-border)] px-3 py-1.5 text-sm font-semibold text-[var(--color-orange-ink)] hover:bg-[var(--color-orange-soft)]">
               <ShieldAlert size={16} aria-hidden="true" />Hàng đợi kiểm duyệt
             </Link>}
+            {isManager && <Link className="icon-button" aria-label="Xử lý báo cáo" title="Xử lý báo cáo"
+              to={`/c/${encodeURIComponent(community.name)}/moderation?tab=reports`}><Flag size={18} /></Link>}
             {!privateContentLocked && <CommunityMembershipButton community={community} />}
             {!privateContentLocked && <Button variant="outline" size="sm" onClick={() => openCreateModal(community.name)} leftIcon={<Plus size={15} />}>Đăng bài</Button>}
             {isJoined && !isCommunityLoading && <CommunityNotificationToggle key={`${user?.id}:${community.name}`} name={community.name} />}

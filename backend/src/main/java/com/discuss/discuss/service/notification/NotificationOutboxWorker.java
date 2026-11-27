@@ -66,8 +66,7 @@ public class NotificationOutboxWorker {
             return;
         }
         switch (event.getEventType()) {
-            case CHAT_REQUESTED -> saveRecipientNotification(event, event.getChatRecipientId(), NotificationType.CHAT_REQUEST_RECEIVED, null);
-            case CHAT_MESSAGE_SENT -> saveRecipientNotification(event, event.getChatRecipientId(), NotificationType.CHAT_MESSAGE_RECEIVED, null);
+            case CHAT_REQUESTED, CHAT_MESSAGE_SENT -> { /* Complete legacy events without publishing. */ }
             case POST_CREATED -> notifyCommunityMembersOfNewPost(event);
             case COMMENT_CREATED -> notifyCommentRecipient(event);
             case REPORT_SUBMITTED -> notifyReportSubmitted(event);

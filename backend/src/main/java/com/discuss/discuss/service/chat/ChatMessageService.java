@@ -10,7 +10,6 @@ import com.discuss.discuss.mapper.chat.ChatMapper;
 import com.discuss.discuss.repository.chat.MessageAttachmentRepository;
 import com.discuss.discuss.repository.chat.MessageReactionRepository;
 import com.discuss.discuss.repository.chat.MessageRepository;
-import com.discuss.discuss.service.notification.NotificationEvents;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -37,7 +36,6 @@ public class ChatMessageService {
     private final ChatRateLimit rateLimit;
     private final MessageAttachmentRepository attachments;
     private final MessageReactionRepository reactions;
-    private final NotificationEvents notifications;
     private final ChatAccess access;
     private final ChatAttachmentService attachmentService;
     private final ChatChangePublisher changes;
@@ -87,10 +85,6 @@ public class ChatMessageService {
         var message = messageStore.insert(id, actor, text, clientId);
         message.setReplyToId(replyToId);
         var uploaded = files.stream().map(file -> attachmentService.storeAttachment(message.getId(), file)).toList();
-        var recipient = access.requirePeerMembership(request, actor);
-        if (!recipient.isMuted()) {
-            notifications.enqueueChatNotification(actor, recipient.getUserId(), false);
-        }
         changes.changed(request);
         return mapper.toMessage(message, actor, 0, uploaded, List.of());
     }

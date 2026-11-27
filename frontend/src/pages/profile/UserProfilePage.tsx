@@ -24,7 +24,6 @@ import {
   MessageSquare,
   Award,
   BadgeCheck,
-  Eye,
   Mail,
   UserRound,
 } from 'lucide-react';
@@ -100,7 +99,6 @@ export const UserProfilePage: React.FC = () => {
           privacy: {
             showDateOfBirth: response.privacySettings?.showDateOfBirth ?? false,
             showLocation: response.privacySettings?.showLocation ?? false,
-            showPostsOnProfile: response.privacySettings?.showPostsOnProfile ?? true,
           },
           role: response.role,
           status: response.status,
@@ -233,24 +231,16 @@ export const UserProfilePage: React.FC = () => {
         {/* Tab content */}
         {activeTab === 'posts' && (
           <div className="discussion-list">
-            {profileUser.privacy.showPostsOnProfile ? (
-              userPosts.length > 0 ? (
-                userPosts.map((p) => <PostCard key={p.id} post={p} />)
-              ) : postsLoading ? (
-                <p className="profile-empty" role="status">Đang tải bài viết…</p>
-              ) : (
-                <div className="profile-empty" role="status">
-                  <FileText size={24} aria-hidden="true" />
-                  <h2>Chưa có bài viết</h2>
-                  <p>Bài viết chia sẻ trong cộng đồng sẽ xuất hiện ở đây.</p>
-                  {isMe && <Link to="/explore" className="profile-empty-action">Khám phá cộng đồng</Link>}
-                </div>
-              )
+            {userPosts.length > 0 ? (
+              userPosts.map((p) => <PostCard key={p.id} post={p} />)
+            ) : postsLoading ? (
+              <p className="profile-empty" role="status">Đang tải bài viết…</p>
             ) : (
               <div className="profile-empty" role="status">
-                <Eye size={24} aria-hidden="true" />
-                <h2>Bài viết được giữ riêng tư</h2>
-                <p>Bài viết của người dùng này không được công khai.</p>
+                <FileText size={24} aria-hidden="true" />
+                <h2>Chưa có bài viết</h2>
+                <p>Bài viết chia sẻ trong cộng đồng sẽ xuất hiện ở đây.</p>
+                {isMe && <Link to="/explore" className="profile-empty-action">Khám phá cộng đồng</Link>}
               </div>
             )}
           </div>

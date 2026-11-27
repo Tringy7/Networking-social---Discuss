@@ -115,7 +115,7 @@ public class ReportReviewService {
         }
         User actor = userService.getCurrentUser();
         Community community = communitySupport.getCommunityByName(communityName);
-        communityAuthorization.requireOwner(community, actor);
+        communityAuthorization.requireModeratorOrOwner(community, actor);
         return review(type, id, status, note, actor, community, ReportModerationAction.REVIEWED);
     }
 
@@ -155,7 +155,7 @@ public class ReportReviewService {
                 report.setResolutionNote(resolutionNote);
                 report.setAction(action);
                 notificationEvents.enqueueReportReviewedNotification(actor.getId(), id, type, report.getUser().getId(), status);
-                if (community == null && status == ReportStatus.RESOLVED) {
+                if (community == null && status == ReportStatus.RESOLVED && moderationAction == ReportModerationAction.REMOVE_POST) {
                     Post post = report.getPost();
                     notificationEvents.enqueueReportWarningNotification(actor.getId(), id, type, post.getUser().getId(),
                             post.getId(), post.getCommunity().getId());

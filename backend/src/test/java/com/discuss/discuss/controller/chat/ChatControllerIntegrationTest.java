@@ -63,6 +63,8 @@ class ChatControllerIntegrationTest extends AbstractApiIntegrationTest {
                 .andExpect(jsonPath("$[0].unread").value(1));
         mvc.perform(get("/chat/{id}/messages", id).with(as(recipient)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(1)));
+        mvc.perform(get("/notifications/unread-count").with(as(recipient)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.unreadCount").value(0));
         mvc.perform(get("/chat/{id}/messages", id).with(as(outsider))).andExpect(status().isNotFound());
         long replyKey = CLIENT_IDS.incrementAndGet();
         assertThat(open(recipient, sender, replyKey)).isEqualTo(id);

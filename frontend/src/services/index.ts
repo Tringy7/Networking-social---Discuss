@@ -27,7 +27,6 @@ interface UserResponse {
   privacySettings?: {
     showDateOfBirth?: boolean;
     showLocation?: boolean;
-    showPostsOnProfile?: boolean;
   };
 }
 
@@ -176,7 +175,6 @@ export const userService = {
       privacy: {
         showDateOfBirth: Boolean(profile?.dateOfBirth),
         showLocation: Boolean(profile?.location),
-        showPostsOnProfile: true,
       },
       role: response.role,
       status: 'ACTIVE',
@@ -195,7 +193,6 @@ export const userService = {
       gender: data.gender ? API_GENDERS[data.gender] || data.gender : undefined,
       showDateOfBirth: data.privacy?.showDateOfBirth,
       showLocation: data.privacy?.showLocation,
-      showPostsOnProfile: data.privacy?.showPostsOnProfile,
     }),
 
   updatePrivacy: (privacy: Partial<Pick<User['privacy'], 'showDateOfBirth' | 'showLocation'>>) =>
@@ -680,15 +677,12 @@ function mapNotification(item: NotificationResponse): NotificationItem {
     COMMUNITY_POST_CREATED: item.communityName ? `đã đăng bài mới trong c/${item.communityName}.` : 'đã đăng bài mới trong cộng đồng.',
     POST_COMMENTED: 'đã bình luận về bài viết của bạn.',
     COMMENT_REPLIED: 'đã trả lời bình luận của bạn.',
-    CHAT_REQUEST_RECEIVED: 'đã gửi cho bạn yêu cầu nhắn tin.',
-    CHAT_MESSAGE_RECEIVED: 'đã gửi cho bạn một tin nhắn.',
     REPORT_SUBMITTED: 'Có báo cáo mới cần xem xét.',
     REPORT_REVIEWED: item.reportStatus === 'RESOLVED' ? 'Báo cáo của bạn đã được giải quyết.' : 'Báo cáo của bạn đã bị bác bỏ.',
     REPORT_WARNING: item.reportTargetType === 'COMMUNITY'
       ? `Cảnh cáo từ quản trị viên hệ thống: cộng đồng ${item.communityName ? `c/${item.communityName}` : 'của bạn'} được xác định có vi phạm.`
       : 'Cảnh cáo từ quản trị viên hệ thống: bài viết của bạn được xác định có vi phạm.',
   };
-  if (item.type === 'CHAT_REQUEST_RECEIVED' || item.type === 'CHAT_MESSAGE_RECEIVED') targetUrl = '/messages';
   if (item.type === 'REPORT_SUBMITTED') {
     targetUrl = item.reportTargetType === 'MESSAGE'
       ? `/admin/reports/MESSAGE/${item.reportId}`

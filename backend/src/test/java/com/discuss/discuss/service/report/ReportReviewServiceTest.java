@@ -34,7 +34,7 @@ class ReportReviewServiceTest {
     }
 
     @Test
-    void requiresOwnerAndRejectsBlankDecisionNoteBeforeAccessingReport() {
+    void requiresModeratorOrOwnerAndRejectsBlankDecisionNoteBeforeAccessingReport() {
         User owner = User.builder().id(1L).build();
         Community community = Community.builder().id(2L).build();
         when(users.getCurrentUser()).thenReturn(owner);
@@ -44,7 +44,7 @@ class ReportReviewServiceTest {
                 .isThrownBy(() -> reviews.reviewForCommunity("java", ReportTargetType.POST, 3L,
                         ReportStatus.REJECTED, " "))
                 .extracting(ReportException::getError).isEqualTo(ReportErrorCode.INVALID_REVIEW_NOTE);
-        verify(authorization).requireOwner(community, owner);
+        verify(authorization).requireModeratorOrOwner(community, owner);
         verifyNoInteractions(entities);
     }
 }

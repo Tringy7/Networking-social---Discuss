@@ -5,7 +5,6 @@ export type AccountStatus = 'ACTIVE' | 'SUSPENDED' | 'BANNED' | 'PENDING' | 'LOC
 export interface PrivacySettings {
   showDateOfBirth: boolean;
   showLocation: boolean;
-  showPostsOnProfile: boolean;
 }
 
 export interface AppearanceSettings {
@@ -218,7 +217,6 @@ export interface CommunityMember {
 }
 
 export type NotificationType = 'COMMUNITY_POST_CREATED' | 'POST_COMMENTED' | 'COMMENT_REPLIED'
-  | 'CHAT_REQUEST_RECEIVED' | 'CHAT_MESSAGE_RECEIVED'
   | 'REPORT_SUBMITTED' | 'REPORT_REVIEWED' | 'REPORT_WARNING'
   | 'COMMUNITY_JOIN_CONFIRMED' | 'COMMUNITY_MEMBER_JOINED'
   | 'COMMUNITY_JOIN_REQUEST_SENT' | 'COMMUNITY_JOIN_REQUEST_RECEIVED'

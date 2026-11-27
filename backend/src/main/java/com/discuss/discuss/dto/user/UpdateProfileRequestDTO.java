@@ -14,8 +14,7 @@ public record UpdateProfileRequestDTO(
         Gender gender,
         @Size(max = 100) String location,
         Boolean showDateOfBirth,
-        Boolean showLocation,
-        Boolean showPostsOnProfile
+        Boolean showLocation
 ) {
     public UpdateProfileRequestDTO {
         displayName = trim(displayName);
