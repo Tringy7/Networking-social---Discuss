@@ -19,18 +19,18 @@ public class CommunityNotificationPreferenceService {
     private final CommunityNotificationPreferenceRepository repository;
 
     @Transactional(readOnly = true)
-    public boolean isNewPostEnabled(String name) {
-        return repository.findById(memberKey(name))
+    public boolean isNewPostNotificationEnabled(String name) {
+        return repository.findById(requireActiveMembershipKey(name))
                 .map(CommunityNotificationPreference::isNewPostEnabled).orElse(true);
     }
 
     @Transactional
-    public void update(String name, boolean enabled) {
-        var key = memberKey(name);
+    public void updateNewPostNotificationPreference(String name, boolean enabled) {
+        var key = requireActiveMembershipKey(name);
         repository.savePreference(key.userId(), key.communityId(), enabled, LocalDateTime.now());
     }
 
-    private CommunityNotificationPreference.Key memberKey(String name) {
+    private CommunityNotificationPreference.Key requireActiveMembershipKey(String name) {
         var user = users.getCurrentUser();
         var community = communities.getCommunityByNameAndStatusActive(name);
         authorization.requireMembership(community, user);

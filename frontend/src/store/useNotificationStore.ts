@@ -53,8 +53,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     if (syncing) return syncing;
     const refresh = enqueue(async (isCurrent) => {
       const [pages, count] = await Promise.all([
-        Promise.all(Array.from({ length: get().page + 1 }, (_, page) => notificationService.list(page))),
-        notificationService.unreadCount(),
+        Promise.all(Array.from({ length: get().page + 1 }, (_, page) => notificationService.getNotifications(page))),
+        notificationService.getUnreadNotificationCount(),
       ]);
       if (!isCurrent()) return;
       const lastPage = pages.findIndex(page => page.last);
@@ -77,7 +77,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   loadMore: () => enqueue(async (isCurrent) => {
     if (!get().hasMore) return;
     const page = get().page + 1;
-    const result = await notificationService.list(page);
+    const result = await notificationService.getNotifications(page);
     if (isCurrent()) {
       set(state => ({
         notifications: [...new Map([...state.notifications, ...result.content].map(item => [item.id, item])).values()],
@@ -95,7 +95,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   markRead: async (id) => {
     await enqueue(async (isCurrent) => {
-      await notificationService.markRead(id);
+      await notificationService.markNotificationAsRead(id);
       if (!isCurrent()) return;
       set(state => ({
         notifications: state.notifications.map(item => item.id === id ? { ...item, isRead: true } : item),
@@ -108,7 +108,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   markAllRead: async () => {
     await enqueue(async (isCurrent) => {
-      await notificationService.markAllRead();
+      await notificationService.markAllNotificationsAsRead();
       if (!isCurrent()) return;
       set(state => ({
         notifications: state.notifications.map(item => ({ ...item, isRead: true })),

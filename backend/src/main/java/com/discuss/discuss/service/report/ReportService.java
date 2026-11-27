@@ -72,7 +72,7 @@ public class ReportService {
                 .messageId(request.getTargetId()).reporter(reporter).reason(request.getReason().name())
                 .senderUsername(evidence.getSenderUsername()).reportedText(evidence.getText()).attachmentCount(evidence.getAttachmentCount())
                 .description(description).status(ReportStatus.PENDING).build());
-        notificationEvents.reportSubmitted(reporter.getId(), report.getId(), ReportTargetType.MESSAGE, null);
+        notificationEvents.enqueueReportSubmittedNotification(reporter.getId(), report.getId(), ReportTargetType.MESSAGE, null);
         return reportMapper.toResponse(report);
     }
 
@@ -90,7 +90,7 @@ public class ReportService {
                 .status(ReportStatus.PENDING)
                 .build();
         var saved = postReports.saveAndFlush(report);
-        notificationEvents.reportSubmitted(reporter.getId(), saved.getId(), ReportTargetType.POST, post.getCommunity().getId());
+        notificationEvents.enqueueReportSubmittedNotification(reporter.getId(), saved.getId(), ReportTargetType.POST, post.getCommunity().getId());
         return reportMapper.toResponse(saved);
     }
 
@@ -109,7 +109,7 @@ public class ReportService {
                 .status(ReportStatus.PENDING)
                 .build();
         var saved = commentReports.saveAndFlush(report);
-        notificationEvents.reportSubmitted(reporter.getId(), saved.getId(), ReportTargetType.COMMENT,
+        notificationEvents.enqueueReportSubmittedNotification(reporter.getId(), saved.getId(), ReportTargetType.COMMENT,
                 comment.getPost().getCommunity().getId());
         return reportMapper.toResponse(saved);
     }
@@ -128,7 +128,7 @@ public class ReportService {
                 .status(ReportStatus.PENDING)
                 .build();
         var saved = communityReports.saveAndFlush(report);
-        notificationEvents.reportSubmitted(reporter.getId(), saved.getId(), ReportTargetType.COMMUNITY, community.getId());
+        notificationEvents.enqueueReportSubmittedNotification(reporter.getId(), saved.getId(), ReportTargetType.COMMUNITY, community.getId());
         return reportMapper.toResponse(saved);
     }
 

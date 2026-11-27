@@ -33,7 +33,7 @@ public class NotificationService {
         var page = unreadOnly
                 ? repository.findByRecipientIdAndReadAtIsNull(recipientId, newestFirst)
                 : repository.findByRecipientId(recipientId, newestFirst);
-        return pageMapper.toResponse(page.map(this::toResponse));
+        return pageMapper.toResponse(page.map(this::mapNotificationToResponse));
     }
 
     @Transactional(readOnly = true)
@@ -58,7 +58,7 @@ public class NotificationService {
         repository.deleteReadNotifications(userService.getCurrentUser().getId());
     }
 
-    private NotificationResponseDTO toResponse(Notification notification) {
+    private NotificationResponseDTO mapNotificationToResponse(Notification notification) {
         var actor = notification.getActor();
         var profile = actor.getProfile();
         String displayName = profile == null ? null : profile.getDisplayName();

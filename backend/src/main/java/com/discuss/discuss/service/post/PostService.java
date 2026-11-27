@@ -81,7 +81,7 @@ public class PostService {
         postContentRepository.save(postContent);
 
         List<PostMedia> postAttachments = postAttachmentService.saveAttachments(post, request);
-        notificationEvents.postCreated(post);
+        notificationEvents.enqueuePostCreatedNotification(post);
         return postMapper.toResponse(post, postContent, postAttachments, 0, 0, null, false);
     }
 

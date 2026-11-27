@@ -81,7 +81,7 @@ public class ChatRequestService {
         request.setStatus(ChatRequest.Status.ACCEPTED);
         requests.save(request);
         messageStore.insert(id, actorId, text, clientId);
-        notifications.chatReceived(actorId, peerId, false);
+        notifications.enqueueChatNotification(actorId, peerId, false);
         changes.changed(request);
         return conversationService.buildConversationResponse(membership, request);
     }

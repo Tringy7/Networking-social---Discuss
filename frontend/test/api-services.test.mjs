@@ -98,8 +98,8 @@ test('rejects invalid report target IDs before sending a request', async (contex
 test('sends notification actions and accepts responses with no body', async (context) => {
   const calls = mockRequests(context, () => new Response(null, { status: 204 }));
 
-  await modules.notificationService.markRead('11');
-  await modules.notificationService.markAllRead();
+  await modules.notificationService.markNotificationAsRead('11');
+  await modules.notificationService.markAllNotificationsAsRead();
   await modules.notificationService.deleteReadNotifications();
 
   assert.deepEqual(calls.map(({ method, path }) => [method, path]), [
@@ -124,7 +124,7 @@ test('refreshes an expired session and retries the original request', async (con
   modules.setApiSessionAuthenticated(true);
   context.after(() => modules.setApiSessionAuthenticated(false));
 
-  assert.deepEqual(await modules.notificationService.unreadCount(), { unreadCount: 3 });
+  assert.deepEqual(await modules.notificationService.getUnreadNotificationCount(), { unreadCount: 3 });
   assert.deepEqual(calls.map(({ method, path }) => [method, path]), [
     ['GET', '/notifications/unread-count'],
     ['POST', '/auth/refresh'],

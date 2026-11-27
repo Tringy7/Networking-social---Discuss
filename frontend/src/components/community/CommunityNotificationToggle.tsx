@@ -11,7 +11,7 @@ export default function CommunityNotificationToggle({ name }: { name: string }) 
 
   useEffect(() => {
     let active = true;
-    notificationService.communityPreference(name)
+    notificationService.getCommunityNotificationPreference(name)
       .then(result => { if (active) setEnabled(result.newPostEnabled); })
       .catch(() => { if (active) setEnabled(null); })
       .finally(() => { if (active) setBusy(false); });
@@ -22,8 +22,8 @@ export default function CommunityNotificationToggle({ name }: { name: string }) 
     setBusy(true);
     try {
       const response = enabled === null
-        ? await notificationService.communityPreference(name)
-        : await notificationService.updateCommunityPreference(name, !enabled);
+        ? await notificationService.getCommunityNotificationPreference(name)
+        : await notificationService.updateCommunityNotificationPreference(name, !enabled);
       setEnabled(response.newPostEnabled);
     } catch (error) {
       notify(error instanceof Error ? error.message : 'Không thể cập nhật thông báo cộng đồng.', 'error');

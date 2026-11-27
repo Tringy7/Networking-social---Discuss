@@ -89,7 +89,7 @@ public class ChatMessageService {
         var uploaded = files.stream().map(file -> attachmentService.storeAttachment(message.getId(), file)).toList();
         var recipient = access.requirePeerMembership(request, actor);
         if (!recipient.isMuted()) {
-            notifications.chatReceived(actor, recipient.getUserId(), false);
+            notifications.enqueueChatNotification(actor, recipient.getUserId(), false);
         }
         changes.changed(request);
         return mapper.toMessage(message, actor, 0, uploaded, List.of());

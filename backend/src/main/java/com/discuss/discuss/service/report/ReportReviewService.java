@@ -140,7 +140,7 @@ public class ReportReviewService {
                 report.setHandledAt(now);
                 report.setResolutionNote(resolutionNote);
                 report.setAction(action);
-                notificationEvents.reportReviewed(actor.getId(), id, type, report.getReporter().getId(), status);
+                notificationEvents.enqueueReportReviewedNotification(actor.getId(), id, type, report.getReporter().getId(), status);
                 yield mapper.toResponse(report);
             }
             case POST -> {
@@ -154,10 +154,10 @@ public class ReportReviewService {
                 report.setHandledAt(now);
                 report.setResolutionNote(resolutionNote);
                 report.setAction(action);
-                notificationEvents.reportReviewed(actor.getId(), id, type, report.getUser().getId(), status);
+                notificationEvents.enqueueReportReviewedNotification(actor.getId(), id, type, report.getUser().getId(), status);
                 if (community == null && status == ReportStatus.RESOLVED) {
                     Post post = report.getPost();
-                    notificationEvents.reportWarning(actor.getId(), id, type, post.getUser().getId(),
+                    notificationEvents.enqueueReportWarningNotification(actor.getId(), id, type, post.getUser().getId(),
                             post.getId(), post.getCommunity().getId());
                 }
                 yield mapper.toResponse(report);
@@ -173,7 +173,7 @@ public class ReportReviewService {
                 report.setHandledAt(now);
                 report.setResolutionNote(resolutionNote);
                 report.setAction(action);
-                notificationEvents.reportReviewed(actor.getId(), id, type, report.getReporter().getId(), status);
+                notificationEvents.enqueueReportReviewedNotification(actor.getId(), id, type, report.getReporter().getId(), status);
                 yield mapper.toResponse(report);
             }
             case COMMUNITY -> {
@@ -184,10 +184,10 @@ public class ReportReviewService {
                 report.setHandledAt(now);
                 report.setResolutionNote(resolutionNote);
                 report.setAction(action);
-                notificationEvents.reportReviewed(actor.getId(), id, type, report.getUser().getId(), status);
+                notificationEvents.enqueueReportReviewedNotification(actor.getId(), id, type, report.getUser().getId(), status);
                 Community reportedCommunity = report.getCommunity();
                 if (status == ReportStatus.RESOLVED && reportedCommunity.getOwner() != null) {
-                    notificationEvents.reportWarning(actor.getId(), id, type, reportedCommunity.getOwner().getId(),
+                    notificationEvents.enqueueReportWarningNotification(actor.getId(), id, type, reportedCommunity.getOwner().getId(),
                             null, reportedCommunity.getId());
                 }
                 yield mapper.toResponse(report);

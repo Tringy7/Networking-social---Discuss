@@ -69,7 +69,7 @@ public class CommentService {
                 .status(CommentStatus.VISIBLE).build();
         commentRepository.saveAndFlush(comment);
         attachmentService.store(comment, files);
-        notificationEvents.commentCreated(comment);
+        notificationEvents.enqueueCommentCreatedNotification(comment);
         return commentSupport.toResponse(comment, user);
     }
     public CommentResponseDTO update(Long id, UpdateCommentRequestDTO request) {

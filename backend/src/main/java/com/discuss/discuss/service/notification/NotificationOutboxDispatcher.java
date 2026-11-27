@@ -30,18 +30,18 @@ class NotificationOutboxDispatcher {
     private boolean running;
 
     @TransactionalEventListener(classes = NotificationEvents.Queued.class, phase = TransactionPhase.AFTER_COMMIT)
-    public void onQueued() {
-        schedule(Instant.now());
+    public void scheduleOnOutboxEventCommitted() {
+        scheduleOutboxDispatch(Instant.now());
     }
 
     @EventListener(ApplicationReadyEvent.class)
     @Scheduled(initialDelayString = "${app.notifications.recovery-delay-ms:300000}",
             fixedDelayString = "${app.notifications.recovery-delay-ms:300000}")
-    public void recoverPending() {
-        schedule(Instant.now());
+    public void recoverPendingNotificationEvents() {
+        scheduleOutboxDispatch(Instant.now());
     }
 
-    private synchronized void schedule(Instant at) {
+    private synchronized void scheduleOutboxDispatch(Instant at) {
         if (scheduledAt != null && !at.isBefore(scheduledAt)) {
             return;
         }
@@ -54,7 +54,7 @@ class NotificationOutboxDispatcher {
         }
         long ticket = ++generation;
         try {
-            scheduled = scheduler.schedule(() -> dispatch(ticket), at);
+            scheduled = scheduler.schedule(() -> dispatchDueNotificationEvents(ticket), at);
             scheduledAt = at;
         } catch (TaskRejectedException rejected) {
             scheduled = null;
@@ -63,7 +63,7 @@ class NotificationOutboxDispatcher {
         }
     }
 
-    private void dispatch(long ticket) {
+    private void dispatchDueNotificationEvents(long ticket) {
         synchronized (this) {
             if (ticket != generation) {
                 return;
@@ -73,9 +73,9 @@ class NotificationOutboxDispatcher {
             running = true;
         }
         try (var ignored = MDC.putCloseable(NotificationSqlLogFilter.WORKER_CONTEXT, "true")) {
-            worker.processDueEvents().ifPresent(next -> {
+            worker.processDueNotificationEvents().ifPresent(next -> {
                 Duration wait = Duration.between(LocalDateTime.now(), next);
-                schedule(Instant.now().plus(wait.isNegative() ? Duration.ZERO : wait));
+                scheduleOutboxDispatch(Instant.now().plus(wait.isNegative() ? Duration.ZERO : wait));
             });
         } catch (RuntimeException failure) {
             log.warn("Notification dispatch failed; pending events will be recovered", failure);
@@ -85,7 +85,7 @@ class NotificationOutboxDispatcher {
                 Instant next = scheduledAt;
                 scheduledAt = null;
                 if (next != null) {
-                    schedule(next);
+                    scheduleOutboxDispatch(next);
                 }
             }
         }

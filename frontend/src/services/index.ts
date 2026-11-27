@@ -717,17 +717,17 @@ function mapNotification(item: NotificationResponse): NotificationItem {
 }
 
 export const notificationService = {
-  list: async (page = 0, unreadOnly = false) => {
+  getNotifications: async (page = 0, unreadOnly = false) => {
     const response = await apiClient.get<{ content: NotificationResponse[]; last: boolean; totalElements: number }>(
       `/notifications?page=${page}&size=20&unreadOnly=${unreadOnly}`);
     return { ...response, content: response.content.map(mapNotification) };
   },
-  unreadCount: () => apiClient.get<{ unreadCount: number }>('/notifications/unread-count'),
-  markRead: (id: string) => apiClient.put<void>(`/notifications/${encodeURIComponent(id)}/read`),
-  markAllRead: () => apiClient.put<void>('/notifications/read-all'),
+  getUnreadNotificationCount: () => apiClient.get<{ unreadCount: number }>('/notifications/unread-count'),
+  markNotificationAsRead: (id: string) => apiClient.put<void>(`/notifications/${encodeURIComponent(id)}/read`),
+  markAllNotificationsAsRead: () => apiClient.put<void>('/notifications/read-all'),
   deleteReadNotifications: () => apiClient.delete<void>('/notifications/read'),
-  communityPreference: (name: string) => apiClient.get<{ newPostEnabled: boolean }>(
+  getCommunityNotificationPreference: (name: string) => apiClient.get<{ newPostEnabled: boolean }>(
     `/communities/${encodeURIComponent(name)}/notification-preferences`),
-  updateCommunityPreference: (name: string, newPostEnabled: boolean) => apiClient.put<{ newPostEnabled: boolean }>(
+  updateCommunityNotificationPreference: (name: string, newPostEnabled: boolean) => apiClient.put<{ newPostEnabled: boolean }>(
     `/communities/${encodeURIComponent(name)}/notification-preferences`, { newPostEnabled }),
 };

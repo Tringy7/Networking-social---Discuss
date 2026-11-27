@@ -164,7 +164,7 @@ public class CommunityMemberService {
         if (community.getVisibility() == CommunityVisibility.PRIVATE) {
             if (pending.isEmpty()) {
                 joinRequestRepository.save(new CommunityJoinRequest(community, user));
-                notificationEvents.communityMembershipChanged(
+                notificationEvents.enqueueCommunityMembershipNotification(
                         NotificationEventType.COMMUNITY_JOIN_REQUESTED, user.getId(), community.getId());
             }
             return new JoinResult(null, true);
@@ -172,7 +172,7 @@ public class CommunityMemberService {
 
         pending.ifPresent(CommunityJoinRequest::close);
         CommunityRole role = activateMembership(community, user, member).getRole();
-        notificationEvents.communityMembershipChanged(
+        notificationEvents.enqueueCommunityMembershipNotification(
                 NotificationEventType.COMMUNITY_JOINED, user.getId(), community.getId());
         return new JoinResult(role, false);
     }
@@ -214,7 +214,7 @@ public class CommunityMemberService {
         }
 
         request.review(reviewer, approve);
-        notificationEvents.communityMembershipChanged(
+        notificationEvents.enqueueCommunityMembershipNotification(
                 approve ? NotificationEventType.COMMUNITY_JOIN_APPROVED : NotificationEventType.COMMUNITY_JOIN_REJECTED,
                 request.getApplicant().getId(), community.getId());
         return CommunityJoinRequestDTO.from(request);
