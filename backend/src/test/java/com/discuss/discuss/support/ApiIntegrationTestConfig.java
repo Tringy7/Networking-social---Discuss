@@ -1,6 +1,21 @@
 package com.discuss.discuss.support;
 
 import com.discuss.discuss.config.*;
+import com.discuss.discuss.controller.chat.ChatConversationController;
+import com.discuss.discuss.controller.chat.ChatMessageController;
+import com.discuss.discuss.controller.chat.ChatPrivacyController;
+import com.discuss.discuss.controller.chat.ChatRealtimeController;
+import com.discuss.discuss.controller.chat.ChatRequestController;
+import com.discuss.discuss.service.chat.ChatAttachmentService;
+import com.discuss.discuss.service.media.AttachmentMediaService;
+import com.discuss.discuss.service.chat.ChatConversationService;
+import com.discuss.discuss.service.chat.ChatMessageService;
+import com.discuss.discuss.service.chat.ChatPrivacyService;
+import com.discuss.discuss.service.chat.ChatReactionService;
+import com.discuss.discuss.service.chat.ChatReportEvidenceService;
+import com.discuss.discuss.service.chat.ChatRequestService;
+import com.discuss.discuss.service.chat.ChatUpdates;
+import com.discuss.discuss.service.chat.ChatServiceConfiguration;
 import com.discuss.discuss.controller.admin.ManageCategoryController;
 import com.discuss.discuss.controller.admin.ManageCommunityController;
 import com.discuss.discuss.controller.admin.ManagePostController;
@@ -24,6 +39,7 @@ import com.discuss.discuss.controller.user.UserController;
 import com.discuss.discuss.controller.user.UserSearchController;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.exception.GlobalExceptionHandler;
+import com.discuss.discuss.mapper.chat.ChatMapperImpl;
 import com.discuss.discuss.mapper.comment.CommentMapper;
 import com.discuss.discuss.mapper.community.CommunityMapper;
 import com.discuss.discuss.mapper.community.CommunityMemberMapper;
@@ -82,7 +98,10 @@ import java.util.Map;
 @EnableTransactionManagement(proxyTargetClass = true)
 @EnableJpaRepositories(basePackageClasses = UserRepository.class)
 @Import({SecurityConfiguration.class, CustomAuthenticationEntryPoint.class, CustomAccessDeniedHandler.class,
-        SessionTokenValidator.class, JwtService.class, GlobalExceptionHandler.class,
+        ChatConversationController.class, ChatRequestController.class, ChatMessageController.class,
+        ChatPrivacyController.class, ChatRealtimeController.class,
+        ChatServiceConfiguration.class, ChatAttachmentService.class, AttachmentMediaService.class, ChatConversationService.class, ChatMessageService.class, ChatPrivacyService.class, ChatReactionService.class, ChatReportEvidenceService.class, ChatRequestService.class,
+        ChatUpdates.class, SessionTokenValidator.class, JwtService.class, GlobalExceptionHandler.class,
         UserController.class, CommunityMemberController.class, CommunityController.class, PostController.class,
         CommentController.class,
         ReportController.class, NotificationController.class, ManageUserController.class,
@@ -98,7 +117,7 @@ import java.util.Map;
         CommentReportQueryService.class, NotificationService.class, NotificationEvents.class,
         CommunityNotificationPreferenceService.class, AdminUserService.class, AdminCategoryService.class,
         AdminReputationService.class, AdminCommunityService.class, AdminPostService.class,
-        ActivityLogService.class, PageMapper.class, PostMapper.class, CommentMapper.class, ReportMapper.class,
+        ActivityLogService.class, PageMapper.class, ChatMapperImpl.class, PostMapper.class, CommentMapper.class, ReportMapper.class,
         UserMapper.class, UserUpdateMapperImpl.class, CommunityMapper.class, CommunityMemberMapper.class,
         AdminController.class, ManageActivityLogController.class, ManageReportController.class,
         PostCommentController.class, CategoryController.class, ExploreCommunityController.class,

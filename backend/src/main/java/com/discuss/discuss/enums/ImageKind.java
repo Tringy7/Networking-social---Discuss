@@ -15,7 +15,9 @@ public enum ImageKind {
 
     COMMUNITY_BANNER("communities/%s/banner/", 1920, 640, false),
 
-    POST("posts/%s/", 1920, 1920, false);
+    POST("posts/%s/", 1920, 1920, false),
+
+    CHAT_ATTACHMENT("chat/%s/", 1920, 1920, false);
 
     private final String prefixTemplate;
     private final int maxWidth;

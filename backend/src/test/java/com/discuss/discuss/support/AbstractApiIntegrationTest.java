@@ -60,7 +60,8 @@ public abstract class AbstractApiIntegrationTest {
     @Autowired private PostContentRepository contents;
 
     @MockitoBean protected ImageService images;
-    @MockitoBean private MinioService minio;
+    @MockitoBean protected MinioService minio;
+    @MockitoBean protected com.discuss.discuss.service.chat.ChatRateLimit chatRateLimit;
 
     protected MockMvc mvc;
 

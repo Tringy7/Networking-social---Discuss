@@ -127,9 +127,15 @@ public class ImageProcessingService {
     }
 
     private Processed processCommentImage(MultipartFile file) {
-        byte[] bytes;
         try {
-            bytes = file.getBytes();
+            return encodeImageAsPng(file.getBytes());
+        } catch (IOException ex) {
+            throw new MediaException(MediaErrorCode.INVALID_IMAGE, "Cannot read image", ex);
+        }
+    }
+
+    private Processed encodeImageAsPng(byte[] bytes) {
+        try {
             // Decode every upload and store only re-encoded PNG image bytes.
             java.awt.image.BufferedImage image;
             try (var input = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
@@ -168,7 +174,28 @@ public class ImageProcessingService {
             throw new MediaException(MediaErrorCode.FILE_TOO_LARGE);
         }
 
-        byte[] bytes = readBytes(file);
+        return processImageBytes(readBytes(file), kind);
+    }
+
+    Processed processChatImage(byte[] bytes, String detectedType) {
+        if (bytes.length == 0) {
+            throw new MediaException(MediaErrorCode.EMPTY_FILE);
+        }
+        if (bytes.length > maxBytes) {
+            throw new MediaException(MediaErrorCode.FILE_TOO_LARGE);
+        }
+        if ("image/gif".equals(detectedType)) {
+            concurrency.acquireUninterruptibly();
+            try {
+                return encodeImageAsPng(bytes);
+            } finally {
+                concurrency.release();
+            }
+        }
+        return processImageBytes(bytes, ImageKind.CHAT_ATTACHMENT);
+    }
+
+    private Processed processImageBytes(byte[] bytes, ImageKind kind) {
         Header header = inspect(bytes); // format + dimensions checked WITHOUT decoding pixels
 
         int orientation = header.format() == Format.JPEG ? jpegExifOrientation(bytes) : 1;

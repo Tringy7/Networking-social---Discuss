@@ -5,6 +5,7 @@ export const ADMIN_REPORT_TYPES = [
   ['POST', 'Bài viết'],
   ['COMMENT', 'Bình luận'],
   ['COMMUNITY', 'Cộng đồng'],
+  ['MESSAGE', 'Tin nhắn'],
 ] as const;
 
 export const adminModeration = {

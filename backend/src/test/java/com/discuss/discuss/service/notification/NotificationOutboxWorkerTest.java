@@ -45,8 +45,8 @@ class NotificationOutboxWorkerTest {
 
     @Test
     void deliversToReporterAndDoesNotSendCompletedEventAgain() {
-        worker.processDueEvents();
-        worker.processDueEvents();
+        worker.processDueNotificationEvents();
+        worker.processDueNotificationEvents();
 
         var notification = ArgumentCaptor.forClass(Notification.class);
         verify(notifications, times(1)).save(notification.capture());
@@ -63,7 +63,7 @@ class NotificationOutboxWorkerTest {
         LocalDateTime start = LocalDateTime.now();
         when(notifications.save(any(Notification.class))).thenThrow(new IllegalStateException("storage down"));
 
-        worker.processDueEvents();
+        worker.processDueNotificationEvents();
 
         assertThat(event.getAttemptCount()).isEqualTo(previousAttempts + 1);
         assertThat(event.getStatus()).isEqualTo(status);

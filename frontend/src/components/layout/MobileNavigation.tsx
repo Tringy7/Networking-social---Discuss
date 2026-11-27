@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import NotificationBadge from '../ui/NotificationBadge';
 import { useNotificationStore } from '../../store/useNotificationStore';
+import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { usePostStore } from '../../store/usePostStore';
@@ -94,7 +95,7 @@ export const MobileNavigation: React.FC = () => {
                   <Link onClick={closeMoreMenu} to={`/u/${user.username}`} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><UserRound className="h-4 w-4" />Hồ sơ</Link>
                   <Link onClick={closeMoreMenu} to="/saved" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Bookmark className="h-4 w-4" />Đã lưu</Link>
                   <Link onClick={closeMoreMenu} to="/reports/mine" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Flag className="h-4 w-4 shrink-0" aria-hidden="true" />Báo cáo của tôi</Link>
-                  <Link onClick={closeMoreMenu} to="/messages" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><MessageSquare className="h-4 w-4" />Tin nhắn</Link>
+                  <button type="button" onClick={() => { closeMoreMenu(); useChatStore.getState().openWindow(); }} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><MessageSquare className="h-4 w-4" />Tin nhắn</button>
                   <Link onClick={closeMoreMenu} to="/communities/mine" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Users className="h-4 w-4" />Cộng đồng của tôi</Link>
                   <Link onClick={closeMoreMenu} to="/communities/create" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Plus className="h-4 w-4" />Tạo cộng đồng</Link>
                   <Link onClick={closeMoreMenu} to="/settings" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Settings className="h-4 w-4" />Cài đặt</Link>

@@ -12,6 +12,7 @@ import com.discuss.discuss.service.comment.CommentSupport;
 import com.discuss.discuss.service.community.CommunitySupport;
 import com.discuss.discuss.service.notification.NotificationEvents;
 import com.discuss.discuss.service.post.PostSupport;
+import com.discuss.discuss.service.chat.ChatReportEvidenceService;
 import com.discuss.discuss.service.user.UserService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -35,11 +36,14 @@ public class ReportService {
     private final CommunityReportRepository communityReports;
     private final NotificationEvents notificationEvents;
     private final PageMapper pageMapper;
+    private final ChatMessageReportRepository chatReports;
+    private final ChatReportEvidenceService chat;
 
     @Transactional(readOnly = true)
     public PageResponseDTO<MyReportResponseDTO> listMine(ReportTargetType type, ReportStatus status, Pageable pageable) {
         Long reporterId = userService.getCurrentUser().getId();
         return pageMapper.toResponse(switch (type) {
+            case MESSAGE -> chatReports.mine(reporterId, status, pageable).map(reportMapper::toMyReport);
             case POST -> postReports.findMine(reporterId, status, pageable);
             case COMMENT -> commentReports.findMine(reporterId, status, pageable);
             case COMMUNITY -> communityReports.findMine(reporterId, status, pageable);
@@ -53,10 +57,23 @@ public class ReportService {
         String description = reportSupport.normalizeDescription(request.getDescription());
 
         return switch (request.getTargetType()) {
+            case MESSAGE -> createMessageReport(request, reporter, description);
             case POST -> createPostReport(request, reporter, description);
             case COMMENT -> createCommentReport(request, reporter, description);
             case COMMUNITY -> createCommunityReport(request, reporter, description);
         };
+    }
+
+    private ReportResponseDTO createMessageReport(CreateReportRequestDTO request, User reporter, String description) {
+        var evidence = chat.getMessageReportEvidence(request.getTargetId(), reporter.getId());
+        reportSupport.checkDuplicate(chatReports.existsByMessageIdAndReporterIdAndStatus(
+                request.getTargetId(), reporter.getId(), ReportStatus.PENDING));
+        var report = chatReports.saveAndFlush(ChatMessageReport.builder()
+                .messageId(request.getTargetId()).reporter(reporter).reason(request.getReason().name())
+                .senderUsername(evidence.getSenderUsername()).reportedText(evidence.getText()).attachmentCount(evidence.getAttachmentCount())
+                .description(description).status(ReportStatus.PENDING).build());
+        notificationEvents.enqueueReportSubmittedNotification(reporter.getId(), report.getId(), ReportTargetType.MESSAGE, null);
+        return reportMapper.toResponse(report);
     }
 
     private ReportResponseDTO createPostReport(CreateReportRequestDTO request, User reporter, String description) {
@@ -73,7 +90,7 @@ public class ReportService {
                 .status(ReportStatus.PENDING)
                 .build();
         var saved = postReports.saveAndFlush(report);
-        notificationEvents.reportSubmitted(reporter.getId(), saved.getId(), ReportTargetType.POST, post.getCommunity().getId());
+        notificationEvents.enqueueReportSubmittedNotification(reporter.getId(), saved.getId(), ReportTargetType.POST, post.getCommunity().getId());
         return reportMapper.toResponse(saved);
     }
 
@@ -92,7 +109,7 @@ public class ReportService {
                 .status(ReportStatus.PENDING)
                 .build();
         var saved = commentReports.saveAndFlush(report);
-        notificationEvents.reportSubmitted(reporter.getId(), saved.getId(), ReportTargetType.COMMENT,
+        notificationEvents.enqueueReportSubmittedNotification(reporter.getId(), saved.getId(), ReportTargetType.COMMENT,
                 comment.getPost().getCommunity().getId());
         return reportMapper.toResponse(saved);
     }
@@ -111,7 +128,7 @@ public class ReportService {
                 .status(ReportStatus.PENDING)
                 .build();
         var saved = communityReports.saveAndFlush(report);
-        notificationEvents.reportSubmitted(reporter.getId(), saved.getId(), ReportTargetType.COMMUNITY, community.getId());
+        notificationEvents.enqueueReportSubmittedNotification(reporter.getId(), saved.getId(), ReportTargetType.COMMUNITY, community.getId());
         return reportMapper.toResponse(saved);
     }
 

@@ -9,6 +9,7 @@ import NotificationPanel from './NotificationPanel';
 import Logo from '../common/Logo';
 import Avatar from '../ui/Avatar';
 import Button from '../ui/Button';
+import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { usePostStore } from '../../store/usePostStore';
@@ -34,6 +35,15 @@ export const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, logout, activeRole } = useAuthStore();
+  const unreadMessages = useChatStore(state => state.threads.reduce((total, thread) => total + (thread.hidden ? 0 : thread.unread), 0));
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+    const stop = useChatStore.getState().connect();
+    return () => {
+      stop();
+      useChatStore.getState().clear();
+    };
+  }, [isAuthenticated, user?.id]);
   const { communities } = useCommunityStore();
   const { posts, openCreateModal } = usePostStore();
   const { unreadCount: unreadNotifs, hydrate: hydrateNotifications, clear } = useNotificationStore();
@@ -337,16 +347,14 @@ export const Navbar: React.FC = () => {
                 Tạo bài viết
               </Button>
 
-              {/* Messages Shortcut */}
-              <Link
-                to="/messages"
-                className="hidden sm:flex p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors relative cursor-pointer"
+              <button type="button"
+                onClick={() => useChatStore.getState().openWindow()}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors relative cursor-pointer"
                 title="Tin nhắn riêng"
-                aria-label="Tin nhắn riêng"
-              >
+                aria-label={unreadMessages ? `Tin nhắn riêng, ${unreadMessages} chưa đọc` : "Tin nhắn riêng"}>
                 <MessageSquare className="w-5 h-5" />
-
-              </Link>
+                {unreadMessages > 0 && <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[var(--color-danger)]" />}
+              </button>
 
               {/* Notifications Dropdown */}
               <div ref={notifRef} className="relative hidden sm:block">

@@ -67,7 +67,7 @@ public class ReportController {
         return switch (type) {
             case POST -> getCommunityPostReports(name, request);
             case COMMENT -> getCommunityCommentReports(name, request);
-            case COMMUNITY -> throw new ReportException(ReportErrorCode.INVALID_COMMUNITY_REPORT_TYPE);
+            case COMMUNITY, MESSAGE -> throw new ReportException(ReportErrorCode.INVALID_COMMUNITY_REPORT_TYPE);
         };
     }
 

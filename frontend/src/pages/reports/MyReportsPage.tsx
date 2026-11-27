@@ -8,7 +8,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import type { ReportReason, ReportStatus, ReportTargetType } from '../../types';
 
 const types: Record<ReportTargetType, string> = {
-  POST: 'Bài viết', COMMENT: 'Bình luận', COMMUNITY: 'Cộng đồng',
+  POST: 'Bài viết', COMMENT: 'Bình luận', COMMUNITY: 'Cộng đồng', MESSAGE: 'Tin nhắn',
 };
 const statuses: Record<ReportStatus, string> = {
   PENDING: 'Chờ xử lý', RESOLVED: 'Đã giải quyết', REJECTED: 'Đã từ chối',

@@ -1,7 +1,6 @@
 import apiClient from './apiClient';
 import { assertImageRequestSize } from '../utils/imageUploadLimits';
-import { Community, CommunityMember, Post, User, Report, MyReport, CreateReportRequest, NotificationItem, Conversation, ChatMessage } from '../types';
-import { demoConversations } from '../mocks/demoContent';
+import { Community, CommunityMember, Post, User, Report, MyReport, CreateReportRequest, NotificationItem } from '../types';
 interface AuthResponse {
   message?: string;
   data?: Partial<User>;
@@ -74,14 +73,6 @@ export const USER_SEARCH_AVAILABLE = true;
 function requireFeature(available: boolean, name: string): void {
   if (!available) throw new Error(`${name} hiện chưa khả dụng.`);
 }
-export const MESSAGES_AVAILABLE = false;
-
-let localConversations = demoConversations.map((conversation) => ({
-  ...conversation,
-  participant: { ...conversation.participant },
-  messages: conversation.messages.map((message) => ({ ...message })),
-}));
-
 export interface LoginSession {
   id: string;
   deviceName: string;
@@ -670,7 +661,7 @@ type NotificationResponse = {
   commentId: number | null;
   communityName: string | null;
   reportId: number | null;
-  reportTargetType: 'POST' | 'COMMENT' | 'COMMUNITY' | null;
+  reportTargetType: CreateReportRequest['targetType'] | null;
   reportStatus: 'RESOLVED' | 'REJECTED' | null;
   read: boolean;
   createdAt: string;
@@ -689,20 +680,26 @@ function mapNotification(item: NotificationResponse): NotificationItem {
     COMMUNITY_POST_CREATED: item.communityName ? `đã đăng bài mới trong c/${item.communityName}.` : 'đã đăng bài mới trong cộng đồng.',
     POST_COMMENTED: 'đã bình luận về bài viết của bạn.',
     COMMENT_REPLIED: 'đã trả lời bình luận của bạn.',
+    CHAT_REQUEST_RECEIVED: 'đã gửi cho bạn yêu cầu nhắn tin.',
+    CHAT_MESSAGE_RECEIVED: 'đã gửi cho bạn một tin nhắn.',
     REPORT_SUBMITTED: 'Có báo cáo mới cần xem xét.',
     REPORT_REVIEWED: item.reportStatus === 'RESOLVED' ? 'Báo cáo của bạn đã được giải quyết.' : 'Báo cáo của bạn đã bị bác bỏ.',
     REPORT_WARNING: item.reportTargetType === 'COMMUNITY'
       ? `Cảnh cáo từ quản trị viên hệ thống: cộng đồng ${item.communityName ? `c/${item.communityName}` : 'của bạn'} được xác định có vi phạm.`
       : 'Cảnh cáo từ quản trị viên hệ thống: bài viết của bạn được xác định có vi phạm.',
   };
+  if (item.type === 'CHAT_REQUEST_RECEIVED' || item.type === 'CHAT_MESSAGE_RECEIVED') targetUrl = '/messages';
   if (item.type === 'REPORT_SUBMITTED') {
-    targetUrl = item.reportTargetType === 'COMMUNITY'
+    targetUrl = item.reportTargetType === 'MESSAGE'
+      ? `/admin/reports/MESSAGE/${item.reportId}`
+      : item.reportTargetType === 'COMMUNITY'
       ? `/admin/reports?type=COMMUNITY${item.reportId ? `&reportId=${item.reportId}` : ''}`
       : item.communityName ? `/c/${encodeURIComponent(item.communityName)}/moderation?type=${item.reportTargetType || 'POST'}` : '/notifications';
   }
   if (item.type === 'REPORT_WARNING' && item.reportTargetType === 'COMMUNITY' && item.communityName) {
     targetUrl = `/c/${encodeURIComponent(item.communityName)}`;
   }
+  if (item.type === 'REPORT_REVIEWED' && item.reportTargetType === 'MESSAGE') targetUrl = '/reports/mine?type=MESSAGE';
   const isMembershipNotification = item.type.startsWith('COMMUNITY_JOIN_') || item.type === 'COMMUNITY_MEMBER_JOINED';
   if (isMembershipNotification && item.communityName) {
     const communityPath = `/c/${encodeURIComponent(item.communityName)}`;
@@ -720,61 +717,17 @@ function mapNotification(item: NotificationResponse): NotificationItem {
 }
 
 export const notificationService = {
-  list: async (page = 0, unreadOnly = false) => {
+  getNotifications: async (page = 0, unreadOnly = false) => {
     const response = await apiClient.get<{ content: NotificationResponse[]; last: boolean; totalElements: number }>(
       `/notifications?page=${page}&size=20&unreadOnly=${unreadOnly}`);
     return { ...response, content: response.content.map(mapNotification) };
   },
-  unreadCount: () => apiClient.get<{ unreadCount: number }>('/notifications/unread-count'),
-  markRead: (id: string) => apiClient.put<void>(`/notifications/${encodeURIComponent(id)}/read`),
-  markAllRead: () => apiClient.put<void>('/notifications/read-all'),
+  getUnreadNotificationCount: () => apiClient.get<{ unreadCount: number }>('/notifications/unread-count'),
+  markNotificationAsRead: (id: string) => apiClient.put<void>(`/notifications/${encodeURIComponent(id)}/read`),
+  markAllNotificationsAsRead: () => apiClient.put<void>('/notifications/read-all'),
   deleteReadNotifications: () => apiClient.delete<void>('/notifications/read'),
-  communityPreference: (name: string) => apiClient.get<{ newPostEnabled: boolean }>(
+  getCommunityNotificationPreference: (name: string) => apiClient.get<{ newPostEnabled: boolean }>(
     `/communities/${encodeURIComponent(name)}/notification-preferences`),
-  updateCommunityPreference: (name: string, newPostEnabled: boolean) => apiClient.put<{ newPostEnabled: boolean }>(
+  updateCommunityNotificationPreference: (name: string, newPostEnabled: boolean) => apiClient.put<{ newPostEnabled: boolean }>(
     `/communities/${encodeURIComponent(name)}/notification-preferences`, { newPostEnabled }),
-};
-
-export const messageService = {
-  list: async (): Promise<Conversation[]> => MESSAGES_AVAILABLE
-    ? apiClient.get<Conversation[]>('/messages')
-    : localConversations.map((conversation) => ({
-        ...conversation,
-        participant: { ...conversation.participant },
-        messages: conversation.messages.map((message) => ({ ...message })),
-      })),
-  get: async (conversationId: string): Promise<Conversation> => {
-    if (MESSAGES_AVAILABLE) return apiClient.get<Conversation>(`/messages/${conversationId}`);
-    const conversation = localConversations.find((item) => item.id === conversationId);
-    if (!conversation) throw new Error('Không tìm thấy cuộc trò chuyện.');
-    return {
-      ...conversation,
-      participant: { ...conversation.participant },
-      messages: conversation.messages.map((message) => ({ ...message })),
-    };
-  },
-  send: async (conversationId: string, text: string): Promise<ChatMessage> => {
-    if (MESSAGES_AVAILABLE) {
-      return apiClient.post<ChatMessage>(`/messages/${conversationId}`, { text });
-    }
-    const conversation = localConversations.find((item) => item.id === conversationId);
-    const trimmedText = text.trim();
-    if (!conversation) throw new Error('Không tìm thấy cuộc trò chuyện.');
-    if (!trimmedText) throw new Error('Tin nhắn không được để trống.');
-    const timestamp = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-    const message: ChatMessage = {
-      id: `demo-message-${Date.now()}`,
-      senderId: 'demo-current-user',
-      senderUsername: 'ban',
-      text: trimmedText,
-      timestamp,
-      isMe: true,
-    };
-    localConversations = localConversations.map((item) =>
-      item.id === conversationId
-        ? { ...item, lastMessage: message.text, lastMessageTime: timestamp, messages: [...item.messages, message] }
-        : item
-    );
-    return message;
-  },
 };

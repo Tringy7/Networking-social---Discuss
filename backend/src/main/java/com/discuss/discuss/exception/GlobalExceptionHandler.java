@@ -7,6 +7,7 @@ import com.discuss.discuss.exception.media.MediaException;
 import com.discuss.discuss.exception.user.UserException;
 import com.discuss.discuss.exception.post.PostException;
 import com.discuss.discuss.exception.report.ReportException;
+import com.discuss.discuss.exception.chat.ChatException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +49,14 @@ public class GlobalExceptionHandler {
             org.springframework.web.method.annotation.HandlerMethodValidationException.class})
     public ResponseEntity<Map<String, Object>> handleInvalidParameter(Exception ex) {
         return ResponseEntity.badRequest().body(Map.of("status", 400, "message", "Invalid request parameter"));
+    }
+
+    @ExceptionHandler(ChatException.class)
+    public ResponseEntity<Map<String, Object>> handleChatException(ChatException ex) {
+        var error = ex.getError();
+        log.warn("[CHAT] error={}, status={}, message={}", error.name(), error.getStatus().value(), ex.getMessage());
+        return ResponseEntity.status(error.getStatus())
+                .body(Map.of("status", error.getStatus().value(), "message", ex.getMessage()));
     }
 
     @ExceptionHandler(ReportException.class)

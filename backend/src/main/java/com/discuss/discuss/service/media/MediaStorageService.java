@@ -7,9 +7,11 @@ import com.discuss.discuss.exception.media.MediaErrorCode;
 import com.discuss.discuss.exception.media.MediaException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ContentDisposition;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -113,6 +115,21 @@ public class MediaStorageService {
         } catch (Exception e) {
             log.warn("[MEDIA-ORPHAN] key={} reason={}", objectKey, e.getMessage());
         }
+    }
+
+    public ImageService.StoredChatImage storeChatImage(long messageId, byte[] bytes, String detectedType,
+                                                String filename, Consumer<String> reserve) {
+        var processed = imageProcessor.processChatImage(bytes, detectedType);
+        if ("image/gif".equals(detectedType)) {
+            filename = filename.replaceFirst("(?i)\\.gif$", "") + ".png";
+        }
+        String key = ImageKind.CHAT_ATTACHMENT.prefixFor(messageId)
+                + UUID.randomUUID() + extensionFor(processed.contentType());
+        String disposition = ContentDisposition.inline()
+                .filename(filename, StandardCharsets.UTF_8).build().toString();
+        putObject(key, processed.data(), processed.contentType(),
+                Map.of("Cache-Control", "private, no-store", "Content-Disposition", disposition), reserve);
+        return new ImageService.StoredChatImage(key, filename, processed.contentType());
     }
 
     // ------------------------------------------------------------------ internal

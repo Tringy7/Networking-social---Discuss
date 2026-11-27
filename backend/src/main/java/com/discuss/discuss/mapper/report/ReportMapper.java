@@ -1,6 +1,7 @@
 package com.discuss.discuss.mapper.report;
 
 import com.discuss.discuss.dto.report.ReportResponseDTO;
+import com.discuss.discuss.dto.report.MyReportResponseDTO;
 import com.discuss.discuss.entity.*;
 import com.discuss.discuss.enums.*;
 import org.springframework.stereotype.Component;
@@ -31,4 +32,16 @@ public class ReportMapper {
                 report.getHandledAt(), report.getCreatedAt());
     }
 
+    public ReportResponseDTO toResponse(ChatMessageReport report) {
+        return new ReportResponseDTO(report.getId(), ReportTargetType.MESSAGE, report.getMessageId(), null,
+                report.getReporter().getUsername(), ReportReason.valueOf(report.getReason()), report.getDescription(),
+                report.getStatus(), report.getAction(), report.getResolutionNote(),
+                report.getHandledBy() == null ? null : report.getHandledBy().getUsername(),
+                report.getHandledAt(), report.getCreatedAt());
+    }
+
+    public MyReportResponseDTO toMyReport(ChatMessageReport report) {
+        return new MyReportResponseDTO(report.getId(), ReportTargetType.MESSAGE, report.getMessageId(), null,
+                report.getReason(), report.getDescription(), report.getStatus(), report.getCreatedAt(), report.getHandledAt());
+    }
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
+import { chatService } from '../../services/chatService';
 import Button from '../../components/ui/Button';
 import { Lock, Check, RotateCcw } from 'lucide-react';
 
@@ -11,6 +12,29 @@ export const PrivacySettingsPage: React.FC = () => {
   const [showDOB, setShowDOB] = useState(user?.privacy.showDateOfBirth ?? true);
   const [showLocation, setShowLocation] = useState(user?.privacy.showLocation ?? true);
   const [isLoading, setIsLoading] = useState(false);
+  const [chatPrivacy, setChatPrivacy] = useState<boolean>();
+  const [savingChatPrivacy, setSavingChatPrivacy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (user?.id) chatService.getChatPrivacySettings().then(result => {
+      if (active) setChatPrivacy(result.allowRequests);
+    }).catch(() => { if (active) addToast('Không thể tải cài đặt nhắn tin.', 'error'); });
+    return () => { active = false; };
+  }, [user?.id, addToast]);
+
+  async function toggleChatPrivacy() {
+    if (chatPrivacy === undefined || savingChatPrivacy) return;
+    setSavingChatPrivacy(true);
+    try {
+      await chatService.updateChatPrivacySettings(!chatPrivacy);
+      setChatPrivacy(!chatPrivacy);
+    } catch {
+      addToast('Không thể cập nhật cài đặt nhắn tin.', 'error');
+    } finally {
+      setSavingChatPrivacy(false);
+    }
+  }
 
   const savedDOB = user?.privacy.showDateOfBirth;
   const savedLocation = user?.privacy.showLocation;
@@ -56,6 +80,14 @@ export const PrivacySettingsPage: React.FC = () => {
       </div>
 
       <div className="space-y-4">
+        <label className="flex items-center justify-between gap-4 setting-group">
+          <span className="space-y-0.5">
+            <span className="block text-sm font-semibold">Cho phép người khác bắt đầu trò chuyện</span>
+            <span className="block text-xs text-[var(--text-secondary)]">Cho phép người chưa trò chuyện với bạn gửi lời nhắn đầu tiên.</span>
+          </span>
+          <input type="checkbox" disabled={chatPrivacy === undefined || savingChatPrivacy}
+            checked={chatPrivacy ?? false} onChange={() => void toggleChatPrivacy()} />
+        </label>
         {/* Toggle 1: DOB */}
         <div className="flex items-center justify-between gap-4 setting-group">
           <div className="space-y-0.5 max-w-md">

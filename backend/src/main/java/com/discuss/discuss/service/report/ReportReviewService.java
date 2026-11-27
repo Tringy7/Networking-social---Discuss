@@ -1,5 +1,9 @@
 package com.discuss.discuss.service.report;
 
+import com.discuss.discuss.service.audit.ActivityLogService;
+import com.discuss.discuss.repository.ChatMessageReportRepository;
+import com.discuss.discuss.mapper.page.PageMapper;
+import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.comment.CommentAttachmentDTO;
 import com.discuss.discuss.dto.report.AdminReportTargetDTO;
 import com.discuss.discuss.dto.report.ReportResponseDTO;
@@ -22,6 +26,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,11 +43,24 @@ public class ReportReviewService {
     private final PostSupport postSupport;
     private final CommentSupport commentSupport;
     private final CommunityService communityService;
+    private final ActivityLogService activityLog;
+    private final ChatMessageReportRepository chatReports;
+    private final PageMapper pageMapper;
+
+    @HasRole("ADMIN")
+    @Transactional(readOnly = true)
+    public PageResponseDTO<ReportResponseDTO> listMessages(
+            ReportStatus status, String community, Pageable pageable) {
+        var result = community == null || community.isBlank() ? chatReports.list(status, pageable)
+                : Page.<ChatMessageReport>empty(pageable);
+        return pageMapper.toResponse(result.map(mapper::toResponse));
+    }
 
     @HasRole("ADMIN")
     @Transactional(readOnly = true)
     public ReportResponseDTO getDetail(ReportTargetType type, Long id) {
         return switch (type) {
+            case MESSAGE -> mapper.toResponse(find(ChatMessageReport.class, id, false));
             case POST -> mapper.toResponse(find(PostReport.class, id, false));
             case COMMENT -> mapper.toResponse(find(CommentReport.class, id, false));
             case COMMUNITY -> mapper.toResponse(find(CommunityReport.class, id, false));
@@ -49,9 +68,15 @@ public class ReportReviewService {
     }
 
     @HasRole("ADMIN")
-    @Transactional(readOnly = true)
+    @Transactional
     public AdminReportTargetDTO getTarget(ReportTargetType type, Long id) {
         return switch (type) {
+            case MESSAGE -> {
+                var report = find(ChatMessageReport.class, id, false);
+                activityLog.record("VIEW_REPORTED_MESSAGE", "MESSAGE_REPORT", id, null);
+                yield new AdminReportTargetDTO(null, null, null, new AdminReportTargetDTO.MessagePreview(
+                        report.getMessageId(), report.getSenderUsername(), report.getReportedText(), report.getAttachmentCount()));
+            }
             case POST -> {
                 var post = find(PostReport.class, id, false).getPost();
                 yield new AdminReportTargetDTO(postSupport.toResponse(post, userService.getCurrentUser()), null, null);
@@ -85,7 +110,7 @@ public class ReportReviewService {
     @Transactional
     public ReportResponseDTO reviewForCommunity(
             String communityName, ReportTargetType type, Long id, ReportStatus status, String note) {
-        if (type == ReportTargetType.COMMUNITY) {
+        if (type != ReportTargetType.POST && type != ReportTargetType.COMMENT) {
             throw new ReportException(ReportErrorCode.INVALID_COMMUNITY_REPORT_TYPE);
         }
         User actor = userService.getCurrentUser();
@@ -107,6 +132,17 @@ public class ReportReviewService {
         LocalDateTime now = LocalDateTime.now();
         String action = status == ReportStatus.RESOLVED ? moderationAction.name() : "REJECTED";
         return switch (type) {
+            case MESSAGE -> {
+                var report = find(ChatMessageReport.class, id, true);
+                requirePending(report.getStatus());
+                report.setStatus(status);
+                report.setHandledBy(actor);
+                report.setHandledAt(now);
+                report.setResolutionNote(resolutionNote);
+                report.setAction(action);
+                notificationEvents.enqueueReportReviewedNotification(actor.getId(), id, type, report.getReporter().getId(), status);
+                yield mapper.toResponse(report);
+            }
             case POST -> {
                 var report = find(PostReport.class, id, true);
                 if (community != null) {
@@ -118,10 +154,10 @@ public class ReportReviewService {
                 report.setHandledAt(now);
                 report.setResolutionNote(resolutionNote);
                 report.setAction(action);
-                notificationEvents.reportReviewed(actor.getId(), id, type, report.getUser().getId(), status);
+                notificationEvents.enqueueReportReviewedNotification(actor.getId(), id, type, report.getUser().getId(), status);
                 if (community == null && status == ReportStatus.RESOLVED) {
                     Post post = report.getPost();
-                    notificationEvents.reportWarning(actor.getId(), id, type, post.getUser().getId(),
+                    notificationEvents.enqueueReportWarningNotification(actor.getId(), id, type, post.getUser().getId(),
                             post.getId(), post.getCommunity().getId());
                 }
                 yield mapper.toResponse(report);
@@ -137,7 +173,7 @@ public class ReportReviewService {
                 report.setHandledAt(now);
                 report.setResolutionNote(resolutionNote);
                 report.setAction(action);
-                notificationEvents.reportReviewed(actor.getId(), id, type, report.getReporter().getId(), status);
+                notificationEvents.enqueueReportReviewedNotification(actor.getId(), id, type, report.getReporter().getId(), status);
                 yield mapper.toResponse(report);
             }
             case COMMUNITY -> {
@@ -148,10 +184,10 @@ public class ReportReviewService {
                 report.setHandledAt(now);
                 report.setResolutionNote(resolutionNote);
                 report.setAction(action);
-                notificationEvents.reportReviewed(actor.getId(), id, type, report.getUser().getId(), status);
+                notificationEvents.enqueueReportReviewedNotification(actor.getId(), id, type, report.getUser().getId(), status);
                 Community reportedCommunity = report.getCommunity();
                 if (status == ReportStatus.RESOLVED && reportedCommunity.getOwner() != null) {
-                    notificationEvents.reportWarning(actor.getId(), id, type, reportedCommunity.getOwner().getId(),
+                    notificationEvents.enqueueReportWarningNotification(actor.getId(), id, type, reportedCommunity.getOwner().getId(),
                             null, reportedCommunity.getId());
                 }
                 yield mapper.toResponse(report);

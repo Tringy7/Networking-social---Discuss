@@ -8,6 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
+@org.hibernate.annotations.DynamicUpdate
 @Table(name = "user_privacy_settings")
 @Getter
 @Setter
@@ -36,6 +37,8 @@ public class UserPrivacySettings {
     @Builder.Default
     @Column(nullable = false)
     private boolean showLocation = true;
+
+    private Boolean allowChatRequests;
 
 //    @Builder.Default
 //    @Column(nullable = false)

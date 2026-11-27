@@ -34,6 +34,7 @@ public class OutboxEvent {
     private Long reportId;
     private Long reporterId;
     private Long warningRecipientId;
+    private Long chatRecipientId;
 
     @Enumerated(EnumType.STRING)
     private ReportTargetType reportTargetType;
