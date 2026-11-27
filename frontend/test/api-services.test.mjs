@@ -131,3 +131,29 @@ test('refreshes an expired session and retries the original request', async (con
     ['GET', '/notifications/unread-count'],
   ]);
 });
+
+test('sends a chat reply and preserves the client id across multipart retries', async (context) => {
+  const calls = mockRequests(context);
+  const clientId = 1234567890123;
+  await modules.chatService.sendMessage(7, 'Reply', clientId, 42);
+  const files = [new File(['test'], 'notes.txt')];
+  await modules.chatService.sendMessage(7, '', clientId, 42, files);
+  await modules.chatService.sendMessage(7, '', clientId, 42, files);
+
+  assert.equal(calls[0].path, '/chat/7/messages');
+  assert.deepEqual(JSON.parse(calls[0].body), { text: 'Reply', clientId, replyToId: 42 });
+  for (const call of calls.slice(1)) {
+    assert.ok(call.body instanceof FormData);
+    assert.equal(call.headers, undefined);
+    assert.equal(call.body.get('clientId'), String(clientId));
+    assert.equal(call.body.get('replyToId'), '42');
+    assert.equal(call.body.get('files').name, 'notes.txt');
+  }
+});
+
+test('routes message reports without exposing chat history through the report endpoint', async (context) => {
+  const calls = mockRequests(context);
+  await modules.reportService.create({ targetType: 'MESSAGE', targetId: 17, reason: 'HARASSMENT' });
+  assert.equal(calls[0].path, '/reports');
+  assert.deepEqual(JSON.parse(calls[0].body), { targetType: 'MESSAGE', targetId: 17, reason: 'HARASSMENT' });
+});

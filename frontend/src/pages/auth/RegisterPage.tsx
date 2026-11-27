@@ -39,7 +39,7 @@ export const RegisterPage: React.FC = () => {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (requestInFlight.current) return;
     const errors: Record<string, string> = {};

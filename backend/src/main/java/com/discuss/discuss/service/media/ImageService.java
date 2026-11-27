@@ -98,6 +98,13 @@ public class ImageService {
         return storage.storeCommentImage(commentId, file, this::deleteUncommittedImage);
     }
 
+    public record StoredChatImage(String objectKey, String filename, String contentType) {}
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public StoredChatImage storeChatImage(long messageId, byte[] bytes, String detectedType, String filename) {
+        return storage.storeChatImage(messageId, bytes, detectedType, filename, this::deleteUncommittedImage);
+    }
+
     private void deleteUncommittedImage(String key) {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override

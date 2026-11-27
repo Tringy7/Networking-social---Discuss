@@ -28,7 +28,7 @@ const reasons: { value: ReportReason; label: string }[] = [
   { value: 'MISINFORMATION', label: 'Thông tin sai lệch' },
   { value: 'OTHER', label: 'Lý do khác' },
 ];
-const targetLabels = { POST: 'bài viết', COMMENT: 'bình luận', COMMUNITY: 'cộng đồng', USER: 'tài khoản' };
+const targetLabels = { POST: 'bài viết', COMMENT: 'bình luận', COMMUNITY: 'cộng đồng', MESSAGE: 'tin nhắn', USER: 'tài khoản' };
 
 export default function ReportModal({ isOpen, onClose, contentType, contentId, contentTitle, communityName }: ReportModalProps) {
   const addReport = useReportStore((state) => state.addReport);

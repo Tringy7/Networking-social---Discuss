@@ -3,14 +3,17 @@ import { useAuthStore } from '../store/useAuthStore';
 import { useToastStore } from '../store/useToastStore';
 import { useCommunityStore } from '../store/useCommunityStore';
 import { usePostStore } from '../store/usePostStore';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Sidebar from '../components/layout/Sidebar';
 import PostComposerModal from '../components/post/PostComposerModal';
 import MobileNavigation from '../components/layout/MobileNavigation';
 import PageTransition from '../components/layout/PageTransition';
 
+const FloatingChat = React.lazy(() => import('../pages/messages/FloatingChat'));
+
 export const AppLayout: React.FC = () => {
+  const { pathname } = useLocation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const account = useAuthStore((state) => state.user?.username);
   const hydrateCommunities = useCommunityStore((state) => state.hydrate);
@@ -57,6 +60,7 @@ export const AppLayout: React.FC = () => {
         </main>
       </div>
       <MobileNavigation />
+      {isAuthenticated && pathname !== '/messages' && <React.Suspense fallback={null}><FloatingChat /></React.Suspense>}
       <PostComposerModal />
     </div>
   );

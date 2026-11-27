@@ -26,7 +26,7 @@ export const LoginPage: React.FC = () => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const requestInFlight = useRef(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (requestInFlight.current) return;
     const errors: Record<string, string> = {};

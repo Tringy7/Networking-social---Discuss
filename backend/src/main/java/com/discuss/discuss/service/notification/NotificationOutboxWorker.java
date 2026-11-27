@@ -66,6 +66,8 @@ public class NotificationOutboxWorker {
             return;
         }
         switch (event.getEventType()) {
+            case CHAT_REQUESTED -> save(event, event.getChatRecipientId(), NotificationType.CHAT_REQUEST_RECEIVED, null);
+            case CHAT_MESSAGE_SENT -> save(event, event.getChatRecipientId(), NotificationType.CHAT_MESSAGE_RECEIVED, null);
             case POST_CREATED -> notifyCommunity(event);
             case COMMENT_CREATED -> notifyComment(event);
             case REPORT_SUBMITTED -> notifyReportSubmitted(event);
@@ -118,8 +120,8 @@ public class NotificationOutboxWorker {
     }
 
     private void notifyReportSubmitted(OutboxEvent event) {
-        var community = entities.find(Community.class, event.getCommunityId());
-        if (event.getReportTargetType() == ReportTargetType.COMMUNITY) {
+        var community = event.getCommunityId() == null ? null : entities.find(Community.class, event.getCommunityId());
+        if (event.getReportTargetType() == ReportTargetType.COMMUNITY || event.getReportTargetType() == ReportTargetType.MESSAGE) {
             var admins = entities.createQuery("""
                     select u.id from User u where u.role = :role and u.status = :status and u.id <> :actor
                     """, Long.class).setParameter("role", UserRole.ADMIN).setParameter("status", UserStatus.ACTIVE)

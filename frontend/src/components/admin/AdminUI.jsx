@@ -37,9 +37,9 @@ export function AdminStatusBadge({
 export function AdminPageHeader({
   title,
   description,
-  loading,
-  onRefresh,
-  children
+  loading = false,
+  onRefresh = undefined,
+  children = undefined
 }) {
   return <header className="admin-page-heading"><div><h1>{title}</h1>{description && <p>{description}</p>}</div>{(children || onRefresh) && <div className="admin-heading-actions">{children}{onRefresh && <button type="button" className="admin-button" disabled={loading} onClick={onRefresh} aria-label="Làm mới"><RefreshCw size={15} className={loading ? 'admin-spinning' : ''} aria-hidden="true" /><span>Làm mới</span></button>}</div>}</header>;
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { usePostStore } from '../../store/usePostStore';
 import { useToastStore } from '../../store/useToastStore';
@@ -197,11 +198,17 @@ export const UserProfilePage: React.FC = () => {
                 </Link>
               ) : (
                 <>
-                  <Link to="/messages">
+                  {currentUser ? (
+                    <Button onClick={() => useChatStore.getState().openWindow(username)} variant="primary" size="sm" leftIcon={<MessageSquare className="w-4 h-4" />}>
+                      Nhắn tin
+                    </Button>
+                  ) : (
+                  <Link to={`/messages?to=${encodeURIComponent(username ?? '')}`}>
                     <Button variant="primary" size="sm" leftIcon={<MessageSquare className="w-4 h-4" />}>
                       Nhắn tin
                     </Button>
                   </Link>
+                  )}
                 </>
               )}
 

@@ -168,8 +168,8 @@ export interface Comment {
   createdAt: string;
 }
 
-export type ReportContentType = 'POST' | 'COMMENT' | 'COMMUNITY' | 'USER';
-export type ReportTargetType = 'POST' | 'COMMENT' | 'COMMUNITY';
+export type ReportContentType = ReportTargetType | 'USER';
+export type ReportTargetType = 'POST' | 'COMMENT' | 'COMMUNITY' | 'MESSAGE';
 export type ReportReason = 'SPAM' | 'HARASSMENT' | 'HATE_SPEECH' | 'INAPPROPRIATE_CONTENT' | 'MISINFORMATION' | 'OTHER';
 export interface CreateReportRequest {
   targetType: ReportTargetType;
@@ -218,6 +218,7 @@ export interface CommunityMember {
 }
 
 export type NotificationType = 'COMMUNITY_POST_CREATED' | 'POST_COMMENTED' | 'COMMENT_REPLIED'
+  | 'CHAT_REQUEST_RECEIVED' | 'CHAT_MESSAGE_RECEIVED'
   | 'REPORT_SUBMITTED' | 'REPORT_REVIEWED' | 'REPORT_WARNING'
   | 'COMMUNITY_JOIN_CONFIRMED' | 'COMMUNITY_MEMBER_JOINED'
   | 'COMMUNITY_JOIN_REQUEST_SENT' | 'COMMUNITY_JOIN_REQUEST_RECEIVED'
@@ -235,28 +236,4 @@ export interface NotificationItem {
   targetUrl: string;
   isRead: boolean;
   createdAt: string;
-}
-
-export interface ChatMessage {
-  id: string;
-  senderId: string;
-  senderUsername: string;
-  text: string;
-  timestamp: string;
-  isMe: boolean;
-}
-
-export interface Conversation {
-  id: string;
-  participant: {
-    id: string;
-    username: string;
-    displayName: string;
-    avatarUrl: string;
-    status: 'online' | 'offline';
-  };
-  lastMessage: string;
-  lastMessageTime: string;
-  unreadCount: number;
-  messages: ChatMessage[];
 }

@@ -2,6 +2,7 @@ import { ADMIN_AVAILABLE } from '../../services';
 import React from 'react';
 import { NavLink, Link, useLocation, matchPath } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
+import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
@@ -54,7 +55,10 @@ export default function Sidebar() {
             {link('/reports/mine', 'Báo cáo của tôi', Flag)}
             {link(`/u/${user.username}`, 'Hồ sơ của bạn', UserRound)}
             {link('/notifications', 'Thông báo', Bell)}
-            {link('/messages', 'Tin nhắn', MessageSquare)}
+            <button type="button" className={`side-link ${location.pathname === '/messages' ? 'is-active' : ''}`}
+              aria-label="Tin nhắn" title={collapsed ? 'Tin nhắn' : undefined} onClick={() => useChatStore.getState().openWindow()}>
+              <MessageSquare className="side-icon" aria-hidden="true" />{!collapsed && <span>Tin nhắn</span>}
+            </button>
           </nav>
           <nav className="side-group">
             {!collapsed && <div className="side-group-title"><span className="sidebar-caption">Cộng đồng của bạn</span><Link to="/communities/create" className="icon-button" aria-label="Tạo cộng đồng"><Plus size={16} /></Link></div>}

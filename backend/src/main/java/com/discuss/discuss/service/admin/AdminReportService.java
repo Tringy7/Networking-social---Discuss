@@ -28,6 +28,7 @@ public class AdminReportService {
 
     public PageResponseDTO<ReportResponseDTO> list(ReportTargetType type, ReportStatus status, String communityName, Pageable pageable) {
         return switch (type) {
+            case MESSAGE -> reviewService.listMessages(status, communityName, pageable);
             case POST -> postReports.list(status, communityName, pageable);
             case COMMENT -> commentReports.list(status, communityName, pageable);
             case COMMUNITY -> communityReports.list(status, communityName, pageable);
@@ -43,6 +44,7 @@ public class AdminReportService {
                                     ReportModerationAction requestedAction) {
         var action = requestedAction == null ? ReportModerationAction.REVIEWED : requestedAction;
         var allowedAction = switch (type) {
+            case MESSAGE -> ReportModerationAction.REVIEWED;
             case POST -> ReportModerationAction.REMOVE_POST;
             case COMMENT -> ReportModerationAction.REMOVE_COMMENT;
             case COMMUNITY -> ReportModerationAction.LOCK_COMMUNITY;

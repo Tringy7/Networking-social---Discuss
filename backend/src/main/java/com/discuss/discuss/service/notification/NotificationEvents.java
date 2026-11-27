@@ -21,6 +21,11 @@ public class NotificationEvents {
 
     record Queued() {}
 
+    public void chatReceived(Long actorId, Long recipientId, boolean request) {
+        var type = request ? NotificationEventType.CHAT_REQUESTED : NotificationEventType.CHAT_MESSAGE_SENT;
+        enqueue(event(type, actorId).chatRecipientId(recipientId).build());
+    }
+
     public void postCreated(Post post) {
         enqueue(event(NotificationEventType.POST_CREATED, post.getUser().getId())
                 .postId(post.getId()).communityId(post.getCommunity().getId()).build());

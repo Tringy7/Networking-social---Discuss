@@ -1,6 +1,8 @@
 package com.discuss.discuss.enums;
 
 public enum NotificationType {
+    CHAT_REQUEST_RECEIVED,
+    CHAT_MESSAGE_RECEIVED,
     COMMUNITY_POST_CREATED,
     POST_COMMENTED,
     COMMENT_REPLIED,

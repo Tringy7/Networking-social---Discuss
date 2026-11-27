@@ -208,13 +208,18 @@ function ReportDetailContent({ type, reportId }) {
 }
 
 function ReportTargetPreview({ resource }) {
-  const { post, comment, community } = resource.data || {};
+  const { post, comment, community, message } = resource.data || {};
   return (
     <section className="admin-report-target" aria-labelledby="admin-report-target-title">
       <h2 id="admin-report-target-title">Nội dung bị báo cáo</h2>
       {resource.loading ? <AdminLoadingSkeleton /> : resource.error
         ? <AdminErrorState error={resource.error} retry={resource.reload} />
         : <>
+          {message && <article>
+            <header><h3>Tin nhắn của @{message.username}</h3></header>
+            {message.content && <p className="whitespace-pre-wrap break-words">{message.content}</p>}
+            {message.attachmentCount > 0 && <p>{message.attachmentCount} tệp đính kèm</p>}
+          </article>}
           {comment && <article>
             <header><h3>Bình luận của @{comment.username}</h3><AdminStatusBadge status={comment.status} /></header>
             {comment.status === 'DELETED' ? <p>Bình luận đã bị gỡ.</p> : <>

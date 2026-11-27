@@ -326,3 +326,5 @@ Yêu cầu:
 8. Nếu thiếu dữ liệu, ghi [CẦN BỔ SUNG: ...].
 9. Liệt kê hình giao diện, use case, ERD, sơ đồ lớp, sơ đồ tuần tự, kết quả kiểm thử và môi trường triển khai cần bổ sung.
 ```
+
+[Xem API, kiến trúc và schema của module nhắn tin riêng](backend/docs/chat.md).
