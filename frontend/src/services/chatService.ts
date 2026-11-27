@@ -13,6 +13,8 @@ export interface ChatThread {
   pinned: boolean;
   hidden: boolean;
   muted: boolean;
+  peerReadThrough?: number;
+  preview?: { mine: boolean; text: string | null; recalled: boolean; createdAt: string } | null;
 }
 export interface ChatEntry {
   id: number;
@@ -22,7 +24,7 @@ export interface ChatEntry {
   replyToId: number | null;
   editedAt: string | null;
   recalled: boolean;
-  markConversationAsRead: boolean;
+  read: boolean;
   attachments: { id: number; filename: string; contentType: string }[];
   reactions: { emoji: string; mine: boolean }[];
 }
@@ -30,6 +32,7 @@ export interface ChatEntry {
 export const chatService = {
   subscribeToChatEvents: () => new EventSource(API_BASE_URL.replace(/\/$/, '') + '/chat/events', { withCredentials: true }),
   listConversations: () => apiClient.get<ChatThread[]>('/chat'),
+  getConversation: (id: number) => apiClient.get<ChatThread>(`/chat/${id}`),
   getMessageHistory: (id: number, before?: number) => apiClient.get<ChatEntry[]>(`/chat/${id}/messages${before ? `?before=${before}` : ''}`),
   openConversationAndSendMessage: (username: string, text: string, clientId: number) =>
     apiClient.post<ChatThread>('/chat/requests', { username, text, clientId }),

@@ -42,9 +42,8 @@ public class NotificationService {
     }
 
     @Transactional(readOnly = true)
-    public long countCurrentUserUnreadNotifications() {
-        return repository.countByRecipientIdAndTypeNotInAndReadAtIsNull(
-                userService.getCurrentUser().getId(), LEGACY_CHAT_TYPES);
+    public NotificationRepository.NotificationSummary getCurrentUserNotificationSummary() {
+        return repository.summarize(userService.getCurrentUser().getId(), LEGACY_CHAT_TYPES);
     }
 
     @Transactional

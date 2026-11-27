@@ -85,7 +85,7 @@ public class ChatMessageService {
         var message = messageStore.insert(id, actor, text, clientId);
         message.setReplyToId(replyToId);
         var uploaded = files.stream().map(file -> attachmentService.storeAttachment(message.getId(), file)).toList();
-        changes.changed(request);
+        changes.messageSent(request);
         return mapper.toMessage(message, actor, 0, uploaded, List.of());
     }
 

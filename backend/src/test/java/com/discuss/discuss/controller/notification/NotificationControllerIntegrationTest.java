@@ -40,6 +40,24 @@ class NotificationControllerIntegrationTest extends AbstractApiIntegrationTest {
                 .andExpect(jsonPath("$.unreadCount").value(0));
     }
 
+    @Test
+    void summaryChangesWhenANewNotificationReplacesTheUnreadCountOfAnOlderOne() throws Exception {
+        User actor = user(UserRole.USER);
+        User recipient = user(UserRole.USER);
+        var original = notification(actor, recipient);
+        mvc.perform(get("/notifications/unread-count").with(as(recipient)))
+                .andExpect(jsonPath("$.unreadCount").value(1))
+                .andExpect(jsonPath("$.latestId").value(original.getId()));
+
+        mvc.perform(put("/notifications/{id}/read", original.getId()).with(as(recipient)))
+                .andExpect(status().isNoContent());
+        var latest = notification(actor, recipient);
+        mvc.perform(get("/notifications/unread-count").with(as(recipient)))
+                .andExpect(jsonPath("$.unreadCount").value(1))
+                .andExpect(jsonPath("$.latestId").value(latest.getId()))
+                .andExpect(jsonPath("$.lastReadAt").exists());
+    }
+
     private Notification notification(User actor, User recipient) {
         return notifications.save(Notification.builder().actor(actor).recipientId(recipient.getId())
                 .type(NotificationType.REPORT_REVIEWED).build());

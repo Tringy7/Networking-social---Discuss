@@ -116,7 +116,9 @@ public class ReportReviewService {
         User actor = userService.getCurrentUser();
         Community community = communitySupport.getCommunityByName(communityName);
         communityAuthorization.requireModeratorOrOwner(community, actor);
-        return review(type, id, status, note, actor, community, ReportModerationAction.REVIEWED);
+        var result = review(type, id, status, note, actor, community, ReportModerationAction.REVIEWED);
+        activityLog.recordCommunityReportDecision(actor, type, id, status, note.strip());
+        return result;
     }
 
     private ReportResponseDTO review(

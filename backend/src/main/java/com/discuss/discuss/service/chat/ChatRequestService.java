@@ -79,7 +79,7 @@ public class ChatRequestService {
         request.setStatus(ChatRequest.Status.ACCEPTED);
         requests.save(request);
         messageStore.insert(id, actorId, text, clientId);
-        changes.changed(request);
+        changes.messageSent(request);
         return conversationService.buildConversationResponse(membership, request);
     }
 

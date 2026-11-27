@@ -33,37 +33,12 @@ function ChatAvatar({ name, online = false }: { name: string; online?: boolean }
   </span>;
 }
 
-function ConversationRow({ thread, selected, disabled, active, onSelect }: {
-  thread: ChatThread; selected: boolean; disabled: boolean; active: boolean; onSelect: () => void;
+function ConversationRow({ thread, selected, disabled, onSelect }: {
+  thread: ChatThread; selected: boolean; disabled: boolean; onSelect: () => void;
 }) {
-  const element = useRef<HTMLButtonElement>(null);
-  const [visible, setVisible] = useState(false);
-  const [preview, setPreview] = useState<ChatEntry>();
-  const update = useChatStore(state => state.update);
-  const [revision, setRevision] = useState(0);
-  useEffect(() => {
-    if (!update.id || update.id === thread.id) setRevision(update.sequence);
-  }, [update, thread.id]);
-
-  useEffect(() => {
-    const button = element.current;
-    if (!button) return;
-    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting));
-    observer.observe(button);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!visible || !active) return;
-    let current = true;
-    void chatService.getMessageHistory(thread.id).then(entries => {
-      if (current) setPreview(entries.find(entry => entry.text !== null || entry.recalled || entry.attachments.length > 0));
-    }).catch(() => {});
-    return () => { current = false; };
-  }, [thread.id, revision, visible, active]);
-
-  const summary = preview?.recalled ? 'Tin nhắn đã thu hồi' : preview?.text || (preview?.attachments.length ? 'Tệp đính kèm' : '');
-  return <button ref={element} type="button" className="chat-thread"
+  const preview = thread.preview;
+  const summary = preview?.recalled ? 'Tin nhắn đã thu hồi' : preview ? (preview.text || 'Tệp đính kèm') : '';
+  return <button type="button" className="chat-thread"
     aria-current={selected ? 'true' : undefined} disabled={disabled} onClick={onSelect}>
     <ChatAvatar name={thread.peer} online={thread.online} />
     <span className="chat-thread-text">
@@ -104,7 +79,7 @@ export function ChatContent({ target, onSelect, floating = false, active = true,
   const [composing, setComposing] = useState(false);
   const [recipient, setRecipient] = useState('');
   const [tab, setTab] = useState<'chat' | 'hidden'>('chat');
-  const [history, setHistory] = useState<{ id: number; entries: ChatEntry[] }>({ id: 0, entries: [] });
+  const [history, setHistory] = useState<{ id: number; entries: ChatEntry[]; hasMore: boolean }>({ id: 0, entries: [], hasMore: false });
   const [draft, setDraft] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [draggingFiles, setDraggingFiles] = useState(false);
@@ -117,18 +92,22 @@ export function ChatContent({ target, onSelect, floating = false, active = true,
   }, [files]);
   const [reply, setReply] = useState<ChatEntry>();
   const [editing, setEditing] = useState<ChatEntry>();
-  const [historyReload, setHistoryReload] = useState(0);
+  const [historyReload, setHistoryReload] = useState({ revision: 0, latestOnly: false });
   const retry = useRef<{ target: string; text: string; key: number; replyToId?: number; files: File[] } | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [hasMore, setHasMore] = useState(false);
-  const loadedPages = useRef({ id: 0, count: 1 });
+  const loadedHistory = useRef({ id: 0, count: 1 });
   const readCursor = useRef({ id: 0, through: 0 });
   const historyPanel = useRef<HTMLDivElement>(null);
   const lastRendered = useRef({ id: 0, last: 0 });
   const shouldScroll = useRef(true);
   const entries = history.id === id ? history.entries : [];
+  const hasMore = history.id === id && history.hasMore;
+
+  useEffect(() => {
+    loadedHistory.current = { id: history.id, count: Math.max(1, Math.ceil(history.entries.length / 30)) };
+  }, [history]);
 
   useEffect(() => {
     let active = true;
@@ -138,19 +117,21 @@ export function ChatContent({ target, onSelect, floating = false, active = true,
   }, [refresh]);
 
   useEffect(() => {
-    if (liveUpdate.sequence && (!liveUpdate.id || liveUpdate.id === id)) setHistoryReload(value => value + 1);
+    if (liveUpdate.sequence && (!liveUpdate.id || liveUpdate.id === id)) {
+      setHistoryReload(value => ({ revision: value.revision + 1, latestOnly: liveUpdate.latestOnly }));
+    }
   }, [id, liveUpdate]);
 
   useEffect(() => {
     if (!id || !active) return;
     let current = true;
-    if (loadedPages.current.id !== id) loadedPages.current = { id, count: 1 };
     if (readCursor.current.id !== id) readCursor.current = { id, through: 0 };
     async function loadHistory() {
       const result: ChatEntry[] = [];
       let before: number | undefined;
       let more = true;
-      const pages = loadedPages.current.count;
+      const latestOnly = historyReload.latestOnly;
+      const pages = !latestOnly && loadedHistory.current.id === id ? loadedHistory.current.count : 1;
       for (let index = 0; index < pages && more && current; index++) {
         const page = await chatService.getMessageHistory(id, before);
         result.push(...page);
@@ -158,14 +139,20 @@ export function ChatContent({ target, onSelect, floating = false, active = true,
         more = page.length === 30;
       }
       if (!current) return;
-      setHistory({ id, entries: [...result].reverse() });
-      setHasMore(more);
+      const newest = [...result].reverse();
+      setHistory(previous => {
+        if (!latestOnly || previous.id !== id || !more) return { id, entries: newest, hasMore: more };
+        const first = newest[0].id;
+        if ((previous.entries.at(-1)?.id ?? 0) < first) return { id, entries: newest, hasMore: true };
+        const older = previous.entries.filter(entry => entry.id < first);
+        return { id, entries: [...older, ...newest], hasMore: older.length > 0 ? previous.hasMore : more };
+      });
       const incoming = result.find(entry => !entry.mine);
       if (document.visibilityState === 'visible' && incoming && incoming.id > readCursor.current.through) {
         await chatService.markConversationAsRead(id, incoming.id);
         if (!current) return;
         readCursor.current.through = incoming.id;
-        await refresh();
+        if (useChatStore.getState().connection !== 'connected') await refresh();
       }
     }
     void loadHistory().catch(() => { if (current) setError('Không thể tải lịch sử tin nhắn.'); });
@@ -183,7 +170,7 @@ export function ChatContent({ target, onSelect, floating = false, active = true,
 
   useEffect(() => {
     const onVisible = () => {
-      if (id && document.visibilityState === 'visible') setHistoryReload(value => value + 1);
+      if (id && document.visibilityState === 'visible') setHistoryReload(value => ({ revision: value.revision + 1, latestOnly: false }));
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
@@ -215,7 +202,7 @@ export function ChatContent({ target, onSelect, floating = false, active = true,
         await chatService.editMessage(id, editing.id, text);
         setEditing(undefined);
         setDraft('');
-        setHistoryReload(value => value + 1);
+        setHistoryReload(value => ({ revision: value.revision + 1, latestOnly: false }));
       });
       return;
     }
@@ -233,7 +220,8 @@ export function ChatContent({ target, onSelect, floating = false, active = true,
         onSelect({ id: String(opened.id) });
       } else {
         const entry = await chatService.sendMessage(id, text, key, replyToId, files);
-        setHistory(current => ({ id, entries: [...(current.id === id ? current.entries : []).filter(item => item.id !== entry.id), entry] }));
+        setHistory(current => ({ id, hasMore: current.id === id && current.hasMore,
+          entries: [...(current.id === id ? current.entries : []).filter(item => item.id !== entry.id), entry] }));
       }
       setDraft('');
       setFiles([]);
@@ -287,7 +275,7 @@ export function ChatContent({ target, onSelect, floating = false, active = true,
         <button type="button" className="chat-primary" onClick={openComposer} disabled={busy}><Plus size={17} /> Tin nhắn mới</button>
       </div>
     </header>}
-    {error && <div className="chat-error" role="alert"><span>{error}</span><button type="button" className="chat-control" onClick={() => void run(async () => { await refresh(); setHistoryReload(value => value + 1); })}>Thử lại</button></div>}
+    {error && <div className="chat-error" role="alert"><span>{error}</span><button type="button" className="chat-control" onClick={() => void run(async () => { await refresh(); setHistoryReload(value => ({ revision: value.revision + 1, latestOnly: false })); })}>Thử lại</button></div>}
     <div className={id || peer || choosingRecipient ? 'chat-frame chat-open' : 'chat-frame'}>
       <aside className="chat-sidebar" aria-label="Cuộc trò chuyện">
         <div className="chat-sidebar-toolbar">
@@ -315,7 +303,7 @@ export function ChatContent({ target, onSelect, floating = false, active = true,
           {!loading && visible.length === 0 && <p className="chat-list-state">{query.trim() ? 'Không tìm thấy cuộc trò chuyện.'
             : tab === 'hidden' ? 'Chưa có cuộc trò chuyện đã ẩn.' : 'Chưa có cuộc trò chuyện.'}</p>}
           {visible.map(item => <ConversationRow key={item.id} thread={item} selected={item.id === id}
-            disabled={busy} active={active} onSelect={() => { setComposing(false); selectThread({ id: String(item.id) }); }} />)}
+            disabled={busy} onSelect={() => { setComposing(false); selectThread({ id: String(item.id) }); }} />)}
         </div>
       </aside>
       <section className="chat-conversation" aria-label="Nội dung tin nhắn"
@@ -395,14 +383,13 @@ export function ChatContent({ target, onSelect, floating = false, active = true,
             {id > 0 && history.id !== id && !error && <p role="status">Đang tải lịch sử…</p>}
             {id > 0 && entries.length > 0 && hasMore && <button type="button" className="chat-older chat-control" disabled={busy} onClick={() => void run(async () => {
               const page = await chatService.getMessageHistory(id, entries[0].id);
-              loadedPages.current.count += 1;
-              setHasMore(page.length === 30);
               setHistory(current => current.id !== id ? current : {
-                id, entries: [...page.reverse(), ...current.entries].filter((entry, index, all) => all.findIndex(item => item.id === entry.id) === index),
+                id, hasMore: page.length === 30, entries: [...page.reverse(), ...current.entries].filter((entry, index, all) => all.findIndex(item => item.id === entry.id) === index),
               });
             })}><ChevronUp size={15} /> Tin nhắn cũ hơn</button>}
             {displayedEntries.map((entry, index) => {
               const day = dateFormat.format(new Date(entry.createdAt));
+              const isRead = entry.mine && (thread?.peerReadThrough === undefined ? entry.read : entry.id <= thread.peerReadThrough);
               const previous = displayedEntries[index - 1];
               const next = displayedEntries[index + 1];
               const grouped = next && next.mine === entry.mine && !entry.recalled && !next.recalled
@@ -419,10 +406,10 @@ export function ChatContent({ target, onSelect, floating = false, active = true,
                   if (attachment.contentType.startsWith('video/')) return <video key={attachment.id} src={url} controls playsInline preload="metadata" aria-label={attachment.filename} />;
                   return <a key={attachment.id} href={url}><FileText size={18} /> {attachment.filename}</a>;
                 })}</div>}
-                {(!grouped || entry.read || entry.editedAt) && <div className="chat-message-meta">
+                {(!grouped || isRead || entry.editedAt) && <div className="chat-message-meta">
                 {!grouped && <time dateTime={entry.createdAt}>{timeFormat.format(new Date(entry.createdAt))}</time>}
                 {entry.editedAt && !entry.recalled && <small> · Đã chỉnh sửa</small>}
-                {entry.read && <small><Check size={13} /> Đã đọc</small>}</div>}
+                {isRead && <small><Check size={13} /> Đã đọc</small>}</div>}
                 {entry.reactions.length > 0 && <div className="chat-reactions">{entry.reactions.map((reaction, index) =>
                   <span key={index} aria-label={reaction.mine ? 'Biểu cảm của bạn' : 'Biểu cảm'}>{reactionIcons[reaction.emoji] ?? reaction.emoji}</span>)}</div>}
                 {!entry.recalled && <details className="chat-message-options chat-menu">
@@ -432,7 +419,7 @@ export function ChatContent({ target, onSelect, floating = false, active = true,
                   {entry.mine && thread && <>
                     <button type="button" onClick={() => { setReply(undefined); setFiles([]); setEditing(entry); setDraft(entry.text ?? ''); }}>Sửa</button>
                     <button type="button" onClick={() => void run(async () => {
-                      await chatService.recallMessageForEveryone(id, entry.id); setHistoryReload(value => value + 1);
+                      await chatService.recallMessageForEveryone(id, entry.id); setHistoryReload(value => ({ revision: value.revision + 1, latestOnly: false }));
                     })}>Thu hồi</button>
                   </>}
                   {canSend && reactionOptions.map(([code, icon]) => {
@@ -441,11 +428,11 @@ export function ChatContent({ target, onSelect, floating = false, active = true,
                       aria-label={`Biểu cảm ${icon}`} onClick={() => void run(async () => {
                         if (selected) await chatService.removeMessageReaction(id, entry.id);
                         else await chatService.setMessageReaction(id, entry.id, code);
-                        setHistoryReload(value => value + 1);
+                        setHistoryReload(value => ({ revision: value.revision + 1, latestOnly: false }));
                       })}>{icon}</button>;
                   })}
                   <button type="button" onClick={() => void run(async () => {
-                    await chatService.hideMessageForCurrentUser(id, entry.id); setHistoryReload(value => value + 1);
+                    await chatService.hideMessageForCurrentUser(id, entry.id); setHistoryReload(value => ({ revision: value.revision + 1, latestOnly: false }));
                   })}>Xóa phía tôi</button>
                 </div></details>}
               </article></div>;

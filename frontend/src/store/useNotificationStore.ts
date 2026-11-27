@@ -9,6 +9,7 @@ interface NotificationState {
   page: number;
   hasMore: boolean;
   hydrate: () => Promise<void>;
+  syncUnreadCount: () => Promise<void>;
   loadMore: () => Promise<void>;
   clear: () => void;
   markRead: (id: string) => Promise<void>;
@@ -19,6 +20,10 @@ interface NotificationState {
 let sessionRevision = 0;
 let queue: Promise<void> = Promise.resolve();
 let syncing: Promise<void> | undefined;
+let polling: Promise<void> | undefined;
+let listSignature: string | undefined;
+const signatureOf = ({ unreadCount, totalCount, latestId, lastReadAt }: Awaited<ReturnType<typeof notificationService.getUnreadNotificationCount>>) =>
+  JSON.stringify([unreadCount, totalCount, latestId, lastReadAt]);
 const currentUserId = () => useAuthStore.getState().user?.id;
 export const notificationSyncKey = 'discuss:notifications-changed';
 
@@ -52,11 +57,11 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   hydrate: () => {
     if (syncing) return syncing;
     const refresh = enqueue(async (isCurrent) => {
-      const [pages, count] = await Promise.all([
-        Promise.all(Array.from({ length: get().page + 1 }, (_, page) => notificationService.getNotifications(page))),
-        notificationService.getUnreadNotificationCount(),
-      ]);
+      const count = await notificationService.getUnreadNotificationCount();
+      const pages = await Promise.all(Array.from({ length: get().page + 1 }, (_, page) =>
+        notificationService.getNotifications(page)));
       if (!isCurrent()) return;
+      listSignature = signatureOf(count);
       const lastPage = pages.findIndex(page => page.last);
       const page = lastPage === -1 ? pages.length - 1 : lastPage;
       const items = pages.slice(0, page + 1).flatMap(result => result.content);
@@ -71,6 +76,24 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       if (syncing === pending) syncing = undefined;
     });
     const pending = syncing;
+    return pending;
+  },
+
+  syncUnreadCount: () => {
+    if (syncing) return syncing;
+    if (polling) return polling;
+    const revision = sessionRevision;
+    let changed = false;
+    const check = enqueue(async (isCurrent) => {
+      const summary = await notificationService.getUnreadNotificationCount();
+      changed = isCurrent() && signatureOf(summary) !== listSignature;
+    });
+    const pending = check.then(async () => {
+      if (changed && revision === sessionRevision) await get().hydrate();
+    }).finally(() => {
+      if (polling === pending) polling = undefined;
+    });
+    polling = pending;
     return pending;
   },
 
@@ -89,6 +112,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   clear: () => {
     sessionRevision++;
     syncing = undefined;
+    polling = undefined;
+    listSignature = undefined;
     queue = Promise.resolve();
     set({ notifications: [], unreadCount: 0, page: 0, hasMore: false });
   },

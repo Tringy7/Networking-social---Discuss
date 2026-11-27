@@ -71,7 +71,6 @@ public class UserMapper {
             UserProfile profile,
             String dateOfBirth,
             String location,
-            PublicUserProfileResponseDTO.Statistics statistics,
             UserReputationDTO reputation
     ) {
         PublicUserProfileResponseDTO.Profile profileDTO = null;
@@ -93,7 +92,6 @@ public class UserMapper {
                 user.getUsername(),
                 user.getCreatedAt(),
                 profileDTO,
-                statistics,
                 reputation
         );
     }

@@ -20,7 +20,19 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     Page<Notification> findByRecipientIdAndTypeNotInAndReadAtIsNull(
             Long recipientId, Collection<NotificationType> excludedTypes, Pageable pageable);
 
-    long countByRecipientIdAndTypeNotInAndReadAtIsNull(Long recipientId, Collection<NotificationType> excludedTypes);
+    interface NotificationSummary {
+        Long getUnreadCount();
+        long getTotalCount();
+        Long getLatestId();
+        LocalDateTime getLastReadAt();
+    }
+
+    @Query("""
+            select sum(case when n.readAt is null then 1 else 0 end) as unreadCount,
+                   count(n) as totalCount, max(n.id) as latestId, max(n.readAt) as lastReadAt
+            from Notification n where n.recipientId = :recipientId and n.type not in :excludedTypes
+            """)
+    NotificationSummary summarize(Long recipientId, Collection<NotificationType> excludedTypes);
 
     boolean existsByIdAndRecipientId(Long id, Long recipientId);
 

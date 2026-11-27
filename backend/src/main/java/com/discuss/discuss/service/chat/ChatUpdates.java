@@ -18,7 +18,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class ChatUpdates {
-    public record Changed(Set<Long> recipients, long conversationId) {}
+    public record Changed(Set<Long> recipients, long conversationId, String event) {
+        public Changed(Set<Long> recipients, long conversationId) {
+            this(recipients, conversationId, "chat");
+        }
+    }
     private record Subscription(SseEmitter emitter, Jwt token) {}
     private final ConcurrentHashMap<Long, Set<Subscription>> subscriptions = new ConcurrentHashMap<>();
     private final JwtDecoder decoder;
@@ -46,7 +50,7 @@ public class ChatUpdates {
     @Async
     @TransactionalEventListener
     public void changed(Changed event) {
-        event.recipients().forEach(userId -> publish(userId, "chat", event.conversationId()));
+        event.recipients().forEach(userId -> publish(userId, event.event(), event.conversationId()));
     }
 
     public boolean online(long userId) {

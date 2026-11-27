@@ -46,7 +46,7 @@ export const Navbar: React.FC = () => {
   }, [isAuthenticated, user?.id]);
   const { communities } = useCommunityStore();
   const { posts, openCreateModal } = usePostStore();
-  const { unreadCount: unreadNotifs, hydrate: hydrateNotifications, clear } = useNotificationStore();
+  const { unreadCount: unreadNotifs, hydrate: hydrateNotifications, syncUnreadCount, clear } = useNotificationStore();
   const addToast = useToastStore((state) => state.addToast);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,7 +95,9 @@ export const Navbar: React.FC = () => {
         // Ignore malformed browser storage events.
       }
     };
-    const timer = window.setInterval(refreshWhenVisible, 10000);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void syncUnreadCount().catch(() => {});
+    }, 10000);
     window.addEventListener('focus', refreshWhenVisible);
     window.addEventListener('online', refreshWhenVisible);
     window.addEventListener('storage', syncFromOtherTab);
@@ -107,7 +109,7 @@ export const Navbar: React.FC = () => {
       window.removeEventListener('storage', syncFromOtherTab);
       document.removeEventListener('visibilitychange', refreshWhenVisible);
     };
-  }, [addToast, clear, hydrateNotifications, isAuthenticated, user?.id]);
+  }, [addToast, clear, hydrateNotifications, isAuthenticated, syncUnreadCount, user?.id]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

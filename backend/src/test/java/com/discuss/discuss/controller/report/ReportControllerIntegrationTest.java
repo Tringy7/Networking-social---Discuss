@@ -50,6 +50,13 @@ class ReportControllerIntegrationTest extends AbstractApiIntegrationTest {
                 .andExpect(jsonPath("$.status").value("RESOLVED"))
                 .andExpect(jsonPath("$.resolutionNote").value("Reviewed post"));
         assertThat(reports.findById(id).orElseThrow().getStatus()).isEqualTo(ReportStatus.RESOLVED);
+        User admin = user(UserRole.ADMIN);
+        mvc.perform(get("/admin/activity-logs").param("actorUserId", owner.getId().toString())
+                        .param("action", "COMMUNITY_RESOLVE_REPORT").with(as(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].targetType").value("POST_REPORT"))
+                .andExpect(jsonPath("$.content[0].targetId").value((int) id))
+                .andExpect(jsonPath("$.content[0].note").value("Reviewed post"));
     }
 
     @ParameterizedTest

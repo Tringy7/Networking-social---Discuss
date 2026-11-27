@@ -604,11 +604,6 @@ export interface AdminUserDetail {
     gender: string | null;
     location: string | null;
   };
-  statistics: {
-    postCount: number;
-    commentCount: number;
-    communityCount: number;
-  };
 }
 
 export const adminService = {
@@ -716,7 +711,7 @@ export const notificationService = {
       `/notifications?page=${page}&size=20&unreadOnly=${unreadOnly}`);
     return { ...response, content: response.content.map(mapNotification) };
   },
-  getUnreadNotificationCount: () => apiClient.get<{ unreadCount: number }>('/notifications/unread-count'),
+  getUnreadNotificationCount: () => apiClient.get<{ unreadCount: number; totalCount: number; latestId: number | null; lastReadAt: string | null }>('/notifications/unread-count'),
   markNotificationAsRead: (id: string) => apiClient.put<void>(`/notifications/${encodeURIComponent(id)}/read`),
   markAllNotificationsAsRead: () => apiClient.put<void>('/notifications/read-all'),
   deleteReadNotifications: () => apiClient.delete<void>('/notifications/read'),
