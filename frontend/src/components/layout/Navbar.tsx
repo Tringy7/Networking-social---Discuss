@@ -15,6 +15,7 @@ import { useCommunityStore } from '../../store/useCommunityStore';
 import { usePostStore } from '../../store/usePostStore';
 import { useToastStore } from '../../store/useToastStore';
 import { notificationSyncKey, useNotificationStore } from '../../store/useNotificationStore';
+import { listenForNotificationSoundPermission } from '../../utils/notificationSound';
 import {
   Search,
   Plus,
@@ -95,6 +96,7 @@ export const Navbar: React.FC = () => {
         // Ignore malformed browser storage events.
       }
     };
+    const stopListeningForSoundPermission = listenForNotificationSoundPermission();
     const timer = window.setInterval(() => {
       if (document.visibilityState === 'visible') void syncUnreadCount().catch(() => {});
     }, 10000);
@@ -103,6 +105,7 @@ export const Navbar: React.FC = () => {
     window.addEventListener('storage', syncFromOtherTab);
     document.addEventListener('visibilitychange', refreshWhenVisible);
     return () => {
+      stopListeningForSoundPermission();
       window.clearInterval(timer);
       window.removeEventListener('focus', refreshWhenVisible);
       window.removeEventListener('online', refreshWhenVisible);

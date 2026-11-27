@@ -104,10 +104,17 @@ export const useChatStore = create<{
           stream.close();
           if (!active || timer !== undefined) return;
           set({ connection: 'disconnected' });
-          timer = window.setTimeout(() => {
-            timer = undefined;
+          timer = window.setTimeout(async () => {
             delay = Math.min(delay * 2, 30_000);
-            if (active) open();
+            try {
+              // EventSource hides HTTP status. The authenticated request refreshes expired cookies via apiClient.
+              await refresh();
+            } catch {
+              // The stream will retry after backoff if connectivity is still unavailable.
+            } finally {
+              timer = undefined;
+              if (active) open();
+            }
           }, delay);
         };
       };

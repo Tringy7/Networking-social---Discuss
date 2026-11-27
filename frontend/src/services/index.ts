@@ -688,7 +688,12 @@ function mapNotification(item: NotificationResponse): NotificationItem {
   if (item.type === 'REPORT_WARNING' && item.reportTargetType === 'COMMUNITY' && item.communityName) {
     targetUrl = `/c/${encodeURIComponent(item.communityName)}`;
   }
-  if (item.type === 'REPORT_REVIEWED' && item.reportTargetType === 'MESSAGE') targetUrl = '/reports/mine?type=MESSAGE';
+  if (item.type === 'REPORT_REVIEWED') {
+    const query = new URLSearchParams();
+    if (item.reportTargetType) query.set('type', item.reportTargetType);
+    if (item.reportStatus) query.set('status', item.reportStatus);
+    targetUrl = query.size ? `/reports/mine?${query}` : '/reports/mine';
+  }
   const isMembershipNotification = item.type.startsWith('COMMUNITY_JOIN_') || item.type === 'COMMUNITY_MEMBER_JOINED';
   if (isMembershipNotification && item.communityName) {
     const communityPath = `/c/${encodeURIComponent(item.communityName)}`;

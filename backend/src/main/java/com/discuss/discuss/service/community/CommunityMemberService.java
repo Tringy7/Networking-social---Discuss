@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -153,7 +154,7 @@ public class CommunityMemberService {
         );
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public JoinResult joinCommunity(String communityName) {
         Community community = communitySupport.getActiveCommunityForMembership(communityName);
         User user = userService.getCurrentUser();
@@ -190,7 +191,7 @@ public class CommunityMemberService {
         return pageMapper.toResponse(requests.map(CommunityJoinRequestDTO::from));
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public CommunityJoinRequestDTO reviewJoinRequest(String name, Long id, boolean approve) {
         Community community = communitySupport.getActiveCommunityForMembership(name);
         User reviewer = userService.getCurrentUser();

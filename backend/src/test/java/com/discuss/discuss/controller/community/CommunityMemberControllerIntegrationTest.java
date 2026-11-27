@@ -54,6 +54,8 @@ class CommunityMemberControllerIntegrationTest extends AbstractApiIntegrationTes
         mvc.perform(post("/communities/{name}/members", community.getName()).with(as(applicant)))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.joinRequestPending").value(true));
+        mvc.perform(post("/communities/{name}/members", community.getName()).with(as(applicant)))
+                .andExpect(status().isAccepted());
         assertThat(members.findByCommunityAndUser(community, applicant)).isEmpty();
         var pending = joinRequests.findByCommunityAndApplicantAndStatus(
                 community, applicant, CommunityJoinRequest.Status.PENDING).orElseThrow();
@@ -68,6 +70,11 @@ class CommunityMemberControllerIntegrationTest extends AbstractApiIntegrationTes
 
         assertThat(members.findByCommunityAndUser(community, applicant).orElseThrow().getStatus())
                 .isEqualTo(MembershipStatus.ACTIVE);
+        mvc.perform(body(patch(path).with(as(owner)), """
+                {"approved":false}
+                """)).andExpect(status().isConflict());
+        assertThat(joinRequests.findById(pending.getId()).orElseThrow().getStatus())
+                .isEqualTo(CommunityJoinRequest.Status.APPROVED);
         assertThat(outbox.findAll().stream().filter(event -> community.getId().equals(event.getCommunityId())))
                 .extracting(OutboxEvent::getEventType)
                 .containsExactlyInAnyOrder(NotificationEventType.COMMUNITY_JOIN_REQUESTED,
@@ -99,6 +106,22 @@ class CommunityMemberControllerIntegrationTest extends AbstractApiIntegrationTes
                 .isEqualTo(CommunityRole.OWNER);
         assertThat(members.findByCommunityAndUser(community, owner).orElseThrow().getRole())
                 .isEqualTo(CommunityRole.MODERATOR);
+    }
+
+    @Test
+    void firstNewMemberBecomesOwnerAfterTheLastOwnerLeaves() throws Exception {
+        User owner = user(UserRole.USER);
+        User first = user(UserRole.USER);
+        Community community = community(owner, CommunityVisibility.PUBLIC);
+
+        mvc.perform(delete("/communities/{name}/members/me", community.getName()).with(as(owner)))
+                .andExpect(status().isOk());
+        mvc.perform(post("/communities/{name}/members", community.getName()).with(as(first)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.currentUserRole").value("OWNER"));
+        mvc.perform(post("/communities/{name}/members", community.getName()).with(as(owner)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.currentUserRole").value("MEMBER"));
     }
 
     @Test

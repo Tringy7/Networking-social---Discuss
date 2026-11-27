@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { NotificationItem } from '../types';
 import { notificationService } from '../services';
 import { useAuthStore } from './useAuthStore';
+import { playNotificationSound } from '../utils/notificationSound';
 
 interface NotificationState {
   notifications: NotificationItem[];
@@ -22,6 +23,7 @@ let queue: Promise<void> = Promise.resolve();
 let syncing: Promise<void> | undefined;
 let polling: Promise<void> | undefined;
 let listSignature: string | undefined;
+let latestSeenId: number | undefined;
 const signatureOf = ({ unreadCount, totalCount, latestId, lastReadAt }: Awaited<ReturnType<typeof notificationService.getUnreadNotificationCount>>) =>
   JSON.stringify([unreadCount, totalCount, latestId, lastReadAt]);
 const currentUserId = () => useAuthStore.getState().user?.id;
@@ -65,6 +67,11 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       const lastPage = pages.findIndex(page => page.last);
       const page = lastPage === -1 ? pages.length - 1 : lastPage;
       const items = pages.slice(0, page + 1).flatMap(result => result.content);
+      const previouslySeen = latestSeenId;
+      if (previouslySeen !== undefined && items.some(item => !item.isRead && Number(item.id) > previouslySeen)) {
+        playNotificationSound();
+      }
+      latestSeenId = Math.max(latestSeenId ?? 0, count.latestId ?? 0, ...pages[0].content.map(item => Number(item.id)));
       set({
         notifications: [...new Map(items.map(item => [item.id, item])).values()],
         unreadCount: count.unreadCount,
@@ -114,6 +121,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     syncing = undefined;
     polling = undefined;
     listSignature = undefined;
+    latestSeenId = undefined;
     queue = Promise.resolve();
     set({ notifications: [], unreadCount: 0, page: 0, hasMore: false });
   },
