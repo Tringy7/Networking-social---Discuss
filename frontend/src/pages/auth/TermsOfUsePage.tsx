@@ -88,7 +88,7 @@ export const TermsOfUsePage: React.FC = () => (
     <div className="border-t border-[var(--border-color)] pt-4">
       <Link
         to="/register"
-        className="inline-flex items-center justify-center rounded-full bg-[var(--color-orange)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-orange-hover)]"
+        className="inline-flex items-center justify-center rounded-full bg-[var(--action-bg)] px-5 py-2.5 text-sm font-semibold text-[var(--action-ink)] transition-colors hover:bg-[var(--action-hover)]"
       >
         Tiếp tục đăng ký
       </Link>

@@ -19,8 +19,9 @@ export default function EditorialTabs<T extends string>({ label, options, value,
     {options.map((option) => <button key={option.id} type="button" className={`feed-tab ${value === option.id ? 'is-selected' : ''}`}
       aria-pressed={value === option.id} onClick={() => onChange(option.id)}>
       {option.icon}{option.label}
-      {value === option.id && <motion.span className="tab-indicator" layoutId={`tab-${id}`}
-        transition={quiet ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 35 }} />}
+      {value === option.id && <motion.span aria-hidden="true" className="tab-indicator"
+        layoutId={quiet ? undefined : `tab-${id}`}
+        transition={{ duration: quiet ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }} />}
     </button>)}
     {trailing && <span className="feed-count">{trailing}</span>}
   </nav>;

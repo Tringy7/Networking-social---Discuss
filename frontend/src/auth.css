@@ -2,8 +2,8 @@
    At 1200px: 600px story + 96px gap + 504px form column = 1200px.
    The form itself stays at 420px; both columns share one centred frame. */
 .auth-layout {
-  --auth-tint: #fff7f1;
-  --auth-panel: #fafbfc;
+  --auth-tint: var(--color-orange-soft);
+  --auth-panel: var(--bg-elevated);
   --auth-avatar-bg: #eaf1ef;
   --auth-avatar-ink: #3e6056;
   display: flex;
@@ -13,8 +13,6 @@
   color: var(--text-primary);
 }
 .dark .auth-layout {
-  --auth-tint: #211c18;
-  --auth-panel: #1d2023;
   --auth-avatar-bg: #283a34;
   --auth-avatar-ink: #b0d0c1;
 }

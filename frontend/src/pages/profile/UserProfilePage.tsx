@@ -225,7 +225,7 @@ export const UserProfilePage: React.FC = () => {
       <div className="profile-columns">
         <section className="profile-activity min-w-0" aria-labelledby="profile-posts-heading">
           <h2 id="profile-posts-heading" className="mb-3 font-semibold">Bài viết</h2>
-          <div className="discussion-list">
+          <div className="discussion-list discussion-cards">
             {userPosts.length > 0 ? (
               userPosts.map((p) => <PostCard key={p.id} post={p} />)
             ) : postsLoading ? (

@@ -25,7 +25,7 @@ const StoreProtectedRoute: React.FC = () => {
         <button
           type="button"
           onClick={() => void retrySessionInitialization()}
-          className="rounded-full bg-[var(--color-orange)] px-4 py-2 text-sm font-semibold text-white"
+          className="rounded-full bg-[var(--action-bg)] px-4 py-2 text-sm font-semibold text-[var(--action-ink)]"
         >
           Thử lại
         </button>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { User, Lock, Palette, Bell, KeyRound, Trash2, SlidersHorizontal } from 'lucide-react';
+import PageTransition from '../components/layout/PageTransition';
 
 export const SettingsLayout: React.FC = () => {
   const tabs = [
@@ -23,7 +24,6 @@ export const SettingsLayout: React.FC = () => {
       </header>
 
       <div className="settings-workspace">
-        {/* Settings Sub-Sidebar */}
         <nav aria-label="Các mục cài đặt" className="settings-navigation">
           {tabs.map((tab) => (
             <NavLink
@@ -43,9 +43,8 @@ export const SettingsLayout: React.FC = () => {
           ))}
         </nav>
 
-        {/* Settings Content Area */}
         <div className="settings-content">
-          <div className="route-content"><Outlet /></div>
+          <PageTransition><Outlet /></PageTransition>
         </div>
       </div>
     </div>

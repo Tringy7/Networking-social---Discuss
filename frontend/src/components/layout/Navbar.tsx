@@ -8,7 +8,6 @@ import NotificationBadge from '../ui/NotificationBadge';
 import NotificationPanel from './NotificationPanel';
 import Logo from '../common/Logo';
 import Avatar from '../ui/Avatar';
-import Button from '../ui/Button';
 import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
@@ -197,7 +196,7 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* ZONE 2: SEARCH INPUT & AUTOCOMPLETE */}
-        <div ref={searchRef} className={`${isMobileSearchOpen ? 'absolute inset-x-0 top-full z-50 border-b border-[var(--border-color)] bg-[var(--bg-nav)] px-3 py-3 shadow-[var(--surface-shadow)] sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none' : 'hidden sm:relative'} sm:flex sm:flex-1 sm:max-w-xl`}>
+        <div ref={searchRef} className={`${isMobileSearchOpen ? 'absolute inset-x-0 top-full z-50 border-b border-[var(--border-color)] bg-[var(--bg-nav)] px-3 py-3 shadow-[var(--surface-shadow)] sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none' : 'hidden sm:relative'} min-w-0 sm:flex sm:flex-1 sm:max-w-xl`}>
           <form onSubmit={handleSearchSubmit} className="nav-search relative flex w-full items-center">
             <Search className="absolute left-3.5 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
             <input
@@ -325,6 +324,12 @@ export const Navbar: React.FC = () => {
 
         {/* ZONE 3: ACTIONS & USER MENU */}
         <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+          {isAuthenticated && user && (
+            <Link to="/posts/create" className="navbar-create-post">
+              <Plus size={18} aria-hidden="true" />
+              Tạo bài viết
+            </Link>
+          )}
           <ThemeToggle />
           <button
             ref={mobileSearchButtonRef}
@@ -341,17 +346,6 @@ export const Navbar: React.FC = () => {
           </button>
           {isAuthenticated && user ? (
             <>
-              {/* Create Post Button */}
-              <Button
-                variant="primary"
-                size="sm"
-                leftIcon={<Plus className="w-4 h-4" />}
-                onClick={() => navigate('/posts/create')}
-                className="navbar-create-post cursor-pointer"
-              >
-                Tạo bài viết
-              </Button>
-
               <button type="button"
                 onClick={() => useChatStore.getState().openWindow()}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors relative cursor-pointer"

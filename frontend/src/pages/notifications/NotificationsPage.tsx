@@ -88,13 +88,13 @@ export const NotificationsPage: React.FC = () => {
       <EditorialTabs label="Lọc thông báo" value={tab} onChange={setTab} options={[{id:'all',label:'Tất cả'},{id:'unread',label:`Chưa đọc (${unreadCount})`}]} />
       {!!filtered.length && <div className="notification-list">{filtered.map((item) => <Link key={item.id}
         to={item.targetUrl} data-notification-type={item.type}
-        onClick={() => { if (!item.isRead) void markAsRead(item.id); }} className={`notification-row ${item.isRead ? '' : 'is-unread'}`}>
+        onClick={() => { if (!item.isRead) void markAsRead(item.id); }} className={`notification-panel-item ${item.isRead ? '' : 'is-unread'}`}>
         <NotificationIcon item={item} />
-        <div className="min-w-0 flex-1">
+        <div className="notification-panel-copy">
           <NotificationMessage item={item} />
           <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleDateString('vi-VN', {day:'numeric',month:'short'})}</time>
         </div>
-        {!item.isRead && <><span className="unread-dot" aria-hidden="true" /><span className="sr-only">Chưa đọc</span></>}
+        {!item.isRead && <><span className="notification-panel-dot" aria-hidden="true" /><span className="sr-only">Chưa đọc</span></>}
       </Link>)}</div>}
       {hasMore && <Button variant="secondary" size="sm" isLoading={loadingMore} onClick={() => void showMore()}>Xem thêm</Button>}
       {!filtered.length && !hasMore && <section className="editorial-empty">

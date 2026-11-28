@@ -55,7 +55,7 @@ export default function HomePage() {
         onChange={(id) => { setSearchParams({ tab: id }); setDisplayCount(6); }} />
       {!POSTS_AVAILABLE && <p role="status" className="feed-notice">Bài viết mẫu · Tương tác được lưu trong phiên hiện tại.</p>}
       {loading && <p role="status" className="feed-notice">Đang tải bài viết…</p>}
-      <div className="discussion-list">
+      <div className="discussion-list discussion-cards">
         {sorted.slice(0, displayCount).map((post) => <motion.div key={post.id}
           initial={quiet ? false : { opacity: 0.8 }} animate={{ opacity: 1 }}
           transition={{ duration: quiet ? 0 : 0.12 }}>

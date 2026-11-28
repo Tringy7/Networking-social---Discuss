@@ -15,6 +15,7 @@ const FloatingChat = React.lazy(() => import('../pages/messages/FloatingChat'));
 export const AppLayout: React.FC = () => {
   const { pathname } = useLocation();
   const isComposer = pathname === '/posts/create';
+  const isSettings = pathname === '/settings' || pathname.startsWith('/settings/');
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const account = useAuthStore((state) => state.user?.username);
   const hydrateCommunities = useCommunityStore((state) => state.hydrate);
@@ -55,9 +56,9 @@ export const AppLayout: React.FC = () => {
       <a href="#main-content" className="skip-link">Bỏ qua điều hướng, đến nội dung</a>
       <Navbar />
       <div className="app-frame">
-        {!isComposer && <Sidebar />}
+        <Sidebar />
         <main id="main-content" tabIndex={-1} className="app-canvas">
-          <PageTransition><Outlet /></PageTransition>
+          <PageTransition routeKey={isSettings ? '/settings' : pathname}><Outlet /></PageTransition>
         </main>
       </div>
       <MobileNavigation />
