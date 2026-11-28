@@ -3,11 +3,13 @@ package com.discuss.discuss.service.notification;
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.notification.NotificationResponseDTO;
 import com.discuss.discuss.entity.Notification;
+import com.discuss.discuss.enums.NotificationType;
 import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.repository.NotificationRepository;
 import com.discuss.discuss.service.media.MinioService;
 import com.discuss.discuss.service.user.UserService;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
+    private static final List<NotificationType> LEGACY_CHAT_TYPES = List.of(
+            NotificationType.CHAT_REQUEST_RECEIVED, NotificationType.CHAT_MESSAGE_RECEIVED);
+
     private final NotificationRepository repository;
     private final UserService userService;
     private final PageMapper pageMapper;
@@ -31,14 +36,14 @@ public class NotificationService {
                 pageable.getPageSize(),
                 Sort.by(Sort.Direction.DESC, "createdAt", "id"));
         var page = unreadOnly
-                ? repository.findByRecipientIdAndReadAtIsNull(recipientId, newestFirst)
-                : repository.findByRecipientId(recipientId, newestFirst);
+                ? repository.findByRecipientIdAndTypeNotInAndReadAtIsNull(recipientId, LEGACY_CHAT_TYPES, newestFirst)
+                : repository.findByRecipientIdAndTypeNotIn(recipientId, LEGACY_CHAT_TYPES, newestFirst);
         return pageMapper.toResponse(page.map(this::mapNotificationToResponse));
     }
 
     @Transactional(readOnly = true)
-    public long countCurrentUserUnreadNotifications() {
-        return repository.countByRecipientIdAndReadAtIsNull(userService.getCurrentUser().getId());
+    public NotificationRepository.NotificationSummary getCurrentUserNotificationSummary() {
+        return repository.summarize(userService.getCurrentUser().getId(), LEGACY_CHAT_TYPES);
     }
 
     @Transactional

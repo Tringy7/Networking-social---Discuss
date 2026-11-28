@@ -22,7 +22,8 @@ public interface ChatMapper {
     @Mapping(target = "id", source = "membership.conversationId")
     @Mapping(target = "status", source = "request.conversationStatus")
     ChatThreadResponseDTO toThread(ConversationMember membership, ChatRequest request, String peer,
-                                   boolean incoming, boolean blocked, boolean blockedByMe, boolean online, long unread);
+                                   boolean incoming, boolean blocked, boolean blockedByMe, boolean online, long unread,
+                                   long peerReadThrough, ChatThreadResponseDTO.Preview preview);
 
     default ChatMessageResponseDTO toMessage(Message message, long actor, long readByPeer,
                                              List<MessageAttachment> attachments, List<MessageReaction> reactions) {

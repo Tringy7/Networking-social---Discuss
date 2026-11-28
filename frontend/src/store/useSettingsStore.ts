@@ -14,14 +14,14 @@ interface AccentColorPreset {
 
 export const ACCENT_PRESETS: AccentColorPreset[] = [
   {
-    id: 'sunset',
-    name: 'DISCUSS Orange (Mặc định)',
-    primary: '#F97316',
-    ink: '#A8370A',
-    hover: '#EA580C',
-    soft: 'rgba(249, 115, 22, 0.10)',
-    border: 'rgba(249, 115, 22, 0.24)',
-    description: 'Cam thương hiệu hiện đại, nổi bật vừa đủ trên nền sáng',
+    id: 'monochrome',
+    name: 'Trắng đen (Mặc định)',
+    primary: '#171717',
+    ink: '#171717',
+    hover: '#243041',
+    soft: '#EDF0F5',
+    border: '#CDD5E0',
+    description: 'Trắng đen với điểm nhấn xanh đen',
   },
   {
     id: 'tangerine',
@@ -92,7 +92,7 @@ interface SettingsState {
 
 const DEFAULT_SETTINGS: AppearanceSettings = {
   theme: 'light',
-  accentColor: '#F97316',
+  accentColor: ACCENT_PRESETS[0].primary,
   density: 'comfortable',
   fontSize: 'medium',
   animationIntensity: 'full',
@@ -100,6 +100,9 @@ const DEFAULT_SETTINGS: AppearanceSettings = {
   sidebarHidden: false,
   feedLayout: 'card',
 };
+
+const normalizeAccentColor = (color: string) =>
+  ['#F97316', '#F05A28', '#E04D1B', '#A6452D'].includes(color.toUpperCase()) ? DEFAULT_SETTINGS.accentColor : color;
 
 const getInitialSettings = (): AppearanceSettings => {
   try {
@@ -110,10 +113,7 @@ const getInitialSettings = (): AppearanceSettings => {
         ...DEFAULT_SETTINGS,
         ...parsed,
         theme: parsed.theme ?? DEFAULT_SETTINGS.theme,
-        accentColor:
-          parsed.accentColor === '#F05A28' || parsed.accentColor === '#E04D1B'
-            ? DEFAULT_SETTINGS.accentColor
-            : parsed.accentColor ?? DEFAULT_SETTINGS.accentColor,
+        accentColor: normalizeAccentColor(parsed.accentColor ?? DEFAULT_SETTINGS.accentColor),
       };
     }
   } catch (e) {
@@ -140,28 +140,34 @@ const applyDOMClasses = (settings: AppearanceSettings) => {
     root.classList.remove('dark');
   }
 
-  // Accent Color injection into CSS variables
+  // The default accent follows the active theme. Custom accents override it.
   const matchedPreset = ACCENT_PRESETS.find((p) => p.primary === settings.accentColor) || ACCENT_PRESETS[0];
-  root.style.setProperty('--color-orange', matchedPreset.primary);
-  root.style.setProperty('--color-orange-ink', isDark
-    ? `color-mix(in srgb, ${matchedPreset.primary} 60%, white)`
-    : matchedPreset.ink);
-  root.style.setProperty('--color-orange-hover', matchedPreset.hover);
-  root.style.setProperty('--color-orange-soft', matchedPreset.soft);
-  root.style.setProperty('--color-orange-border', matchedPreset.border);
-  // Keep filled actions readable for every existing user-selectable accent.
-  const rgb = matchedPreset.primary.match(/[a-f0-9]{2}/gi)!.map((channel) => {
-    const value = parseInt(channel, 16) / 255;
-    return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
-  });
-  const luminance = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
-  const darkInk = (luminance + 0.05) / 0.061 >= 1.05 / (luminance + 0.05);
-  root.style.setProperty('--action-ink', darkInk ? '#251A12' : '#FFFFFF');
-  const hover = matchedPreset.primary.match(/[a-f0-9]{2}/gi)!.map((channel) => {
-    const value = parseInt(channel, 16);
-    return Math.round(darkInk ? value + (255 - value) * 0.08 : value * 0.92).toString(16).padStart(2, '0');
-  }).join('');
-  root.style.setProperty('--action-hover', `#${hover}`);
+  if (matchedPreset.id === 'monochrome') {
+    const properties = ['--color-orange', '--color-orange-ink', '--color-orange-hover', '--color-orange-soft',
+      '--color-orange-border', '--action-ink', '--action-hover'];
+    properties.forEach((property) => root.style.removeProperty(property));
+  } else {
+    root.style.setProperty('--color-orange', matchedPreset.primary);
+    root.style.setProperty('--color-orange-ink', isDark
+      ? `color-mix(in srgb, ${matchedPreset.primary} 60%, white)`
+      : matchedPreset.ink);
+    root.style.setProperty('--color-orange-hover', matchedPreset.hover);
+    root.style.setProperty('--color-orange-soft', matchedPreset.soft);
+    root.style.setProperty('--color-orange-border', matchedPreset.border);
+
+    const channels = matchedPreset.primary.match(/[a-f0-9]{2}/gi)!.map((channel) => parseInt(channel, 16));
+    const rgb = channels.map((channel) => {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+    });
+    const luminance = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+    const darkInk = (luminance + 0.05) / 0.061 >= 1.05 / (luminance + 0.05);
+    root.style.setProperty('--action-ink', darkInk ? '#171717' : '#FFFFFF');
+    const hover = channels.map((value) =>
+      Math.round(darkInk ? value + (255 - value) * 0.08 : value * 0.92).toString(16).padStart(2, '0')
+    ).join('');
+    root.style.setProperty('--action-hover', `#${hover}`);
+  }
   // Density
   root.classList.remove('density-comfortable', 'density-compact');
   root.classList.add(`density-${settings.density}`);
@@ -236,6 +242,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     },
     updateSettings: (newSettings) => {
       const updated = { ...get().settings, ...newSettings };
+      updated.accentColor = normalizeAccentColor(updated.accentColor);
       persist(updated);
       set({ settings: updated });
     },

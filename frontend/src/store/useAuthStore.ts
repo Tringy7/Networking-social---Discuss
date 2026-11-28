@@ -92,7 +92,6 @@ function mapUser(
     privacy: {
       showDateOfBirth: privacy?.showDateOfBirth ?? currentUser?.privacy.showDateOfBirth ?? false,
       showLocation: privacy?.showLocation ?? currentUser?.privacy.showLocation ?? false,
-      showPostsOnProfile: privacy?.showPostsOnProfile ?? currentUser?.privacy.showPostsOnProfile ?? true,
     },
     role: response.role,
     status: response.status,

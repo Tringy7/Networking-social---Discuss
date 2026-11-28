@@ -21,11 +21,6 @@ public class NotificationEvents {
 
     record Queued() {}
 
-    public void enqueueChatNotification(Long actorId, Long recipientId, boolean request) {
-        var type = request ? NotificationEventType.CHAT_REQUESTED : NotificationEventType.CHAT_MESSAGE_SENT;
-        saveAndSignalOutboxEvent(newOutboxEvent(type, actorId).chatRecipientId(recipientId).build());
-    }
-
     public void enqueuePostCreatedNotification(Post post) {
         saveAndSignalOutboxEvent(newOutboxEvent(NotificationEventType.POST_CREATED, post.getUser().getId())
                 .postId(post.getId()).communityId(post.getCommunity().getId()).build());

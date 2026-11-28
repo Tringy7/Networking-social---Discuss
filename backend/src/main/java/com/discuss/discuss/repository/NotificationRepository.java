@@ -1,6 +1,8 @@
 package com.discuss.discuss.repository;
 
 import com.discuss.discuss.entity.Notification;
+import com.discuss.discuss.enums.NotificationType;
+import java.util.Collection;
 import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,12 +14,25 @@ import org.springframework.data.repository.query.Param;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     @EntityGraph(attributePaths = {"actor", "actor.profile"})
-    Page<Notification> findByRecipientId(Long recipientId, Pageable pageable);
+    Page<Notification> findByRecipientIdAndTypeNotIn(Long recipientId, Collection<NotificationType> excludedTypes, Pageable pageable);
 
     @EntityGraph(attributePaths = {"actor", "actor.profile"})
-    Page<Notification> findByRecipientIdAndReadAtIsNull(Long recipientId, Pageable pageable);
+    Page<Notification> findByRecipientIdAndTypeNotInAndReadAtIsNull(
+            Long recipientId, Collection<NotificationType> excludedTypes, Pageable pageable);
 
-    long countByRecipientIdAndReadAtIsNull(Long recipientId);
+    interface NotificationSummary {
+        Long getUnreadCount();
+        long getTotalCount();
+        Long getLatestId();
+        LocalDateTime getLastReadAt();
+    }
+
+    @Query("""
+            select sum(case when n.readAt is null then 1 else 0 end) as unreadCount,
+                   count(n) as totalCount, max(n.id) as latestId, max(n.readAt) as lastReadAt
+            from Notification n where n.recipientId = :recipientId and n.type not in :excludedTypes
+            """)
+    NotificationSummary summarize(Long recipientId, Collection<NotificationType> excludedTypes);
 
     boolean existsByIdAndRecipientId(Long id, Long recipientId);
 

@@ -10,6 +10,7 @@ import com.discuss.discuss.repository.chat.UserBlockRepository;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +40,11 @@ public class ChatConversationService {
                 .toList();
     }
 
+    public ChatThreadResponseDTO getConversation(long id) {
+        long actor = users.getCurrentUser().getId();
+        return buildConversationResponse(access.requireConversationMember(id, actor), access.requireChatRequest(id));
+    }
+
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void markConversationAsRead(long id, long through) {
         long actor = users.getCurrentUser().getId();
@@ -47,7 +53,7 @@ public class ChatConversationService {
         messageStore.findMessage(id, through);
         if (through > ChatAccess.getLastReadMessageId(membership)) {
             membership.setReadThrough(through);
-            changes.changed(request);
+            changes.read(request);
         }
     }
 
@@ -74,9 +80,21 @@ public class ChatConversationService {
         boolean incoming = request.getRecipientId().equals(actor);
         long peer = incoming ? request.getSenderId() : request.getRecipientId();
         boolean blocked = access.isPairBlocked(actor, peer);
+        var latest = messages.findVisibleForPreview(membership.getConversationId(), actor, PageRequest.of(0, 1))
+                .stream().findFirst().orElse(null);
+        ChatThreadResponseDTO.Preview preview = null;
+        if (latest != null) {
+            String text = latest.getRecalledAt() != null ? null : latest.getBody();
+            if (text != null && text.codePointCount(0, text.length()) > 160) {
+                text = text.substring(0, text.offsetByCodePoints(0, 160)) + "…";
+            }
+            preview = new ChatThreadResponseDTO.Preview(latest.getSenderId().equals(actor), text,
+                    latest.getRecalledAt() != null, latest.getCreatedAt());
+        }
         return mapper.toThread(membership, request, users.getById(peer).getUsername(),
                 incoming, blocked, blocks.findByBlockerIdAndBlockedId(actor, peer).isPresent(),
                 !blocked && request.getConversationStatus() == ChatRequest.Status.ACCEPTED && updates.online(peer),
-                messages.countUnread(membership.getConversationId(), actor, ChatAccess.getLastReadMessageId(membership)));
+                messages.countUnread(membership.getConversationId(), actor, ChatAccess.getLastReadMessageId(membership)),
+                ChatAccess.getLastReadMessageId(access.requirePeerMembership(request, actor)), preview);
     }
 }

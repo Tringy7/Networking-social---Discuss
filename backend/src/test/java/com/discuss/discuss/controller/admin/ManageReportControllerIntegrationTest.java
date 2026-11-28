@@ -6,9 +6,11 @@ import com.discuss.discuss.entity.PostReport;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.CommunityVisibility;
 import com.discuss.discuss.enums.PostStatus;
+import com.discuss.discuss.enums.NotificationEventType;
 import com.discuss.discuss.enums.ReportStatus;
 import com.discuss.discuss.enums.UserRole;
 import com.discuss.discuss.repository.PostReportRepository;
+import com.discuss.discuss.repository.OutboxEventRepository;
 import com.discuss.discuss.repository.PostRepository;
 import com.discuss.discuss.support.AbstractApiIntegrationTest;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ManageReportControllerIntegrationTest extends AbstractApiIntegrationTest {
     @Autowired private PostReportRepository reports;
     @Autowired private PostRepository posts;
+    @Autowired private OutboxEventRepository outbox;
 
     @Test
     void listsOpensAndModeratesReports() throws Exception {
@@ -35,12 +38,13 @@ class ManageReportControllerIntegrationTest extends AbstractApiIntegrationTest {
         Post post = publishedPost(author, community, "Reported post");
         PostReport first = report(post, reporter);
         PostReport second = report(publishedPost(author, community, "Another post"), reporter);
+        PostReport kept = report(publishedPost(author, community, "Post to keep"), reporter);
 
         mvc.perform(get("/admin/reports").param("type", "POST").param("communityName", community.getName())
                         .with(as(admin))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(2));
+                .andExpect(jsonPath("$.totalElements").value(3));
         mvc.perform(get("/reports/posts").param("communityName", community.getName()).with(as(admin)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(2));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(3));
         for (String path : List.of("/reports/comments", "/reports/communities")) {
             mvc.perform(get(path).with(as(admin))).andExpect(status().isOk())
                     .andExpect(jsonPath("$.content").isArray());
@@ -57,6 +61,15 @@ class ManageReportControllerIntegrationTest extends AbstractApiIntegrationTest {
         mvc.perform(body(patch("/admin/reports/POST/{id}/resolve", second.getId()).with(as(admin)),
                 "{\"resolutionNote\":\"Confirmed violation\",\"action\":\"REMOVE_POST\"}")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("RESOLVED"));
+        mvc.perform(body(patch("/admin/reports/POST/{id}/resolve", kept.getId()).with(as(admin)),
+                """
+                {"resolutionNote":"Reviewed and kept","action":"REVIEWED"}
+                """)).andExpect(status().isOk());
+        assertThat(outbox.findAll().stream()
+                .filter(event -> event.getEventType() == NotificationEventType.REPORT_WARNING
+                        && admin.getId().equals(event.getActorId()))
+                .map(event -> event.getReportId())).containsExactly(second.getId());
+        assertThat(posts.findById(kept.getPost().getId()).orElseThrow().getStatus()).isEqualTo(PostStatus.PUBLISHED);
         assertThat(posts.findById(second.getPost().getId()).orElseThrow().isModerationRemoval()).isTrue();
         assertThat(posts.findById(post.getId()).orElseThrow().getStatus()).isEqualTo(PostStatus.PUBLISHED);
     }

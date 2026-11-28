@@ -27,7 +27,6 @@ interface UserResponse {
   privacySettings?: {
     showDateOfBirth?: boolean;
     showLocation?: boolean;
-    showPostsOnProfile?: boolean;
   };
 }
 
@@ -176,7 +175,6 @@ export const userService = {
       privacy: {
         showDateOfBirth: Boolean(profile?.dateOfBirth),
         showLocation: Boolean(profile?.location),
-        showPostsOnProfile: true,
       },
       role: response.role,
       status: 'ACTIVE',
@@ -195,7 +193,6 @@ export const userService = {
       gender: data.gender ? API_GENDERS[data.gender] || data.gender : undefined,
       showDateOfBirth: data.privacy?.showDateOfBirth,
       showLocation: data.privacy?.showLocation,
-      showPostsOnProfile: data.privacy?.showPostsOnProfile,
     }),
 
   updatePrivacy: (privacy: Partial<Pick<User['privacy'], 'showDateOfBirth' | 'showLocation'>>) =>
@@ -607,11 +604,6 @@ export interface AdminUserDetail {
     gender: string | null;
     location: string | null;
   };
-  statistics: {
-    postCount: number;
-    commentCount: number;
-    communityCount: number;
-  };
 }
 
 export const adminService = {
@@ -680,15 +672,12 @@ function mapNotification(item: NotificationResponse): NotificationItem {
     COMMUNITY_POST_CREATED: item.communityName ? `đã đăng bài mới trong c/${item.communityName}.` : 'đã đăng bài mới trong cộng đồng.',
     POST_COMMENTED: 'đã bình luận về bài viết của bạn.',
     COMMENT_REPLIED: 'đã trả lời bình luận của bạn.',
-    CHAT_REQUEST_RECEIVED: 'đã gửi cho bạn yêu cầu nhắn tin.',
-    CHAT_MESSAGE_RECEIVED: 'đã gửi cho bạn một tin nhắn.',
     REPORT_SUBMITTED: 'Có báo cáo mới cần xem xét.',
     REPORT_REVIEWED: item.reportStatus === 'RESOLVED' ? 'Báo cáo của bạn đã được giải quyết.' : 'Báo cáo của bạn đã bị bác bỏ.',
     REPORT_WARNING: item.reportTargetType === 'COMMUNITY'
       ? `Cảnh cáo từ quản trị viên hệ thống: cộng đồng ${item.communityName ? `c/${item.communityName}` : 'của bạn'} được xác định có vi phạm.`
       : 'Cảnh cáo từ quản trị viên hệ thống: bài viết của bạn được xác định có vi phạm.',
   };
-  if (item.type === 'CHAT_REQUEST_RECEIVED' || item.type === 'CHAT_MESSAGE_RECEIVED') targetUrl = '/messages';
   if (item.type === 'REPORT_SUBMITTED') {
     targetUrl = item.reportTargetType === 'MESSAGE'
       ? `/admin/reports/MESSAGE/${item.reportId}`
@@ -699,7 +688,12 @@ function mapNotification(item: NotificationResponse): NotificationItem {
   if (item.type === 'REPORT_WARNING' && item.reportTargetType === 'COMMUNITY' && item.communityName) {
     targetUrl = `/c/${encodeURIComponent(item.communityName)}`;
   }
-  if (item.type === 'REPORT_REVIEWED' && item.reportTargetType === 'MESSAGE') targetUrl = '/reports/mine?type=MESSAGE';
+  if (item.type === 'REPORT_REVIEWED') {
+    const query = new URLSearchParams();
+    if (item.reportTargetType) query.set('type', item.reportTargetType);
+    if (item.reportStatus) query.set('status', item.reportStatus);
+    targetUrl = query.size ? `/reports/mine?${query}` : '/reports/mine';
+  }
   const isMembershipNotification = item.type.startsWith('COMMUNITY_JOIN_') || item.type === 'COMMUNITY_MEMBER_JOINED';
   if (isMembershipNotification && item.communityName) {
     const communityPath = `/c/${encodeURIComponent(item.communityName)}`;
@@ -722,7 +716,7 @@ export const notificationService = {
       `/notifications?page=${page}&size=20&unreadOnly=${unreadOnly}`);
     return { ...response, content: response.content.map(mapNotification) };
   },
-  getUnreadNotificationCount: () => apiClient.get<{ unreadCount: number }>('/notifications/unread-count'),
+  getUnreadNotificationCount: () => apiClient.get<{ unreadCount: number; totalCount: number; latestId: number | null; lastReadAt: string | null }>('/notifications/unread-count'),
   markNotificationAsRead: (id: string) => apiClient.put<void>(`/notifications/${encodeURIComponent(id)}/read`),
   markAllNotificationsAsRead: () => apiClient.put<void>('/notifications/read-all'),
   deleteReadNotifications: () => apiClient.delete<void>('/notifications/read'),

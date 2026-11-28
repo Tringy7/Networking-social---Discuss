@@ -54,6 +54,22 @@ class PostControllerIntegrationTest extends AbstractApiIntegrationTest {
     }
 
     @Test
+    void showsSavedPostsInSaveOrderAcrossPages() throws Exception {
+        User author = user(UserRole.USER);
+        Community community = community(author, CommunityVisibility.PUBLIC);
+        Post firstPublished = publishedPost(author, community, "First published");
+        Post lastPublished = publishedPost(author, community, "Last published");
+
+        mvc.perform(put("/posts/{id}/save", lastPublished.getId()).with(as(author))).andExpect(status().isOk());
+        mvc.perform(put("/posts/{id}/save", firstPublished.getId()).with(as(author))).andExpect(status().isOk());
+
+        mvc.perform(get("/posts/saved").param("size", "1").with(as(author)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.content[0].id").value(firstPublished.getId().toString()));
+        mvc.perform(get("/posts/saved").param("page", "1").param("size", "1").with(as(author)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.content[0].id").value(lastPublished.getId().toString()));
+    }
+
+    @Test
     void postValidationRejectsMissingTitle() throws Exception {
         User member = user(UserRole.USER);
         mvc.perform(body(post("/posts").with(as(member)), """

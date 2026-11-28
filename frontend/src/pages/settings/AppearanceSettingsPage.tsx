@@ -21,7 +21,14 @@ export default function AppearanceSettingsPage() {
       ]} onChange={setTheme} />
     </section>
     <section className="preference-row"><div><h3>Màu điểm nhấn</h3><p>Màu thương hiệu trên các dấu hiệu tương tác.</p></div><div className="accent-choices" role="group" aria-label="Màu điểm nhấn">
-      {ACCENT_PRESETS.map((preset) => <button key={preset.id} type="button" onClick={() => setAccentColor(preset.primary)} aria-pressed={settings.accentColor === preset.primary} aria-label={preset.name} title={preset.name}><span style={{background:preset.primary}} />{preset.name.replace(' (Mặc định)','')}{settings.accentColor === preset.primary && <Check size={14} />}</button>)}
+      {ACCENT_PRESETS.map((preset) => (
+        <button key={preset.id} type="button" onClick={() => setAccentColor(preset.primary)}
+          aria-pressed={settings.accentColor === preset.primary}>
+          <span className="accent-swatch" style={{ background: preset.primary }} aria-hidden="true" />
+          {preset.name.replace(' (Mặc định)', '')}
+          {settings.accentColor === preset.primary && <Check size={14} aria-hidden="true" />}
+        </button>
+      ))}
     </div></section>
     <section className="preference-row"><div><h3>Mật độ nội dung</h3><p>Điều chỉnh khoảng cách giữa các thảo luận.</p></div><Choices label="Mật độ" value={settings.density} options={[{id:'comfortable',label:'Thoải mái'},{id:'compact',label:'Gọn gàng'}]} onChange={setDensity} /></section>
     <section className="preference-row"><div><h3>Cỡ chữ</h3><p>Chọn kích thước văn bản bạn thấy dễ đọc.</p></div><Choices label="Cỡ chữ" value={settings.fontSize} options={[{id:'small',label:'Nhỏ'},{id:'medium',label:'Vừa'},{id:'large',label:'Lớn'}]} onChange={setFontSize} /></section>

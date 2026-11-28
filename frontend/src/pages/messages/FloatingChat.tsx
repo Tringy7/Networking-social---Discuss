@@ -12,7 +12,7 @@ export default function FloatingChat() {
   const minimize = useChatStore(state => state.minimizeWindow);
   const close = useChatStore(state => state.closeWindow);
   const select = useChatStore(state => state.selectTarget);
-  const unread = useChatStore(state => state.threads.some(thread => !thread.hidden && thread.unread > 0));
+  const unread = useChatStore(state => state.threads.some(thread => !thread.hidden && !thread.muted && thread.unread > 0));
 
   return <section className={`chat-dock chat-dock-${mode}`} aria-label="Cửa sổ tin nhắn"
     onKeyDown={event => {

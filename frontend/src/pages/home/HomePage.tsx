@@ -1,6 +1,6 @@
 import PageHeader from '../../components/ui/PageHeader';
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { usePostStore } from '../../store/usePostStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -21,8 +21,9 @@ const tabs = [
 ];
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const currentTab = searchParams.get('tab') || 'for-you';
-  const { posts, feedIds, hasMore, loading, loadMore, openCreateModal, hydrate } = usePostStore();
+  const { posts, feedIds, hasMore, loading, loadMore, hydrate } = usePostStore();
   const { user, isAuthenticated } = useAuthStore();
   const addToast = useToastStore((state) => state.addToast);
   const intensity = useSettingsStore((state) => state.settings.animationIntensity);
@@ -43,8 +44,8 @@ export default function HomePage() {
       <PageHeader title="Bảng tin" variant="compact" actions={<Link to="/explore" className="feed-discover">Khám phá cộng đồng <ArrowUpRight size={15} /></Link>} />
       {isAuthenticated && user ? <div className="composer-strip">
         <Avatar src={user.avatarUrl} alt={user.displayName} size="md" />
-        <button className="composer-prompt" onClick={() => openCreateModal()}>Bạn đang nghĩ gì? Chia sẻ với cộng đồng nhé.</button>
-        <button className="icon-button composer-media" onClick={() => openCreateModal()} aria-label="Tạo bài viết"><ImagePlus size={20} /></button>
+        <button className="composer-prompt" onClick={() => navigate('/posts/create')}>Bạn đang nghĩ gì? Chia sẻ với cộng đồng nhé.</button>
+        <button className="icon-button composer-media" onClick={() => navigate('/posts/create')} aria-label="Tạo bài viết"><ImagePlus size={20} /></button>
       </div> : <div className="guest-strip">
         <p><strong>Chào mừng đến với DISCUSS!</strong> Tìm cộng đồng của bạn và cùng trò chuyện.</p>
         <Link to="/login"><Button variant="primary" size="sm" rightIcon={<ArrowUpRight size={15} />}>Tham gia ngay</Button></Link>
@@ -54,7 +55,7 @@ export default function HomePage() {
         onChange={(id) => { setSearchParams({ tab: id }); setDisplayCount(6); }} />
       {!POSTS_AVAILABLE && <p role="status" className="feed-notice">Bài viết mẫu · Tương tác được lưu trong phiên hiện tại.</p>}
       {loading && <p role="status" className="feed-notice">Đang tải bài viết…</p>}
-      <div className="discussion-list">
+      <div className="discussion-list discussion-cards">
         {sorted.slice(0, displayCount).map((post) => <motion.div key={post.id}
           initial={quiet ? false : { opacity: 0.8 }} animate={{ opacity: 1 }}
           transition={{ duration: quiet ? 0 : 0.12 }}>

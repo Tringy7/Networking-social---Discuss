@@ -63,6 +63,13 @@ class ChatControllerIntegrationTest extends AbstractApiIntegrationTest {
                 .andExpect(jsonPath("$[0].unread").value(1));
         mvc.perform(get("/chat/{id}/messages", id).with(as(recipient)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(1)));
+        mvc.perform(get("/notifications/unread-count").with(as(recipient)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.unreadCount").value(0));
+        mvc.perform(get("/chat/{id}", id).with(as(recipient)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.unread").value(1))
+                .andExpect(jsonPath("$.preview.text").value("hello"))
+                .andExpect(jsonPath("$.preview.mine").value(false));
+        mvc.perform(get("/chat/{id}", id).with(as(outsider))).andExpect(status().isNotFound());
         mvc.perform(get("/chat/{id}/messages", id).with(as(outsider))).andExpect(status().isNotFound());
         long replyKey = CLIENT_IDS.incrementAndGet();
         assertThat(open(recipient, sender, replyKey)).isEqualTo(id);
@@ -74,10 +81,14 @@ class ChatControllerIntegrationTest extends AbstractApiIntegrationTest {
         long message = json.readTree(sent.getResponse().getContentAsString()).path("id").asLong();
         mvc.perform(body(put("/chat/{id}/read", id).with(as(recipient)), json.writeValueAsString(Map.of("through", message))))
                 .andExpect(status().isNoContent());
+        mvc.perform(get("/chat/{id}", id).with(as(sender)))
+                .andExpect(jsonPath("$.peerReadThrough").value(message));
         mvc.perform(get("/chat/{id}/messages", id).with(as(sender))).andExpect(jsonPath("$[0].read").value(true));
         mvc.perform(body(patch("/chat/{id}/messages/{message}", id, message).with(as(recipient)), "{\"text\":\"changed\"}"))
                 .andExpect(status().isForbidden());
         mvc.perform(delete("/chat/{id}/messages/{message}", id, message).with(as(recipient))).andExpect(status().isNoContent());
+        mvc.perform(get("/chat/{id}", id).with(as(recipient))).andExpect(jsonPath("$.preview.text").value("hello"));
+        mvc.perform(get("/chat/{id}", id).with(as(sender))).andExpect(jsonPath("$.preview.text").value("follow-up"));
         mvc.perform(get("/chat/{id}/messages", id).with(as(sender))).andExpect(jsonPath("$[0].text").value("follow-up"));
     }
 
@@ -235,7 +246,7 @@ class ChatControllerIntegrationTest extends AbstractApiIntegrationTest {
             });
             assertThat(stream.getResponse().getContentAsString()).doesNotContain("event:chat");
             long id = open(sender, recipient, CLIENT_IDS.incrementAndGet());
-            assertThat(stream.getResponse().getContentAsString()).contains("event:chat", "data:" + id);
+            assertThat(stream.getResponse().getContentAsString()).contains("event:chat-message", "data:" + id);
             stream.getRequest().getAsyncContext().complete();
             var reconnect = mvc.perform(get("/chat/events").cookie(cookie))
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("event:ready"))).andReturn();

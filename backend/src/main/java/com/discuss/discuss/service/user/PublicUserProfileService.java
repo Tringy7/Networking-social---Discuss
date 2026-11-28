@@ -45,7 +45,6 @@ public class PublicUserProfileService {
                 profile,
                 resolveVisibleDateOfBirth(profile, privacy),
                 resolveVisibleLocation(profile, privacy),
-                emptyStatistics(),
                 reputation.getReputation(user.getId())
         );
     }
@@ -65,9 +64,5 @@ public class PublicUserProfileService {
             return null;
         }
         return privacy.isShowLocation() ? profile.getLocation() : null;
-    }
-
-    private PublicUserProfileResponseDTO.Statistics emptyStatistics() {
-        return new PublicUserProfileResponseDTO.Statistics(0L, 0L, 0L);
     }
 }

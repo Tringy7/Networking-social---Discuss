@@ -456,8 +456,8 @@ a.admin-breakdown-row:hover { text-decoration:underline; }
 .admin-button { min-height:38px; border-radius:8px; font-weight:650; transition:transform 140ms ease,background-color 140ms ease,border-color 140ms ease,box-shadow 140ms ease; }
 .admin-button:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 3px 10px #1111110c; }
 .admin-button:active:not(:disabled) { transform:translateY(0) scale(.985); }
-.admin-button-primary { background:var(--color-orange); border-color:var(--color-orange); color:#24170f; }
-.admin-button-primary:hover:not(:disabled) { background:var(--color-orange-hover); border-color:var(--color-orange-hover); color:#24170f; opacity:1; }
+.admin-button-primary { background:var(--action-bg); border-color:var(--action-bg); color:var(--action-ink); }
+.admin-button-primary:hover:not(:disabled) { background:var(--action-hover); border-color:var(--action-hover); color:var(--action-ink); opacity:1; }
 .admin-metrics { border-radius:10px; background:var(--bg-main); padding-block:22px; box-shadow:0 1px 2px #10182808; }
 .admin-metric { padding-inline:clamp(16px,2vw,28px); }
 .admin-metric > span { font-weight:600; }

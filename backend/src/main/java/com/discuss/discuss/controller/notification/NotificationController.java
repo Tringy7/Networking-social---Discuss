@@ -6,6 +6,7 @@ import com.discuss.discuss.dto.notification.NotificationResponseDTO;
 import com.discuss.discuss.service.notification.NotificationService;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class NotificationController {
     private final NotificationService notificationService;
 
-    public record UnreadCountResponse(long unreadCount) {}
+    public record UnreadCountResponse(long unreadCount, long totalCount, Long latestId, LocalDateTime lastReadAt) {}
 
     @GetMapping
     public ResponseEntity<PageResponseDTO<NotificationResponseDTO>> getCurrentUserNotifications(
@@ -29,7 +30,10 @@ public class NotificationController {
 
     @GetMapping("/unread-count")
     public ResponseEntity<UnreadCountResponse> countCurrentUserUnreadNotifications() {
-        return ResponseEntity.ok(new UnreadCountResponse(notificationService.countCurrentUserUnreadNotifications()));
+        var summary = notificationService.getCurrentUserNotificationSummary();
+        Long unread = summary.getUnreadCount();
+        return ResponseEntity.ok(new UnreadCountResponse(unread == null ? 0 : unread,
+                summary.getTotalCount(), summary.getLatestId(), summary.getLastReadAt()));
     }
 
     @PutMapping("/{notificationId}/read")

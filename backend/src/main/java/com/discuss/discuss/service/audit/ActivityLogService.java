@@ -3,6 +3,8 @@ import com.discuss.discuss.dto.admin.AdminActivityLogResponseDTO;
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.entity.AdminActivityLog;
 import com.discuss.discuss.entity.User;
+import com.discuss.discuss.enums.ReportStatus;
+import com.discuss.discuss.enums.ReportTargetType;
 import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.repository.AdminActivityLogRepository;
 import com.discuss.discuss.service.user.UserService;
@@ -16,15 +18,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@HasRole("ADMIN")
 public class ActivityLogService {
     private final AdminActivityLogRepository repository;
     private final UserService userService;
     private final PageMapper pageMapper;
 
+    @HasRole("ADMIN")
     @Transactional(propagation = Propagation.MANDATORY)
     public void record(String action, String targetType, Long targetId, String note) {
-        User actor = userService.getCurrentUser();
+        save(userService.getCurrentUser(), action, targetType, targetId, note);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordCommunityReportDecision(User actor, ReportTargetType type, Long id, ReportStatus status, String note) {
+        String action = status == ReportStatus.RESOLVED ? "COMMUNITY_RESOLVE_REPORT" : "COMMUNITY_REJECT_REPORT";
+        save(actor, action, type.name() + "_REPORT", id, note);
+    }
+
+    private void save(User actor, String action, String targetType, Long targetId, String note) {
         repository.save(
                 AdminActivityLog.builder()
                         .actorUserId(actor.getId())
@@ -35,6 +46,7 @@ public class ActivityLogService {
                         .note(note).build());
     }
 
+    @HasRole("ADMIN")
     @Transactional(readOnly = true)
     public PageResponseDTO<AdminActivityLogResponseDTO> list(Long actorUserId, String action, String targetType, Pageable pageable) {
         Specification<AdminActivityLog> filter = buildActivityLogSpecification(actorUserId, action, targetType);

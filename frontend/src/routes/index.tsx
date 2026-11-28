@@ -13,6 +13,7 @@ const HomePage = React.lazy(() => import('../pages/home/HomePage'));
 const ExplorePage = React.lazy(() => import('../pages/explore/ExplorePage'));
 const SearchResultsPage = React.lazy(() => import('../pages/search/SearchResultsPage'));
 const CommunityDetailPage = React.lazy(() => import('../pages/community/CommunityDetailPage'));
+const CreatePostPage = React.lazy(() => import('../pages/post/CreatePostPage'));
 const PostDetailPage = React.lazy(() => import('../pages/post/PostDetailPage'));
 const UserProfilePage = React.lazy(() => import('../pages/profile/UserProfilePage'));
 
@@ -85,6 +86,7 @@ export const AppRoutes: React.FC = () => {
 
         <Route element={<ProtectedRoute />}>
           {/* Authenticated User Pages */}
+          <Route path="/posts/create" element={<React.Suspense fallback={routeLoading}><CreatePostPage /></React.Suspense>} />
           <Route path="/notifications" element={<React.Suspense fallback={routeLoading}><NotificationsPage /></React.Suspense>} />
           <Route path="/messages" element={<React.Suspense fallback={routeLoading}><MessagesPage /></React.Suspense>} />
           <Route path="/saved" element={<React.Suspense fallback={routeLoading}><SavedPostsPage /></React.Suspense>} />

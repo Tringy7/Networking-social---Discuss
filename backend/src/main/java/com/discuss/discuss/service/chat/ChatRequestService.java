@@ -10,7 +10,6 @@ import com.discuss.discuss.exception.chat.ChatException;
 import com.discuss.discuss.repository.chat.ChatRequestRepository;
 import com.discuss.discuss.repository.chat.ConversationMemberRepository;
 import com.discuss.discuss.repository.chat.ConversationRepository;
-import com.discuss.discuss.service.notification.NotificationEvents;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,7 +28,6 @@ public class ChatRequestService {
     private final ChatMessageService messageService;
     private final UserService users;
     private final ChatRateLimit rateLimit;
-    private final NotificationEvents notifications;
     private final ChatAccess access;
     private final ChatChangePublisher changes;
     private final ChatConversationService conversationService;
@@ -81,8 +79,7 @@ public class ChatRequestService {
         request.setStatus(ChatRequest.Status.ACCEPTED);
         requests.save(request);
         messageStore.insert(id, actorId, text, clientId);
-        notifications.enqueueChatNotification(actorId, peerId, false);
-        changes.changed(request);
+        changes.messageSent(request);
         return conversationService.buildConversationResponse(membership, request);
     }
 

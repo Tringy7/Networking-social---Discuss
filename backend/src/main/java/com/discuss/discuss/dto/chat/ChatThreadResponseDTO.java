@@ -2,6 +2,7 @@ package com.discuss.discuss.dto.chat;
 
 import com.discuss.discuss.entity.ChatRequest;
 import lombok.AllArgsConstructor;
+import java.time.Instant;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -20,4 +21,8 @@ public class ChatThreadResponseDTO {
     private boolean pinned;
     private boolean hidden;
     private boolean muted;
+    private long peerReadThrough;
+    private Preview preview;
+
+    public record Preview(boolean mine, String text, boolean recalled, Instant createdAt) {}
 }

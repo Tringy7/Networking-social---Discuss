@@ -13,6 +13,7 @@ import com.discuss.discuss.enums.MembershipStatus;
 import com.discuss.discuss.enums.PostStatus;
 import com.discuss.discuss.enums.VoteType;
 import jakarta.persistence.criteria.Order;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -144,7 +145,11 @@ public class PostSpecifications {
             saves.select(saved.get("id")).where(cb.equal(saved.get("post"), root),
                     cb.equal(saved.get("user").get("id"), user.getId()));
             if (query.getResultType() != Long.class) {
-                query.orderBy(cb.desc(saves), cb.desc(root.get("id")));
+                var savedAt = query.subquery(LocalDateTime.class);
+                var savedEntry = savedAt.from(PostSave.class);
+                savedAt.select(savedEntry.get("createdAt")).where(cb.equal(savedEntry.get("post"), root),
+                        cb.equal(savedEntry.get("user").get("id"), user.getId()));
+                query.orderBy(cb.desc(savedAt), cb.desc(saves));
             }
             return cb.exists(saves);
         };

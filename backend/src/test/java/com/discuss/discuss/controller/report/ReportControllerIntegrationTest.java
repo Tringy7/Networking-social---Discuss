@@ -50,14 +50,23 @@ class ReportControllerIntegrationTest extends AbstractApiIntegrationTest {
                 .andExpect(jsonPath("$.status").value("RESOLVED"))
                 .andExpect(jsonPath("$.resolutionNote").value("Reviewed post"));
         assertThat(reports.findById(id).orElseThrow().getStatus()).isEqualTo(ReportStatus.RESOLVED);
+        User admin = user(UserRole.ADMIN);
+        mvc.perform(get("/admin/activity-logs").param("actorUserId", owner.getId().toString())
+                        .param("action", "COMMUNITY_RESOLVE_REPORT").with(as(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].targetType").value("POST_REPORT"))
+                .andExpect(jsonPath("$.content[0].targetId").value((int) id))
+                .andExpect(jsonPath("$.content[0].note").value("Reviewed post"));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"/communities/{name}/reports/POST/{id}/reject", "/reports/community/{name}/POST/{id}/reject"})
     void listsPersonalAndCommunityReportsAndSupportsRejection(String path) throws Exception {
         User owner = user(UserRole.USER);
+        User moderator = user(UserRole.USER);
         User reporter = user(UserRole.USER);
         Community community = community(owner, CommunityVisibility.PUBLIC);
+        addMember(community, moderator, CommunityRole.MODERATOR);
         addMember(community, reporter, CommunityRole.MEMBER);
         Post post = publishedPost(owner, community);
         MvcResult result = mvc.perform(body(post("/reports").with(as(reporter)),
@@ -73,7 +82,7 @@ class ReportControllerIntegrationTest extends AbstractApiIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1));
         mvc.perform(get("/reports/community/{name}/comments", community.getName()).with(as(owner)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
-        mvc.perform(body(patch(path, community.getName(), id).with(as(owner)),
+        mvc.perform(body(patch(path, community.getName(), id).with(as(moderator)),
                 "{\"resolutionNote\":\"No violation\"}")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("REJECTED"));
     }

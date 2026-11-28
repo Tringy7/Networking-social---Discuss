@@ -1,7 +1,7 @@
 import ReportModal from '../../components/post/ReportModal';
 import CommunityRulesContent from '../../components/community/CommunityRulesContent';
 import React, { useState } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { usePostStore } from '../../store/usePostStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -30,6 +30,7 @@ import {
   Share2,
   Calendar,
   Flag,
+  ClipboardCheck,
   Lock,
 } from 'lucide-react';
 
@@ -37,8 +38,11 @@ export const CommunityDetailPage: React.FC = () => {
   const { communityName } = useParams<{ communityName: string }>();
   const [searchParams] = useSearchParams();
 
+  const navigate = useNavigate();
+  const createPostPath = '/posts/create?community=' + encodeURIComponent(communityName || '');
+
   const { communities, hydrateCommunity } = useCommunityStore();
-  const { posts, loadCommunityPosts, openCreateModal, setPinned } = usePostStore();
+  const { posts, loadCommunityPosts, setPinned } = usePostStore();
   const { isAuthenticated, user } = useAuthStore();
   const { addToast } = useToastStore();
 
@@ -89,9 +93,9 @@ export const CommunityDetailPage: React.FC = () => {
   // Auto-open composer if ?action=create is in URL
   React.useEffect(() => {
     if (searchParams.get('action') === 'create' && community && isJoined) {
-      openCreateModal(community.name);
+      navigate(createPostPath, { replace: true });
     }
-  }, [searchParams, community, isJoined, openCreateModal]);
+  }, [searchParams, community, isJoined, createPostPath, navigate]);
 
   if (!community) {
     return (
@@ -139,6 +143,14 @@ export const CommunityDetailPage: React.FC = () => {
     && (community.currentUserRole === 'OWNER' || community.currentUserRole === 'MODERATOR');
   const canEditMedia = !isCommunityLoading && canEditCommunityMedia(community, user, isAuthenticated);
   const viewerRole = isOwner ? 'OWNER' : community.currentUserRole;
+  const shareCommunity = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      addToast('Đã sao chép liên kết cộng đồng!', 'success');
+    } catch {
+      addToast('Không thể sao chép liên kết.', 'error');
+    }
+  };
 
   const communityPosts = posts.filter((p) => p.communityName === community.name);
   const sortedPosts = [...communityPosts].sort((a, b) => {
@@ -170,7 +182,7 @@ export const CommunityDetailPage: React.FC = () => {
         <EntityBanner src={community.bannerUrl} alt={`Ảnh bìa ${community.displayName}`} variant="community">
           <EntityImageActions key={`${community.name}-banner`} src={community.bannerUrl} kind="banner"
             name={community.displayName} href={`/c/${community.name}`} handle={`c/${community.name}`} avatarUrl={community.avatarUrl}
-            onEdit={canEditMedia ? () => setMediaKind('banner') : undefined} />
+            menuOnImage onEdit={canEditMedia ? () => setMediaKind('banner') : undefined} />
         </EntityBanner>
         <div className="community-identity">
           <div className="community-avatar-slot">
@@ -184,16 +196,26 @@ export const CommunityDetailPage: React.FC = () => {
           <div className="community-actions">
             {canReviewJoinRequests && <Link
               to={`/c/${encodeURIComponent(community.name)}/moderation`}
-              className="inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--color-orange-border)] px-3 py-1.5 text-sm font-semibold text-[var(--color-orange-ink)] hover:bg-[var(--color-orange-soft)]">
-              <ShieldAlert size={16} aria-hidden="true" />Hàng đợi kiểm duyệt
+              className="icon-button" aria-label="Hàng đợi kiểm duyệt" title="Hàng đợi kiểm duyệt">
+              <ShieldAlert size={18} aria-hidden="true" />
             </Link>}
+            {isManager && <Link className="icon-button" aria-label="Xử lý báo cáo" title="Xử lý báo cáo"
+              to={`/c/${encodeURIComponent(community.name)}/moderation?tab=reports`}><ClipboardCheck size={18} /></Link>}
             {!privateContentLocked && <CommunityMembershipButton community={community} />}
-            {!privateContentLocked && <Button variant="outline" size="sm" onClick={() => openCreateModal(community.name)} leftIcon={<Plus size={15} />}>Đăng bài</Button>}
-            {isJoined && !isCommunityLoading && <CommunityNotificationToggle key={`${user?.id}:${community.name}`} name={community.name} />}
-            {isOwner && <Link className="icon-button" aria-label="Cài đặt cộng đồng" to={`/c/${community.name}/settings`}><Settings size={18} /></Link>}
+            {isJoined && !privateContentLocked && community.status === 'ACTIVE' && <Button variant="outline" size="sm" onClick={() => navigate(createPostPath)} leftIcon={<Plus size={15} />}>Đăng bài</Button>}
+            {isJoined && !isCommunityLoading && <CommunityNotificationToggle key={`${user?.id}:${community.name}`} name={community.name} iconOnly />}
+            <button type="button" className="icon-button" aria-label="Chia sẻ cộng đồng" title="Chia sẻ cộng đồng" onClick={shareCommunity}><Share2 size={18} /></button>
+            <button type="button" className="icon-button" aria-label="Báo cáo cộng đồng" title="Báo cáo cộng đồng" onClick={() => setIsReportOpen(true)}><Flag size={18} /></button>
+            {isOwner && <Link className="icon-button" aria-label="Cài đặt cộng đồng" title="Cài đặt cộng đồng" to={`/c/${community.name}/settings`}><Settings size={18} /></Link>}
           </div>
         </div>
-        <div className="community-facts"><span><Users size={15} /> {community.memberCount.toLocaleString('vi-VN')} thành viên</span>{community.visibility === 'PRIVATE' && <span><Lock size={15} /> Riêng tư</span>}{isJoined && !isCommunityLoading && !communityLoadFailed && viewerRole !== 'NONE' && <Badge role={viewerRole} />}{community.category && <span>{community.category}</span>}<span><Calendar size={15} /> {new Date(community.createdAt).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span><button onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); addToast('Đã sao chép liên kết cộng đồng!', 'success'); } catch { addToast('Không thể sao chép liên kết.', 'error'); } }}><Share2 size={15} /> Chia sẻ</button><button type="button" onClick={() => setIsReportOpen(true)}><Flag size={15} /> Báo cáo cộng đồng</button></div>
+        <div className="community-facts">
+          <span><Users size={15} /> {community.memberCount.toLocaleString('vi-VN')} thành viên</span>
+          {community.visibility === 'PRIVATE' && <span><Lock size={15} /> Riêng tư</span>}
+          {community.category && <span>{community.category}</span>}
+          <span><Calendar size={15} /> {new Date(community.createdAt).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span>
+          {isJoined && !isCommunityLoading && !communityLoadFailed && viewerRole !== 'NONE' && <Badge role={viewerRole} />}
+        </div>
       </header>
       <div className="community-columns">
         <section className="min-w-0" aria-label="Bài viết cộng đồng">
@@ -205,25 +227,25 @@ export const CommunityDetailPage: React.FC = () => {
             <EditorialTabs label="Sắp xếp bài viết cộng đồng" options={[{ id: 'latest', label: 'Mới nhất', icon: <Clock /> }, { id: 'popular', label: 'Sôi nổi', icon: <Flame /> }]} value={tab} onChange={setTab} trailing={`${sortedPosts.length} bài viết`} />
             {!POSTS_AVAILABLE && <p className="feed-notice">Bài viết mẫu · Tương tác được lưu trong phiên hiện tại.</p>}
             {postsLoading && <p role="status" className="feed-notice">Đang tải bài viết…</p>}
-            <div className="discussion-list">{sortedPosts.map((post) => <PostCard key={post.id} post={post} showCommunity={false}
+            <div className="discussion-list discussion-cards">{sortedPosts.map((post) => <PostCard key={post.id} post={post} showCommunity={false}
               onTogglePin={canPinPosts ? () => { void changePin(post.id, !post.pinned); } : undefined}
               pinDisabled={pinPending || postsLoading} />)}</div>
-            {hasMorePosts && <Button disabled={postsLoading || pinPending} variant="secondary" onClick={async () => {
+            {hasMorePosts && <Button className="mt-4" disabled={postsLoading || pinPending} variant="secondary" onClick={async () => {
               setPostsLoading(true);
               try { setHasMorePosts(await loadCommunityPosts(community.name, postPage + 1)); setPostPage(postPage + 1); }
               catch (error) { addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); }
               finally { setPostsLoading(false); }
             }}>Xem thêm bài viết</Button>}
-            {!postsLoading && !sortedPosts.length && <div className="editorial-empty"><h2>Chia sẻ bài viết đầu tiên</h2><p>Chia sẻ câu hỏi hoặc góc nhìn đầu tiên cùng cộng đồng.</p><Button size="sm" className="mt-4" onClick={() => openCreateModal(community.name)}>Viết bài đầu tiên</Button></div>}
+            {!postsLoading && !sortedPosts.length && <div className="editorial-empty"><h2>Chia sẻ bài viết đầu tiên</h2><p>Chia sẻ câu hỏi hoặc góc nhìn đầu tiên cùng cộng đồng.</p>{isJoined && community.status === 'ACTIVE' && <Button size="sm" className="mt-4" onClick={() => navigate(createPostPath)}>Viết bài đầu tiên</Button>}</div>}
           </>}
         </section>
-        <aside className="community-context">
-          <section className="context-section" aria-label="Giới thiệu cộng đồng">
+        <aside className="community-context" aria-label="Thông tin cộng đồng">
+          <section className="context-section">
             <div className="context-title"><h2>Giới thiệu</h2></div>
             <p className="entity-about-description">{community.description || 'Cộng đồng chưa có mô tả.'}</p>
           </section>
           <section className="context-section"><div className="context-title"><h2>Nội quy cộng đồng</h2><BookOpen size={16} /></div>
-            <CommunityRulesContent markdown={community.rules} />
+            <CommunityRulesContent markdown={community.rules} omitTitle />
           </section>
           <section className="context-section"><div className="context-title"><h2>Ban quản trị</h2>{isOwner && <Link to={`/c/${community.name}/settings?tab=members`}>Quản lý</Link>}</div>
             {community.ownerUsername && <Link to={`/u/${community.ownerUsername}`} className="context-community"><Avatar alt={community.ownerUsername} size="sm" /><div className="community-info"><span className="text-sm font-semibold">@{community.ownerUsername}</span><p>Chủ cộng đồng</p></div></Link>}

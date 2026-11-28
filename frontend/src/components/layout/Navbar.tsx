@@ -8,13 +8,13 @@ import NotificationBadge from '../ui/NotificationBadge';
 import NotificationPanel from './NotificationPanel';
 import Logo from '../common/Logo';
 import Avatar from '../ui/Avatar';
-import Button from '../ui/Button';
 import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { usePostStore } from '../../store/usePostStore';
 import { useToastStore } from '../../store/useToastStore';
 import { notificationSyncKey, useNotificationStore } from '../../store/useNotificationStore';
+import { listenForNotificationSoundPermission } from '../../utils/notificationSound';
 import {
   Search,
   Plus,
@@ -35,7 +35,7 @@ export const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, logout, activeRole } = useAuthStore();
-  const unreadMessages = useChatStore(state => state.threads.reduce((total, thread) => total + (thread.hidden ? 0 : thread.unread), 0));
+  const unreadMessages = useChatStore(state => state.threads.reduce((total, thread) => total + (thread.hidden || thread.muted ? 0 : thread.unread), 0));
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return;
     const stop = useChatStore.getState().connect();
@@ -45,8 +45,8 @@ export const Navbar: React.FC = () => {
     };
   }, [isAuthenticated, user?.id]);
   const { communities } = useCommunityStore();
-  const { posts, openCreateModal } = usePostStore();
-  const { unreadCount: unreadNotifs, hydrate: hydrateNotifications, clear } = useNotificationStore();
+  const { posts } = usePostStore();
+  const { unreadCount: unreadNotifs, hydrate: hydrateNotifications, syncUnreadCount, clear } = useNotificationStore();
   const addToast = useToastStore((state) => state.addToast);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,19 +95,23 @@ export const Navbar: React.FC = () => {
         // Ignore malformed browser storage events.
       }
     };
-    const timer = window.setInterval(refreshWhenVisible, 10000);
+    const stopListeningForSoundPermission = listenForNotificationSoundPermission();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void syncUnreadCount().catch(() => {});
+    }, 10000);
     window.addEventListener('focus', refreshWhenVisible);
     window.addEventListener('online', refreshWhenVisible);
     window.addEventListener('storage', syncFromOtherTab);
     document.addEventListener('visibilitychange', refreshWhenVisible);
     return () => {
+      stopListeningForSoundPermission();
       window.clearInterval(timer);
       window.removeEventListener('focus', refreshWhenVisible);
       window.removeEventListener('online', refreshWhenVisible);
       window.removeEventListener('storage', syncFromOtherTab);
       document.removeEventListener('visibilitychange', refreshWhenVisible);
     };
-  }, [addToast, clear, hydrateNotifications, isAuthenticated, user?.id]);
+  }, [addToast, clear, hydrateNotifications, isAuthenticated, syncUnreadCount, user?.id]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -192,7 +196,7 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* ZONE 2: SEARCH INPUT & AUTOCOMPLETE */}
-        <div ref={searchRef} className={`${isMobileSearchOpen ? 'absolute inset-x-0 top-full z-50 border-b border-[var(--border-color)] bg-[var(--bg-nav)] px-3 py-3 shadow-[var(--surface-shadow)] sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none' : 'hidden sm:relative'} sm:flex sm:flex-1 sm:max-w-xl`}>
+        <div ref={searchRef} className={`${isMobileSearchOpen ? 'absolute inset-x-0 top-full z-50 border-b border-[var(--border-color)] bg-[var(--bg-nav)] px-3 py-3 shadow-[var(--surface-shadow)] sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none' : 'hidden sm:relative'} min-w-0 sm:flex sm:flex-1 sm:max-w-xl`}>
           <form onSubmit={handleSearchSubmit} className="nav-search relative flex w-full items-center">
             <Search className="absolute left-3.5 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
             <input
@@ -320,6 +324,12 @@ export const Navbar: React.FC = () => {
 
         {/* ZONE 3: ACTIONS & USER MENU */}
         <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+          {isAuthenticated && user && (
+            <Link to="/posts/create" className="navbar-create-post">
+              <Plus size={18} aria-hidden="true" />
+              Tạo bài viết
+            </Link>
+          )}
           <ThemeToggle />
           <button
             ref={mobileSearchButtonRef}
@@ -336,17 +346,6 @@ export const Navbar: React.FC = () => {
           </button>
           {isAuthenticated && user ? (
             <>
-              {/* Create Post Button */}
-              <Button
-                variant="primary"
-                size="sm"
-                leftIcon={<Plus className="w-4 h-4" />}
-                onClick={() => openCreateModal()}
-                className="navbar-create-post cursor-pointer"
-              >
-                Tạo bài viết
-              </Button>
-
               <button type="button"
                 onClick={() => useChatStore.getState().openWindow()}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors relative cursor-pointer"

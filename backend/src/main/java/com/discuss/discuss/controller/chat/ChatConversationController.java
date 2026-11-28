@@ -26,6 +26,11 @@ public class ChatConversationController {
     @GetMapping
     public ResponseEntity<List<ChatThreadResponseDTO>> listConversations() { return ResponseEntity.ok(chat.listConversations()); }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ChatThreadResponseDTO> getConversation(@PathVariable long id) {
+        return ResponseEntity.ok(chat.getConversation(id));
+    }
+
     @PutMapping("/{id}/read")
     public ResponseEntity<Void> markConversationAsRead(@PathVariable long id, @Valid @RequestBody ChatReadRequestDTO body) {
         chat.markConversationAsRead(id, body.getThrough());

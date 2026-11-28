@@ -22,7 +22,7 @@ export default function CommunityModerationPage() {
   if (community.loading) return <p className="utility-page py-8" role="status">Đang tải cộng đồng…</p>;
   const isOwner = Boolean(community.data && isCommunityOwner(community.data, user, isAuthenticated));
   const role = community.data?.currentUserRole;
-  const isManager = isAuthenticated && (role === 'OWNER' || role === 'MODERATOR');
+  const isManager = isAuthenticated && (isOwner || role === 'MODERATOR');
   const canReviewRequests = isManager && community.data?.visibility === 'PRIVATE';
 
   if (showReports && community.data?.name === communityName && isOwner) {
@@ -36,7 +36,8 @@ export default function CommunityModerationPage() {
       <Button size="sm" variant="secondary" onClick={community.reload}>Thử lại</Button>
     </div> : showReports ? (
       <><h1 className="text-2xl font-semibold">Báo cáo cộng đồng</h1>
-        <CommunityReportsPanel key={`${communityName}:${reportType}`} name={communityName} canReview={false} /></>
+        {isManager ? <CommunityReportsPanel key={`${communityName}:${reportType}`} name={communityName} canReview />
+          : <p role="alert">Chỉ chủ cộng đồng và người điều hành mới được xử lý báo cáo.</p>}</>
     ) : canReviewRequests ? (
       <>
         <header className="space-y-1">

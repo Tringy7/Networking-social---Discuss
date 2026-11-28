@@ -33,8 +33,10 @@ class ChatAccess {
     }
 
     public ChatRequest lockConversationForMember(long conversationId, long userId) {
-        requireConversationMember(conversationId, userId);
-        return lockConversationParticipants(conversationId);
+        var membership = requireConversationMember(conversationId, userId);
+        var request = lockConversationParticipants(conversationId);
+        entities.refresh(membership);
+        return request;
     }
 
     public ConversationMember requirePeerMembership(ChatRequest request, long userId) {

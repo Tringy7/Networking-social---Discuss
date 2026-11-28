@@ -17,7 +17,6 @@ public class PublicUserProfileResponseDTO {
     private LocalDateTime joinedAt;
 
     private Profile profile;
-    private Statistics statistics;
     private UserReputationDTO reputation;
 
     @Data
@@ -31,14 +30,5 @@ public class PublicUserProfileResponseDTO {
         private String dateOfBirth;
         private Gender gender;
         private String location;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Statistics {
-        private long postCount;
-        private long commentCount;
-        private long communityCount;
     }
 }

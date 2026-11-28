@@ -42,7 +42,6 @@ public class UserPrivacySettings {
 
 //    @Builder.Default
 //    @Column(nullable = false)
-//    private boolean showPostsOnProfile = true;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

@@ -157,3 +157,23 @@ test('routes message reports without exposing chat history through the report en
   assert.equal(calls[0].path, '/reports');
   assert.deepEqual(JSON.parse(calls[0].body), { targetType: 'MESSAGE', targetId: 17, reason: 'HARASSMENT' });
 });
+
+test('opens My Reports with the matching type and outcome for every reviewed report', async (context) => {
+  const types = ['POST', 'COMMENT', 'COMMUNITY', 'MESSAGE'];
+  mockRequests(context, () => Response.json({
+    content: types.map((reportTargetType, id) => ({
+      id, type: 'REPORT_REVIEWED', reportTargetType,
+      reportStatus: id % 2 === 0 ? 'RESOLVED' : 'REJECTED',
+      read: false,
+    })),
+    last: true,
+  }));
+
+  const result = await modules.notificationService.getNotifications();
+  assert.deepEqual(result.content.map(item => item.targetUrl), [
+    '/reports/mine?type=POST&status=RESOLVED',
+    '/reports/mine?type=COMMENT&status=REJECTED',
+    '/reports/mine?type=COMMUNITY&status=RESOLVED',
+    '/reports/mine?type=MESSAGE&status=REJECTED',
+  ]);
+});

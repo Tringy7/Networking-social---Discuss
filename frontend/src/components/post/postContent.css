@@ -1,5 +1,3 @@
-/* Discuss post editor: 12-column shell retained; the editor is the main workspace.
-   The existing modal is 64rem wide, with 24px gutters. Gallery: 3 equal tracks + 2 x 12px gaps. */
 .post-composer { display: grid; gap: 16px; min-width: 0; }
 .post-content-divider { border-top: 1px solid var(--border-color); margin-top: 16px; padding-top: 16px; }
 .discussion-row .post-content-divider .post-body-content { margin-top: 0; }
@@ -15,11 +13,11 @@
 .post-composer-fields:disabled { opacity: .7; }
 .post-block-count { margin-right: auto; align-self: center; color: var(--text-muted); font-size: 12px; }
 .post-composer label { display: grid; gap: 7px; font-size: 13px; font-weight: 500; }
-.post-composer input:not([type=file]), .post-composer select, .markdown-editor textarea {
+.post-composer input:not([type=file]), .markdown-editor textarea {
   width: 100%; min-width: 0; border: 1px solid var(--border-color); background: var(--bg-surface);
   border-radius: var(--radius-control); padding: 11px 12px; color: var(--text-primary); font-size: 14px;
 }
-.post-composer :is(input,select,textarea,button):focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.post-composer :is(input,textarea,button):focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .post-composer button:disabled { cursor: not-allowed; opacity: .5; }
 .markdown-editor { border: 1px solid var(--border-color); border-radius: var(--radius-control); overflow: hidden; }
 .markdown-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 6px; border-bottom: 1px solid var(--border-color); background: var(--bg-main); }
@@ -134,3 +132,130 @@
 .comment-media-tile { width: 100%; aspect-ratio: 4 / 3; border-radius: var(--radius-control); background: var(--bg-elevated); }
 .comment-media-tile img { display: block; width: 100%; height: 100%; max-height: none; object-fit: cover; }
 .comment-media-tile:hover img { opacity: .9; }
+
+.post-create-page {
+  max-width: 800px;
+  margin: clamp(8px, 2vw, 26px) auto 0;
+  padding: clamp(20px, 4vw, 40px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-panel);
+  background: var(--bg-surface);
+}
+.post-create-header {
+  margin-bottom: 26px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+.post-create-header h1 {
+  font-size: clamp(1.65rem, 3vw, 2.15rem);
+  line-height: 1.2;
+  font-weight: 750;
+  letter-spacing: -.035em;
+}
+.post-create-page .post-composer-fields { gap: 18px; }
+.post-create-page .post-composer footer { position: static; padding-bottom: 0; }
+.post-create-page .post-composer input[required] { padding: 14px; }
+.post-create-page .markdown-toolbar { padding: 7px 9px; }
+.post-create-page .markdown-editor textarea { min-height: 200px; }
+.post-create-page .post-image-dropzone { padding: 18px 12px; }
+.post-create-page .post-image-dropzone > svg { color: var(--color-orange-ink); }
+.post-composer-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 650;
+}
+.post-composer-label > span { color: var(--text-muted); font-size: 12px; font-weight: 400; }
+.post-community-field { display: grid; gap: 8px; min-width: 0; }
+.post-community-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-self: start;
+  min-width: min(240px, 100%);
+  max-width: 100%;
+  min-height: 46px;
+  padding: 7px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-control);
+  background: var(--bg-main);
+  text-align: left;
+  font-size: 14px;
+  font-weight: 650;
+  transition: background-color .15s ease;
+}
+.post-community-trigger:hover { background: var(--bg-hover); }
+.post-community-trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.post-community-trigger > svg { flex-shrink: 0; }
+.post-community-trigger > svg:last-child { margin-left: auto; }
+.post-community-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(580px, calc(100% - 24px));
+  max-width: none;
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-panel);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: var(--surface-shadow);
+}
+.post-community-dialog::backdrop { background: rgb(12 16 21 / 52%); }
+body:has(.post-community-dialog[open]) { overflow: hidden; }
+.post-community-panel { display: grid; gap: 12px; padding: clamp(12px, 3vw, 22px); }
+.post-community-panel header { display: flex; align-items: center; justify-content: space-between; }
+.post-community-panel h2 { font-size: 19px; font-weight: 700; letter-spacing: -.02em; }
+.post-community-panel header button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: var(--radius-control);
+  color: var(--text-secondary);
+}
+.post-community-panel header button:hover { background: var(--bg-hover); color: var(--text-primary); }
+.post-community-search { position: relative; }
+.post-community-search > svg {
+  position: absolute;
+  inset-inline-start: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.post-composer .post-community-search input {
+  padding-inline-start: 40px;
+  background: var(--bg-main);
+}
+.post-community-results { max-height: min(53dvh, 440px); overflow: auto; overscroll-behavior: contain; }
+.post-community-results:empty { display: none; }
+.post-community-results li + li { border-top: 1px solid var(--border-color); }
+.post-community-results button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 8px;
+  text-align: left;
+  transition: background-color .15s ease;
+}
+.post-community-results button:hover,
+.post-community-results button[aria-pressed=true] { background: var(--bg-hover); }
+.post-community-results button:focus-visible { outline-offset: -2px; }
+.post-community-results button > svg { flex-shrink: 0; color: var(--color-orange-ink); }
+.post-community-details { display: grid; flex: 1; gap: 3px; min-width: 0; font-size: 12px; color: var(--text-secondary); }
+.post-community-details strong { overflow-wrap: anywhere; font-size: 14px; color: var(--text-primary); }
+.post-community-private { display: inline-flex; align-items: center; gap: 3px; margin-inline-start: 7px; }
+.post-community-description { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.post-community-empty { padding: 16px 8px; color: var(--text-secondary); font-size: 14px; }
+.post-community-empty a { display: inline-block; margin-top: 8px; color: var(--color-orange-ink); text-decoration: underline; }
+@media (max-width: 480px) {
+  .post-create-page { padding: 16px; }
+  .post-create-header { margin-bottom: 18px; padding-bottom: 14px; }
+  .post-community-trigger { width: 100%; }
+}

@@ -6,7 +6,6 @@ import { usePostStore } from '../../store/usePostStore';
 import { useToastStore } from '../../store/useToastStore';
 import { userService } from '../../services';
 import { User } from '../../types';
-import EditorialTabs from '../../components/ui/EditorialTabs';
 import PostCard from '../../components/post/PostCardView';
 import Avatar from '../../components/ui/Avatar';
 import EntityBanner from '../../components/ui/EntityBanner';
@@ -24,7 +23,6 @@ import {
   MessageSquare,
   Award,
   BadgeCheck,
-  Eye,
   Mail,
   UserRound,
 } from 'lucide-react';
@@ -48,7 +46,6 @@ export const UserProfilePage: React.FC = () => {
   const { posts, loadUserPosts } = usePostStore();
   const { addToast } = useToastStore();
 
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
   const [isAvatarEditorOpen, setIsAvatarEditorOpen] = useState(false);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [isBannerEditorOpen, setIsBannerEditorOpen] = useState(false);
@@ -100,7 +97,6 @@ export const UserProfilePage: React.FC = () => {
           privacy: {
             showDateOfBirth: response.privacySettings?.showDateOfBirth ?? false,
             showLocation: response.privacySettings?.showLocation ?? false,
-            showPostsOnProfile: response.privacySettings?.showPostsOnProfile ?? true,
           },
           role: response.role,
           status: response.status,
@@ -227,48 +223,29 @@ export const UserProfilePage: React.FC = () => {
         </header>
 
       <div className="profile-columns">
-        <section className="profile-activity min-w-0" aria-label="Hoạt động">
-        <EditorialTabs label="Hoạt động của người dùng" options={[{ id: 'posts', label: 'Bài viết', icon: <FileText /> }, { id: 'comments', label: 'Bình luận', icon: <MessageSquare /> }]} value={activeTab} onChange={setActiveTab} />
-
-        {/* Tab content */}
-        {activeTab === 'posts' && (
-          <div className="discussion-list">
-            {profileUser.privacy.showPostsOnProfile ? (
-              userPosts.length > 0 ? (
-                userPosts.map((p) => <PostCard key={p.id} post={p} />)
-              ) : postsLoading ? (
-                <p className="profile-empty" role="status">Đang tải bài viết…</p>
-              ) : (
-                <div className="profile-empty" role="status">
-                  <FileText size={24} aria-hidden="true" />
-                  <h2>Chưa có bài viết</h2>
-                  <p>Bài viết chia sẻ trong cộng đồng sẽ xuất hiện ở đây.</p>
-                  {isMe && <Link to="/explore" className="profile-empty-action">Khám phá cộng đồng</Link>}
-                </div>
-              )
+        <section className="profile-activity min-w-0" aria-labelledby="profile-posts-heading">
+          <h2 id="profile-posts-heading" className="mb-3 font-semibold">Bài viết</h2>
+          <div className="discussion-list discussion-cards">
+            {userPosts.length > 0 ? (
+              userPosts.map((p) => <PostCard key={p.id} post={p} />)
+            ) : postsLoading ? (
+              <p className="profile-empty" role="status">Đang tải bài viết…</p>
             ) : (
               <div className="profile-empty" role="status">
-                <Eye size={24} aria-hidden="true" />
-                <h2>Bài viết được giữ riêng tư</h2>
-                <p>Bài viết của người dùng này không được công khai.</p>
+                <FileText size={24} aria-hidden="true" />
+                <h2>Chưa có bài viết</h2>
+                <p>Bài viết chia sẻ trong cộng đồng sẽ xuất hiện ở đây.</p>
+                {isMe && <Link to="/explore" className="profile-empty-action">Khám phá cộng đồng</Link>}
               </div>
             )}
           </div>
-        )}
 
-        {activeTab === 'posts' && hasMorePosts && <Button disabled={postsLoading} variant="secondary" onClick={async () => {
-          setPostsLoading(true);
-          try { setHasMorePosts(await loadUserPosts(profileUser.username, postPage + 1)); setPostPage(postPage + 1); }
-          catch (error) { addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); }
-          finally { setPostsLoading(false); }
-        }}>Xem thêm bài viết</Button>}
-        {activeTab === 'comments' && (
-          <div className="profile-empty" role="status">
-            <MessageSquare size={24} aria-hidden="true" />
-            <h2>Chưa có bình luận để hiển thị</h2>
-            <p>Hiện chưa có dữ liệu hoạt động bình luận.</p>
-          </div>
-        )}
+          {hasMorePosts && <Button disabled={postsLoading} variant="secondary" onClick={async () => {
+            setPostsLoading(true);
+            try { setHasMorePosts(await loadUserPosts(profileUser.username, postPage + 1)); setPostPage(postPage + 1); }
+            catch (error) { addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); }
+            finally { setPostsLoading(false); }
+          }}>Xem thêm bài viết</Button>}
         </section>
 
         <aside className="profile-about" aria-label="Giới thiệu người dùng">

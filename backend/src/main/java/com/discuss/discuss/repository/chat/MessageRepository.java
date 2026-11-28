@@ -9,6 +9,12 @@ import java.util.Optional;
 
 public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findByConversationIdAndIdLessThanOrderByIdDesc(Long conversationId, Long before, Pageable page);
+    @Query("""
+            select m from Message m where m.conversationId = :conversationId
+              and :actor not member of m.hiddenFor order by m.id desc
+            """)
+    List<Message> findVisibleForPreview(long conversationId, long actor, Pageable page);
+
     Optional<Message> findByConversationIdAndSenderIdAndClientId(Long conversationId, Long senderId, String clientId);
     @Query("""
             select count(m) from Message m

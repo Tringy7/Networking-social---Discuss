@@ -56,6 +56,16 @@ class NotificationOutboxWorkerTest {
         assertThat(event.getProcessedAt()).isNotNull();
     }
 
+    @Test
+    void completesLegacyChatEventWithoutCreatingNotification() {
+        event.setEventType(NotificationEventType.CHAT_MESSAGE_SENT);
+
+        worker.processDueNotificationEvents();
+
+        verifyNoInteractions(notifications);
+        assertThat(event.getStatus()).isEqualTo(OutboxStatus.COMPLETED);
+    }
+
     @ParameterizedTest
     @CsvSource({"0, PENDING", "4, FAILED"})
     void recordsStorageFailureAndStopsRetryingAtAttemptLimit(int previousAttempts, OutboxStatus status) {
