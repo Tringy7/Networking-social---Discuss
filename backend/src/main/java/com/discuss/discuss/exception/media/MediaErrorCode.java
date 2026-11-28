@@ -6,6 +6,7 @@ public enum MediaErrorCode {
 
     // 400 - Bad Request
     EMPTY_FILE(HttpStatus.BAD_REQUEST, "The uploaded file is empty"),
+    INVALID_VIDEO(HttpStatus.BAD_REQUEST, "Only valid MP4 videos are supported"),
     INVALID_IMAGE(HttpStatus.BAD_REQUEST, "The file is not a valid or readable image"),
     UNSUPPORTED_IMAGE_FORMAT(HttpStatus.BAD_REQUEST, "Only JPEG, PNG and WebP images are supported"),
     TOO_MANY_FILES(HttpStatus.BAD_REQUEST, "Too many files in a single request"),

@@ -1,12 +1,18 @@
 package com.discuss.discuss.exception;
 
 import com.discuss.discuss.exception.auth.AuthException;
+import com.discuss.discuss.exception.comment.CommentException;
 import com.discuss.discuss.exception.community.CommunityException;
 import com.discuss.discuss.exception.media.MediaException;
 import com.discuss.discuss.exception.user.UserException;
+import com.discuss.discuss.exception.post.PostException;
+import com.discuss.discuss.exception.report.ReportException;
+import com.discuss.discuss.exception.chat.ChatException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -21,6 +27,65 @@ import java.util.Map;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+    @ExceptionHandler({org.springframework.web.servlet.NoHandlerFoundException.class,
+            org.springframework.web.servlet.resource.NoResourceFoundException.class})
+    public ResponseEntity<Map<String, Object>> handleEndpointNotFound(Exception ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("status", 404, "message", "Endpoint not found"));
+    }
+
+    @ExceptionHandler(CommentException.class)
+    public ResponseEntity<Map<String, Object>> handleCommentException(
+            CommentException ex) {
+        log.warn("[COMMENT] error={}, status={}, message={}",
+                ex.getError().name(), ex.getError().getStatus().value(), ex.getMessage());
+        return ResponseEntity.status(ex.getError().getStatus())
+                .body(Map.of("status", ex.getError().getStatus().value(), "message", ex.getMessage()));
+    }
+
+
+    @ExceptionHandler({jakarta.validation.ConstraintViolationException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.web.method.annotation.HandlerMethodValidationException.class})
+    public ResponseEntity<Map<String, Object>> handleInvalidParameter(Exception ex) {
+        return ResponseEntity.badRequest().body(Map.of("status", 400, "message", "Invalid request parameter"));
+    }
+
+    @ExceptionHandler(ChatException.class)
+    public ResponseEntity<Map<String, Object>> handleChatException(ChatException ex) {
+        var error = ex.getError();
+        log.warn("[CHAT] error={}, status={}, message={}", error.name(), error.getStatus().value(), ex.getMessage());
+        return ResponseEntity.status(error.getStatus())
+                .body(Map.of("status", error.getStatus().value(), "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ReportException.class)
+    public ResponseEntity<Map<String, Object>> handleReportException(ReportException ex) {
+        log.warn("[REPORT] error={}, status={}, message={}",
+                ex.getError().name(), ex.getError().getStatus().value(), ex.getMessage());
+        return ResponseEntity.status(ex.getError().getStatus())
+                .body(Map.of("status", ex.getError().getStatus().value(), "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(PostException.class)
+    public ResponseEntity<Map<String, Object>> handlePostException(PostException ex) {
+        log.warn("[POST] error={}, status={}, message={}",
+                ex.getError().name(), ex.getError().getStatus().value(), ex.getMessage());
+        return ResponseEntity.status(ex.getError().getStatus())
+                .body(Map.of("status", ex.getError().getStatus().value(), "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("status", 403, "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidJson(HttpMessageNotReadableException ex) {
+        return ResponseEntity.badRequest()
+                .body(Map.of("status", 400, "message", "Invalid JSON request body"));
+    }
 
     @ExceptionHandler(AuthException.class)
     public ResponseEntity<Map<String, Object>> handleAuthException(AuthException ex) {
@@ -35,6 +100,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(ex.getError().getStatus())
                 .body(Map.of(
+                        "code", ex.getError().name(),
                         "status", ex.getError().getStatus().value(),
                         "message", ex.getMessage()
                 ));
@@ -96,7 +162,7 @@ public class GlobalExceptionHandler {
                 .badRequest()
                 .body(Map.of(
                         "status", HttpStatus.BAD_REQUEST.value(),
-                        "message", "Username or password is incorrect",
+                        "message", "Request validation failed",
                         "errors", errors
                 ));
     }

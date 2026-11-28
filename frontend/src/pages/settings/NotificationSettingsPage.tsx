@@ -1,148 +1,58 @@
-import React from 'react';
-import { useToastStore } from '../../store/useToastStore';
-import { useNotificationStore } from '../../store/useNotificationStore';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import CommunityNotificationToggle from '../../components/community/CommunityNotificationToggle';
 import Button from '../../components/ui/Button';
-import { Bell, Check, RotateCcw } from 'lucide-react';
-import { NOTIFICATIONS_AVAILABLE } from '../../services';
+import { communityService } from '../../services';
+import { useAuthStore } from '../../store/useAuthStore';
+import type { Community } from '../../types';
 
-export const NotificationSettingsPage: React.FC = () => {
-  const { addToast } = useToastStore();
-  const { preferences, updatePreferences, savePreferences, resetPreferences } = useNotificationStore();
-  const handleReset = () => {
-    try {
-      resetPreferences();
-      addToast('Đã khôi phục và lưu các tùy chọn thông báo mặc định.', 'info');
-    } catch (error: unknown) {
-      addToast(error instanceof Error ? error.message : 'Không thể khôi phục tùy chọn thông báo.', 'error');
-    }
-  };
+export default function NotificationSettingsPage() {
+  const username = useAuthStore((state) => state.user?.username);
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
 
-  const renderToggle = (
-    label: string,
-    desc: string,
-    checked: boolean,
-    onChange: (checked: boolean) => void
-  ) => (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-4">
-      <div className="space-y-0.5 max-w-md">
-        <h4 className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">{label}</h4>
-        <p className="text-xs text-[var(--text-secondary)]">{desc}</p>
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-      aria-label={label}
-        onClick={() => onChange(!checked)}
-        className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-          checked ? 'bg-[var(--color-orange)]' : 'bg-[var(--bg-elevated)]'
-        }`}
-      >
-        <div
-          className={`bg-white w-4 h-4 rounded-full transform transition-transform ${
-            checked ? 'translate-x-6' : 'translate-x-0'
-          }`}
-        />
-      </button>
-    </div>
-  );
+  useEffect(() => {
+    if (!username) return;
+    let active = true;
+    setLoading(true);
+    setError('');
+    communityService.mine()
+      .then((items) => {
+        if (active) setCommunities([...new Map(items.map((item) => [item.name, item])).values()]);
+      })
+      .catch((cause: unknown) => {
+        if (active) setError(cause instanceof Error ? cause.message : 'Không thể tải cộng đồng của bạn.');
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [username, attempt]);
 
   return (
-    <div className="space-y-6 text-left">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
-          <Bell className="w-5 h-5 text-[var(--color-orange-ink)]" />
-          <span>Tùy chọn thông báo</span>
-        </h2>
-        <p className="text-sm text-[var(--text-secondary)]">
-          Cấu hình thông báo hiển thị trên chuông in-app hoặc gửi đến email của bạn.
-        </p>
-      </div>
+    <section className="space-y-4 text-left" aria-busy={loading}>
+      <h2 className="text-lg font-semibold">Thông báo bài mới</h2>
+      <p className="text-sm text-[var(--text-secondary)]">Chọn cộng đồng bạn muốn nhận thông báo khi có bài viết mới.</p>
 
-      {!NOTIFICATIONS_AVAILABLE && (
-        <div role="status" className="rounded-xl border border-[var(--color-orange-border)] bg-[var(--color-orange-soft)] px-4 py-3 text-sm text-[var(--text-primary)]">
-          Thay đổi được lưu trên thiết bị này; đồng bộ thông báo với máy chủ sẽ khả dụng sau.
+      {loading ? <p role="status" className="text-sm">Đang tải cộng đồng…</p> : error ? (
+        <div className="space-y-2">
+          <p role="alert" className="text-sm">{error}</p>
+          <Button variant="secondary" size="sm" onClick={() => setAttempt((value) => value + 1)}>Thử lại</Button>
         </div>
+      ) : communities.length === 0 ? (
+        <p className="text-sm">Bạn chưa tham gia cộng đồng nào. <Link to="/explore" className="underline">Khám phá cộng đồng</Link></p>
+      ) : (
+        <ul className="space-y-2">
+          {communities.map((community) => (
+            <li key={community.name} className="setting-group flex flex-wrap items-center justify-between gap-3">
+              <Link to={'/c/' + encodeURIComponent(community.name)} className="break-all text-sm font-semibold hover:underline">
+                {community.displayName || 'c/' + community.name}
+              </Link>
+              <CommunityNotificationToggle name={community.name} />
+            </li>
+          ))}
+        </ul>
       )}
-
-      {/* Section 1: In-App */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-          Thông báo trên ứng dụng (In-App)
-        </h3>
-        <div className="space-y-2.5">
-          {renderToggle(
-            'Phản hồi bình luận',
-            'Khi có người trả lời hoặc tương tác với bình luận của bạn.',
-            preferences.inAppReplies,
-            (checked) => updatePreferences({ inAppReplies: checked })
-          )}
-          {renderToggle(
-            'Lượt nhắc đến (@mention)',
-            'Khi tên tài khoản của bạn được đề cập trong bài viết hoặc comment.',
-            preferences.inAppMentions,
-            (checked) => updatePreferences({ inAppMentions: checked })
-          )}
-          {renderToggle(
-            'Hoạt động cộng đồng nổi bật',
-            'Bài viết được ghim hoặc thông báo quan trọng từ nhóm bạn đã tham gia.',
-            preferences.inAppCommunityActivity,
-            (checked) => updatePreferences({ inAppCommunityActivity: checked })
-          )}
-        </div>
-      </div>
-
-      {/* Section 2: Email */}
-      <div className="space-y-3 pt-2">
-        <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-          Thông báo qua Email
-        </h3>
-        <div className="space-y-2.5">
-          {renderToggle(
-            'Bản tin tổng hợp tuần (Weekly Digest)',
-            'Gửi email tổng hợp các bài viết kỹ thuật hay nhất trong tuần.',
-            preferences.emailDigest,
-            (checked) => updatePreferences({ emailDigest: checked })
-          )}
-          {renderToggle(
-            'Thông báo cập nhật hệ thống & bảo mật',
-            'Tin tức bảo mật quan trọng từ đội ngũ DISCUSS.',
-            preferences.emailAnnouncements,
-            (checked) => updatePreferences({ emailAnnouncements: checked })
-          )}
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
-        <button
-          type="button"
-          onClick={handleReset}
-          className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Khôi phục mặc định</span>
-        </button>
-
-        <Button
-          type="button"
-          variant="primary"
-          size="md"
-          onClick={() => {
-            try {
-              savePreferences();
-              addToast('Đã lưu tùy chọn thông báo trên thiết bị này.', 'success');
-            } catch (error: unknown) {
-              addToast(error instanceof Error ? error.message : 'Không thể lưu tùy chọn thông báo.', 'error');
-            }
-          }}
-          leftIcon={<Check className="w-4 h-4" />}
-        >
-          Lưu tùy chọn thông báo
-        </Button>
-      </div>
-    </div>
+    </section>
   );
-};
-
-export default NotificationSettingsPage;
+}

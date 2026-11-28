@@ -27,8 +27,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isLoading = false,
 }) => {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth="sm">
-      <div className="flex flex-col items-center text-center space-y-4">
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="sm" title={title} description={message} closeDisabled={isLoading}>
+      <div className="flex flex-col items-start gap-4">
         <div
           className={`w-12 h-12 rounded-full flex items-center justify-center ${
           variant === 'danger'
@@ -36,14 +36,10 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             : 'bg-[var(--color-orange-soft)] text-[var(--color-orange-ink)]'
           }`}
         >
-          <AlertTriangle className="w-6 h-6" />
+          <AlertTriangle className="w-6 h-6" aria-hidden="true" />
         </div>
-        <div className="space-y-1">
-          <h4 className="text-base font-semibold text-[var(--text-primary)]">{title}</h4>
-          <p className="text-xs text-[var(--text-secondary)]">{message}</p>
-        </div>
-        <div className="flex items-center justify-center gap-3 w-full pt-2">
-          <Button variant="secondary" size="md" onClick={onClose} className="flex-1">
+        <div className="flex w-full flex-wrap items-center justify-end gap-2 border-t border-[var(--border-color)] pt-4">
+          <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={isLoading}>
             {cancelLabel}
           </Button>
           <Button
@@ -51,7 +47,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             size="md"
             onClick={onConfirm}
             isLoading={isLoading}
-            className="flex-1"
+            type="button"
           >
             {confirmLabel}
           </Button>

@@ -1,8 +1,11 @@
 import { create } from 'zustand';
 import { Community, CommunityMember } from '../types';
 import { communityService } from '../services';
+import { useAuthStore } from './useAuthStore';
+import { isCommunityOwner } from '../utils/communityMedia';
 
 interface CommunityInput {
+  rules?: string;
   name: string;
   description: string;
   categoryId: number;
@@ -21,7 +24,7 @@ interface CommunityState {
   hydrateCommunity: (communityName: string) => Promise<void>;
   hydrateMine: () => Promise<void>;
   hydrateMembers: (communityName: string) => Promise<void>;
-  joinCommunity: (communityName: string) => Promise<void>;
+  joinCommunity: (communityName: string) => Promise<boolean>;
   leaveCommunity: (communityName: string) => Promise<void>;
   uploadAvatar: (communityName: string, file: File) => Promise<void>;
   uploadBanner: (communityName: string, file: File) => Promise<void>;
@@ -38,55 +41,97 @@ interface CommunityState {
   transferOwnership: (communityName: string, username: string) => Promise<void>;
 }
 
+// List/membership DTOs omit bannerUrl. A preview refresh must not erase the
+// banner obtained from the detail endpoint (or after a successful upload).
+function mergeCommunityPreview(preview: Community, existing?: Community): Community {
+  return {
+    ...preview,
+    joinRequestPending: preview.joinRequestPending ?? existing?.joinRequestPending,
+    rules: existing?.rules || preview.rules,
+    bannerUrl: preview.bannerUrl || existing?.bannerUrl || '',
+    // Preview DTOs omit owner information; keep the owner from the detail response.
+    ownerId: preview.ownerId || existing?.ownerId || '',
+    ownerUsername: preview.ownerUsername || existing?.ownerUsername || '',
+  };
+}
+
+// A fetch started before an upload must not replace the newly saved image.
+function preserveNewerMedia(incoming: Community, current?: Community, atRequestStart?: Community): Community {
+  return {
+    ...incoming,
+    rules: current && current.rules !== atRequestStart?.rules ? current.rules : incoming.rules,
+    avatarUrl: current && current.avatarUrl !== atRequestStart?.avatarUrl ? current.avatarUrl : incoming.avatarUrl,
+    bannerUrl: current && current.bannerUrl !== atRequestStart?.bannerUrl ? current.bannerUrl : incoming.bannerUrl,
+  };
+}
+
+// Responses requested before a successful membership change must not restore old permissions.
+let membershipRevision = 0;
+
 export const useCommunityStore = create<CommunityState>((set, get) => ({
   communities: [],
   myCommunities: [],
   members: {},
 
   hydrate: async () => {
+    const revision = membershipRevision;
+    const previous = get().communities;
     const communities = await communityService.list();
+    if (revision !== membershipRevision) return;
     set((state) => ({
       communities: communities.map((community) => {
         const existing = state.communities.find((item) => item.id === community.id);
+        const preview = preserveNewerMedia(mergeCommunityPreview(community, existing), existing, previous.find((item) => item.id === community.id));
         return existing && existing.currentUserRole !== 'NONE'
-          ? { ...community, currentUserRole: existing.currentUserRole }
-          : community;
+          ? { ...preview, currentUserRole: existing.currentUserRole }
+          : preview;
       }),
     }));
   },
 
   hydrateByCategory: async (slug) => {
+    const revision = membershipRevision;
+    const previous = get().communities;
     const communities = await communityService.listByCategory(slug);
+    if (revision !== membershipRevision) return;
     set((state) => ({
       communities: communities.map((community) => {
         const existing = state.communities.find((item) => item.id === community.id);
+        const preview = preserveNewerMedia(mergeCommunityPreview(community, existing), existing, previous.find((item) => item.id === community.id));
         return existing && existing.currentUserRole !== 'NONE'
-          ? { ...community, currentUserRole: existing.currentUserRole }
-          : community;
+          ? { ...preview, currentUserRole: existing.currentUserRole }
+          : preview;
       }),
     }));
   },
 
   hydrateSearch: async (query) => {
+    const revision = membershipRevision;
+    const previous = get().communities;
     const communities = await communityService.search(query);
+    if (revision !== membershipRevision) return;
     set((state) => ({
       communities: communities.map((community) => {
         const existing = state.communities.find((item) => item.id === community.id);
+        const preview = preserveNewerMedia(mergeCommunityPreview(community, existing), existing, previous.find((item) => item.id === community.id));
         return existing && existing.currentUserRole !== 'NONE'
-          ? { ...community, currentUserRole: existing.currentUserRole }
-          : community;
+          ? { ...preview, currentUserRole: existing.currentUserRole }
+          : preview;
       }),
     }));
   },
 
   hydrateCommunity: async (communityName) => {
-    const community = await communityService.getByName(communityName);
-    if (!community) return;
+    const revision = membershipRevision;
+    const previous = get().communities.find((item) => item.name === communityName);
+    const response = await communityService.getByName(communityName);
+    if (revision !== membershipRevision) return;
+    if (!response) return;
     set((state) => {
       const existing = state.communities.find((item) => item.name === communityName);
-      const hydrated = existing && existing.currentUserRole !== 'NONE'
-        ? { ...community, currentUserRole: existing.currentUserRole }
-        : community;
+      const hydrated = preserveNewerMedia(response, existing, previous);
+      const { user, isAuthenticated } = useAuthStore.getState();
+      if (isCommunityOwner(response, user, isAuthenticated)) hydrated.currentUserRole = 'OWNER';
       return {
         communities: [hydrated, ...state.communities.filter((item) => item.name !== communityName)],
       };
@@ -94,12 +139,18 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   },
 
   hydrateMine: async () => {
+    const revision = membershipRevision;
+    const previous = [...get().communities, ...get().myCommunities];
     const mine = await communityService.mine();
+    if (revision !== membershipRevision) return;
     set((state) => {
       // The personal directory stays independent of Explore search/category results.
       const mineById = new Map<string, Community>();
       for (const community of mine) {
-        if (mineById.get(community.id)?.currentUserRole !== 'OWNER') mineById.set(community.id, community);
+        const existing = state.communities.find((item) => item.id === community.id)
+          ?? state.myCommunities.find((item) => item.id === community.id);
+        if (mineById.get(community.id)?.currentUserRole !== 'OWNER') mineById.set(community.id,
+          preserveNewerMedia(mergeCommunityPreview(community, existing), existing, previous.find((item) => item.id === community.id)));
       }
       const others = state.communities
         .filter((community) => !mineById.has(community.id))
@@ -109,61 +160,72 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   },
 
   hydrateMembers: async (communityName) => {
+    const revision = membershipRevision;
     const members = await communityService.members(communityName);
+    if (revision !== membershipRevision) return;
     set((state) => ({ members: { ...state.members, [communityName]: members } }));
   },
 
   joinCommunity: async (communityName) => {
-    await communityService.join(communityName);
+    const membership = await communityService.join(communityName);
+    const user = useAuthStore.getState().user;
+    membershipRevision += 1;
     set((state) => ({
       communities: state.communities.map((community) => community.name === communityName
         ? {
             ...community,
-            currentUserRole: 'MEMBER',
-            memberCount: community.memberCount + 1,
+            currentUserRole: membership.currentUserRole ?? 'NONE',
+            joinRequestPending: membership.joinRequestPending,
+            ...(membership.currentUserRole === 'OWNER' && user
+              ? { ownerId: user.id, ownerUsername: user.username } : {}),
+            memberCount: community.memberCount + (membership.joinRequestPending ? 0 : 1),
           }
         : community),
     }));
-    void Promise.all([get().hydrate(), get().hydrateMine()]).catch(() => undefined);
+    void Promise.all([get().hydrateCommunity(communityName), get().hydrateMine()]).catch(() => undefined);
+    return membership.joinRequestPending;
   },
 
   leaveCommunity: async (communityName) => {
     await communityService.leave(communityName);
+    membershipRevision += 1;
     set((state) => ({
+      members: { ...state.members, [communityName]: [] },
       myCommunities: state.myCommunities.filter((community) => community.name !== communityName),
       communities: state.communities.map((community) => community.name === communityName
         ? {
             ...community,
             currentUserRole: 'NONE',
+            ownerId: '',
+            ownerUsername: '',
             memberCount: Math.max(0, community.memberCount - 1),
           }
         : community),
     }));
-    void Promise.all([get().hydrate(), get().hydrateMine()]).catch(() => undefined);
+    void Promise.all([get().hydrateCommunity(communityName), get().hydrateMine()]).catch(() => undefined);
   },
 
   uploadAvatar: async (communityName, file) => {
     const updated = await communityService.uploadAvatar(communityName, file);
+    const applyAvatar = (item: Community) => item.name === communityName ? { ...item, avatarUrl: updated.avatarUrl } : item;
     set((state) => ({
-      communities: state.communities.map((item) => item.name === communityName ? {
-        ...item,
-        avatarUrl: updated.avatarUrl,
-      } : item),
+      communities: state.communities.map(applyAvatar),
+      myCommunities: state.myCommunities.map(applyAvatar),
     }));
   },
 
   uploadBanner: async (communityName, file) => {
     const updated = await communityService.uploadBanner(communityName, file);
+    const applyBanner = (item: Community) => item.name === communityName ? { ...item, bannerUrl: updated.bannerUrl } : item;
     set((state) => ({
-      communities: state.communities.map((item) => item.name === communityName ? {
-        ...item,
-        bannerUrl: updated.bannerUrl,
-      } : item),
+      communities: state.communities.map(applyBanner),
+      myCommunities: state.myCommunities.map(applyBanner),
     }));
   },
 
   createCommunity: async (data) => {
     const created = await communityService.create({
+      rules: data.rules,
       name: data.name,
       description: data.description,
       categoryId: data.categoryId,
@@ -199,7 +261,23 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
 
   transferOwnership: async (communityName, username) => {
     await communityService.transferOwnership(communityName, username);
-    await Promise.all([get().hydrateMembers(communityName), get().hydrateCommunity(communityName)]);
+    membershipRevision += 1;
+    const newOwner = get().members[communityName]?.find((member) => member.username === username);
+    set((state) => ({
+      communities: state.communities.map((community) => community.name === communityName
+        ? { ...community, currentUserRole: 'MODERATOR' as const, ownerId: newOwner?.id || '', ownerUsername: username } : community),
+      myCommunities: state.myCommunities.map((community) => community.name === communityName
+        ? { ...community, currentUserRole: 'MODERATOR' as const, ownerId: newOwner?.id || '', ownerUsername: username } : community),
+      members: {
+        ...state.members,
+        [communityName]: (state.members[communityName] || []).map((member) => member.username === username
+          ? { ...member, role: 'OWNER' as const }
+          : member.role === 'OWNER' ? { ...member, role: 'MODERATOR' as const } : member),
+      },
+    }));
+    // A refresh failure must not report an already completed transfer as failed.
+    void Promise.all([get().hydrateMembers(communityName), get().hydrateCommunity(communityName), get().hydrateMine()])
+      .catch(() => undefined);
   },
 
   banCommunity: async () => {

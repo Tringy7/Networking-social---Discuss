@@ -1,50 +1,70 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { usePostStore } from '../../store/usePostStore';
 import { useToastStore } from '../../store/useToastStore';
 import { userService } from '../../services';
 import { User } from '../../types';
-import EditorialTabs from '../../components/ui/EditorialTabs';
 import PostCard from '../../components/post/PostCardView';
 import Avatar from '../../components/ui/Avatar';
+import EntityBanner from '../../components/ui/EntityBanner';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
-import ReportModal from '../../components/post/ReportModal';
-import Modal from '../../components/ui/Modal';
+import EntityImageActions from '../../components/ui/EntityImageActions';
 import ImageCropEditor from '../../components/profile/ImageCropEditor';
 import {
   Calendar,
   MapPin,
   Cake,
-  Settings,
   Edit3,
   Share2,
-  Flag,
   FileText,
   MessageSquare,
   Award,
-  Camera,
-  Eye,
+  BadgeCheck,
+  Mail,
+  UserRound,
 } from 'lucide-react';
+
+const genderLabels: Record<string, string> = {
+  MALE: 'Nam',
+  FEMALE: 'Nữ',
+  OTHER: 'Khác',
+};
+
+const reputationRankLabels = {
+  MEMBER: 'Thành viên',
+  CONTRIBUTOR: 'Người đóng góp',
+  TRUSTED: 'Uy tín',
+  HIGHLY_TRUSTED: 'Uy tín cao',
+};
 
 export const UserProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const { user: currentUser, authStatus, uploadAvatar, uploadBanner } = useAuthStore();
-  const { posts } = usePostStore();
+  const { posts, loadUserPosts } = usePostStore();
   const { addToast } = useToastStore();
 
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
-  const [isReportOpen, setIsReportOpen] = useState(false);
   const [isAvatarEditorOpen, setIsAvatarEditorOpen] = useState(false);
-  const [imageActionsTarget, setImageActionsTarget] = useState<'avatar' | 'banner' | null>(null);
-  const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false);
-  const [previewKind, setPreviewKind] = useState<'avatar' | 'banner'>('avatar');
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [isBannerEditorOpen, setIsBannerEditorOpen] = useState(false);
   const [isSavingBanner, setIsSavingBanner] = useState(false);
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+
+  const [postPage, setPostPage] = useState(0);
+  const [hasMorePosts, setHasMorePosts] = useState(false);
+  const [postsLoading, setPostsLoading] = useState(false);
+  useEffect(() => {
+    if (!username || !currentUser) return;
+    let active = true;
+    setPostPage(0); setPostsLoading(true);
+    loadUserPosts(username).then((more) => { if (active) setHasMorePosts(more); })
+      .catch((error: unknown) => { if (active) addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); })
+      .finally(() => { if (active) setPostsLoading(false); });
+    return () => { active = false; };
+  }, [username, currentUser?.username, loadUserPosts, addToast]);
 
   const isMe = currentUser?.username === username;
 
@@ -64,7 +84,7 @@ export const UserProfilePage: React.FC = () => {
     // the page fresh after profile edits in another tab/session.
     const request = isMe
       ? userService.getMe().then((response): User => ({
-          id: response.id || currentUser?.id || response.username,
+          id: String(response.id ?? currentUser?.id ?? response.username),
           username: response.username,
           displayName: response.profile?.displayName || response.username,
           email: response.email,
@@ -77,12 +97,12 @@ export const UserProfilePage: React.FC = () => {
           privacy: {
             showDateOfBirth: response.privacySettings?.showDateOfBirth ?? false,
             showLocation: response.privacySettings?.showLocation ?? false,
-            showPostsOnProfile: response.privacySettings?.showPostsOnProfile ?? true,
           },
           role: response.role,
           status: response.status,
-          createdAt: response.createdAt || new Date().toISOString(),
-          karma: currentUser?.karma ?? 0,
+          createdAt: response.createdAt || '',
+          karma: response.reputation?.score ?? 0,
+          reputation: response.reputation,
         }))
       : userService.getPublicProfile(username);
     request.then((profile) => {
@@ -110,10 +130,20 @@ export const UserProfilePage: React.FC = () => {
   }
 
   const userPosts = posts.filter((p) => p.author.username === profileUser.username);
+  const reputation = profileUser.reputation;
   const joinedDate = new Date(profileUser.createdAt);
   const joinedLabel = Number.isNaN(joinedDate.getTime())
     ? 'Chưa có thông tin'
-    : joinedDate.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' });
+    : joinedDate.toLocaleDateString('vi-VN');
+  const genderLabel = genderLabels[profileUser.gender?.toUpperCase() ?? ''];
+  const birthDate = profileUser.dateOfBirth?.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$3/$2/$1');
+  const profileFacts = [
+    { label: 'Tham gia từ', value: joinedLabel, icon: Calendar },
+    { label: 'Giới tính', value: genderLabel, icon: UserRound },
+    { label: 'Địa điểm', value: (isMe || profileUser.privacy.showLocation) && profileUser.location, icon: MapPin },
+    { label: 'Ngày sinh', value: (isMe || profileUser.privacy.showDateOfBirth) && birthDate, icon: Cake },
+    { label: 'Email · Chỉ mình bạn', value: isMe && profileUser.email, icon: Mail },
+  ];
 
   const handleShareProfile = () => {
     navigator.clipboard?.writeText(window.location.href);
@@ -122,100 +152,38 @@ export const UserProfilePage: React.FC = () => {
 
   return (
     <div className="profile-page w-full pb-8 text-left">
-      <section className="profile-editorial">
-        <div className={`profile-cover relative w-full bg-[var(--bg-elevated)] ${profileUser.bannerUrl ? '' : 'has-no-cover'}`}>
-          {isMe && (
-            <button
-              type="button"
-              onClick={() => setImageActionsTarget((target) => target === 'banner' ? null : 'banner')}
-              className="group absolute inset-0 z-10 overflow-hidden bg-[var(--bg-surface)] text-left"
-              aria-label="Chỉnh sửa ảnh bìa"
-              title="Chỉnh sửa ảnh bìa"
-            >
-              {profileUser.bannerUrl ? (
-                <img
-                  src={profileUser.bannerUrl}
-                  alt={`${profileUser.displayName} - ảnh bìa`}
-                  className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.01]"
-                />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center bg-[var(--bg-elevated)] text-sm text-[var(--text-muted)]">
-                  Thêm ảnh bìa
-                </span>
-              )}
-              <span className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10 group-focus-visible:bg-black/10" />
-            </button>
-          )}
-          {!isMe && (
-            <button type="button" onClick={() => setImageActionsTarget((target) => target === 'banner' ? null : 'banner')} aria-label="Tùy chọn ảnh bìa"
-              className="absolute inset-0 overflow-hidden bg-[var(--bg-surface)] text-left">
-              {profileUser.bannerUrl && (
-                <img
-                  src={profileUser.bannerUrl}
-                  alt={`${profileUser.displayName} - ảnh bìa`}
-                  className="h-full w-full object-cover"
-                />
-              )}
-            </button>
-          )}
-          {imageActionsTarget === 'banner' && (
-            <div data-ui="popover" className="absolute right-2 top-2 z-50 min-w-44 overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-1.5 shadow-xl">
-              {profileUser.bannerUrl && (
-                <button type="button" onClick={() => { setPreviewKind('banner'); setImageActionsTarget(null); setIsAvatarPreviewOpen(true); }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
-                  <Eye className="h-4 w-4" /> Xem ảnh bìa
-                </button>
-              )}
-              {isMe && (
-                <button type="button" onClick={() => { setImageActionsTarget(null); setIsBannerEditorOpen(true); }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
-                  <Camera className="h-4 w-4" /> Chỉnh ảnh bìa
-                </button>
-              )}
-            </div>
-          )}
-          <div className="profile-avatar-position absolute z-30">
-            <button
-              type="button"
-              onClick={() => setImageActionsTarget((target) => target === 'avatar' ? null : 'avatar')}
-              className="group relative h-full w-full rounded-full border-4 border-[var(--bg-surface)] bg-[var(--bg-surface)]"
-              aria-label="Tùy chọn ảnh đại diện"
-              aria-expanded={imageActionsTarget === 'avatar'}
-            >
-              <Avatar src={profileUser.avatarUrl} alt={profileUser.displayName} size="2xl" className="h-full w-full" />
-              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-                {isMe ? <Camera className="h-6 w-6" /> : <Eye className="h-6 w-6" />}
-              </span>
-            </button>
-            {imageActionsTarget === 'avatar' && (
-              <div data-ui="popover" className="absolute left-0 top-full z-50 mt-1 min-w-44 overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface)] p-1.5 shadow-xl sm:mt-1">
-                {profileUser.avatarUrl && (
-                  <button type="button" onClick={() => { setPreviewKind('avatar'); setImageActionsTarget(null); setIsAvatarPreviewOpen(true); }}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
-                    <Eye className="h-4 w-4" /> Xem ảnh đại diện
-                  </button>
-                )}
-                {isMe && imageActionsTarget === 'avatar' && (
-                  <button type="button" onClick={() => { setImageActionsTarget(null); setIsAvatarEditorOpen(true); }}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
-                    <Camera className="h-4 w-4" /> Chỉnh ảnh đại diện
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+      <section className="profile-editorial" aria-label="Hồ sơ người dùng">
+        <header className="profile-masthead">
+        <EntityBanner src={profileUser.bannerUrl} alt={`${profileUser.displayName} - ảnh bìa`} variant="user" className="profile-cover">
+          <EntityImageActions key={`${profileUser.username}-banner`} src={profileUser.bannerUrl} kind="banner"
+            name={profileUser.displayName} href={`/u/${profileUser.username}`} handle={`u/${profileUser.username}`} avatarUrl={profileUser.avatarUrl}
+            onEdit={isMe ? () => setIsBannerEditorOpen(true) : undefined} />
+        </EntityBanner>
 
         <div className="profile-identity">
+          <div className="profile-avatar-position">
+            <EntityImageActions key={`${profileUser.username}-avatar`} src={profileUser.avatarUrl} kind="avatar"
+              name={profileUser.displayName} href={`/u/${profileUser.username}`} handle={`u/${profileUser.username}`} avatarUrl={profileUser.avatarUrl}
+              onEdit={isMe ? () => setIsAvatarEditorOpen(true) : undefined}>
+              <Avatar src={profileUser.avatarUrl} alt={profileUser.displayName} size="2xl" className="h-full w-full border-4 border-[var(--bg-surface)]" />
+            </EntityImageActions>
+          </div>
           <div className="profile-name-row">
-            <span className="profile-avatar-spacer" aria-hidden="true" />
-            <div className="profile-name-wrap flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
-              <h1 className="editorial-title profile-name text-[var(--text-primary)]">
-                {profileUser.displayName}
-              </h1>
-              {profileUser.role === 'OWNER' && <Badge role="OWNER" />}
-              {profileUser.role === 'MODERATOR' && <Badge role="MODERATOR" />}
-              {profileUser.role === 'ADMIN' && <Badge role="ADMIN" />}
+            <div className="profile-name-wrap">
+              <div className="profile-display-name">
+                <h1 className="editorial-title profile-name text-[var(--text-primary)]">
+                  {profileUser.displayName}
+                </h1>
+                {reputation?.hasReputationBadge && (
+                  <span title="Uy tín cộng đồng" role="img" aria-label="Uy tín cộng đồng" className="shrink-0 text-[var(--color-info)]">
+                    <BadgeCheck size={22} aria-hidden="true" />
+                  </span>
+                )}
+                {profileUser.role === 'OWNER' && <Badge role="OWNER" />}
+                {profileUser.role === 'MODERATOR' && <Badge role="MODERATOR" />}
+                {profileUser.role === 'ADMIN' && <Badge role="ADMIN" />}
+              </div>
+              <p className="profile-handle">@{profileUser.username}</p>
             </div>
             <div className="profile-actions flex shrink-0 items-center gap-1.5 sm:gap-2">
               {isMe ? (
@@ -226,21 +194,17 @@ export const UserProfilePage: React.FC = () => {
                 </Link>
               ) : (
                 <>
-                  <Link to="/messages">
+                  {currentUser ? (
+                    <Button onClick={() => useChatStore.getState().openWindow(username)} variant="primary" size="sm" leftIcon={<MessageSquare className="w-4 h-4" />}>
+                      Nhắn tin
+                    </Button>
+                  ) : (
+                  <Link to={`/messages?to=${encodeURIComponent(username ?? '')}`}>
                     <Button variant="primary" size="sm" leftIcon={<MessageSquare className="w-4 h-4" />}>
                       Nhắn tin
                     </Button>
                   </Link>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsReportOpen(true)}
-                    className="text-[var(--color-danger)]"
-                    title="Báo cáo tài khoản"
-                    aria-label="Báo cáo tài khoản"
-                  >
-                    <Flag className="w-4 h-4" />
-                  </Button>
+                  )}
                 </>
               )}
 
@@ -254,81 +218,66 @@ export const UserProfilePage: React.FC = () => {
               </button>
             </div>
           </div>
-          <p className="profile-handle">@{profileUser.username}</p>
 
         </div>
+        </header>
 
       <div className="profile-columns">
-        <section className="profile-activity min-w-0">
-        <EditorialTabs label="Hoạt động của người dùng" options={[{ id: 'posts', label: 'Bài viết', icon: <FileText /> }, { id: 'comments', label: 'Bình luận', icon: <MessageSquare /> }]} value={activeTab} onChange={setActiveTab} />
-
-        {/* Tab content */}
-        {activeTab === 'posts' && (
+        <section className="profile-activity min-w-0" aria-labelledby="profile-posts-heading">
+          <h2 id="profile-posts-heading" className="mb-3 font-semibold">Bài viết</h2>
           <div className="discussion-list">
-            {profileUser.privacy.showPostsOnProfile ? (
-              userPosts.length > 0 ? (
-                userPosts.map((p) => <PostCard key={p.id} post={p} />)
-              ) : (
-                <div className="py-12 text-center text-sm text-[var(--text-secondary)]">
-                  {profileUser.displayName} chưa đăng bài viết nào.
-                </div>
-              )
+            {userPosts.length > 0 ? (
+              userPosts.map((p) => <PostCard key={p.id} post={p} />)
+            ) : postsLoading ? (
+              <p className="profile-empty" role="status">Đang tải bài viết…</p>
             ) : (
-              <div className="py-12 text-center text-sm text-[var(--text-secondary)]">
-                Bài viết của người dùng này không được công khai.
+              <div className="profile-empty" role="status">
+                <FileText size={24} aria-hidden="true" />
+                <h2>Chưa có bài viết</h2>
+                <p>Bài viết chia sẻ trong cộng đồng sẽ xuất hiện ở đây.</p>
+                {isMe && <Link to="/explore" className="profile-empty-action">Khám phá cộng đồng</Link>}
               </div>
             )}
           </div>
-        )}
 
-        {activeTab === 'comments' && (
-          <div className="space-y-2 py-12 text-center text-sm text-[var(--text-secondary)]">
-            <MessageSquare className="mx-auto h-8 w-8 text-[var(--color-orange)] opacity-70" />
-            <p>Chưa có dữ liệu bình luận để hiển thị.</p>
-          </div>
-        )}
+          {hasMorePosts && <Button disabled={postsLoading} variant="secondary" onClick={async () => {
+            setPostsLoading(true);
+            try { setHasMorePosts(await loadUserPosts(profileUser.username, postPage + 1)); setPostPage(postPage + 1); }
+            catch (error) { addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); }
+            finally { setPostsLoading(false); }
+          }}>Xem thêm bài viết</Button>}
         </section>
 
-        <aside className="profile-about">
-          <section className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-[var(--text-primary)]">Giới thiệu</h2>
-              {isMe && (
-                <Link
-                  to="/settings/profile"
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border-color)] text-[var(--text-secondary)] transition-colors hover:border-[var(--color-orange)] hover:text-[var(--color-orange)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-orange)]"
-                  title="Cài đặt hồ sơ"
-                  aria-label="Cài đặt hồ sơ"
-                >
-                  <Settings className="h-4 w-4" />
-                </Link>
-              )}
-            </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-[var(--text-secondary)]">
-              {profileUser.bio || 'Chưa có phần giới thiệu.'}
-            </p>
-            <div className="mt-4 space-y-3 text-sm text-[var(--text-secondary)]">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
-                <span>Tham gia {joinedLabel}</span>
+        <aside className="profile-about" aria-label="Giới thiệu người dùng">
+          <section className="profile-about-content">
+            <h2 className="font-semibold text-[var(--text-primary)]">Giới thiệu</h2>
+            {profileUser.bio.trim() ? (
+              <p className="entity-about-description whitespace-pre-wrap break-words">{profileUser.bio}</p>
+            ) : isMe && (
+              <Link to="/settings/profile" className="text-sm text-[var(--text-secondary)] underline underline-offset-4 hover:text-[var(--text-primary)]">
+                Thêm tiểu sử
+              </Link>
+            )}
+            {reputation && (
+              <div className="profile-reputation">
+                <Award className="h-5 w-5 shrink-0 text-[var(--color-orange-ink)]" aria-hidden="true" />
+                <div>
+                  <strong>{reputation.score.toLocaleString('vi-VN')} điểm uy tín</strong>
+                  <span>{reputationRankLabels[reputation.rank]}</span>
+                </div>
               </div>
-              {profileUser.privacy.showLocation && profileUser.location && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
-                  <span>{profileUser.location}</span>
+            )}
+            <dl className="profile-facts">
+              {profileFacts.map(({ label, value, icon: Icon }) => value && (
+                <div key={label} className="flex items-start gap-2.5">
+                  <Icon className="h-4 w-4 shrink-0 text-[var(--text-muted)]" aria-hidden="true" />
+                  <div className="min-w-0">
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </div>
                 </div>
-              )}
-              {profileUser.privacy.showDateOfBirth && profileUser.dateOfBirth && (
-                <div className="flex items-center gap-2">
-                  <Cake className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
-                  <span>Sinh nhật {profileUser.dateOfBirth}</span>
-                </div>
-              )}
-            </div>
-            <div className="mt-4 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-              <Award className="h-4 w-4 text-[var(--color-orange)]" />
-              <span>{userPosts.length} bài viết</span>
-            </div>
+              ))}
+            </dl>
           </section>
         </aside>
       </div>
@@ -336,34 +285,12 @@ export const UserProfilePage: React.FC = () => {
 
       <footer className="site-footer flex flex-col gap-2 pt-5 text-xs text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
         <span>© 2026 DISCUSS Community Network</span>
-        <nav className="flex flex-wrap gap-x-4 gap-y-1">
+        <nav aria-label="Liên kết chân trang" className="flex flex-wrap gap-x-4 gap-y-1">
           <Link to="/explore" className="transition-colors hover:text-[var(--text-primary)]">Cộng đồng</Link>
           <Link to="/settings/privacy" className="transition-colors hover:text-[var(--text-primary)]">Quyền riêng tư</Link>
           <Link to="/settings" className="transition-colors hover:text-[var(--text-primary)]">Cài đặt</Link>
         </nav>
       </footer>
-
-      <Modal
-        isOpen={isAvatarPreviewOpen}
-        onClose={() => setIsAvatarPreviewOpen(false)}
-        title={`${previewKind === 'avatar' ? 'Ảnh đại diện' : 'Ảnh bìa'} của ${profileUser.displayName}`}
-        maxWidth="4xl"
-      >
-        <div className="mx-auto max-w-4xl overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)]">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <Avatar src={profileUser.avatarUrl} alt={profileUser.displayName} size="sm" />
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-[var(--text-primary)]">{profileUser.displayName}</div>
-              <div className="text-xs text-[var(--text-muted)]">{previewKind === 'avatar' ? 'Ảnh đại diện' : 'Ảnh bìa'}</div>
-            </div>
-          </div>
-          <div className="flex min-h-48 items-center justify-center p-2 sm:p-4">
-            <img src={previewKind === 'avatar' ? profileUser.avatarUrl : profileUser.bannerUrl}
-              alt={`${previewKind === 'avatar' ? 'Ảnh đại diện' : 'Ảnh bìa'} của ${profileUser.displayName}`}
-              className="max-h-[70vh] max-w-full rounded-lg object-contain" />
-          </div>
-        </div>
-      </Modal>
 
       <ImageCropEditor
         kind="avatar"
@@ -400,15 +327,6 @@ export const UserProfilePage: React.FC = () => {
             throw error;
           } finally { setIsSavingBanner(false); }
         }}
-      />
-      {/* Report Modal */}
-      <ReportModal
-        isOpen={isReportOpen}
-        onClose={() => setIsReportOpen(false)}
-        contentType="USER"
-        contentId={profileUser.id}
-        contentTitle={`Tài khoản @${profileUser.username}`}
-        targetUsername={profileUser.username}
       />
     </div>
   );

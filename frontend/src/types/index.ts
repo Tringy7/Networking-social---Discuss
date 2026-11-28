@@ -5,7 +5,6 @@ export type AccountStatus = 'ACTIVE' | 'SUSPENDED' | 'BANNED' | 'PENDING' | 'LOC
 export interface PrivacySettings {
   showDateOfBirth: boolean;
   showLocation: boolean;
-  showPostsOnProfile: boolean;
 }
 
 export interface AppearanceSettings {
@@ -24,6 +23,7 @@ export interface User {
   username: string;
   displayName: string;
   email: string;
+  provider?: 'LOCAL' | 'GOOGLE';
   avatarUrl: string;
   bannerUrl: string;
   bio: string;
@@ -35,6 +35,11 @@ export interface User {
   status: AccountStatus;
   createdAt: string;
   karma: number;
+  reputation?: {
+    score: number;
+    rank: 'MEMBER' | 'CONTRIBUTOR' | 'TRUSTED' | 'HIGHLY_TRUSTED';
+    hasReputationBadge: boolean;
+  };
 }
 
 export type CommunityCategory = 
@@ -68,12 +73,39 @@ export interface Community {
   status: 'ACTIVE' | 'RESTRICTED' | 'BANNED';
   memberCount: number;
   currentUserRole: CommunityMemberRole;
+  joinRequestPending?: boolean;
   ownerId: string;
   ownerUsername: string;
   createdAt: string;
-  rules: CommunityRule[];
+  rules: string;
 }
 
+export type PostType = 'TEXT' | 'LINK';
+export type PostMediaType = 'IMAGE' | 'VIDEO';
+export interface PostMediaInput {
+  caption?: string | null;
+  type: PostMediaType;
+  objectKey: string;
+  fileIndex?: number;
+}
+export interface PostImage {
+  objectKey: string | null;
+  url: string;
+  position: number;
+  inlineImage: boolean;
+}
+export interface PostMedia extends PostImage {
+  caption?: string | null;
+  type: PostMediaType;
+}
+export interface PostInput {
+  communityName: string;
+  title: string;
+  type: 'TEXT';
+  content: string;
+  media: PostMediaInput[];
+  files?: File[];
+}
 export interface Post {
   id: string;
   communityName: string;
@@ -88,22 +120,35 @@ export interface Post {
   };
   title: string;
   content: string;
-  tags?: string[];
+  type?: PostType;
+  media?: PostMedia[];
+  linkUrl?: string | null;
+  updatedAt?: string;
   mediaUrl?: string;
   mediaType?: 'image' | 'code' | 'link';
   codeSnippet?: {
     language: string;
     code: string;
   };
-  heartCount: number;
+  voteScore: number;
   commentCount: number;
-  isHearted: boolean;
+  userVote: 'UP' | 'DOWN' | null;
   isSaved: boolean;
   createdAt: string;
   pinned?: boolean;
 }
 
+export interface CommentAttachment {
+  expiresAt?: string;
+  url: string;
+  id: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+}
 export interface Comment {
+  attachments?: CommentAttachment[];
+  status?: 'VISIBLE' | 'HIDDEN' | 'DELETED';
   id: string;
   postId: string;
   author: {
@@ -116,14 +161,34 @@ export interface Comment {
   };
   content: string;
   parentCommentId: string | null;
-  heartCount: number;
-  isHearted?: boolean;
+  voteScore: number;
+  userVote: 'UP' | 'DOWN' | null;
   replies?: Comment[];
   createdAt: string;
 }
 
-export type ReportContentType = 'POST' | 'COMMENT' | 'COMMUNITY' | 'USER';
+export type ReportContentType = ReportTargetType | 'USER';
+export type ReportTargetType = 'POST' | 'COMMENT' | 'COMMUNITY' | 'MESSAGE';
+export type ReportReason = 'SPAM' | 'HARASSMENT' | 'HATE_SPEECH' | 'INAPPROPRIATE_CONTENT' | 'MISINFORMATION' | 'OTHER';
+export interface CreateReportRequest {
+  targetType: ReportTargetType;
+  targetId: number;
+  reason: ReportReason;
+  description?: string;
+}
 export type ReportStatus = 'PENDING' | 'RESOLVED' | 'REJECTED';
+
+export interface MyReport {
+  id: number;
+  targetType: ReportTargetType;
+  targetId: number;
+  communityName: string;
+  reason: ReportReason;
+  description: string | null;
+  status: ReportStatus;
+  createdAt: string;
+  resolvedAt: string | null;
+}
 
 export interface Report {
   id: string;
@@ -135,6 +200,7 @@ export interface Report {
   reporterUsername: string;
   targetUsername?: string;
   reason: string;
+  description?: string;
   status: ReportStatus;
   resolutionNote?: string;
   createdAt: string;
@@ -150,7 +216,11 @@ export interface CommunityMember {
   status: 'ACTIVE' | 'MUTED' | 'BANNED';
 }
 
-export type NotificationType = 'REPLY' | 'MENTION' | 'INVITE' | 'MOD_ACTION' | 'SYSTEM';
+export type NotificationType = 'COMMUNITY_POST_CREATED' | 'POST_COMMENTED' | 'COMMENT_REPLIED'
+  | 'REPORT_SUBMITTED' | 'REPORT_REVIEWED' | 'REPORT_WARNING'
+  | 'COMMUNITY_JOIN_CONFIRMED' | 'COMMUNITY_MEMBER_JOINED'
+  | 'COMMUNITY_JOIN_REQUEST_SENT' | 'COMMUNITY_JOIN_REQUEST_RECEIVED'
+  | 'COMMUNITY_JOIN_APPROVED' | 'COMMUNITY_JOIN_REJECTED';
 
 export interface NotificationItem {
   id: string;
@@ -164,28 +234,4 @@ export interface NotificationItem {
   targetUrl: string;
   isRead: boolean;
   createdAt: string;
-}
-
-export interface ChatMessage {
-  id: string;
-  senderId: string;
-  senderUsername: string;
-  text: string;
-  timestamp: string;
-  isMe: boolean;
-}
-
-export interface Conversation {
-  id: string;
-  participant: {
-    id: string;
-    username: string;
-    displayName: string;
-    avatarUrl: string;
-    status: 'online' | 'offline';
-  };
-  lastMessage: string;
-  lastMessageTime: string;
-  unreadCount: number;
-  messages: ChatMessage[];
 }

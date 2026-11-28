@@ -1,7 +1,5 @@
 package com.discuss.discuss.entity;
 
-import com.discuss.discuss.enums.CommunityStatus;
-import com.discuss.discuss.enums.CommunityVisibility;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -30,6 +28,10 @@ public class CommunityInfo {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(columnDefinition = "TEXT")
+    @Builder.Default
+    private String rules = "";
 
     @Column(length = 500)
     private String avatar;

@@ -50,6 +50,11 @@ public enum UserErrorCode {
     // 403 - Forbidden
     // =========================
 
+    ROLE_REQUIRED(
+            HttpStatus.FORBIDDEN,
+            "You do not have the required role"
+    ),
+
     ACCOUNT_LOCKED(
             HttpStatus.FORBIDDEN,
             "This account has been locked"

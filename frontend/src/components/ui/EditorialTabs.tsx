@@ -4,9 +4,9 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 
 interface Props<T extends string> {
   label: string;
-  options: { id: T; label: string; icon?: React.ReactNode }[];
+  options: { id: NoInfer<T>; label: string; icon?: React.ReactNode }[];
   value: T;
-  onChange: (value: T) => void;
+  onChange: (value: NoInfer<T>) => void;
   trailing?: React.ReactNode;
 }
 

@@ -1,11 +1,13 @@
+import { ADMIN_AVAILABLE } from '../../services';
 import React from 'react';
 import { NavLink, Link, useLocation, matchPath } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
+import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import Avatar from '../ui/Avatar';
-import { Home, Compass, TrendingUp, Bookmark, Bell, MessageSquare, Users, Settings, ShieldAlert, ShieldCheck, Plus, LogIn, UserRound, PanelLeftClose, PanelLeftOpen, ArrowUpRight } from 'lucide-react';
+import { Home, Compass, TrendingUp, Bookmark, Bell, Flag, MessageSquare, Users, Settings, ShieldAlert, ShieldCheck, Plus, LogIn, UserRound, PanelLeftClose, PanelLeftOpen, ArrowUpRight } from 'lucide-react';
 
 export default function Sidebar() {
   const { user, isAuthenticated, activeRole } = useAuthStore();
@@ -17,10 +19,10 @@ export default function Sidebar() {
   const quiet = reduced || settings.animationIntensity !== 'full';
   const joined = communities.filter((c) => ['OWNER', 'MODERATOR', 'MEMBER'].includes(c.currentUserRole));
   const managed = joined.find((c) => ['OWNER', 'MODERATOR'].includes(c.currentUserRole));
-  const moderationActive = managed ? ['/community/:name/moderation', '/c/:name/moderation'].some((path) => {
-    const match = matchPath({ path, end: true }, location.pathname);
-    return match?.params.name === managed.name;
-  }) : false;
+  const moderationActive = managed
+    ? matchPath({ path: '/c/:name/moderation', end: true }, location.pathname)?.params.name === managed.name
+      && (new URLSearchParams(location.search).has('type') || new URLSearchParams(location.search).get('tab') === 'reports')
+    : false;
   const popular = location.pathname === '/' && new URLSearchParams(location.search).get('tab') === 'popular';
   const link = (to: string, label: string, Icon: React.ElementType, active?: boolean, end = false) => (
     <NavLink key={to} to={to} end={end} title={collapsed ? label : undefined} aria-label={label}
@@ -50,22 +52,26 @@ export default function Sidebar() {
           <nav className="side-group">
             {!collapsed && <p className="sidebar-caption">Thư viện cá nhân</p>}
             {link('/saved', 'Bài viết đã lưu', Bookmark)}
-            {link(`/user/${user.username}`, 'Hồ sơ của bạn', UserRound)}
+            {link('/reports/mine', 'Báo cáo của tôi', Flag)}
+            {link(`/u/${user.username}`, 'Hồ sơ của bạn', UserRound)}
             {link('/notifications', 'Thông báo', Bell)}
-            {link('/messages', 'Tin nhắn', MessageSquare)}
+            <button type="button" className={`side-link ${location.pathname === '/messages' ? 'is-active' : ''}`}
+              aria-label="Tin nhắn" title={collapsed ? 'Tin nhắn' : undefined} onClick={() => useChatStore.getState().openWindow()}>
+              <MessageSquare className="side-icon" aria-hidden="true" />{!collapsed && <span>Tin nhắn</span>}
+            </button>
           </nav>
           <nav className="side-group">
             {!collapsed && <div className="side-group-title"><span className="sidebar-caption">Cộng đồng của bạn</span><Link to="/communities/create" className="icon-button" aria-label="Tạo cộng đồng"><Plus size={16} /></Link></div>}
-            {joined.slice(0, 5).map((c) => <NavLink key={c.id} to={`/community/${c.name}`} end title={c.displayName} aria-label={c.displayName} className={({ isActive }) => `side-link community-link ${isActive ? 'is-active' : ''}`}>
+            {joined.slice(0, 5).map((c) => <NavLink key={c.id} to={`/c/${c.name}`} end title={c.displayName} aria-label={c.displayName} className={({ isActive }) => `side-link community-link ${isActive ? 'is-active' : ''}`}>
               <Avatar src={c.avatarUrl} alt={c.displayName} size="xs" shape="rounded" />{!collapsed && <span className="truncate">{c.displayName}</span>}
             </NavLink>)}
             {link('/communities/mine', 'Tất cả cộng đồng', Users)}
             {collapsed && link('/communities/create', 'Tạo cộng đồng', Plus)}
           </nav>
-          {(managed || activeRole === 'ADMIN') && <nav className="side-group">
+          {(managed || (ADMIN_AVAILABLE && activeRole === 'ADMIN')) && <nav className="side-group">
             {!collapsed && <p className="sidebar-caption">Quản lý</p>}
-            {managed && link(`/community/${managed.name}/moderation`, 'Kiểm duyệt', ShieldAlert, moderationActive, true)}
-            {activeRole === 'ADMIN' && link('/admin', 'Trung tâm quản trị', ShieldCheck)}
+            {managed && link(`/c/${managed.name}/moderation?tab=reports`, 'Báo cáo cộng đồng', ShieldAlert, moderationActive, true)}
+            {ADMIN_AVAILABLE && activeRole === 'ADMIN' && link('/admin', 'Trung tâm quản trị', ShieldCheck)}
           </nav>}
         </> : !collapsed ? <div className="sidebar-invitation">
           <p className="sidebar-invitation-title">Có cộng đồng dành cho bạn</p><p>Gặp những người cùng sở thích và chia sẻ câu chuyện của bạn.</p>

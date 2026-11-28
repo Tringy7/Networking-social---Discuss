@@ -4,6 +4,7 @@ import { useToastStore } from '../../store/useToastStore';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import Avatar from '../../components/ui/Avatar';
+import EntityBanner from '../../components/ui/EntityBanner';
 import ImageCropEditor from '../../components/profile/ImageCropEditor';
 import { Camera, Check } from 'lucide-react';
 
@@ -18,7 +19,7 @@ export const EditProfilePage: React.FC = () => {
   const [bio, setBio] = useState(user?.bio || '');
   const [location, setLocation] = useState(user?.location || '');
   const [dateOfBirth, setDateOfBirth] = useState(user?.dateOfBirth || '');
-  const [gender, setGender] = useState(user?.gender || 'Nam');
+  const [gender, setGender] = useState(user?.gender || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [bannerUrl, setBannerUrl] = useState(user?.bannerUrl || '');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +32,7 @@ export const EditProfilePage: React.FC = () => {
       setBio('');
       setLocation('');
       setDateOfBirth('');
-      setGender('Nam');
+      setGender('');
       setAvatarUrl('');
       setBannerUrl('');
       return;
@@ -42,7 +43,7 @@ export const EditProfilePage: React.FC = () => {
     setBio(user?.bio || '');
     setLocation(user?.location || '');
     setDateOfBirth(user?.dateOfBirth || '');
-    setGender(user?.gender || 'Nam');
+    setGender(user?.gender || '');
     setAvatarUrl(user?.avatarUrl || '');
     setBannerUrl(user?.bannerUrl || '');
   }, [user]);
@@ -61,6 +62,7 @@ export const EditProfilePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setIsLoading(true);
     try {
       await updateProfile({
@@ -68,7 +70,7 @@ export const EditProfilePage: React.FC = () => {
         bio: bio.trim(),
         location: location.trim(),
         dateOfBirth,
-        gender,
+        gender: gender || undefined,
       });
       addToast('Cập nhật hồ sơ cá nhân thành công!', 'success');
     } catch (error: unknown) {
@@ -89,20 +91,18 @@ export const EditProfilePage: React.FC = () => {
       <div className="space-y-3">
         <label className="text-sm font-semibold text-[var(--text-secondary)] block">Ảnh bìa & Ảnh đại diện</label>
         
-        <button
-          type="button"
-          onClick={handleBannerChange}
-          disabled={isLoading}
-          aria-label="Chọn ảnh bìa mới"
-          className="group relative block h-32 w-full cursor-pointer overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] text-left transition-colors hover:border-[var(--border-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] disabled:cursor-wait sm:h-40"
-        >
-          {bannerUrl ? (
-            <img src={bannerUrl} alt="Ảnh bìa xem trước" className="h-full w-full object-cover" />
-          ) : (
-            <span className="flex h-full items-center justify-center gap-2 text-sm text-[var(--text-muted)]"><Camera className="h-4 w-4" /> Thêm ảnh bìa</span>
-          )}
-          <span className="absolute inset-0 flex items-center justify-center gap-2 bg-black/0 text-sm font-medium text-white opacity-0 transition-opacity group-hover:bg-black/35 group-hover:opacity-100 group-focus-visible:bg-black/35 group-focus-visible:opacity-100"><Camera className="h-4 w-4" /> Thay ảnh bìa</span>
-        </button>
+        <EntityBanner src={bannerUrl} alt="Ảnh bìa xem trước" variant="user" className="entity-banner--preview">
+          <button
+            type="button"
+            onClick={handleBannerChange}
+            disabled={isLoading}
+            aria-label="Chọn ảnh bìa mới"
+            className="profile-cover-button group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] disabled:cursor-wait"
+          >
+            <span className="profile-cover-feedback" aria-hidden="true" />
+            <span className="entity-cover-edit-label"><Camera className="h-4 w-4" />{bannerUrl ? 'Thay ảnh bìa' : 'Thêm ảnh bìa'}</span>
+          </button>
+        </EntityBanner>
 
         {/* Click the avatar itself to choose a replacement. */}
         <div className="flex items-center gap-4 -mt-10 sm:-mt-12 pl-4 relative z-10">
@@ -119,6 +119,7 @@ export const EditProfilePage: React.FC = () => {
             </span>
           </button>
         </div>
+        <p className="text-xs leading-relaxed text-[var(--text-muted)]">Ảnh ngang 4:1. Giữ nội dung chính ở giữa để hiển thị tốt trên điện thoại.</p>
       </div>
 
       {/* Form fields */}
@@ -128,6 +129,7 @@ export const EditProfilePage: React.FC = () => {
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           placeholder="Ví dụ: Nguyễn Văn A"
+          maxLength={50}
           required
         />
 
@@ -152,6 +154,7 @@ export const EditProfilePage: React.FC = () => {
             label="Địa điểm / Tỉnh thành"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
+            maxLength={100}
             placeholder="TP. Hồ Chí Minh, Việt Nam"
           />
 
@@ -164,15 +167,17 @@ export const EditProfilePage: React.FC = () => {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-[var(--text-secondary)]">Giới tính</label>
+          <label htmlFor="profile-gender" className="text-sm font-semibold text-[var(--text-secondary)]">Giới tính</label>
           <select
+            id="profile-gender"
             value={gender}
             onChange={(e) => setGender(e.target.value)}
             className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-main)] p-2.5 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] cursor-pointer"
           >
+            {(!user?.gender || gender === '') && <option value="">Chưa chọn</option>}
             <option value="Nam">Nam</option>
             <option value="Nữ">Nữ</option>
-            <option value="Khác">Khác / Không muốn tiết lộ</option>
+            <option value="Khác">Khác</option>
             <option value="Không muốn tiết lộ">Không muốn tiết lộ</option>
           </select>
         </div>
@@ -184,9 +189,13 @@ export const EditProfilePage: React.FC = () => {
           type="button"
           variant="ghost"
           size="md"
+          disabled={isLoading}
           onClick={() => {
             setDisplayName(user?.displayName || '');
             setBio(user?.bio || '');
+            setLocation(user?.location || '');
+            setDateOfBirth(user?.dateOfBirth || '');
+            setGender(user?.gender || '');
             addToast('Đã khôi phục các giá trị ban đầu', 'info');
           }}
         >

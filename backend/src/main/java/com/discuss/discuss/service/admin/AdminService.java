@@ -1,0 +1,32 @@
+package com.discuss.discuss.service.admin;
+
+import com.discuss.discuss.dto.admin.AdminResponse.*;
+import com.discuss.discuss.enums.CommunityStatus;
+import com.discuss.discuss.enums.UserStatus;
+import com.discuss.discuss.service.user.UserService;
+import com.discuss.discuss.service.community.CommunityService;
+import com.discuss.discuss.service.post.PostQueryService;
+import com.discuss.discuss.service.comment.CommentService;
+import com.discuss.discuss.utils.annotation.auth.HasRole;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+@HasRole("ADMIN")
+public class AdminService {
+    private final UserService userService;
+    private final CommunityService communityService;
+    private final PostQueryService postQueryService;
+    private final CommentService commentService;
+
+    public Stats stats() {
+        return new Stats(
+                new StatusCounts(userService.countAll(), userService.countByStatus(UserStatus.ACTIVE),
+                        userService.countByStatus(UserStatus.LOCKED)),
+                new StatusCounts(communityService.countAll(), communityService.countByStatus(CommunityStatus.ACTIVE),
+                        communityService.countByStatus(CommunityStatus.BANED)),
+                new Total(postQueryService.countAll()), new Total(commentService.countAll()));
+    }
+
+}

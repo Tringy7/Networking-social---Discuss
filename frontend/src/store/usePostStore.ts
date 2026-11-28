@@ -1,256 +1,252 @@
 import { create } from 'zustand';
-import { Post, Comment } from '../types';
-import { POSTS_AVAILABLE, commentService, postService } from '../services';
-import { demoComments, demoPosts } from '../mocks/demoContent';
+import type { Post, PostInput, Comment } from '../types';
+import { postService, commentService, type PostPage, type CommentMutationResponse } from '../services';
+import { useAuthStore } from './useAuthStore';
 
 interface PostState {
   posts: Post[];
+  feedIds: string[];
+  feedTab: string;
+  feedPage: number;
+  hasMore: boolean;
+  loading: boolean;
   savedPosts: Post[];
   comments: Record<string, Comment[]>;
   hydrate: (tab?: string) => Promise<void>;
-  hydrateSaved: () => Promise<void>;
-  loadPost: (postId: string) => Promise<Post>;
-  loadComments: (postId: string) => Promise<void>;
-  toggleHeart: (postId: string) => Promise<void>;
-  toggleSave: (postId: string) => Promise<void>;
-  addPost: (postData: {
-    communityName: string;
-    communityDisplayName: string;
-    communityAvatar: string;
-    author: Post['author'];
-    title: string;
-    content: string;
-    tags?: string[];
-    mediaUrl?: string;
-    mediaType?: Post['mediaType'];
-    codeSnippet?: Post['codeSnippet'];
-  }) => Promise<Post>;
-  deletePost: (postId: string) => Promise<void>;
-  addComment: (postId: string, content: string, parentCommentId?: string) => Promise<void>;
-  toggleCommentHeart: (postId: string, commentId: string) => Promise<void>;
-  isCreateModalOpen: boolean;
-  targetCommunityName?: string;
-  openCreateModal: (communityName?: string) => void;
-  closeCreateModal: () => void;
+  loadMore: () => Promise<void>;
+  loadCommunityPosts: (name: string, page?: number) => Promise<boolean>;
+  loadUserPosts: (username: string, page?: number) => Promise<boolean>;
+  hydrateSaved: (page?: number) => Promise<boolean>;
+  loadPost: (id: string) => Promise<Post>;
+  loadComments: (id: string) => Promise<void>;
+  refreshCommentImages: (id: string) => Promise<void>;
+  searchPosts: (query: string, page?: number) => Promise<PostPage>;
+  vote: (id: string, type: 'UP' | 'DOWN' | null) => Promise<void>;
+  toggleSave: (id: string) => Promise<void>;
+  setPinned: (id: string, pinned: boolean) => Promise<void>;
+  addPost: (input: PostInput) => Promise<Post>;
+  editPost: (id: string, input: PostInput) => Promise<Post>;
+  deletePost: (id: string) => Promise<void>;
+  addComment: (id: string, content: string, parent?: string, files?: File[]) => Promise<void>;
+  editComment: (postId: string, commentId: string, content: string) => Promise<void>;
+  deleteComment: (postId: string, commentId: string) => Promise<void>;
+  voteComment: (postId: string, commentId: string, type: 'UP' | 'DOWN' | null) => Promise<void>;
+  editingPost?: Post;
+  openEditModal: (post: Post) => void;
+  closeEditModal: () => void;
+  reset: () => void;
 }
+const merge = (existing: Post[], incoming: Post[]) =>
+  [...existing.filter((post) => !incoming.some((item) => item.id === post.id)), ...incoming];
 
-function appendReply(comments: Comment[], parentId: string, reply: Comment): Comment[] {
-  return comments.map((comment) => {
-    if (comment.id === parentId) {
-      return { ...comment, replies: [...(comment.replies ?? []), reply] };
-    }
-    return {
-      ...comment,
-      replies: comment.replies ? appendReply(comment.replies, parentId, reply) : comment.replies,
-    };
-  });
-}
-
-function updateCommentReaction(
-  comments: Comment[],
-  commentId: string,
-  isHearted: boolean
-): Comment[] {
-  return comments.map((comment) => {
-    if (comment.id === commentId) {
-      return {
-        ...comment,
-        isHearted,
-        heartCount: Math.max(0, comment.heartCount + (isHearted ? 1 : -1)),
-      };
-    }
-    return {
-      ...comment,
-      replies: comment.replies
-        ? updateCommentReaction(comment.replies, commentId, isHearted)
-        : comment.replies,
-    };
-  });
-}
-
-function findComment(comments: Comment[], commentId: string): Comment | undefined {
-  for (const comment of comments) {
-    if (comment.id === commentId) return comment;
-    const reply = comment.replies ? findComment(comment.replies, commentId) : undefined;
-    if (reply) return reply;
+const commentTree = (rows: CommentMutationResponse[]): Comment[] => {
+  const nodes = new Map(rows.map(row => [String(row.id), {
+    id: String(row.id), postId: String(row.postId), content: row.content, status: row.status,
+    parentCommentId: row.parentId == null ? null : String(row.parentId),
+    author: { ...row.author, id: String(row.author.id),
+      displayName: row.author.displayName || row.author.username, avatarUrl: row.author.avatarUrl || '' },
+    createdAt: row.createdAt, voteScore: row.voteScore ?? 0, userVote: row.userVote ?? null, replies: [],
+    attachments: (row.attachments || []).map(file => ({ ...file, id: String(file.id) })),
+  } as Comment]));
+  const roots: Comment[] = [];
+  for (const node of nodes.values()) {
+    const parent = node.parentCommentId && nodes.get(node.parentCommentId);
+    if (parent) parent.replies!.push(node); else roots.push(node);
   }
-  return undefined;
-}
+  return roots;
+};
 
+const flattenComments = (comments: Comment[]): Comment[] => comments.flatMap(comment => [comment, ...flattenComments(comment.replies || [])]);
+const upsertComment = (comments: Comment[], response: CommentMutationResponse): Comment[] => {
+  const nodes = new Map<string, Comment>(flattenComments(comments).map(comment => [comment.id, { ...comment, replies: [] as Comment[] }]));
+  const next = commentTree([response])[0];
+  nodes.set(next.id, next);
+  const roots: Comment[] = [];
+  for (const node of nodes.values()) {
+    const parent = node.parentCommentId && nodes.get(node.parentCommentId);
+    if (parent) parent.replies!.push(node); else roots.push(node);
+  }
+  return roots;
+};
+const markCommentDeleted = (comments: Comment[], id: string): Comment[] => comments.map(comment => ({
+  ...comment,
+  ...(comment.id === id ? { status: 'DELETED' as const, content: '[deleted]', attachments: [] } : {}),
+  replies: markCommentDeleted(comment.replies || [], id),
+}));
+const adjustCommentCount = (posts: Post[], id: string, delta: number) => posts.map(post => post.id === id
+  ? { ...post, commentCount: Math.max(0, post.commentCount + delta) } : post);
+const commentVersions = new Map<string, number>();
+const imageRefreshes = new Map<string, Promise<void>>();
+const bumpComments = (id: string) => commentVersions.set(id, (commentVersions.get(id) || 0) + 1);
+
+let feedRequest = 0;
+let session = 0;
+let savedRequest = 0;
+const saving = new Set<string>();
 export const usePostStore = create<PostState>((set, get) => ({
-  posts: POSTS_AVAILABLE ? [] : demoPosts.map((post) => ({ ...post })),
-  savedPosts: POSTS_AVAILABLE
-    ? []
-    : demoPosts.filter((post) => post.isSaved).map((post) => ({ ...post })),
-  comments: POSTS_AVAILABLE ? {} : { 'demo-post-react-query': demoComments },
-  isCreateModalOpen: false,
-  targetCommunityName: undefined,
-
+  posts: [], feedIds: [], feedTab: 'for-you', feedPage: 0, hasMore: false, loading: false,
+  savedPosts: [], comments: {},
+  reset: () => { session++; feedRequest++; savedRequest++; saving.clear(); commentVersions.clear(); imageRefreshes.clear(); set({ posts: [], feedIds: [], savedPosts: [], comments: {},
+    hasMore: false, loading: false, editingPost: undefined }); },
   hydrate: async (tab = 'for-you') => {
-    if (POSTS_AVAILABLE) set({ posts: await postService.list(tab) });
+    const request = ++feedRequest;
+    set({ loading: true, feedTab: tab });
+    try {
+      const page = await postService.list(tab, 0);
+      if (request === feedRequest) set((state) => ({ posts: merge(state.posts, page.content), feedIds: page.content.map((post) => post.id),
+        feedPage: 0, hasMore: !page.last }));
+    } finally { if (request === feedRequest) set({ loading: false }); }
   },
-
-  hydrateSaved: async () => {
-    if (POSTS_AVAILABLE) {
-      set({ savedPosts: await postService.listSaved() });
-      return;
+  loadMore: async () => {
+    if (get().loading || !get().hasMore) return;
+    const request = feedRequest;
+    const { feedPage, feedTab } = get();
+    set({ loading: true });
+    try {
+      const page = await postService.list(feedTab, feedPage + 1);
+      if (request === feedRequest) set((state) => ({ posts: merge(state.posts, page.content),
+        feedIds: [...new Set([...state.feedIds, ...page.content.map((post) => post.id)])], feedPage: page.page, hasMore: !page.last }));
+    } finally { if (request === feedRequest) set({ loading: false }); }
+  },
+  loadCommunityPosts: async (name, number = 0) => {
+    const generation = session;
+    const page = await postService.listCommunity(name, number);
+    if (generation === session) set((state) => ({ posts: merge(number === 0 ? state.posts.filter((post) => post.communityName !== name) : state.posts, page.content) }));
+    return !page.last;
+  },
+  loadUserPosts: async (username, number = 0) => {
+    const generation = session;
+    const page = await postService.listUser(username, number);
+    if (generation === session) set((state) => ({ posts: merge(number === 0 ? state.posts.filter((post) => post.author.username !== username) : state.posts, page.content) }));
+    return !page.last;
+  },
+  loadPost: async (id) => {
+    const generation = session;
+    const post = await postService.getById(id);
+    if (generation === session) set((state) => ({ posts: merge(state.posts, [post]) }));
+    return post;
+  },
+  addPost: async (input) => {
+    const generation = session;
+    const post = await postService.create(input);
+    if (generation === session) set((state) => ({ posts: merge(state.posts, [post]), feedIds: [post.id, ...state.feedIds.filter((id) => id !== post.id)] }));
+    return post;
+  },
+  editPost: async (id, input) => {
+    const generation = session;
+    const post = await postService.update(id, input);
+    if (generation === session) set((state) => ({ posts: merge(state.posts, [post]), savedPosts: state.savedPosts.map((item) => item.id === id ? post : item) }));
+    return post;
+  },
+  deletePost: async (id) => {
+    const generation = session;
+    await postService.delete(id);
+    if (generation === session) set((state) => ({ posts: state.posts.filter((post) => post.id !== id), savedPosts: state.savedPosts.filter((post) => post.id !== id), feedIds: state.feedIds.filter((item) => item !== id) }));
+  },
+  hydrateSaved: async (number = 0) => {
+    const generation = session;
+    const request = ++savedRequest;
+    const page = await postService.saved(number);
+    if (generation === session && request === savedRequest) set((state) => ({
+      savedPosts: number === 0 ? page.content : [...state.savedPosts, ...page.content.filter((post) => !state.savedPosts.some((item) => item.id === post.id))],
+      posts: merge(state.posts, page.content),
+    }));
+    return !page.last;
+  },
+  loadComments: async (id) => {
+    const generation = session;
+    bumpComments(id);
+    const version = commentVersions.get(id);
+    const rows = await commentService.list(id);
+    if (generation === session && version === commentVersions.get(id)) {
+      set(state => ({ comments: { ...state.comments, [id]: commentTree(rows) } }));
     }
-    set({ savedPosts: get().posts.filter((post) => post.isSaved) });
   },
-
-  loadPost: async (postId) => {
-    const existing = get().posts.find((post) => post.id === postId);
-    if (existing) return existing;
-    const post = POSTS_AVAILABLE
-      ? await postService.getById(postId)
-      : demoPosts.find((item) => item.id === postId);
-    if (!post) throw new Error('Không tìm thấy bài viết.');
-    set((state) => ({ posts: [post, ...state.posts] }));
-    return post;
+  refreshCommentImages: (id) => {
+    const pending = imageRefreshes.get(id);
+    if (pending) return pending;
+    const task = get().loadComments(id).finally(() => {
+      if (imageRefreshes.get(id) === task) imageRefreshes.delete(id);
+    });
+    imageRefreshes.set(id, task);
+    return task;
   },
-
-  loadComments: async (postId) => {
-    if (!POSTS_AVAILABLE && get().comments[postId]) return;
-    const comments = POSTS_AVAILABLE
-      ? await commentService.list(postId)
-      : postId === 'demo-post-react-query' ? demoComments : [];
-    set((state) => ({ comments: { ...state.comments, [postId]: comments } }));
+  searchPosts: async (query, number = 0) => {
+    const generation = session;
+    const page = await postService.search(query, number);
+    if (generation === session) set(state => ({ posts: merge(state.posts, page.content) }));
+    return page;
   },
-
-  openCreateModal: (communityName) => {
-    set({ isCreateModalOpen: true, targetCommunityName: communityName });
-  },
-
-  closeCreateModal: () => {
-    set({ isCreateModalOpen: false, targetCommunityName: undefined });
-  },
-
-  toggleHeart: async (postId) => {
-    const state = get();
-    const post = state.posts.find((item) => item.id === postId)
-      ?? state.savedPosts.find((item) => item.id === postId);
-    if (!post) throw new Error('Không tìm thấy bài viết.');
-    const result = POSTS_AVAILABLE
-      ? await postService.toggleHeart(postId, post.isHearted)
-      : { isHearted: !post.isHearted };
-    const updatePost = (item: Post) => item.id === postId
-      ? {
-          ...item,
-          isHearted: result.isHearted,
-          heartCount: Math.max(0, item.heartCount + (result.isHearted ? 1 : -1)),
-        }
-      : item;
-    set((current) => ({
-      posts: current.posts.map(updatePost),
-      savedPosts: current.savedPosts.map(updatePost),
+  vote: async (id, type) => {
+    const generation = session;
+    const post = await postService.vote(id, type);
+    if (generation === session) set((state) => ({
+      posts: merge(state.posts, [post]),
+      savedPosts: state.savedPosts.map((item) => item.id === id ? post : item),
     }));
   },
+  setPinned: async (id, pinned) => {
+    const generation = session;
+    await postService.setPinned(id, pinned);
+    if (generation !== session) return;
 
-  toggleSave: async (postId) => {
-    const post = get().posts.find((item) => item.id === postId)
-      ?? get().savedPosts.find((item) => item.id === postId);
-    if (!post) throw new Error('Không tìm thấy bài viết.');
-    const result = POSTS_AVAILABLE
-      ? await postService.toggleSave(postId)
-      : { isSaved: !post.isSaved };
-    set((state) => {
-      const posts = state.posts.map((post) =>
-        post.id === postId ? { ...post, isSaved: result.isSaved } : post
-      );
-      const savedPost = posts.find((post) => post.id === postId)
-        ?? state.savedPosts.find((post) => post.id === postId);
-      const updatedSavedPost = savedPost ? { ...savedPost, isSaved: result.isSaved } : undefined;
-      const savedPosts = result.isSaved
-        ? updatedSavedPost && !state.savedPosts.some((post) => post.id === postId)
-          ? [updatedSavedPost, ...state.savedPosts]
-          : state.savedPosts
-        : state.savedPosts.filter((post) => post.id !== postId);
-      return { posts, savedPosts };
+    const update = (post: Post) => post.id === id ? { ...post, pinned } : post;
+    set(state => ({
+      posts: state.posts.map(update),
+      savedPosts: state.savedPosts.map(update),
+    }));
+  },
+  toggleSave: async (id) => {
+    if (saving.has(id)) return;
+    const generation = session;
+    const current = get().posts.find((post) => post.id === id) || get().savedPosts.find((post) => post.id === id);
+    if (!current) throw new Error('Không tìm thấy bài viết.');
+    saving.add(id);
+    try {
+      const post = await postService.save(id, !current.isSaved);
+      if (generation === session) {
+        savedRequest++;
+        set((state) => ({ posts: merge(state.posts, [post]),
+          savedPosts: post.isSaved ? [post, ...state.savedPosts.filter((item) => item.id !== id)] : state.savedPosts.filter((item) => item.id !== id) }));
+      }
+    } finally { if (generation === session) saving.delete(id); }
+  },
+  addComment: async (id, content, parent, files) => {
+    const generation = session;
+    if (!useAuthStore.getState().user) throw new Error('Vui lòng đăng nhập.');
+    const response = await commentService.create(id, content, parent, files);
+    if (generation !== session) return;
+    bumpComments(id);
+    set(state => ({ comments: { ...state.comments, [id]: upsertComment(state.comments[id] || [], response) },
+      posts: adjustCommentCount(state.posts, id, 1), savedPosts: adjustCommentCount(state.savedPosts, id, 1) }));
+  },
+  editComment: async (postId, commentId, content) => {
+    const generation = session;
+    const response = await commentService.update(commentId, content);
+    if (generation !== session) return;
+    bumpComments(postId);
+    set(state => ({ comments: { ...state.comments, [postId]: upsertComment(state.comments[postId] || [], response) } }));
+  },
+  deleteComment: async (postId, commentId) => {
+    const generation = session;
+    await commentService.delete(commentId);
+    if (generation !== session) return;
+    bumpComments(postId);
+    set(state => {
+      const previous = flattenComments(state.comments[postId] || []).find(comment => comment.id === commentId);
+      const delta = previous?.status === 'VISIBLE' ? -1 : 0;
+      return { comments: { ...state.comments, [postId]: markCommentDeleted(state.comments[postId] || [], commentId) },
+        posts: adjustCommentCount(state.posts, postId, delta), savedPosts: adjustCommentCount(state.savedPosts, postId, delta) };
     });
   },
-
-  addPost: async (postData) => {
-    const post: Post = POSTS_AVAILABLE
-      ? await postService.create({
-          communityName: postData.communityName,
-          title: postData.title,
-          content: postData.content,
-          tags: postData.tags,
-          mediaUrl: postData.mediaUrl,
-          mediaType: postData.mediaType,
-          codeSnippet: postData.codeSnippet,
-        })
-      : {
-          ...postData,
-          id: `demo-post-${Date.now()}`,
-          heartCount: 0,
-          commentCount: 0,
-          isHearted: false,
-          isSaved: false,
-          createdAt: new Date().toISOString(),
-        };
-    set((state) => ({ posts: [post, ...state.posts] }));
-    return post;
+  voteComment: async (postId, commentId, type) => {
+    const generation = session;
+    if (!useAuthStore.getState().user) throw new Error('Vui lòng đăng nhập.');
+    const response = await commentService.vote(commentId, type);
+    if (generation !== session) return;
+    bumpComments(postId);
+    set(state => ({ comments: { ...state.comments, [postId]: upsertComment(state.comments[postId] || [], response) } }));
   },
-
-  deletePost: async (postId) => {
-    if (POSTS_AVAILABLE) await postService.delete(postId);
-    set((state) => ({
-      posts: state.posts.filter((post) => post.id !== postId),
-      savedPosts: state.savedPosts.filter((post) => post.id !== postId),
-      comments: Object.fromEntries(
-        Object.entries(state.comments).filter(([id]) => id !== postId)
-      ),
-    }));
-  },
-
-  addComment: async (postId, content, parentCommentId) => {
-    const comment = POSTS_AVAILABLE
-      ? await commentService.create(postId, content, parentCommentId)
-      : {
-          id: `demo-comment-${Date.now()}`,
-          postId,
-          author: {
-            id: 'demo-current-user',
-            username: 'ban',
-            displayName: 'Bạn',
-            avatarUrl: '',
-          },
-          content,
-          parentCommentId: parentCommentId ?? null,
-          heartCount: 0,
-          isHearted: false,
-          createdAt: new Date().toISOString(),
-        };
-    set((state) => {
-      const comments = state.comments[postId] ?? [];
-      const updatedComments = parentCommentId
-        ? appendReply(comments, parentCommentId, comment)
-        : [comment, ...comments];
-      return {
-        comments: { ...state.comments, [postId]: updatedComments },
-        posts: state.posts.map((post) =>
-          post.id === postId ? { ...post, commentCount: post.commentCount + 1 } : post
-        ),
-      };
-    });
-  },
-
-  toggleCommentHeart: async (postId, commentId) => {
-    const existing = findComment(get().comments[postId] ?? [], commentId);
-    if (!existing) throw new Error('Không tìm thấy bình luận.');
-    const result = POSTS_AVAILABLE
-      ? await commentService.toggleHeart(postId, commentId)
-      : { isHearted: !existing.isHearted };
-    set((state) => ({
-      comments: {
-        ...state.comments,
-        [postId]: updateCommentReaction(
-          state.comments[postId] ?? [],
-          commentId,
-          result.isHearted
-        ),
-      },
-    }));
-  },
+  openEditModal: (post) => set({ editingPost: post }),
+  closeEditModal: () => set({ editingPost: undefined }),
 }));

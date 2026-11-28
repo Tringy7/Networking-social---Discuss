@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Bell, Compass, Home, Menu, MessageSquare, Plus, Settings, ShieldCheck, UserRound, Users, X, Bookmark, LogIn } from 'lucide-react';
+import { Bell, Compass, Flag, Home, Menu, MessageSquare, Plus, Settings, ShieldCheck, UserRound, Users, X, Bookmark, LogIn } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import NotificationBadge from '../ui/NotificationBadge';
 import { useNotificationStore } from '../../store/useNotificationStore';
+import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
-import { usePostStore } from '../../store/usePostStore';
 
 const itemClass = ({ isActive }: { isActive: boolean }) =>
   `flex min-h-14 flex-col items-center justify-center gap-1 px-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)] ${
@@ -17,8 +17,7 @@ const itemClass = ({ isActive }: { isActive: boolean }) =>
 export const MobileNavigation: React.FC = () => {
   const { user, isAuthenticated, activeRole } = useAuthStore();
   const { communities } = useCommunityStore();
-  const openCreateModal = usePostStore((state) => state.openCreateModal);
-  const unreadCount = useNotificationStore((state) => state.notifications.filter((item) => !item.isRead).length);
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
   const navigate = useNavigate();
   const reduced = useReducedMotion();
   const intensity = useSettingsStore((state) => state.settings.animationIntensity);
@@ -59,7 +58,7 @@ export const MobileNavigation: React.FC = () => {
   ).slice(0, 5);
 
   const createPost = () => {
-    if (isAuthenticated) openCreateModal();
+    if (isAuthenticated) navigate('/posts/create');
     else navigate('/login');
   };
 
@@ -91,20 +90,18 @@ export const MobileNavigation: React.FC = () => {
             <nav aria-label="Các trang khác" className="grid grid-cols-2 gap-1 sm:grid-cols-3">
               {isAuthenticated && user ? (
                 <>
-                  <Link onClick={closeMoreMenu} to={`/user/${user.username}`} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><UserRound className="h-4 w-4" />Hồ sơ</Link>
+                  <Link onClick={closeMoreMenu} to={`/u/${user.username}`} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><UserRound className="h-4 w-4" />Hồ sơ</Link>
                   <Link onClick={closeMoreMenu} to="/saved" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Bookmark className="h-4 w-4" />Đã lưu</Link>
-                  <Link onClick={closeMoreMenu} to="/messages" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><MessageSquare className="h-4 w-4" />Tin nhắn</Link>
+                  <Link onClick={closeMoreMenu} to="/reports/mine" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Flag className="h-4 w-4 shrink-0" aria-hidden="true" />Báo cáo của tôi</Link>
+                  <button type="button" onClick={() => { closeMoreMenu(); useChatStore.getState().openWindow(); }} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><MessageSquare className="h-4 w-4" />Tin nhắn</button>
                   <Link onClick={closeMoreMenu} to="/communities/mine" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Users className="h-4 w-4" />Cộng đồng của tôi</Link>
                   <Link onClick={closeMoreMenu} to="/communities/create" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Plus className="h-4 w-4" />Tạo cộng đồng</Link>
                   <Link onClick={closeMoreMenu} to="/settings" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><Settings className="h-4 w-4" />Cài đặt</Link>
                   {joinedCommunities.map((community) => (
-                    <Link key={community.id} onClick={closeMoreMenu} to={`/community/${community.name}`} className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]">
+                    <Link key={community.id} onClick={closeMoreMenu} to={`/c/${community.name}`} className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]">
                       <span className="truncate">c/{community.name}</span>
                     </Link>
                   ))}
-                  {(activeRole === 'OWNER' || activeRole === 'MODERATOR' || activeRole === 'ADMIN') && (
-                    <Link onClick={closeMoreMenu} to="/community/lap-trinh-viet-nam/moderation" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><ShieldCheck className="h-4 w-4" />Kiểm duyệt</Link>
-                  )}
                   {activeRole === 'ADMIN' && <Link onClick={closeMoreMenu} to="/admin" className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"><ShieldCheck className="h-4 w-4" />Quản trị</Link>}
                 </>
               ) : (

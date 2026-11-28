@@ -18,21 +18,28 @@ export default function CommunityMembershipButton({ community }: { community: Co
   const intensity = useSettingsStore((state) => state.settings.animationIntensity);
   const reduced = useReducedMotion();
   const [pending, setPending] = useState(false);
-  const joined = community.currentUserRole !== 'NONE';
+  const joined = authenticated && community.currentUserRole !== 'NONE';
+  const awaitingReview = authenticated && community.joinRequestPending;
+  const label = joined ? 'Đã tham gia' : awaitingReview ? 'Đang chờ duyệt'
+    : community.visibility === 'PRIVATE' ? 'Gửi yêu cầu tham gia' : 'Tham gia';
   const toggle = async () => {
     if (!authenticated) { notify('Đăng nhập để tham gia cộng đồng nhé.', 'info'); navigate('/login'); return; }
     if (pending) return;
     setPending(true);
     try {
-      if (joined) await leave(community.name);
-      else await join(community.name);
-      notify(joined ? `Đã rời ${community.displayName}` : `Chào mừng bạn đến với ${community.displayName}!`, joined ? 'info' : 'success');
+      if (joined) {
+        await leave(community.name);
+        notify(`Đã rời ${community.displayName}`, 'info');
+      } else {
+        const awaitingApproval = await join(community.name);
+        notify(awaitingApproval ? 'Đã gửi yêu cầu tham gia.' : `Chào mừng bạn đến với ${community.displayName}!`, 'success');
+      }
     } catch (error) { notify(error instanceof Error ? error.message : 'Chưa thể cập nhật. Bạn thử lại nhé.', 'error'); }
     finally { setPending(false); }
   };
   return <Button className="membership-button" variant={joined ? 'secondary' : 'outline'} size="sm" isLoading={pending}
-    onClick={toggle} aria-pressed={joined} aria-label={`${joined ? 'Rời khỏi' : 'Tham gia'} cộng đồng ${community.displayName}`}
+    onClick={toggle} disabled={awaitingReview} aria-pressed={joined} aria-label={`${joined ? 'Rời khỏi' : label} cộng đồng ${community.displayName}`}
     leftIcon={joined ? <Check size={14} /> : <Plus size={14} />}>
-    <motion.span key={joined ? 'joined' : 'join'} initial={reduced || intensity !== 'full' ? false : { opacity: 0.5 }} animate={{ opacity: 1 }} transition={{ duration: 0.12 }}>{joined ? 'Đã tham gia' : 'Tham gia'}</motion.span>
+    <motion.span key={joined ? 'joined' : 'join'} initial={reduced || intensity !== 'full' ? false : { opacity: 0.5 }} animate={{ opacity: 1 }} transition={{ duration: 0.12 }}>{label}</motion.span>
   </Button>;
 }

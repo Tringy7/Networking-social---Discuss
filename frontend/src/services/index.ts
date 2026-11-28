@@ -1,15 +1,17 @@
 import apiClient from './apiClient';
-import { Community, CommunityMember, Post, Comment, User, Report, NotificationItem, Conversation, ChatMessage } from '../types';
-import { demoConversations, demoNotifications } from '../mocks/demoContent';
+import { assertImageRequestSize } from '../utils/imageUploadLimits';
+import { Community, CommunityMember, Post, User, Report, MyReport, CreateReportRequest, NotificationItem } from '../types';
 interface AuthResponse {
   message?: string;
   data?: Partial<User>;
 }
 
 interface UserResponse {
-  id?: string;
+  reputation?: User['reputation'];
+  id?: string | number;
   username: string;
   email: string;
+  provider?: User['provider'];
   role: User['role'];
   status: User['status'];
   createdAt: string;
@@ -25,7 +27,6 @@ interface UserResponse {
   privacySettings?: {
     showDateOfBirth?: boolean;
     showLocation?: boolean;
-    showPostsOnProfile?: boolean;
   };
 }
 
@@ -42,7 +43,7 @@ interface PublicUserProfileResponse {
     gender?: string | null;
     location?: string | null;
   } | null;
-  statistics: { postCount: number; commentCount: number; communityCount: number };
+  reputation?: User['reputation'];
   role: User['role'];
 }
 
@@ -61,20 +62,28 @@ const API_GENDERS: Record<string, string> = {
   'Không muốn tiết lộ': 'PREFER_NOT_TO_SAY',
 };
 
-export const POSTS_AVAILABLE = false;
-export const NOTIFICATIONS_AVAILABLE = false;
-export const MESSAGES_AVAILABLE = false;
+export const POSTS_AVAILABLE = true;
+export const POST_INTERACTIONS_AVAILABLE = true;
+export const COMMENTS_AVAILABLE = true;
+export const REPORT_CREATION_AVAILABLE = true;
+export const ADMIN_AVAILABLE = true;
+export const USER_SEARCH_AVAILABLE = true;
 
-export const POSTS_UNAVAILABLE_MESSAGE = 'Tính năng bài viết hiện chưa khả dụng vì backend chưa có API.';
-export const NOTIFICATIONS_UNAVAILABLE_MESSAGE = 'Tính năng thông báo hiện chưa khả dụng vì backend chưa có API.';
-
-const postsUnavailableError = () => new Error(POSTS_UNAVAILABLE_MESSAGE);
-const notificationsUnavailableError = () => new Error(NOTIFICATIONS_UNAVAILABLE_MESSAGE);
-let localConversations = demoConversations.map((conversation) => ({
-  ...conversation,
-  participant: { ...conversation.participant },
-  messages: conversation.messages.map((message) => ({ ...message })),
-}));
+function requireFeature(available: boolean, name: string): void {
+  if (!available) throw new Error(`${name} hiện chưa khả dụng.`);
+}
+export interface LoginSession {
+  id: string;
+  deviceName: string;
+  createdAt: string;
+  lastActiveAt: string;
+  expiresAt: string;
+  current: boolean;
+}
+export const sessionService = {
+  list: () => apiClient.get<LoginSession[]>('/auth/sessions'),
+  revoke: (id: string) => apiClient.delete<{ message: string }>(`/auth/sessions/${encodeURIComponent(id)}`),
+};
 
 export const authService = {
   login: (emailOrUsername: string, password: string) =>
@@ -128,17 +137,28 @@ export const authService = {
   resetPassword: (data: { password: string; confirmPassword: string }) =>
     apiClient.post<{ message?: string }>('/auth/forgot-password/reset', data),
 
-  changePassword: (data: { oldPassword: string; password: string; confirmPassword: string }) =>
+  requestChangePasswordOtp: () => apiClient.post<{ message?: string }>('/auth/change-password/request'),
+
+  verifyChangePasswordOtp: (code: string) =>
+    apiClient.post<{ message?: string }>('/auth/change-password/verify', { code }),
+
+  changePassword: (data: { password: string; confirmPassword: string }) =>
     apiClient.patch<{ message?: string }>('/auth/change-password', data),
 };
 
 export const userService = {
-  getMe: () => apiClient.get<UserResponse>('/user/me'),
-  search: (query: string) =>
-    apiClient.get<UserSearchResult[]>(`/users/search?q=${encodeURIComponent(query)}`),
+  getMe: () => apiClient.get<UserResponse>('/users/me'),
+  search: async (query: string) => {
+    requireFeature(USER_SEARCH_AVAILABLE, 'Tìm kiếm thành viên');
+    const path = `/users/search?q=${encodeURIComponent(query.trim())}&size=100`;
+    const first = await apiClient.get<{ content: UserSearchResult[]; totalPages: number }>(`${path}&page=0`);
+    const rest = await Promise.all(Array.from({ length: Math.max(0, first.totalPages - 1) }, (_, index) =>
+      apiClient.get<{ content: UserSearchResult[] }>(`${path}&page=${index + 1}`)));
+    return [...first.content, ...rest.flatMap(page => page.content)];
+  },
   getPublicProfile: async (username: string): Promise<User> => {
     const response = await apiClient.get<PublicUserProfileResponse>(
-      `/user/${encodeURIComponent(username)}`
+      `/users/by-username/${encodeURIComponent(username)}`
     );
     const profile = response.profile;
     return {
@@ -155,17 +175,17 @@ export const userService = {
       privacy: {
         showDateOfBirth: Boolean(profile?.dateOfBirth),
         showLocation: Boolean(profile?.location),
-        showPostsOnProfile: true,
       },
       role: response.role,
       status: 'ACTIVE',
       createdAt: response.joinedAt,
-      karma: response.statistics.postCount,
+      karma: response.reputation?.score ?? 0,
+      reputation: response.reputation,
     };
   },
 
   updateProfile: (data: Partial<User>) =>
-    apiClient.patch<UserResponse>('/user/me/profile', {
+    apiClient.patch<UserResponse>('/users/me/profile', {
       displayName: data.displayName,
       bio: data.bio,
       location: data.location,
@@ -173,23 +193,29 @@ export const userService = {
       gender: data.gender ? API_GENDERS[data.gender] || data.gender : undefined,
       showDateOfBirth: data.privacy?.showDateOfBirth,
       showLocation: data.privacy?.showLocation,
-      showPostsOnProfile: data.privacy?.showPostsOnProfile,
+    }),
+
+  updatePrivacy: (privacy: Partial<Pick<User['privacy'], 'showDateOfBirth' | 'showLocation'>>) =>
+    apiClient.patch<Pick<User['privacy'], 'showDateOfBirth' | 'showLocation'>>('/users/me/settings/privacy', {
+      showDateOfBirth: privacy.showDateOfBirth,
+      showLocation: privacy.showLocation,
     }),
 
   uploadAvatar: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return apiClient.put<UserResponse>('/user/me/avatar', formData);
+    return apiClient.put<UserResponse>('/users/me/avatar', formData);
   },
 
   uploadBanner: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return apiClient.put<UserResponse>('/user/me/banner', formData);
+    return apiClient.put<UserResponse>('/users/me/banner', formData);
   },
 };
 
 interface CommunityApiResponse {
+  rules?: string | null;
   id: string | number;
   name: string;
   displayName?: string | null;
@@ -205,11 +231,21 @@ interface CommunityApiResponse {
   memberCount: number;
   currentUserRole?: Community['currentUserRole'] | null;
   myRole?: Community['currentUserRole'] | null;
+  joinRequestPending?: boolean;
   joined?: boolean;
   ownerId?: string | number;
   ownerUsername?: string;
   owner?: { userId?: string | number; username?: string };
   createdAt: string;
+}
+
+export interface CommunityJoinRequest {
+  id: number;
+  applicantUsername: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CLOSED';
+  requestedAt: string;
+  reviewerUsername: string | null;
+  reviewedAt: string | null;
 }
 
 interface CommunityPageResponse {
@@ -249,10 +285,11 @@ function mapCommunity(value: CommunityApiResponse): Community {
     status: mapCommunityStatus(value.status || value.communityStatus),
     memberCount: value.memberCount,
     currentUserRole: value.currentUserRole || value.myRole || (value.joined ? 'MEMBER' : 'NONE'),
+    joinRequestPending: value.joinRequestPending,
     ownerId: String(value.ownerId || value.owner?.userId || ''),
     ownerUsername: value.ownerUsername || value.owner?.username || '',
     createdAt: value.createdAt,
-    rules: [],
+    rules: typeof value.rules === 'string' ? value.rules : '',
   };
 }
 
@@ -328,18 +365,24 @@ export const categoryService = {
 
 export const communityService = {
   list: async (): Promise<Community[]> =>
-    (await getAllCommunityPages('/explore')).map(mapCommunity),
+    (await getAllCommunityPages('/communities')).map(mapCommunity),
+  listJoinRequests: (name: string, history: boolean, page: number) =>
+    apiClient.get<{ content: CommunityJoinRequest[]; page: number; totalElements: number; totalPages: number }>(
+      `/communities/${encodeURIComponent(name)}/join-requests?history=${history}&page=${page}`
+    ),
+  reviewJoinRequest: (name: string, id: number, approved: boolean) =>
+    apiClient.patch<CommunityJoinRequest>(`/communities/${encodeURIComponent(name)}/join-requests/${id}`, { approved }),
   listByCategory: async (slug: string): Promise<Community[]> =>
-    (await getAllCommunityPages(`/explore/${encodeURIComponent(slug)}`)).map(mapCommunity),
+    (await getAllCommunityPages(`/categories/${encodeURIComponent(slug)}/communities`)).map(mapCommunity),
   search: async (query: string): Promise<Community[]> => {
     const escapedQuery = query.trim().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     const filter = `name ~~ '%${escapedQuery}%' or info.description ~~ '%${escapedQuery}%'`;
-    return (await getAllCommunityPages(`/explore/search?filter=${encodeURIComponent(filter)}`)).map(mapCommunity);
+    return (await getAllCommunityPages(`/communities?filter=${encodeURIComponent(filter)}`)).map(mapCommunity);
   },
   mine: async (): Promise<Community[]> => {
     const [owned, joined] = await Promise.all([
-      getCommunitiesWithRole('/user/me/owned', 'OWNER'),
-      getCommunitiesWithRole('/user/me/joined', 'MEMBER'),
+      getCommunitiesWithRole('/users/me/communities/owned', 'OWNER'),
+      getCommunitiesWithRole('/users/me/communities/joined', 'MEMBER'),
     ]);
     return [...owned, ...joined];
   },
@@ -347,19 +390,25 @@ export const communityService = {
     const response = await apiClient.get<CommunityApiResponse>(`/communities/${encodeURIComponent(name)}`);
     return mapCommunity(response);
   },
+  getDefaultRules: async (): Promise<string> => {
+    const response = await apiClient.get<{ rules: string }>('/communities/default-rules');
+    return response.rules;
+  },
   create: async (data: {
+    rules?: string;
     name: string;
     description: string;
     categoryId: number;
     visibility: Community['visibility'];
   }) => {
     const response = await apiClient.post<CommunityApiResponse>('/communities', {
+      rules: data.rules,
       name: data.name,
       description: data.description,
       categoryId: data.categoryId,
       visibility: data.visibility,
     });
-    return { ...mapCommunity(response), currentUserRole: 'OWNER' };
+    return { ...mapCommunity(response), currentUserRole: 'OWNER' as const };
   },
   update: async (name: string, data: Partial<Community>) => {
     let categoryId: number | undefined;
@@ -372,6 +421,7 @@ export const communityService = {
     const response = await apiClient.patch<CommunityApiResponse>(
       `/communities/${encodeURIComponent(name)}`,
       {
+        rules: data.rules,
         description: data.description,
         categoryId,
         visibility: data.visibility,
@@ -406,8 +456,9 @@ export const communityService = {
   transferOwnership: async (name: string, username: string) =>
     apiClient.put(`/communities/${encodeURIComponent(name)}/owner`, { username }),
   join: async (name: string) => {
-    await apiClient.post(`/communities/${encodeURIComponent(name)}/members`);
-    return true;
+    return apiClient.post<{ message: string; currentUserRole: Community['currentUserRole'] | null; joinRequestPending: boolean }>(
+      `/communities/${encodeURIComponent(name)}/members`
+    );
   },
   leave: async (name: string) => {
     await apiClient.delete(`/communities/${encodeURIComponent(name)}/members/me`);
@@ -415,83 +466,113 @@ export const communityService = {
   },
 };
 
+export interface PostPage {
+  content: Post[]; page: number; size: number; totalElements: number;
+  totalPages: number; first: boolean; last: boolean; empty: boolean;
+}
+export interface TrashedPost { post: Post; deletedAt: string | null; canRestore: boolean; }
+export interface TrashPage extends Omit<PostPage, 'content'> { content: TrashedPost[]; }
+function postFormData(input: import('../types').PostInput): FormData {
+  const { files = [], ...post } = input;
+  assertImageRequestSize(files, post);
+  const form = new FormData();
+  form.append('post', new Blob([JSON.stringify(post)], { type: 'application/json' }));
+  files.forEach(file => form.append('files', file));
+  return form;
+}
+
 export const postService = {
-  list: async (tab: string = 'for-you'): Promise<Post[]> =>
-    POSTS_AVAILABLE
-      ? apiClient.get<Post[]>(`/posts?tab=${encodeURIComponent(tab)}`)
-      : [],
-  getById: async (postId: string): Promise<Post | undefined> =>
-    POSTS_AVAILABLE ? apiClient.get<Post>(`/posts/${postId}`) : undefined,
-  create: async (data: {
-    communityName: string;
-    title: string;
-    content: string;
-    tags?: string[];
-    mediaUrl?: string;
-    mediaType?: Post['mediaType'];
-    codeSnippet?: Post['codeSnippet'];
-  }): Promise<Post> => {
-    if (!POSTS_AVAILABLE) throw postsUnavailableError();
-    return apiClient.post<Post>('/posts', data);
-  },
-  toggleHeart: async (postId: string, isHearted: boolean): Promise<{ isHearted: boolean }> => {
-    if (!POSTS_AVAILABLE) throw postsUnavailableError();
-    return apiClient.put<{ isHearted: boolean }>(`/posts/${postId}/vote`, {
-      voteType: isHearted ? 0 : 1,
-    });
-  },
-  toggleSave: async (postId: string): Promise<{ isSaved: boolean }> => {
-    if (!POSTS_AVAILABLE) throw postsUnavailableError();
-    return apiClient.put<{ isSaved: boolean }>(`/posts/${postId}/save`);
-  },
-  delete: async (postId: string): Promise<void> => {
-    if (!POSTS_AVAILABLE) throw postsUnavailableError();
-    return apiClient.delete<void>(`/posts/${postId}`);
-  },
-  listSaved: async (): Promise<Post[]> =>
-    POSTS_AVAILABLE ? apiClient.get<Post[]>('/posts/saved') : [],
+  saved: (page = 0) => apiClient.get<PostPage>(`/posts/saved?page=${page}&size=20`),
+  save: (id: string, saved: boolean) => saved
+    ? apiClient.put<Post>(`/posts/${id}/save`)
+    : apiClient.delete<Post>(`/posts/${id}/save`),
+  trash: (page = 0) => apiClient.get<TrashPage>(`/posts/trash?page=${page}&size=20`),
+  restore: (id: string) => apiClient.post<Post>(`/posts/${id}/restore`),
+  vote: (id: string, type: 'UP' | 'DOWN' | null) => type === null
+    ? apiClient.delete<Post>(`/posts/${id}/vote`)
+    : apiClient.put<Post>(`/posts/${id}/vote`, { type }),
+  setPinned: (id: string, pinned: boolean) => pinned
+    ? apiClient.put<void>(`/posts/${id}/pin`)
+    : apiClient.delete<void>(`/posts/${id}/pin`),
+  list: (tab = 'for-you', page = 0) => apiClient.get<PostPage>(`/posts?tab=${encodeURIComponent(tab)}&page=${page}&size=20`),
+  getById: (id: string) => apiClient.get<Post>(`/posts/${id}`),
+  search: (query: string, page = 0) => apiClient.get<PostPage>(`/posts?tab=latest&q=${encodeURIComponent(query.trim())}&page=${page}&size=20`),
+  create: (input: import('../types').PostInput) => apiClient.post<Post>('/posts', postFormData(input)),
+  update: (id: string, input: import('../types').PostInput) => apiClient.patch<Post>(`/posts/${id}`, postFormData(input)),
+  delete: (id: string) => apiClient.delete<void>(`/posts/${id}`),
+  listCommunity: (name: string, page = 0) => apiClient.get<PostPage>(`/communities/${encodeURIComponent(name)}/posts?page=${page}&size=20`),
+  listUser: (name: string, page = 0) => apiClient.get<PostPage>(`/users/${encodeURIComponent(name)}/posts?page=${page}&size=20`),
 };
 
+export interface CommentMutationResponse {
+  voteScore: number;
+  userVote: 'UP' | 'DOWN' | null;
+  attachments: { id: number; fileName: string; contentType: string; size: number; url: string; expiresAt?: string }[];
+  id: number;
+  postId: number;
+  authorId: number;
+  parentId: number | null;
+  content: string;
+  status: 'VISIBLE' | 'HIDDEN' | 'DELETED';
+  createdAt: string;
+  updatedAt: string;
+  author: { id: number; username: string; displayName: string | null; avatarUrl: string | null; isAuthor: boolean };
+}
+
 export const commentService = {
-  list: async (postId: string): Promise<Comment[]> =>
-    POSTS_AVAILABLE ? apiClient.get<Comment[]>(`/posts/${postId}/comments`) : [],
-  create: async (
-    postId: string,
-    content: string,
-    parentCommentId?: string
-  ): Promise<Comment> => {
-    if (!POSTS_AVAILABLE) throw postsUnavailableError();
-    return apiClient.post<Comment>(`/posts/${postId}/comments`, { content, parentCommentId });
+  list: (postId: string) => apiClient.get<CommentMutationResponse[]>(`/posts/${postId}/comments`),
+  create: (postId: string, content: string, parentCommentId?: string, files: File[] = []) => {
+    assertImageRequestSize(files, { postId, content, parentId: parentCommentId ?? null });
+    if (!files.length) return apiClient.post<CommentMutationResponse>('/comments', {
+      postId, content, parentId: parentCommentId ?? null,
+    });
+    const body = new FormData();
+    body.append('comment', new Blob([JSON.stringify({ postId, content, parentId: parentCommentId ?? null })], { type: 'application/json' }));
+    files.forEach(file => body.append('files', file));
+    return apiClient.post<CommentMutationResponse>('/comments', body);
   },
-  toggleHeart: async (postId: string, commentId: string): Promise<{ isHearted: boolean }> => {
-    if (!POSTS_AVAILABLE) throw postsUnavailableError();
-    return apiClient.put<{ isHearted: boolean }>(`/posts/${postId}/comments/${commentId}/vote`);
-  },
+  update: (commentId: string, content: string) =>
+    apiClient.patch<CommentMutationResponse>(`/comments/${commentId}`, { content }),
+  delete: (commentId: string) => apiClient.delete<{ message: string }>(`/comments/${commentId}`),
+  vote: (commentId: string, type: 'UP' | 'DOWN' | null) => type === null
+    ? apiClient.delete<CommentMutationResponse>(`/comments/${commentId}/vote`)
+    : apiClient.put<CommentMutationResponse>(`/comments/${commentId}/vote`, { type }),
 };
 
 export const reportService = {
-  create: async (data: Omit<Report, 'id' | 'status' | 'createdAt' | 'reporterUsername'>) => {
-    return apiClient.post<Report>('/reports', data);
+  listMine: (type: MyReport['targetType'], status: MyReport['status'] | '', page: number) => {
+    const params = new URLSearchParams({ type, page: String(page), size: '10' });
+    if (status) params.set('status', status);
+    return apiClient.get<{ content: MyReport[]; last: boolean; totalPages: number }>(`/reports/me?${params}`);
   },
-  list: async (): Promise<Report[]> => apiClient.get<Report[]>('/reports'),
-  listForCommunity: async (communityName: string): Promise<Report[]> =>
-    apiClient.get<Report[]>(`/reports/community/${encodeURIComponent(communityName)}`),
-  resolve: async (reportId: string, status: 'RESOLVED' | 'REJECTED', resolutionNote?: string) =>
-    apiClient.patch<Report>(`/reports/${reportId}`, { status, resolutionNote }),
+  create: async (data: CreateReportRequest): Promise<Report> => {
+    requireFeature(REPORT_CREATION_AVAILABLE, 'Báo cáo');
+    if (!Number.isSafeInteger(data.targetId) || data.targetId <= 0) throw new Error('Nội dung báo cáo không hợp lệ.');
+    const response = await apiClient.post<{
+      id: number; targetType: CreateReportRequest['targetType']; targetId: number;
+      communityName: string; reporterUsername: string; reason: string; description: string | null;
+      status: Report['status']; resolutionNote: string | null; createdAt: string;
+    }>('/reports', data);
+    return {
+      id: String(response.id), contentType: response.targetType, contentId: String(response.targetId),
+      communityName: response.communityName, reporterUsername: response.reporterUsername,
+      reason: response.reason, description: response.description ?? undefined, status: response.status,
+      resolutionNote: response.resolutionNote ?? undefined, createdAt: response.createdAt,
+    };
+  },
 };
 
 export interface AdminStats {
-  totalUsers: number;
-  totalPosts: number;
-  activeCommunities: number;
-  pendingReports: number;
-  userGrowth: { month: string; users: number }[];
+  users: { total: number; active: number; suspended: number };
+  communities: { total: number; active: number; suspended: number };
+  posts: { total: number };
+  comments: { total: number };
 }
 
-interface AdminUserApiResponse {
-  id: string;
+export interface AdminUserApiResponse {
+  id: string | number;
   username: string;
-  displayName: string;
+  displayName: string | null;
   email: string;
   avatarUrl?: string | null;
   role: User['role'];
@@ -499,148 +580,148 @@ interface AdminUserApiResponse {
   createdAt: string;
 }
 
-export const adminService = {
-  getStats: async (): Promise<AdminStats> => apiClient.get<AdminStats>('/admin/stats'),
-  listUsers: async (): Promise<User[]> => {
-    const users = await apiClient.get<AdminUserApiResponse[]>('/admin/users');
-    return users.map((user) => ({
-      id: user.id,
-      username: user.username,
-      displayName: user.displayName,
-      email: user.email,
-      avatarUrl: user.avatarUrl || '',
-      bannerUrl: '',
-      bio: '',
-      privacy: { showDateOfBirth: false, showLocation: false, showPostsOnProfile: true },
-      role: user.role,
-      status: user.status === 'LOCKED' ? 'SUSPENDED' : user.status as User['status'],
-      createdAt: user.createdAt,
-      karma: 0,
-    }));
-  },
-  updateUserStatus: async (id: string, status: string): Promise<User> => {
-    const updated = await apiClient.patch<AdminUserApiResponse>(`/admin/users/${id}/status`, { status });
-    return {
-      id: updated.id,
-      username: updated.username,
-      displayName: updated.displayName,
-      email: updated.email,
-      avatarUrl: updated.avatarUrl || '',
-      bannerUrl: '',
-      bio: '',
-      privacy: { showDateOfBirth: false, showLocation: false, showPostsOnProfile: true },
-      role: updated.role,
-      status: updated.status === 'LOCKED' ? 'SUSPENDED' : updated.status as User['status'],
-      createdAt: updated.createdAt,
-      karma: 0,
-    };
-  },
-  listCommunities: async (): Promise<Community[]> => {
-    const communities = await apiClient.get<CommunityApiResponse[]>('/admin/communities');
-    return communities.map(mapCommunity);
-  },
-  setCommunityStatus: async (name: string, status: Community['status']) =>
-    apiClient.patch<void>(`/communities/${encodeURIComponent(name)}/status`, { status }),
-};
-
-export const notificationService = {
-  list: async (): Promise<NotificationItem[]> =>
-    NOTIFICATIONS_AVAILABLE
-      ? apiClient.get<NotificationItem[]>('/notifications')
-      : demoNotifications.map((notification) => ({ ...notification })),
-  markRead: async (id: string): Promise<void> => {
-    if (!NOTIFICATIONS_AVAILABLE) throw notificationsUnavailableError();
-    return apiClient.put<void>(`/notifications/${id}/read`);
-  },
-  markAllRead: async (): Promise<void> => {
-    if (!NOTIFICATIONS_AVAILABLE) throw notificationsUnavailableError();
-    return apiClient.put<void>('/notifications/read-all');
-  },
-  getPreferences: async (): Promise<NotificationPreferences> => {
-    if (!NOTIFICATIONS_AVAILABLE) throw notificationsUnavailableError();
-    return apiClient.get<NotificationPreferences>('/notifications/preferences');
-  },
-  savePreferences: async (preferences: NotificationPreferences): Promise<NotificationPreferences> => {
-    if (!NOTIFICATIONS_AVAILABLE) throw notificationsUnavailableError();
-    return apiClient.put<NotificationPreferences>('/notifications/preferences', preferences);
-  },
-};
-
-export interface NotificationPreferences {
-  inAppReplies: boolean;
-  inAppMentions: boolean;
-  inAppCommunityActivity: boolean;
-  emailDigest: boolean;
-  emailAnnouncements: boolean;
+export interface AdminUserPage {
+  content: AdminUserApiResponse[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
 }
 
-export const messageService = {
-  list: async (): Promise<Conversation[]> => MESSAGES_AVAILABLE
-    ? apiClient.get<Conversation[]>('/messages')
-    : localConversations.map((conversation) => ({
-        ...conversation,
-        participant: { ...conversation.participant },
-        messages: conversation.messages.map((message) => ({ ...message })),
-      })),
-  get: async (conversationId: string): Promise<Conversation> => {
-    if (MESSAGES_AVAILABLE) return apiClient.get<Conversation>(`/messages/${conversationId}`);
-    const conversation = localConversations.find((item) => item.id === conversationId);
-    if (!conversation) throw new Error('Không tìm thấy cuộc trò chuyện.');
-    return {
-      ...conversation,
-      participant: { ...conversation.participant },
-      messages: conversation.messages.map((message) => ({ ...message })),
-    };
+export interface AdminUserDetail {
+  userId: number | string;
+  username: string;
+  joinedAt: string;
+  profile: {
+    displayName: string | null;
+    bio: string | null;
+    avatar: string | null;
+    banner: string | null;
+    dateOfBirth: string | null;
+    gender: string | null;
+    location: string | null;
+  };
+}
+
+export const adminService = {
+  getStats: async (): Promise<AdminStats> => {
+    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
+    const response = await apiClient.get<{ data: AdminStats }>('/admin/stats');
+    return response.data;
   },
-  createConversation: async (username: string): Promise<Conversation> => {
-    if (MESSAGES_AVAILABLE) {
-      return apiClient.post<Conversation>('/messages/conversations', { username });
-    }
-    const normalizedUsername = username.trim().replace(/^@/, '');
-    if (!normalizedUsername) throw new Error('Vui lòng nhập tên người dùng.');
-    const existing = localConversations.find(
-      (conversation) => conversation.participant.username === normalizedUsername
-    );
-    if (existing) return existing;
-    const conversation: Conversation = {
-      id: `demo-conversation-${Date.now()}`,
-      participant: {
-        id: `demo-user-${normalizedUsername}`,
-        username: normalizedUsername,
-        displayName: normalizedUsername,
-        avatarUrl: '',
-        status: 'offline',
-      },
-      lastMessage: '',
-      lastMessageTime: '',
-      unreadCount: 0,
-      messages: [],
-    };
-    localConversations = [conversation, ...localConversations];
-    return conversation;
+  listUsers: async (options: { page?: number; size?: number; status?: string; role?: string; sort?: string } = {}): Promise<AdminUserPage> => {
+    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
+    const params = new URLSearchParams({
+      page: String(options.page ?? 0), size: String(options.size ?? 10),
+      sort: options.sort ?? 'createdAt,desc',
+    });
+    if (options.status) params.set('status', options.status);
+    if (options.role) params.set('role', options.role);
+    return apiClient.get<AdminUserPage>(`/admin/users?${params}`);
   },
-  send: async (conversationId: string, text: string): Promise<ChatMessage> => {
-    if (MESSAGES_AVAILABLE) {
-      return apiClient.post<ChatMessage>(`/messages/${conversationId}`, { text });
-    }
-    const conversation = localConversations.find((item) => item.id === conversationId);
-    const trimmedText = text.trim();
-    if (!conversation) throw new Error('Không tìm thấy cuộc trò chuyện.');
-    if (!trimmedText) throw new Error('Tin nhắn không được để trống.');
-    const timestamp = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-    const message: ChatMessage = {
-      id: `demo-message-${Date.now()}`,
-      senderId: 'demo-current-user',
-      senderUsername: 'ban',
-      text: trimmedText,
-      timestamp,
-      isMe: true,
-    };
-    localConversations = localConversations.map((item) =>
-      item.id === conversationId
-        ? { ...item, lastMessage: message.text, lastMessageTime: timestamp, messages: [...item.messages, message] }
-        : item
-    );
-    return message;
+  searchUsers: async (options: { search: string; page?: number; size?: number; status?: string; role?: string }): Promise<AdminUserPage> => {
+    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
+    const search = options.search.trim();
+    if (!search) throw new Error('Từ khóa tìm kiếm không được để trống.');
+    const params = new URLSearchParams({
+      search,
+      page: String(options.page ?? 0),
+      size: String(options.size ?? 10),
+    });
+    if (options.status) params.set('status', options.status);
+    if (options.role) params.set('role', options.role);
+    return apiClient.get<AdminUserPage>(`/admin/users/search?${params}`);
   },
+  getUserDetail: (id: string | number): Promise<AdminUserDetail> => {
+    requireFeature(ADMIN_AVAILABLE, 'Quản trị');
+    return apiClient.get<AdminUserDetail>(`/admin/users/${encodeURIComponent(String(id))}`);
+  },
+  lockUser: (id: string | number): Promise<{ message: string }> =>
+    apiClient.patch<{ message: string }>(`/admin/users/${id}/lock`),
+  unlockUser: (id: string | number): Promise<{ message: string }> =>
+    apiClient.patch<{ message: string }>(`/admin/users/${id}/unlock`),
+};
+
+type NotificationResponse = {
+  id: number;
+  type: NotificationItem['type'];
+  actor: NotificationItem['actor'];
+  postId: number | null;
+  commentId: number | null;
+  communityName: string | null;
+  reportId: number | null;
+  reportTargetType: CreateReportRequest['targetType'] | null;
+  reportStatus: 'RESOLVED' | 'REJECTED' | null;
+  read: boolean;
+  createdAt: string;
+};
+
+function mapNotification(item: NotificationResponse): NotificationItem {
+  let targetUrl = item.postId ? `/post/${item.postId}${item.commentId ? `#comment-${item.commentId}` : ''}` : '/notifications';
+  const communityLabel = item.communityName ? `c/${item.communityName}` : 'cộng đồng';
+  const messages = {
+    COMMUNITY_JOIN_CONFIRMED: `Bạn đã tham gia ${communityLabel}.`,
+    COMMUNITY_MEMBER_JOINED: `đã tham gia ${communityLabel}.`,
+    COMMUNITY_JOIN_REQUEST_SENT: `Bạn đã gửi yêu cầu tham gia ${communityLabel}. Yêu cầu đang chờ duyệt.`,
+    COMMUNITY_JOIN_REQUEST_RECEIVED: `đã gửi yêu cầu tham gia ${communityLabel}.`,
+    COMMUNITY_JOIN_APPROVED: `Yêu cầu tham gia ${communityLabel} của bạn đã được duyệt.`,
+    COMMUNITY_JOIN_REJECTED: `Yêu cầu tham gia ${communityLabel} của bạn đã bị từ chối.`,
+    COMMUNITY_POST_CREATED: item.communityName ? `đã đăng bài mới trong c/${item.communityName}.` : 'đã đăng bài mới trong cộng đồng.',
+    POST_COMMENTED: 'đã bình luận về bài viết của bạn.',
+    COMMENT_REPLIED: 'đã trả lời bình luận của bạn.',
+    REPORT_SUBMITTED: 'Có báo cáo mới cần xem xét.',
+    REPORT_REVIEWED: item.reportStatus === 'RESOLVED' ? 'Báo cáo của bạn đã được giải quyết.' : 'Báo cáo của bạn đã bị bác bỏ.',
+    REPORT_WARNING: item.reportTargetType === 'COMMUNITY'
+      ? `Cảnh cáo từ quản trị viên hệ thống: cộng đồng ${item.communityName ? `c/${item.communityName}` : 'của bạn'} được xác định có vi phạm.`
+      : 'Cảnh cáo từ quản trị viên hệ thống: bài viết của bạn được xác định có vi phạm.',
+  };
+  if (item.type === 'REPORT_SUBMITTED') {
+    targetUrl = item.reportTargetType === 'MESSAGE'
+      ? `/admin/reports/MESSAGE/${item.reportId}`
+      : item.reportTargetType === 'COMMUNITY'
+      ? `/admin/reports?type=COMMUNITY${item.reportId ? `&reportId=${item.reportId}` : ''}`
+      : item.communityName ? `/c/${encodeURIComponent(item.communityName)}/moderation?type=${item.reportTargetType || 'POST'}` : '/notifications';
+  }
+  if (item.type === 'REPORT_WARNING' && item.reportTargetType === 'COMMUNITY' && item.communityName) {
+    targetUrl = `/c/${encodeURIComponent(item.communityName)}`;
+  }
+  if (item.type === 'REPORT_REVIEWED') {
+    const query = new URLSearchParams();
+    if (item.reportTargetType) query.set('type', item.reportTargetType);
+    if (item.reportStatus) query.set('status', item.reportStatus);
+    targetUrl = query.size ? `/reports/mine?${query}` : '/reports/mine';
+  }
+  const isMembershipNotification = item.type.startsWith('COMMUNITY_JOIN_') || item.type === 'COMMUNITY_MEMBER_JOINED';
+  if (isMembershipNotification && item.communityName) {
+    const communityPath = `/c/${encodeURIComponent(item.communityName)}`;
+    targetUrl = item.type === 'COMMUNITY_JOIN_REQUEST_RECEIVED'
+      ? `${communityPath}/moderation?tab=join-requests`
+      : communityPath;
+  }
+  const showActor = !item.type.startsWith('REPORT_') && (!isMembershipNotification
+    || item.type === 'COMMUNITY_MEMBER_JOINED' || item.type === 'COMMUNITY_JOIN_REQUEST_RECEIVED');
+  return {
+    id: String(item.id), type: item.type,
+    actor: showActor ? item.actor : null,
+    message: messages[item.type], targetUrl, isRead: item.read, createdAt: item.createdAt,
+  };
+}
+
+export const notificationService = {
+  getNotifications: async (page = 0, unreadOnly = false) => {
+    const response = await apiClient.get<{ content: NotificationResponse[]; last: boolean; totalElements: number }>(
+      `/notifications?page=${page}&size=20&unreadOnly=${unreadOnly}`);
+    return { ...response, content: response.content.map(mapNotification) };
+  },
+  getUnreadNotificationCount: () => apiClient.get<{ unreadCount: number; totalCount: number; latestId: number | null; lastReadAt: string | null }>('/notifications/unread-count'),
+  markNotificationAsRead: (id: string) => apiClient.put<void>(`/notifications/${encodeURIComponent(id)}/read`),
+  markAllNotificationsAsRead: () => apiClient.put<void>('/notifications/read-all'),
+  deleteReadNotifications: () => apiClient.delete<void>('/notifications/read'),
+  getCommunityNotificationPreference: (name: string) => apiClient.get<{ newPostEnabled: boolean }>(
+    `/communities/${encodeURIComponent(name)}/notification-preferences`),
+  updateCommunityNotificationPreference: (name: string, newPostEnabled: boolean) => apiClient.put<{ newPostEnabled: boolean }>(
+    `/communities/${encodeURIComponent(name)}/notification-preferences`, { newPostEnabled }),
 };

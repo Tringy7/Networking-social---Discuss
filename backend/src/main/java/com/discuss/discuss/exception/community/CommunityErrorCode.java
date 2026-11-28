@@ -3,10 +3,21 @@ package com.discuss.discuss.exception.community;
 import org.springframework.http.HttpStatus;
 
 public enum CommunityErrorCode {
+    JOIN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "Join request not found"),
+    JOIN_REQUEST_ALREADY_REVIEWED(HttpStatus.CONFLICT, "Join request is already closed"),
+    JOIN_REQUESTS_PRIVATE_ONLY(HttpStatus.FORBIDDEN, "Join requests are only available for private communities"),
+
+    CATEGORY_ALREADY_EXISTS(HttpStatus.CONFLICT, "Category name or slug already exists"),
+    CATEGORY_IN_USE(HttpStatus.CONFLICT, "Category is still used by a community"),
 
     // =========================
     // 400 - Bad Request
     // =========================
+
+    INVALID_STATUS(
+            HttpStatus.BAD_REQUEST,
+            "Invalid community status"
+    ),
 
     COMMUNITY_NAME_RESERVED(
             HttpStatus.BAD_REQUEST,
@@ -30,6 +41,26 @@ public enum CommunityErrorCode {
     FORBIDDEN(
             HttpStatus.FORBIDDEN,
             "You do not have permission to perform this action"
+    ),
+
+    ACTIVE_MEMBERSHIP_REQUIRED(
+            HttpStatus.FORBIDDEN,
+            "You are not an active member"
+    ),
+
+    COMMENT_PERMISSION_DENIED(
+            HttpStatus.FORBIDDEN,
+            "Commenting is not allowed"
+    ),
+
+    MODERATOR_OR_OWNER_REQUIRED(
+            HttpStatus.FORBIDDEN,
+            "Moderator or Owner permission required"
+    ),
+
+    OWNER_REQUIRED(
+            HttpStatus.FORBIDDEN,
+            "Owner permission required"
     ),
 
     COMMUNITY_PRIVATE(

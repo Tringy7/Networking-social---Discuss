@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import Button from '../../components/ui/Button';
 import { MailCheck, RotateCcw, ArrowLeft } from 'lucide-react';
+import { AuthError, AuthHeading } from '../../components/auth/AuthFormParts';
 
 export const VerifyEmailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -13,7 +14,9 @@ export const VerifyEmailPage: React.FC = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [cooldown, setCooldown] = useState(60);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState('');
+  const requestInFlight = useRef(false);
 
   useEffect(() => {
     if (cooldown > 0) {
@@ -43,14 +46,26 @@ export const VerifyEmailPage: React.FC = () => {
     }
   };
 
+  const handlePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+    const digits = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!digits) return;
+    event.preventDefault();
+    setOtp(Array.from({ length: 6 }, (_, index) => digits[index] || ''));
+    setError('');
+    document.getElementById(`otp-box-${Math.min(digits.length, 5)}`)?.focus();
+  };
+
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (requestInFlight.current) return;
     const code = otp.join('');
     if (code.length < 6) {
       setError('Vui lòng nhập đầy đủ mã OTP 6 chữ số.');
       return;
     }
 
+    requestInFlight.current = true;
+    setError('');
     setIsLoading(true);
     try {
       if (!pendingEmail) {
@@ -62,12 +77,16 @@ export const VerifyEmailPage: React.FC = () => {
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Xác thực email thất bại.');
     } finally {
+      requestInFlight.current = false;
       setIsLoading(false);
     }
   };
 
   const handleResend = async () => {
-    if (cooldown > 0) return;
+    if (cooldown > 0 || requestInFlight.current) return;
+    requestInFlight.current = true;
+    setIsResending(true);
+    setError('');
     try {
       if (!pendingEmail) {
         throw new Error('Không tìm thấy email đăng ký. Vui lòng đăng ký lại.');
@@ -77,32 +96,26 @@ export const VerifyEmailPage: React.FC = () => {
       addToast('Mã OTP mới đã được gửi tới email của bạn.', 'success');
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Không thể gửi lại mã OTP.');
+    } finally {
+      requestInFlight.current = false;
+      setIsResending(false);
     }
   };
 
   return (
-    <div className="space-y-6 text-left">
-      <div className="w-11 h-11 rounded-full bg-[var(--color-orange-soft)] flex items-center justify-center text-[var(--color-orange-ink)]">
-        <MailCheck className="w-6 h-6" />
-      </div>
+    <div className="auth-page">
+      <MailCheck className="auth-verification-icon" size={32} aria-hidden="true" />
 
-      <div className="space-y-1.5">
-        <h1 className="text-2xl font-semibold text-[var(--text-primary)] tracking-tight">Xác thực email</h1>
-        <p className="text-sm leading-6 text-[var(--text-secondary)]">
+      <AuthHeading title="Kiểm tra email của bạn">
           Mã xác thực gồm 6 chữ số đã được gửi tới{' '}
           <span className="font-semibold text-[var(--text-primary)]">{pendingEmail || 'email của bạn'}</span>.
-        </p>
-      </div>
+      </AuthHeading>
 
-      {error && (
-        <div role="alert" className="p-3 rounded-xl bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 text-sm text-[var(--color-danger)] font-medium">
-          {error}
-        </div>
-      )}
+      <AuthError message={error} />
 
-      <form onSubmit={handleVerify} className="space-y-6">
+      <form onSubmit={handleVerify} className="auth-fields" aria-busy={isLoading}>
         {/* OTP Input 6 boxes */}
-        <div className="flex justify-between gap-2" aria-label="Mã xác thực gồm 6 chữ số">
+        <div className="auth-otp" role="group" aria-label="Mã xác thực gồm 6 chữ số">
           {otp.map((digit, idx) => (
             <input
               key={idx}
@@ -111,11 +124,14 @@ export const VerifyEmailPage: React.FC = () => {
               inputMode="numeric"
               maxLength={1}
               value={digit}
+              disabled={isLoading || isResending}
               onChange={(e) => handleDigitChange(idx, e.target.value)}
               onKeyDown={(e) => handleKeyDown(idx, e)}
+              onPaste={handlePaste}
               aria-label={`Chữ số OTP thứ ${idx + 1}`}
               autoComplete={idx === 0 ? 'one-time-code' : 'off'}
-              className="h-12 w-11 rounded-lg border border-[var(--border-color)] bg-[var(--bg-main)] text-center text-lg font-code font-semibold text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-orange)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] sm:w-12"
+              aria-invalid={error ? true : undefined}
+              className="border border-[var(--border-color)] text-center font-semibold text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--color-orange-ink)]"
             />
           ))}
         </div>
@@ -125,37 +141,38 @@ export const VerifyEmailPage: React.FC = () => {
           variant="primary"
           size="lg"
           isLoading={isLoading}
-          className="w-full text-sm font-semibold"
+          disabled={isResending}
+          className="auth-submit"
         >
           Xác thực tài khoản
         </Button>
       </form>
 
       {/* Resend Cooldown */}
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-[var(--text-secondary)] pt-2">
+      <div className="auth-resend">
         <span>Không nhận được mã?</span>
         {cooldown > 0 ? (
           <span className="text-[var(--text-muted)]">Gửi lại sau {cooldown}s</span>
         ) : (
           <button
             onClick={handleResend}
-            className="flex items-center gap-1.5 text-[var(--color-orange-ink)] hover:underline font-semibold cursor-pointer"
+            type="button"
+            disabled={isLoading || isResending}
+            aria-busy={isResending}
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Gửi lại mã OTP</span>
+            <span>{isResending ? 'Đang gửi mã…' : 'Gửi lại mã OTP'}</span>
           </button>
         )}
       </div>
 
-      <div className="pt-2">
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          className="auth-back"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Quay lại trang Đăng nhập</span>
         </Link>
-      </div>
     </div>
   );
 };

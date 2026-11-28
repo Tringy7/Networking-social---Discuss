@@ -1,6 +1,14 @@
 package com.discuss.discuss.controller.community;
 
 import com.discuss.discuss.dto.common.ApiResponse;
+import com.discuss.discuss.enums.CommunityRole;
+import com.discuss.discuss.dto.common.PageResponseDTO;
+import com.discuss.discuss.dto.community.CommunityJoinRequestDTO;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import com.discuss.discuss.service.community.CommunityMemberService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -22,15 +30,39 @@ public class CommunityMemberController {
     ) {
     }
 
+    public record JoinCommunityResponse(String message, CommunityRole currentUserRole, boolean joinRequestPending) {}
+
+    public record ReviewJoinRequest(@NotNull Boolean approved) {}
+
+    @GetMapping("/{name}/join-requests")
+    public PageResponseDTO<CommunityJoinRequestDTO> listJoinRequests(
+            @PathVariable String name,
+            @RequestParam(defaultValue = "false") boolean history,
+            @PageableDefault(size = 10, sort = {"requestedAt", "id"}, direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return communityMemberService.listJoinRequests(name, history, pageable);
+    }
+
+    @PatchMapping("/{name}/join-requests/{id}")
+    public CommunityJoinRequestDTO reviewJoinRequest(
+            @PathVariable String name,
+            @PathVariable @Positive Long id,
+            @Valid @RequestBody ReviewJoinRequest request
+    ) {
+        return communityMemberService.reviewJoinRequest(name, id, request.approved());
+    }
+
     @PostMapping("/{name}/members")
-    public ResponseEntity<ApiResponse> joinCommunity(
+    public ResponseEntity<JoinCommunityResponse> joinCommunity(
             @PathVariable String name
     ) {
-        communityMemberService.joinCommunity(name);
+        var membership = communityMemberService.joinCommunity(name);
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(new ApiResponse("Joined community successfully"));
+        if (membership.pending()) {
+            return ResponseEntity.accepted().body(new JoinCommunityResponse("Join request pending", null, true));
+        }
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new JoinCommunityResponse("Joined community successfully", membership.role(), false));
     }
 
     @PutMapping("/{communitiesName}/moderators/{username}")

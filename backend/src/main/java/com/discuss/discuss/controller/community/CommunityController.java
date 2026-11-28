@@ -1,6 +1,5 @@
 package com.discuss.discuss.controller.community;
 
-import com.discuss.discuss.dto.common.ApiResponse;
 import com.discuss.discuss.dto.common.PageResponseDTO;
 import com.discuss.discuss.dto.community.CommunityDetailResponseDTO;
 import com.discuss.discuss.dto.community.CommunityMemberResponseDTO;
@@ -8,6 +7,7 @@ import com.discuss.discuss.dto.community.CreateCommunityRequestDTO;
 import com.discuss.discuss.dto.community.UpdateCommunityRequestDTO;
 import com.discuss.discuss.enums.CommunityRole;
 import com.discuss.discuss.service.community.CommunityService;
+import com.discuss.discuss.service.community.CommunityRulesService;
 import com.discuss.discuss.service.media.ImageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +27,12 @@ public class CommunityController {
 
     private final CommunityService communityService;
     private final ImageService imageService;
+    private final CommunityRulesService communityRulesService;
+
+    @GetMapping("/default-rules")
+    public ResponseEntity<java.util.Map<String, String>> getDefaultRules() {
+        return ResponseEntity.ok(java.util.Map.of("rules", communityRulesService.getDefaultRules()));
+    }
 
     /** Creates a new community. */
     @PostMapping
@@ -47,18 +53,6 @@ public class CommunityController {
                 communityService.updateCommunity(name, request)
         );
     }
-
-//    /** Deletes a community. */
-//    @DeleteMapping("/{name}")
-//    public ResponseEntity<ApiResponse> deleteCommunity(
-//            @PathVariable String name
-//    ) {
-//        communityService.deleteCommunity(name);
-//
-//        return ResponseEntity.ok(
-//                new ApiResponse("Community deleted successfully")
-//        );
-//    }
 
     /** Retrieves community details by name. */
     @GetMapping("/{name}")

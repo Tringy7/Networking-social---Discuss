@@ -2,6 +2,7 @@ package com.discuss.discuss.mapper.user;
 
 import com.discuss.discuss.dto.user.PublicUserProfileResponseDTO;
 import com.discuss.discuss.dto.user.UserInfoResponseDTO;
+import com.discuss.discuss.dto.user.UserReputationDTO;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserPrivacySettings;
 import com.discuss.discuss.entity.UserProfile;
@@ -9,7 +10,6 @@ import com.discuss.discuss.service.media.MinioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 
 @Component
 @RequiredArgsConstructor
@@ -23,7 +23,8 @@ public class UserMapper {
     public UserInfoResponseDTO toUserInfoResponse(
             User user,
             UserProfile profile,
-            UserPrivacySettings privacySettings
+            UserPrivacySettings privacySettings,
+            UserReputationDTO reputation
     ) {
         UserInfoResponseDTO.Profile profileDTO = null;
 
@@ -51,12 +52,14 @@ public class UserMapper {
         return new UserInfoResponseDTO(
                 user.getUsername(),
                 user.getEmail(),
+                user.getProvider(),
                 user.getRole(),
                 user.getStatus(),
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
                 profileDTO,
-                privacySettingsDTO
+                privacySettingsDTO,
+                reputation
         );
     }
 
@@ -68,7 +71,7 @@ public class UserMapper {
             UserProfile profile,
             String dateOfBirth,
             String location,
-            PublicUserProfileResponseDTO.Statistics statistics
+            UserReputationDTO reputation
     ) {
         PublicUserProfileResponseDTO.Profile profileDTO = null;
 
@@ -89,7 +92,7 @@ public class UserMapper {
                 user.getUsername(),
                 user.getCreatedAt(),
                 profileDTO,
-                statistics
+                reputation
         );
     }
 }

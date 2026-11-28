@@ -1,9 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, KeyRound, Lock, Palette, Bell, ChevronRight } from 'lucide-react';
+import { User, KeyRound, Lock, Palette, Bell, Trash2, ChevronRight } from 'lucide-react';
 
 export const GeneralSettingsPage: React.FC = () => {
   const sections = [
+    {
+      to: '/settings/trash',
+      title: 'Thùng rác',
+      desc: 'Xem lại nội dung và khôi phục các bài viết của bạn đã xóa.',
+      icon: <Trash2 className="w-5 h-5 text-[var(--text-secondary)]" />,
+    },
     {
       to: '/settings/profile',
       title: 'Hồ sơ cá nhân',
@@ -13,13 +19,13 @@ export const GeneralSettingsPage: React.FC = () => {
     {
       to: '/settings/account',
       title: 'Tài khoản & Đăng nhập',
-      desc: 'Quản lý địa chỉ email, đổi mật khẩu và xem các phiên đăng nhập đang hoạt động.',
+      desc: 'Xem thông tin đăng nhập, đổi mật khẩu và quản lý các phiên đang hoạt động.',
       icon: <KeyRound className="w-5 h-5 text-[var(--text-secondary)]" />,
     },
     {
       to: '/settings/privacy',
       title: 'Quyền riêng tư & Bảo mật',
-      desc: 'Kiểm soát khả năng hiển thị vị trí, ngày sinh và lịch sử bài viết trên trang cá nhân.',
+      desc: 'Chọn hiển thị ngày sinh và vị trí trên hồ sơ công khai.',
       icon: <Lock className="w-5 h-5 text-[var(--text-secondary)]" />,
     },
     {
@@ -31,7 +37,7 @@ export const GeneralSettingsPage: React.FC = () => {
     {
       to: '/settings/notifications',
       title: 'Tùy chọn thông báo',
-      desc: 'Chọn loại thông báo bạn muốn nhận qua ứng dụng hoặc email.',
+      desc: 'Bật hoặc tắt thông báo bài mới cho từng cộng đồng.',
       icon: <Bell className="w-5 h-5 text-[var(--text-secondary)]" />,
     },
   ];

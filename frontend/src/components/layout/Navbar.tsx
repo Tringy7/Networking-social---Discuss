@@ -1,15 +1,21 @@
+import { parseSearchQuery } from '../../utils/searchQuery';
+import { ADMIN_AVAILABLE } from '../../services';
+import { postPath } from '../../utils/postPath';
 import ThemeToggle from '../ui/ThemeToggle';
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import NotificationBadge from '../ui/NotificationBadge';
+import NotificationPanel from './NotificationPanel';
 import Logo from '../common/Logo';
 import Avatar from '../ui/Avatar';
 import Button from '../ui/Button';
+import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { usePostStore } from '../../store/usePostStore';
 import { useToastStore } from '../../store/useToastStore';
-import { useNotificationStore } from '../../store/useNotificationStore';
+import { notificationSyncKey, useNotificationStore } from '../../store/useNotificationStore';
+import { listenForNotificationSoundPermission } from '../../utils/notificationSound';
 import {
   Search,
   Plus,
@@ -21,7 +27,6 @@ import {
   LogOut,
   Shield,
   X,
-  TrendingUp,
   Clock,
   ChevronDown,
   ArrowUpRight,
@@ -29,13 +34,26 @@ import {
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, logout, activeRole } = useAuthStore();
+  const unreadMessages = useChatStore(state => state.threads.reduce((total, thread) => total + (thread.hidden || thread.muted ? 0 : thread.unread), 0));
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+    const stop = useChatStore.getState().connect();
+    return () => {
+      stop();
+      useChatStore.getState().clear();
+    };
+  }, [isAuthenticated, user?.id]);
   const { communities } = useCommunityStore();
-  const { posts, openCreateModal } = usePostStore();
-  const { notifications, hydrate: hydrateNotifications, markRead } = useNotificationStore();
+  const { posts } = usePostStore();
+  const { unreadCount: unreadNotifs, hydrate: hydrateNotifications, syncUnreadCount, clear } = useNotificationStore();
   const addToast = useToastStore((state) => state.addToast);
 
   const [searchQuery, setSearchQuery] = useState('');
+  useEffect(() => {
+    if (location.pathname === '/search') setSearchQuery(new URLSearchParams(location.search).get('q') || '');
+  }, [location.pathname, location.search]);
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     try {
       const saved: unknown = JSON.parse(localStorage.getItem('discuss_searches') || '[]');
@@ -53,17 +71,48 @@ export const Navbar: React.FC = () => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchButtonRef = useRef<HTMLButtonElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuButtonRef = useRef<HTMLButtonElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
-
-  const unreadNotifs = notifications.filter((notification) => !notification.isRead).length;
+  const notificationButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    clear();
+    if (!isAuthenticated || !user?.id) return;
     hydrateNotifications().catch((error: unknown) => {
       addToast(error instanceof Error ? error.message : 'Không thể tải thông báo.', 'error');
     });
-  }, [addToast, hydrateNotifications, isAuthenticated]);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') void hydrateNotifications().catch(() => {});
+    };
+    const syncFromOtherTab = (event: StorageEvent) => {
+      if (event.key !== notificationSyncKey || !event.newValue) return;
+      try {
+        if (JSON.parse(event.newValue)?.userId === user.id) {
+          void hydrateNotifications().catch(() => {});
+        }
+      } catch {
+        // Ignore malformed browser storage events.
+      }
+    };
+    const stopListeningForSoundPermission = listenForNotificationSoundPermission();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void syncUnreadCount().catch(() => {});
+    }, 10000);
+    window.addEventListener('focus', refreshWhenVisible);
+    window.addEventListener('online', refreshWhenVisible);
+    window.addEventListener('storage', syncFromOtherTab);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => {
+      stopListeningForSoundPermission();
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refreshWhenVisible);
+      window.removeEventListener('online', refreshWhenVisible);
+      window.removeEventListener('storage', syncFromOtherTab);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, [addToast, clear, hydrateNotifications, isAuthenticated, syncUnreadCount, user?.id]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -85,7 +134,16 @@ export const Navbar: React.FC = () => {
   useEffect(() => {
     if (!isMobileSearchOpen && !isSearchOpen && !isUserMenuOpen && !isNotifOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && !event.isComposing) {
+        if (isNotifOpen && notifRef.current?.contains(document.activeElement)) {
+          notificationButtonRef.current?.focus();
+        }
+        if (isUserMenuOpen && userMenuRef.current?.contains(document.activeElement)) {
+          userMenuButtonRef.current?.focus();
+        }
+        if (isMobileSearchOpen && searchRef.current?.contains(document.activeElement)) {
+          mobileSearchButtonRef.current?.focus();
+        }
         setIsMobileSearchOpen(false);
         setIsSearchOpen(false);
         setIsUserMenuOpen(false);
@@ -102,7 +160,7 @@ export const Navbar: React.FC = () => {
     setIsSearchOpen(false);
     setIsMobileSearchOpen(false);
     rememberSearch(searchQuery.trim());
-    navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}&type=all`);
+    navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
   const handleLogout = async () => {
@@ -115,16 +173,18 @@ export const Navbar: React.FC = () => {
     }
   };
 
-  const filteredCommunities = communities
+  const search = parseSearchQuery(searchQuery);
+  const keyword = search.keyword.toLowerCase();
+  const filteredCommunities = (search.type === 'communities' && keyword ? communities : [])
     .filter(
       (c) =>
-        c.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.name.toLowerCase().includes(searchQuery.toLowerCase())
+        c.displayName.toLowerCase().includes(keyword) ||
+        c.name.toLowerCase().includes(keyword)
     )
     .slice(0, 3);
 
-  const filteredPosts = posts
-    .filter((p) => p.title.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredPosts = (search.type === 'posts' && keyword ? posts : [])
+    .filter((p) => p.title.toLowerCase().includes(keyword) || p.content?.toLowerCase().includes(keyword))
     .slice(0, 3);
 
   return (
@@ -145,9 +205,9 @@ export const Navbar: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchOpen(true)}
-              placeholder="Tìm kiếm bài viết, cộng đồng, tác giả..."
-              aria-label="Tìm kiếm bài viết, cộng đồng, tác giả"
-              className="w-full h-10 pl-10 pr-20 sm:pr-9 bg-[var(--bg-main)] border border-[var(--border-color)] hover:border-[var(--border-hover)] focus:border-[var(--color-orange-ink)] rounded-full text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus:ring-2 focus:ring-[var(--focus-ring)]"
+              placeholder="Tìm nội dung, u/người dùng, c/cộng đồng..."
+              aria-label="Tìm nội dung, u/ để tìm người dùng, c/ để tìm cộng đồng"
+              className="w-full min-h-10 pl-10 pr-20 sm:pr-9 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--border-hover)] focus:border-[var(--color-orange-ink)] rounded-[var(--radius-control)] text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus:ring-2 focus:ring-[var(--focus-ring)]"
             />
             {searchQuery && (
               <button
@@ -180,7 +240,7 @@ export const Navbar: React.FC = () => {
                         {filteredCommunities.map((c) => (
                           <Link
                             key={c.id}
-                            to={`/community/${c.name}`}
+                            to={`/c/${c.name}`}
                             onClick={() => { setIsSearchOpen(false); setIsMobileSearchOpen(false); }}
                             className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-[var(--bg-elevated)] transition-colors"
                           >
@@ -208,7 +268,7 @@ export const Navbar: React.FC = () => {
                         {filteredPosts.map((p) => (
                           <Link
                             key={p.id}
-                            to={`/post/${p.id}`}
+                            to={postPath(p)}
                             onClick={() => { setIsSearchOpen(false); setIsMobileSearchOpen(false); }}
                             className="block p-2 rounded-xl hover:bg-[var(--bg-elevated)] transition-colors"
                           >
@@ -216,7 +276,7 @@ export const Navbar: React.FC = () => {
                               {p.title}
                             </div>
                             <div className="text-xs text-[var(--text-muted)] mt-0.5">
-                              {p.communityDisplayName} · {p.heartCount} lượt thích
+                              {p.communityDisplayName} · {p.voteScore} điểm
                             </div>
                           </Link>
                         ))}
@@ -226,38 +286,12 @@ export const Navbar: React.FC = () => {
 
                   {filteredCommunities.length === 0 && filteredPosts.length === 0 && (
                     <div className="py-6 text-center text-xs text-[var(--text-secondary)]">
-                      Không tìm thấy kết quả phù hợp cho "{searchQuery}"
+                      {search.keyword ? `Nhấn Enter để tìm ${search.type === 'people' ? 'người dùng' : search.type === 'communities' ? 'cộng đồng' : 'nội dung'} “${search.keyword}”` : 'Nhập từ khóa sau u/ hoặc c/ để tìm kiếm'}
                     </div>
                   )}
                 </>
               ) : (
                 <>
-                  <div>
-                    <div className="text-xs font-semibold text-[var(--text-muted)] px-2 mb-1.5 flex items-center gap-1.5">
-                      <TrendingUp className="w-3.5 h-3.5 text-[var(--color-orange)]" />
-                      <span>Chủ đề thảo luận</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 px-2">
-                      {[...new Set(posts.flatMap((post) => post.tags || []))].slice(0, 8).map(
-                        (tag) => (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => {
-                              setSearchQuery(tag);
-                              rememberSearch(tag);
-                              navigate(`/search?q=${encodeURIComponent(tag)}&type=all`);
-                              setIsSearchOpen(false);
-                              setIsMobileSearchOpen(false);
-                            }}
-                            className="text-xs px-2.5 py-1 rounded-full bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-                          >
-                            {tag}
-                          </button>
-                        )
-                      )}
-                    </div>
-                  </div>
                   <div className="border-t border-[var(--border-color)] pt-2">
                     <div className="text-xs font-semibold text-[var(--text-muted)] px-2 mb-1 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" />
@@ -272,7 +306,7 @@ export const Navbar: React.FC = () => {
                           onClick={() => {
                             setSearchQuery(recent);
                             rememberSearch(recent);
-                            navigate(`/search?q=${encodeURIComponent(recent)}&type=all`);
+                            navigate(`/search?q=${encodeURIComponent(recent)}`);
                             setIsSearchOpen(false);
                             setIsMobileSearchOpen(false);
                           }}
@@ -293,6 +327,7 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center gap-1 sm:gap-3 shrink-0">
           <ThemeToggle />
           <button
+            ref={mobileSearchButtonRef}
             type="button"
             onClick={() => {
               setIsMobileSearchOpen((open) => !open);
@@ -311,26 +346,26 @@ export const Navbar: React.FC = () => {
                 variant="primary"
                 size="sm"
                 leftIcon={<Plus className="w-4 h-4" />}
-                onClick={() => openCreateModal()}
+                onClick={() => navigate('/posts/create')}
                 className="navbar-create-post cursor-pointer"
               >
                 Tạo bài viết
               </Button>
 
-              {/* Messages Shortcut */}
-              <Link
-                to="/messages"
-                className="hidden sm:flex p-2 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors relative cursor-pointer"
+              <button type="button"
+                onClick={() => useChatStore.getState().openWindow()}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors relative cursor-pointer"
                 title="Tin nhắn riêng"
-                aria-label="Tin nhắn riêng"
-              >
+                aria-label={unreadMessages ? `Tin nhắn riêng, ${unreadMessages} chưa đọc` : "Tin nhắn riêng"}>
                 <MessageSquare className="w-5 h-5" />
-
-              </Link>
+                {unreadMessages > 0 && <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[var(--color-danger)]" />}
+              </button>
 
               {/* Notifications Dropdown */}
               <div ref={notifRef} className="relative hidden sm:block">
                 <button
+                  ref={notificationButtonRef}
+                  type="button"
                   onClick={() => {
                     setIsNotifOpen(!isNotifOpen);
                     if (!isNotifOpen && isAuthenticated) {
@@ -343,71 +378,31 @@ export const Navbar: React.FC = () => {
                   title="Thông báo"
                   aria-label={`Thông báo${unreadNotifs > 0 ? `, ${unreadNotifs} chưa đọc` : ''}`}
                   aria-expanded={isNotifOpen}
+                  aria-controls={isNotifOpen ? "navbar-notifications" : undefined}
                 >
                   <Bell className="w-5 h-5" />
                   <NotificationBadge count={unreadNotifs} />
                 </button>
 
-                {isNotifOpen && (
-                  <div data-ui="popover" className="absolute right-0 top-11 z-50 w-[min(20rem,calc(100vw-2rem))] space-y-3 border p-4 text-left sm:w-96">
-                    <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
-                      <h4 className="text-sm font-semibold text-[var(--text-primary)]">Thông báo</h4>
-                      {unreadNotifs > 0 && (
-                        <span className="rounded-full bg-[var(--color-orange-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--color-orange)]">
-                          {unreadNotifs > 99 ? '99+' : unreadNotifs} mới
-                        </span>
-                      )}
-                      <Link
-                        to="/notifications"
-                        onClick={() => setIsNotifOpen(false)}
-                        className="text-xs text-[var(--color-orange)] hover:underline"
-                      >
-                        Xem tất cả
-                      </Link>
-                    </div>
-
-                    <div className="space-y-2 max-h-72 overflow-y-auto">
-                      {notifications.length === 0 ? (
-                        <p className="py-4 text-center text-xs text-[var(--text-secondary)]">
-                      Chưa có thông báo mới.
-                        </p>
-                      ) : notifications.slice(0, 5).map((n) => (
-                        <Link
-                          key={n.id}
-                          to={n.targetUrl}
-                          onClick={() => {
-                            setIsNotifOpen(false);
-                            if (!n.isRead) {
-                              markRead(n.id).catch((error: unknown) => {
-                                addToast(error instanceof Error ? error.message : 'Không thể cập nhật thông báo.', 'error');
-                              });
-                            }
-                          }}
-                          className={`flex items-start gap-3 rounded-xl p-2.5 transition-colors hover:bg-[var(--bg-hover)] ${
-                            !n.isRead ? 'notification-unread' : ''
-                          }`}
-                        >
-                          <Avatar src={n.actor?.avatarUrl} alt={n.actor?.displayName || 'Discuss'} size="xs" />
-                          <div className="min-w-0 flex-1 text-xs">
-                            <span className="font-semibold text-[var(--text-primary)]">
-                              {n.actor?.displayName || 'DISCUSS'}{' '}
-                            </span>
-                            <span className="text-[var(--text-secondary)]">{n.message}</span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {isNotifOpen && <NotificationPanel
+                  onClose={() => setIsNotifOpen(false)}
+                  onDismiss={() => {
+                    setIsNotifOpen(false);
+                    notificationButtonRef.current?.focus();
+                  }}
+                />}
               </div>
 
               {/* User Dropdown */}
               <div ref={userMenuRef} className="relative">
                 <button
+                  ref={userMenuButtonRef}
+                  type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full hover:bg-[var(--bg-elevated)] border border-transparent hover:border-[var(--border-color)] transition-[background-color,border-color] duration-[var(--duration-fast)] cursor-pointer"
                   aria-label="Mở menu tài khoản"
                   aria-expanded={isUserMenuOpen}
+                  aria-controls={isUserMenuOpen ? 'navbar-account-menu' : undefined}
                 >
                   <Avatar src={user.avatarUrl} alt={user.displayName} size="sm" isOnline />
                   <div className="hidden xl:flex flex-col text-left">
@@ -420,14 +415,14 @@ export const Navbar: React.FC = () => {
                 </button>
 
                 {isUserMenuOpen && (
-                  <div data-ui="popover" className="absolute right-0 top-12 w-64 border p-2 z-50 text-left space-y-1">
+                  <div id="navbar-account-menu" data-ui="popover" className="absolute right-0 top-12 w-64 border p-2 z-50 text-left space-y-1">
                     <div className="px-3 py-2 border-b border-[var(--border-color)] mb-1">
                       <div className="text-xs font-semibold text-[var(--text-primary)]">{user.displayName}</div>
                       <div className="text-xs text-[var(--text-muted)]">@{user.username}</div>
                     </div>
 
                     <Link
-                      to={`/user/${user.username}`}
+                      to={`/u/${user.username}`}
                       onClick={() => setIsUserMenuOpen(false)}
                       className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-xl transition-colors"
                     >
@@ -453,7 +448,7 @@ export const Navbar: React.FC = () => {
                       <span>Cài đặt hệ thống</span>
                     </Link>
 
-                    {activeRole === 'ADMIN' && (
+                    {ADMIN_AVAILABLE && activeRole === 'ADMIN' && (
                       <Link
                         to="/admin"
                         onClick={() => setIsUserMenuOpen(false)}
@@ -479,15 +474,11 @@ export const Navbar: React.FC = () => {
             </>
           ) : (
             <div className="flex items-center gap-2">
-              <Link to="/login">
-                <Button variant="ghost" size="sm">
-                  Đăng nhập
-                </Button>
+              <Link to="/login" className="inline-flex min-h-10 items-center rounded-[var(--radius-control)] px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]">
+                Đăng nhập
               </Link>
-              <Link to="/register" className="hidden sm:block">
-                <Button variant="primary" size="sm">
-                  Đăng ký
-                </Button>
+              <Link to="/register" className="hidden min-h-10 items-center rounded-[var(--radius-control)] bg-[var(--action-bg)] px-3 text-sm font-semibold text-[var(--action-ink)] hover:bg-[var(--action-hover)] sm:inline-flex">
+                Đăng ký
               </Link>
             </div>
           )}

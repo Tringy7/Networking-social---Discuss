@@ -1,14 +1,11 @@
 package com.discuss.discuss.mapper.community;
 
 import com.discuss.discuss.dto.community.CommunityMemberResponseDTO;
-import com.discuss.discuss.entity.CommunityInfo;
 import com.discuss.discuss.entity.CommunityMember;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.entity.UserProfile;
 import com.discuss.discuss.service.community.CommunityInfoService;
 import lombok.RequiredArgsConstructor;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.springframework.stereotype.Component;
 
 @Component

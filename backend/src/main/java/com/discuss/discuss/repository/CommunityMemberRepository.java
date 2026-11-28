@@ -5,6 +5,7 @@ import com.discuss.discuss.entity.CommunityMember;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.CommunityRole;
 import com.discuss.discuss.enums.MembershipStatus;
+import com.discuss.discuss.enums.UserStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,6 +19,27 @@ import java.util.Optional;
 public interface CommunityMemberRepository extends JpaRepository<CommunityMember, Long> {
 
     long countByCommunityAndStatus(Community community, MembershipStatus status);
+
+    @Query("""
+            select distinct cm.user.id from CommunityMember cm
+            where cm.community.id = :communityId and cm.status = :status and cm.user.id <> :authorId
+              and not exists (select p.userId from CommunityNotificationPreference p
+                where p.communityId = :communityId and p.userId = cm.user.id and p.newPostEnabled = false)
+            """)
+    List<Long> findNotificationRecipientIds(@Param("communityId") Long communityId,
+                                           @Param("status") MembershipStatus status,
+                                           @Param("authorId") Long authorId);
+
+    @Query("""
+            select distinct cm.user.id from CommunityMember cm
+            where cm.community.id = :communityId and cm.status = :status
+              and cm.user.status = :userStatus and cm.role in :roles and cm.user.id <> :actorId
+            """)
+    List<Long> findStaffNotificationRecipientIds(@Param("communityId") Long communityId,
+                                      @Param("status") MembershipStatus status,
+                                      @Param("userStatus") UserStatus userStatus,
+                                      @Param("roles") Collection<CommunityRole> roles,
+                                      @Param("actorId") Long actorId);
 
     Optional<CommunityMember> findByCommunityAndUser(Community community, User user);
 

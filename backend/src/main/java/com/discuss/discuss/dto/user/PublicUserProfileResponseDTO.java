@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -18,7 +17,7 @@ public class PublicUserProfileResponseDTO {
     private LocalDateTime joinedAt;
 
     private Profile profile;
-    private Statistics statistics;
+    private UserReputationDTO reputation;
 
     @Data
     @NoArgsConstructor
@@ -31,14 +30,5 @@ public class PublicUserProfileResponseDTO {
         private String dateOfBirth;
         private Gender gender;
         private String location;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Statistics {
-        private long postCount;
-        private long commentCount;
-        private long communityCount;
     }
 }

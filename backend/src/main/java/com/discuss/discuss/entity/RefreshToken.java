@@ -31,6 +31,10 @@ public class RefreshToken {
     @Column(nullable = false)
     private Boolean revoked;
 
+    @ManyToOne
+    @JoinColumn(name = "session_id")
+    private AuthSession session;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

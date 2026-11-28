@@ -10,6 +10,8 @@ interface ModalProps {
   description?: string;
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl';
+  closeDisabled?: boolean;
+  placement?: 'center' | 'right';
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -19,14 +21,18 @@ export const Modal: React.FC<ModalProps> = ({
   description,
   children,
   maxWidth = 'md',
+  closeDisabled = false,
+  placement = 'center',
 }) => {
   const modalId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
+  const closeDisabledRef = useRef(closeDisabled);
   const systemReducedMotion = useReducedMotion();
   const intensity = useSettingsStore((state) => state.settings.animationIntensity);
   const shouldReduceMotion = systemReducedMotion || intensity !== 'full';
   onCloseRef.current = onClose;
+  closeDisabledRef.current = closeDisabled;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -35,8 +41,12 @@ export const Modal: React.FC<ModalProps> = ({
     const focusFrame = window.requestAnimationFrame(() => dialogRef.current?.focus());
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // A native image viewer in the top layer owns keyboard interaction while open.
+      const nativeDialog = document.querySelector('dialog[open]');
+      if (nativeDialog && !dialogRef.current?.contains(nativeDialog)) return;
+      if (dialogRef.current?.querySelector('[aria-modal="true"]')) return;
       if (e.key === 'Escape') {
-        onCloseRef.current();
+        if (!closeDisabledRef.current) onCloseRef.current();
         return;
       }
 
@@ -81,14 +91,14 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div className={`fixed inset-0 z-50 flex overflow-y-auto ${placement === 'right' ? 'items-stretch justify-end' : 'items-center justify-center p-4 sm:p-6'}`}>
           {/* Backdrop */}
           <motion.div
             initial={shouldReduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: shouldReduceMotion ? 0 : 0.16 }}
-            onClick={onClose}
+            onClick={closeDisabled ? undefined : onClose}
             className="fixed inset-0 bg-black/45 dark:bg-black/70"
             aria-hidden="true"
           />
@@ -102,11 +112,11 @@ export const Modal: React.FC<ModalProps> = ({
             aria-label={title ? undefined : 'Hộp thoại'}
             aria-labelledby={title ? `${modalId}-title` : undefined}
             aria-describedby={description ? `${modalId}-description` : undefined}
-            initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: 6, transition: { duration: shouldReduceMotion ? 0 : 0.12 } }}
-            transition={shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 380, damping: 32 }}
-            className={`relative w-full ${maxWidths[maxWidth]} max-h-[min(90vh,48rem)] overflow-y-auto bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-[var(--radius-panel)] shadow-[var(--surface-shadow)] p-5 sm:p-6 text-left z-10`}
+            initial={shouldReduceMotion ? false : placement === 'right' ? { opacity: 0, x: 32 } : { opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0, ...(placement === 'right' ? { x: 32 } : { scale: 0.98, y: 6 }), transition: { duration: shouldReduceMotion ? 0 : 0.16 } }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
+            className={`relative w-full ${maxWidths[maxWidth]} ${placement === 'right' ? 'h-dvh' : 'max-h-[min(calc(100dvh-3rem),48rem)] rounded-[var(--radius-panel)]'} overflow-y-auto overscroll-contain bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-primary)] shadow-[var(--surface-shadow)] p-4 sm:p-6 text-left z-10`}
           >
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
@@ -114,8 +124,10 @@ export const Modal: React.FC<ModalProps> = ({
                 {description && <p id={`${modalId}-description`} className="text-sm text-[var(--text-secondary)] mt-1">{description}</p>}
               </div>
               <button
+                type="button"
+                disabled={closeDisabled}
                 onClick={onClose}
-                className="p-2 rounded-[var(--radius-control)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-orange-ink)]"
+                className="modal-close p-2 rounded-[var(--radius-control)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-orange-ink)]"
                 aria-label="Đóng"
               >
                 <X className="w-4 h-4" />

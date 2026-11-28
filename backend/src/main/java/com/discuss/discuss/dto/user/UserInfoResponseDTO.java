@@ -1,6 +1,7 @@
 package com.discuss.discuss.dto.user;
 
 import com.discuss.discuss.enums.Gender;
+import com.discuss.discuss.enums.Provider;
 import com.discuss.discuss.enums.UserRole;
 import com.discuss.discuss.enums.UserStatus;
 import lombok.AllArgsConstructor;
@@ -17,6 +18,7 @@ public class UserInfoResponseDTO {
 
     private String username;
     private String email;
+    private Provider provider;
     private UserRole role;
     private UserStatus status;
     private LocalDateTime createdAt;
@@ -25,6 +27,7 @@ public class UserInfoResponseDTO {
     private Profile profile;
 
     private PrivacySettings privacySettings;
+    private UserReputationDTO reputation;
 
     @Data
     @NoArgsConstructor

@@ -13,9 +13,8 @@ import com.discuss.discuss.mapper.community.CommunityMapper;
 import com.discuss.discuss.mapper.community.CommunityMemberMapper;
 import com.discuss.discuss.mapper.page.PageMapper;
 import com.discuss.discuss.repository.CommunityRepository;
-import com.discuss.discuss.service.community.spectification.CommunitySpecifications;
-import com.discuss.discuss.service.community.support.CommunityNameNormalizer;
 import com.discuss.discuss.service.user.UserService;
+import com.discuss.discuss.utils.annotation.auth.HasRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -24,19 +23,13 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class CommunityService {
 
-    private static final Set<String> RESERVED_NAMES = Set.of(
-            "me", "explore", "new", "create",
-            "search", "admin", "popular"
-    );
-
     private final CommunityRepository communityRepository;
+    private final CommunitySupport communitySupport;
 
     private final CommunityInfoService communityInfoService;
     private final CommunityMemberService communityMemberService;
@@ -46,7 +39,6 @@ public class CommunityService {
     private final CommunityMapper communityMapper;
     private final PageMapper pageMapper;
     private final CommunitySpecifications communitySpecifications;
-    private final CommunityNameNormalizer nameNormalizer;
     private final CommunityMemberMapper communityMemberMapper;
 
     /*
@@ -56,10 +48,10 @@ public class CommunityService {
     public CommunityDetailResponseDTO createCommunity(CreateCommunityRequestDTO req) {
         User user = userService.getCurrentUser();
 
-        String name = this.nameNormalizer.normalize(req.getName());
+        String name = communitySupport.normalize(req.getName());
 
-        this.checkNameCommunityReserved(name);
-        if (this.checkExistsCommunityByName(name)) {
+        communitySupport.checkNameCommunityReserved(name);
+        if (communitySupport.checkExistsCommunityByName(name)) {
             throw new CommunityException(
                     CommunityErrorCode.COMMUNITY_NAME_TAKEN
             );
@@ -104,8 +96,8 @@ public class CommunityService {
             String communityName,
             UpdateCommunityRequestDTO request
     ) {
+        Community community = communitySupport.getActiveCommunityForMembership(communityName);
         User user = userService.getCurrentUser();
-        Community community = this.getCommunityByNameAndStatusActive(communityName);
 
         // Check role user into community
         communityAuthorizationService.requireOwner(community, user);
@@ -131,7 +123,11 @@ public class CommunityService {
             String name,
             CommunityRole role
     ) {
-        Community community = getCommunityByNameAndStatusActive(name);
+        Community community = communitySupport.getCommunityByNameAndStatusActive(name);
+
+        if (community.getVisibility() == CommunityVisibility.PRIVATE) {
+            communityAuthorizationService.requireMembership(community, userService.getCurrentUser());
+        }
 
         Page<CommunityMemberResponseDTO> members =
                 communityMemberService
@@ -141,36 +137,20 @@ public class CommunityService {
         return pageMapper.toResponse(members);
     }
 
-//    /*
-//    * Delete community with the name
-//    * */
-//    @Transactional
-//    public void deleteCommunity(String communityName) {
-//        User user = userService.getCurrentUser();
-//
-//        Community community = this.getCommunityByNameAndStatusActive(communityName);
-//
-//        communityAuthorizationService.requireOwner(community, user);
-//        community.setStatus(CommunityStatus.DELETED);
-//        communityRepository.save(community);
-//    }
-
     /*
     * Get information detail community
     * */
+    @Transactional(readOnly = true)
     public CommunityDetailResponseDTO getCommunityDetail(String name) {
-        Community community = this.getCommunityByNameAndStatusActive(name);
+        Community community = communitySupport.getCommunityByNameAndStatusActive(name);
 
-        CommunityInfo info = community.getInfo();
-
-        long memberCount =
-                communityMemberService.countActiveMembers(community);
-
-        return communityMapper.toDetail(
-                community,
-                info,
-                memberCount
-        );
+        User viewer = userService.getCurrentUser();
+        CommunityDetailResponseDTO detail = toDetail(community);
+        CommunityRole role = communityMemberService.getActiveRole(community, viewer);
+        detail.setCurrentUserRole(role);
+        detail.setJoinRequestPending(role == null && community.getVisibility() == CommunityVisibility.PRIVATE
+                && communityMemberService.hasPendingJoinRequest(community, viewer));
+        return detail;
     }
 
     /*
@@ -181,7 +161,7 @@ public class CommunityService {
             Pageable pageable) {
 
         Specification<Community> specification =
-                communitySpecifications.buildPublicCommunitySpecification();
+                communitySpecifications.hasStatus(CommunityStatus.ACTIVE);
 
         if (filter != null) {
             specification = specification.and(filter);
@@ -264,58 +244,82 @@ public class CommunityService {
                         .map(member -> {
                             Community community = member.getCommunity();
 
-                            return communityMapper.toPreview(
+                            CommunityPreviewResponseDTO preview = communityMapper.toPreview(
                                     community,
                                     community.getInfo(),
                                     communityMemberService.countActiveMembers(community)
                             );
+                            preview.setCurrentUserRole(member.getRole());
+                            return preview;
                         });
 
         return pageMapper.toResponse(communities);
     }
 
-    /*
-     * Get community by name with status active
-     * */
-    public Community getCommunityByNameAndStatusActive(String name) {
-        String normalizedName = nameNormalizer.normalize(name);
 
-        Community community = communityRepository.findByName(normalizedName)
-                .orElseThrow(() ->
-                        new CommunityException(
-                                CommunityErrorCode.COMMUNITY_NOT_FOUND
-                        )
-                );
-
-        if (!community.getStatus().equals(CommunityStatus.ACTIVE)) {
-            throw new CommunityException(
-                    CommunityErrorCode.COMMUNITY_NOT_FOUND
-            );
-        }
-
-        return community;
+    /** Internal management query; includes inactive and private communities when filters are omitted. */
+    @HasRole("ADMIN")
+    @Transactional(readOnly = true)
+    public PageResponseDTO<CommunityDetailResponseDTO> getCommunities(
+            Pageable pageable, CommunityStatus status, CommunityVisibility visibility) {
+        Specification<Community> specification = communitySpecifications.hasStatus(status)
+                .and(communitySpecifications.hasVisibility(visibility));
+        return findCommunityDetails(specification, pageable);
     }
 
-    /*
-     * Check exists community with name
-     * => Exists -> true
-     * */
-    public boolean checkExistsCommunityByName(String name) {
-        if (communityRepository.existsByName(name)) {
-            return true;
-        }
-        return false;
+    @HasRole("ADMIN")
+    @Transactional(readOnly = true)
+    public PageResponseDTO<CommunityDetailResponseDTO> searchCommunities(
+            Pageable pageable, String search, CommunityStatus status, CommunityVisibility visibility) {
+        Specification<Community> specification = communitySpecifications.hasStatus(status)
+                .and(communitySpecifications.hasVisibility(visibility))
+                .and(communitySpecifications.matchesName(search));
+        return findCommunityDetails(specification, pageable);
     }
 
-    /*
-     * Check name communtiy reserved
-     * */
-    public void checkNameCommunityReserved(String name) {
-        if (RESERVED_NAMES.contains(name)) {
-            throw new CommunityException(
-                    CommunityErrorCode.COMMUNITY_NAME_RESERVED
-            );
-        }
+    /** Internal detail lookup that also supports inactive communities. */
+    @HasRole("ADMIN")
+    @Transactional(readOnly = true)
+    public CommunityDetailResponseDTO getCommunityDetailById(Long communityId) {
+        return toDetail(communitySupport.getCommunityById(communityId));
     }
 
+    @HasRole("ADMIN")
+    @Transactional
+    public boolean updateStatus(Long communityId, CommunityStatus status) {
+        if (status == null) {
+            throw new CommunityException(CommunityErrorCode.INVALID_STATUS);
+        }
+
+        Community community = communitySupport.getCommunityById(communityId);
+        if (community.getStatus() == status) {
+            return false;
+        }
+
+        community.setStatus(status);
+        return true;
+    }
+
+    private PageResponseDTO<CommunityDetailResponseDTO> findCommunityDetails(
+            Specification<Community> specification, Pageable pageable) {
+        return pageMapper.toResponse(communityRepository.findAll(specification, pageable)
+                .map(this::toDetail));
+    }
+
+    private CommunityDetailResponseDTO toDetail(Community community) {
+        return communityMapper.toDetail(community, community.getInfo(),
+                communityMemberService.countActiveMembers(community));
+    }
+
+    @Transactional(readOnly = true)
+    @HasRole("ADMIN")
+    public long countAll() {
+        return communityRepository.count();
+    }
+
+    @Transactional(readOnly = true)
+    @HasRole("ADMIN")
+    public long countByStatus(CommunityStatus status) {
+        return communityRepository.countByStatus(status);
+    }
 }

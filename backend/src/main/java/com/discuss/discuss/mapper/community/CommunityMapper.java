@@ -33,6 +33,7 @@ public class CommunityMapper {
                 .id(community.getId())
                 .name(community.getName())
                 .description(info.getDescription())
+                .rules(communityInfoService.resolveRules(info.getRules()))
                 .avatarUrl(
                         communityInfoService.buildImageUrl(info.getAvatar())
                 )
@@ -61,6 +62,7 @@ public class CommunityMapper {
      * Maps the community owner to a response DTO.
      */
     public CommunityOwnerResponseDTO toOwnerDTO(User user) {
+        if (user == null) return null;
         UserProfile profile = userProfileRepository
                 .findByUser(user)
                 .orElse(null);

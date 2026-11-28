@@ -1,0 +1,96 @@
+@baseUrl = http://localhost:8080
+@accessToken = REPLACE_WITH_ADMIN_ACCESS_TOKEN
+@userId = 2
+@communityId = 1
+@postId = 1
+@commentId = 1
+@reportId = 1
+@categoryId = 1
+
+### Statistics
+GET {{baseUrl}}/admin/stats
+Authorization: Bearer {{accessToken}}
+
+### Users
+GET {{baseUrl}}/admin/users/search?search=tri&role=USER&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### Communities
+GET {{baseUrl}}/admin/communities?status=BANED&visibility=PRIVATE&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### Posts
+GET {{baseUrl}}/admin/posts/search?search=java&status=PUBLISHED&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### Post detail, including hidden/deleted posts
+GET {{baseUrl}}/admin/posts/{{postId}}
+Authorization: Bearer {{accessToken}}
+
+### Soft delete a post
+DELETE {{baseUrl}}/admin/posts/{{postId}}
+Authorization: Bearer {{accessToken}}
+
+### Comments
+GET {{baseUrl}}/admin/comments?postId={{postId}}&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### Search comments
+GET {{baseUrl}}/admin/comments/search?search=java&status=VISIBLE&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### Comment detail
+GET {{baseUrl}}/admin/comments/{{commentId}}
+Authorization: Bearer {{accessToken}}
+
+### Soft delete a comment
+DELETE {{baseUrl}}/admin/comments/{{commentId}}
+Authorization: Bearer {{accessToken}}
+
+### Reports (type is required)
+GET {{baseUrl}}/admin/reports?type=POST&status=PENDING&page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### Report detail
+GET {{baseUrl}}/admin/reports/POST/{{reportId}}
+Authorization: Bearer {{accessToken}}
+
+### Resolve after reviewing/moderating the target
+PATCH {{baseUrl}}/admin/reports/POST/{{reportId}}/resolve
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{"resolutionNote":"Reviewed the report and removed the violating post."}
+
+### Reject (use a different pending report to test after resolving)
+PATCH {{baseUrl}}/admin/reports/POST/{{reportId}}/reject
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{"resolutionNote":"No violation found."}
+
+### Categories
+GET {{baseUrl}}/admin/categories
+Authorization: Bearer {{accessToken}}
+
+### Create category
+POST {{baseUrl}}/admin/categories
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{"name":"Programming","slug":"programming"}
+
+### Update category
+PATCH {{baseUrl}}/admin/categories/{{categoryId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{"name":"Software Development","slug":"software-development"}
+
+### Delete unused category
+DELETE {{baseUrl}}/admin/categories/{{categoryId}}
+Authorization: Bearer {{accessToken}}
+
+### Activity logs
+GET {{baseUrl}}/admin/activity-logs?page=0&size=10&action=DELETE_POST
+Authorization: Bearer {{accessToken}}

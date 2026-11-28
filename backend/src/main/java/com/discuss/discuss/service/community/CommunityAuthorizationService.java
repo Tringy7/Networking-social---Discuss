@@ -4,11 +4,13 @@ import com.discuss.discuss.entity.Community;
 import com.discuss.discuss.entity.CommunityMember;
 import com.discuss.discuss.entity.User;
 import com.discuss.discuss.enums.CommunityRole;
+import com.discuss.discuss.enums.CommunityStatus;
+import com.discuss.discuss.enums.CommunityVisibility;
 import com.discuss.discuss.enums.MembershipStatus;
 import com.discuss.discuss.repository.CommunityMemberRepository;
-import com.discuss.discuss.repository.CommunityRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
+import com.discuss.discuss.exception.community.CommunityException;
+import com.discuss.discuss.exception.community.CommunityErrorCode;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -28,10 +30,23 @@ public class CommunityAuthorizationService {
                         MembershipStatus.ACTIVE
                 )
                 .orElseThrow(() ->
-                        new AccessDeniedException(
-                                "You are not an active member"
-                        )
+                        new CommunityException(CommunityErrorCode.ACTIVE_MEMBERSHIP_REQUIRED)
                 );
+    }
+
+    /** Public communities allow signed-in nonmembers to comment; bans still apply. */
+    public void requireCommentPermission(Community community, User user) {
+        if (user == null || community.getStatus() != CommunityStatus.ACTIVE) {
+            throw new CommunityException(CommunityErrorCode.COMMENT_PERMISSION_DENIED);
+        }
+        CommunityMember member = memberRepository.findByCommunityAndUser(community, user).orElse(null);
+        if (member != null && member.getStatus() == MembershipStatus.BANNED) {
+            throw new CommunityException(CommunityErrorCode.MEMBER_BANNED);
+        }
+        if (community.getVisibility() != CommunityVisibility.PUBLIC
+                && (member == null || member.getStatus() != MembershipStatus.ACTIVE)) {
+            throw new CommunityException(CommunityErrorCode.ACTIVE_MEMBERSHIP_REQUIRED);
+        }
     }
 
     public void requireModeratorOrOwner(
@@ -45,9 +60,7 @@ public class CommunityAuthorizationService {
 
         if (role != CommunityRole.MODERATOR
                 && role != CommunityRole.OWNER) {
-            throw new AccessDeniedException(
-                    "Moderator or Owner permission required"
-            );
+            throw new CommunityException(CommunityErrorCode.MODERATOR_OR_OWNER_REQUIRED);
         }
     }
 
@@ -59,9 +72,7 @@ public class CommunityAuthorizationService {
                 requireMembership(community, user);
 
         if (member.getRole() != CommunityRole.OWNER) {
-            throw new AccessDeniedException(
-                    "Owner permission required"
-            );
+            throw new CommunityException(CommunityErrorCode.OWNER_REQUIRED);
         }
     }
 }

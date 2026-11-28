@@ -16,7 +16,7 @@ const UI_GENDERS: Record<string, string> = {
   PREFER_NOT_TO_SAY: 'Không muốn tiết lộ',
 };
 
-export interface RegistrationDraft {
+interface RegistrationDraft {
   username: string;
   displayName: string;
   email: string;
@@ -50,13 +50,13 @@ interface AuthState {
   resendOtp: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
-  updatePrivacy: (privacy: Partial<PrivacySettings>) => Promise<void>;
+  updatePrivacy: (privacy: Partial<Pick<PrivacySettings, 'showDateOfBirth' | 'showLocation'>>) => Promise<void>;
   uploadAvatar: (file: File) => Promise<void>;
   uploadBanner: (file: File) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   verifyForgotPasswordOtp: (email: string, code: string) => Promise<void>;
   resetPassword: (password: string, confirmPassword: string) => Promise<void>;
-  changePassword: (oldPassword: string, password: string, confirmPassword: string) => Promise<void>;
+  changePassword: (password: string, confirmPassword: string) => Promise<void>;
   clearSession: () => void;
 }
 
@@ -76,10 +76,11 @@ function mapUser(
     : currentUser?.gender;
 
   return {
-    id: response.id || currentUser?.id || response.username,
+    id: String(response.id ?? currentUser?.id ?? response.username),
     username: response.username,
     displayName: profile?.displayName || currentUser?.displayName || response.username,
     email: response.email,
+    provider: response.provider ?? currentUser?.provider,
     avatarUrl: profile?.avatar || currentUser?.avatarUrl || '',
     bannerUrl: profile?.banner || currentUser?.bannerUrl || '',
     bio: profile?.bio ?? currentUser?.bio ?? '',
@@ -91,12 +92,12 @@ function mapUser(
     privacy: {
       showDateOfBirth: privacy?.showDateOfBirth ?? currentUser?.privacy.showDateOfBirth ?? false,
       showLocation: privacy?.showLocation ?? currentUser?.privacy.showLocation ?? false,
-      showPostsOnProfile: privacy?.showPostsOnProfile ?? currentUser?.privacy.showPostsOnProfile ?? true,
     },
     role: response.role,
     status: response.status,
     createdAt: response.createdAt || currentUser?.createdAt || new Date().toISOString(),
-    karma: currentUser?.karma ?? 0,
+    karma: response.reputation?.score ?? 0,
+    reputation: response.reputation,
   };
 }
 
@@ -213,7 +214,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         pendingEmail: null,
       });
     } catch (error) {
-      if (!(error instanceof ApiError && error.status === 401)) {
+      if (error instanceof ApiError && error.code === 'ACCOUNT_LOCKED') {
+        get().clearSession();
+      } else if (!(error instanceof ApiError && error.status === 401)) {
         set({ authStatus: 'ERROR' });
       }
       throw error;
@@ -237,7 +240,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         pendingEmail: null,
       });
     } catch (error) {
-      if (!(error instanceof ApiError && error.status === 401)) {
+      if (error instanceof ApiError && error.code === 'ACCOUNT_LOCKED') {
+        get().clearSession();
+      } else if (!(error instanceof ApiError && error.status === 401)) {
         set({ authStatus: 'ERROR' });
       }
       throw error;
@@ -289,7 +294,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   updatePrivacy: async (privacy) => {
     const currentUser = get().user;
     if (!currentUser) throw new Error('Vui lòng đăng nhập để cập nhật quyền riêng tư');
-    await get().updateProfile({ privacy: { ...currentUser.privacy, ...privacy } });
+    const generation = sessionGeneration;
+    const saved = await userService.updatePrivacy(privacy);
+    set((state) => {
+      if (sessionGeneration !== generation || !state.user || state.user.id !== currentUser.id) return state;
+      return { user: { ...state.user, privacy: { ...state.user.privacy, ...saved } } };
+    });
   },
 
   uploadAvatar: async (file) => {
@@ -314,10 +324,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   resetPassword: async (password, confirmPassword) => {
     await authService.resetPassword({ password, confirmPassword });
+    get().clearSession();
   },
 
-  changePassword: async (oldPassword, password, confirmPassword) => {
-    await authService.changePassword({ oldPassword, password, confirmPassword });
+  changePassword: async (password, confirmPassword) => {
+    await authService.changePassword({ password, confirmPassword });
+    get().clearSession();
   },
 
   clearSession: () => {

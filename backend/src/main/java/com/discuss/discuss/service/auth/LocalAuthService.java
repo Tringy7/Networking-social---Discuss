@@ -1,6 +1,5 @@
 package com.discuss.discuss.service.auth;
 
-import com.discuss.discuss.controller.auth.AuthController;
 import com.discuss.discuss.dto.auth.AuthResult;
 import com.discuss.discuss.dto.auth.AuthResponseDTO;
 import com.discuss.discuss.dto.auth.LoginRequestDTO;
@@ -17,6 +16,7 @@ import com.discuss.discuss.repository.UserRepository;
 import com.discuss.discuss.service.auth.email.EmailVerificationService;
 import com.discuss.discuss.service.auth.email.PasswordResetTokenService;
 import com.discuss.discuss.service.user.UserProfileService;
+import com.discuss.discuss.service.user.UserPrivacyService;
 import com.discuss.discuss.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -41,8 +41,10 @@ public class LocalAuthService {
 
     private final UserService userService;
     private final UserProfileService userProfileService;
+    private final UserPrivacyService userPrivacyService;
     private final TokenService tokenService;
     private final PasswordResetTokenService passwordResetTokenService;
+    private final com.discuss.discuss.service.auth.email.OtpService otpService;
 
     /*
         Register new user local
@@ -56,7 +58,7 @@ public class LocalAuthService {
                 .map(existingUser -> handleExistingUser(existingUser, request))
                 .orElseGet(() -> createPendingUser(request, normalizedEmail));
 
-        userProfileService.saveUserProfile(user, normalizeDisplayName(
+        userProfileService.upsertDisplayName(user, normalizeDisplayName(
                 request.getDisplayName(),
                 user.getUsername()
         ));
@@ -94,8 +96,8 @@ public class LocalAuthService {
 
         user.setStatus(UserStatus.ACTIVE);
 
-        userProfileService.createUserProfileIfAbsent(user, user.getUsername());
-        userProfileService.createUserPrivacy(user);
+        userProfileService.createProfileIfAbsent(user, user.getUsername());
+        userPrivacyService.createDefaultPrivacy(user);
     }
 
     @Transactional
@@ -120,7 +122,7 @@ public class LocalAuthService {
                             new AuthException(AuthErrorCode.INVALID_CREDENTIALS)
                     );
 
-            validateAccountStatus(user);
+            this.validateAccountStatus(user);
 
             return tokenService.issueTokens(user);
 
@@ -177,26 +179,52 @@ public class LocalAuthService {
         user.setPassword(passwordEncoder.encode(newPassword));
 
         userRepository.save(user);
+        tokenService.revokeAllUserTokens(user);
 
         passwordResetTokenService.consumeToken(resetToken);
     }
 
-    @Transactional
-    public void changePassword(String oldPassword, String newPassword) {
+    public String requestChangePasswordOtp() {
+        User user = getPasswordChangeUser();
+        return emailVerificationService.generateAndSendOtp(
+                OtpPurpose.CHANGE_PASSWORD, user.getEmail(), user.getUsername());
+    }
 
-        User user = this.userService.getCurrentUser();
-
-        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            throw new AuthException(AuthErrorCode.INVALID_CREDENTIALS);
+    public String verifyChangePasswordOtp(String code) {
+        User user = getPasswordChangeUser();
+        if (!otpService.verifyOtp(OtpPurpose.CHANGE_PASSWORD, normalize(user.getEmail()), code)) {
+            throw new AuthException(AuthErrorCode.INVALID_VERIFICATION_CODE);
         }
+        // A distinct subject prevents recovery tokens being used to change a logged-in account.
+        return passwordResetTokenService.generateToken(changePasswordSubject(user));
+    }
 
+    @Transactional
+    public void changePassword(String verificationToken, String newPassword) {
+        User user = getPasswordChangeUser();
+        if (!changePasswordSubject(user).equals(passwordResetTokenService.getEmailByToken(verificationToken))) {
+            throw new AuthException(AuthErrorCode.INVALID_RESET_TOKEN);
+        }
         if (passwordEncoder.matches(newPassword, user.getPassword())) {
             throw new AuthException(AuthErrorCode.PASSWORD_UNCHANGED);
         }
-
+        passwordResetTokenService.consumeToken(verificationToken);
         user.setPassword(passwordEncoder.encode(newPassword));
-
         userRepository.save(user);
+        tokenService.revokeAllUserTokens(user);
+    }
+
+    private String changePasswordSubject(User user) {
+        return "change-password:" + user.getId() + ":" + normalize(user.getEmail());
+    }
+
+    private User getPasswordChangeUser() {
+        User user = userService.getCurrentUser();
+        validateAccountStatus(user);
+        if (user.getProvider() != Provider.LOCAL) {
+            throw new AuthException(AuthErrorCode.PASSWORD_RESET_NOT_SUPPORTED);
+        }
+        return user;
     }
 
 

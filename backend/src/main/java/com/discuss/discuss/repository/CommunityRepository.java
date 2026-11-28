@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
@@ -19,8 +21,13 @@ public interface CommunityRepository extends
         JpaSpecificationExecutor<Community> {
 
     boolean existsByName(String name);
+    long countByStatus(CommunityStatus status);
 
     Optional<Community> findByName(String name);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Community c WHERE c.name = :name")
+    Optional<Community> findByNameForUpdate(@Param("name") String name);
 
     Page<Community> findByOwner(User owner, Pageable pageable);
 
