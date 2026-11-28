@@ -46,7 +46,7 @@ export const Navbar: React.FC = () => {
     };
   }, [isAuthenticated, user?.id]);
   const { communities } = useCommunityStore();
-  const { posts, openCreateModal } = usePostStore();
+  const { posts } = usePostStore();
   const { unreadCount: unreadNotifs, hydrate: hydrateNotifications, syncUnreadCount, clear } = useNotificationStore();
   const addToast = useToastStore((state) => state.addToast);
 
@@ -346,7 +346,7 @@ export const Navbar: React.FC = () => {
                 variant="primary"
                 size="sm"
                 leftIcon={<Plus className="w-4 h-4" />}
-                onClick={() => openCreateModal()}
+                onClick={() => navigate('/posts/create')}
                 className="navbar-create-post cursor-pointer"
               >
                 Tạo bài viết

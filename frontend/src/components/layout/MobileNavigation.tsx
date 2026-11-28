@@ -8,7 +8,6 @@ import { useNotificationStore } from '../../store/useNotificationStore';
 import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCommunityStore } from '../../store/useCommunityStore';
-import { usePostStore } from '../../store/usePostStore';
 
 const itemClass = ({ isActive }: { isActive: boolean }) =>
   `flex min-h-14 flex-col items-center justify-center gap-1 px-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)] ${
@@ -18,7 +17,6 @@ const itemClass = ({ isActive }: { isActive: boolean }) =>
 export const MobileNavigation: React.FC = () => {
   const { user, isAuthenticated, activeRole } = useAuthStore();
   const { communities } = useCommunityStore();
-  const openCreateModal = usePostStore((state) => state.openCreateModal);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
   const navigate = useNavigate();
   const reduced = useReducedMotion();
@@ -60,7 +58,7 @@ export const MobileNavigation: React.FC = () => {
   ).slice(0, 5);
 
   const createPost = () => {
-    if (isAuthenticated) openCreateModal();
+    if (isAuthenticated) navigate('/posts/create');
     else navigate('/login');
   };
 

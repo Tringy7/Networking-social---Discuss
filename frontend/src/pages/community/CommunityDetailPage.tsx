@@ -1,7 +1,7 @@
 import ReportModal from '../../components/post/ReportModal';
 import CommunityRulesContent from '../../components/community/CommunityRulesContent';
 import React, { useState } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCommunityStore } from '../../store/useCommunityStore';
 import { usePostStore } from '../../store/usePostStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -37,8 +37,11 @@ export const CommunityDetailPage: React.FC = () => {
   const { communityName } = useParams<{ communityName: string }>();
   const [searchParams] = useSearchParams();
 
+  const navigate = useNavigate();
+  const createPostPath = '/posts/create?community=' + encodeURIComponent(communityName || '');
+
   const { communities, hydrateCommunity } = useCommunityStore();
-  const { posts, loadCommunityPosts, openCreateModal, setPinned } = usePostStore();
+  const { posts, loadCommunityPosts, setPinned } = usePostStore();
   const { isAuthenticated, user } = useAuthStore();
   const { addToast } = useToastStore();
 
@@ -89,9 +92,9 @@ export const CommunityDetailPage: React.FC = () => {
   // Auto-open composer if ?action=create is in URL
   React.useEffect(() => {
     if (searchParams.get('action') === 'create' && community && isJoined) {
-      openCreateModal(community.name);
+      navigate(createPostPath, { replace: true });
     }
-  }, [searchParams, community, isJoined, openCreateModal]);
+  }, [searchParams, community, isJoined, createPostPath, navigate]);
 
   if (!community) {
     return (
@@ -190,7 +193,7 @@ export const CommunityDetailPage: React.FC = () => {
             {isManager && <Link className="icon-button" aria-label="Xử lý báo cáo" title="Xử lý báo cáo"
               to={`/c/${encodeURIComponent(community.name)}/moderation?tab=reports`}><Flag size={18} /></Link>}
             {!privateContentLocked && <CommunityMembershipButton community={community} />}
-            {!privateContentLocked && <Button variant="outline" size="sm" onClick={() => openCreateModal(community.name)} leftIcon={<Plus size={15} />}>Đăng bài</Button>}
+            {isJoined && !privateContentLocked && community.status === 'ACTIVE' && <Button variant="outline" size="sm" onClick={() => navigate(createPostPath)} leftIcon={<Plus size={15} />}>Đăng bài</Button>}
             {isJoined && !isCommunityLoading && <CommunityNotificationToggle key={`${user?.id}:${community.name}`} name={community.name} />}
             {isOwner && <Link className="icon-button" aria-label="Cài đặt cộng đồng" to={`/c/${community.name}/settings`}><Settings size={18} /></Link>}
           </div>
@@ -216,7 +219,7 @@ export const CommunityDetailPage: React.FC = () => {
               catch (error) { addToast(error instanceof Error ? error.message : 'Không thể tải bài viết.', 'error'); }
               finally { setPostsLoading(false); }
             }}>Xem thêm bài viết</Button>}
-            {!postsLoading && !sortedPosts.length && <div className="editorial-empty"><h2>Chia sẻ bài viết đầu tiên</h2><p>Chia sẻ câu hỏi hoặc góc nhìn đầu tiên cùng cộng đồng.</p><Button size="sm" className="mt-4" onClick={() => openCreateModal(community.name)}>Viết bài đầu tiên</Button></div>}
+            {!postsLoading && !sortedPosts.length && <div className="editorial-empty"><h2>Chia sẻ bài viết đầu tiên</h2><p>Chia sẻ câu hỏi hoặc góc nhìn đầu tiên cùng cộng đồng.</p>{isJoined && community.status === 'ACTIVE' && <Button size="sm" className="mt-4" onClick={() => navigate(createPostPath)}>Viết bài đầu tiên</Button>}</div>}
           </>}
         </section>
         <aside className="community-context">

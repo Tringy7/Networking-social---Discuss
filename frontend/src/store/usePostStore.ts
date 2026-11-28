@@ -31,12 +31,9 @@ interface PostState {
   editComment: (postId: string, commentId: string, content: string) => Promise<void>;
   deleteComment: (postId: string, commentId: string) => Promise<void>;
   voteComment: (postId: string, commentId: string, type: 'UP' | 'DOWN' | null) => Promise<void>;
-  isCreateModalOpen: boolean;
-  targetCommunityName?: string;
   editingPost?: Post;
-  openCreateModal: (name?: string) => void;
   openEditModal: (post: Post) => void;
-  closeCreateModal: () => void;
+  closeEditModal: () => void;
   reset: () => void;
 }
 const merge = (existing: Post[], incoming: Post[]) =>
@@ -88,9 +85,9 @@ let savedRequest = 0;
 const saving = new Set<string>();
 export const usePostStore = create<PostState>((set, get) => ({
   posts: [], feedIds: [], feedTab: 'for-you', feedPage: 0, hasMore: false, loading: false,
-  savedPosts: [], comments: {}, isCreateModalOpen: false,
+  savedPosts: [], comments: {},
   reset: () => { session++; feedRequest++; savedRequest++; saving.clear(); commentVersions.clear(); imageRefreshes.clear(); set({ posts: [], feedIds: [], savedPosts: [], comments: {},
-    hasMore: false, loading: false, isCreateModalOpen: false, editingPost: undefined }); },
+    hasMore: false, loading: false, editingPost: undefined }); },
   hydrate: async (tab = 'for-you') => {
     const request = ++feedRequest;
     set({ loading: true, feedTab: tab });
@@ -250,7 +247,6 @@ export const usePostStore = create<PostState>((set, get) => ({
     bumpComments(postId);
     set(state => ({ comments: { ...state.comments, [postId]: upsertComment(state.comments[postId] || [], response) } }));
   },
-  openCreateModal: (name) => set({ isCreateModalOpen: true, targetCommunityName: name, editingPost: undefined }),
-  openEditModal: (post) => set({ isCreateModalOpen: true, targetCommunityName: post.communityName, editingPost: post }),
-  closeCreateModal: () => set({ isCreateModalOpen: false, targetCommunityName: undefined, editingPost: undefined }),
+  openEditModal: (post) => set({ editingPost: post }),
+  closeEditModal: () => set({ editingPost: undefined }),
 }));
